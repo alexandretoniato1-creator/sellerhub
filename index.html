@@ -3222,6 +3222,106 @@ async function deleteAgenda(id){
   const {error} = await sb.from('agenda').delete().eq('id',id);
   if(error) console.error('deleteAgenda',error);
 }
+
+// ── NOTIFICAÇÕES PUSH ──
+const PUSH_FN = 'https://kztxwempjmuqjrwulyqh.supabase.co/functions/v1/push-notify';
+const VAPID_PUBLIC = 'BJAj-DivAsMws8GN86oDZ-DEihuzRwaiAUb44kcbtgaCqoYEVdmaF0Zm-cAb9ztLFqmbIga601JwMMunWzILfJA';
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function initPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+  // Registrar service worker inline via blob
+  const swCode = `
+    self.addEventListener('push', e => {
+      const data = e.data ? e.data.json() : {};
+      const title = data.title || 'SellerHub';
+      const options = {
+        body: data.body || '',
+        icon: data.icon || '/icon-192.png',
+        badge: data.badge || '/icon-192.png',
+        tag: data.tag || 'sellerhub',
+        renotify: true,
+        vibrate: [200, 100, 200],
+      };
+      e.waitUntil(self.registration.showNotification(title, options));
+    });
+    self.addEventListener('notificationclick', e => {
+      e.notification.close();
+      e.waitUntil(clients.openWindow('/'));
+    });
+  `;
+  const swBlob = new Blob([swCode], {type: 'application/javascript'});
+  const swUrl = URL.createObjectURL(swBlob);
+
+  try {
+    const reg = await navigator.serviceWorker.register(swUrl, {scope: '/'});
+    await navigator.serviceWorker.ready;
+
+    // Pedir permissão
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') return;
+
+    // Verificar se já tem inscrição
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+      });
+    }
+
+    // Enviar inscrição para o servidor
+    await fetch(`${PUSH_FN}/subscribe`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(sub.toJSON()),
+    });
+
+    console.log('✅ Notificações push ativadas');
+  } catch(e) {
+    console.warn('Push não suportado neste contexto:', e.message);
+  }
+}
+
+// Botão de ativar notificações na sidebar
+function renderPushBtn() {
+  if (!('Notification' in window)) return;
+  const sidebar = document.querySelector('.sidebar-nav');
+  if (!sidebar || document.getElementById('push-btn')) return;
+  const btn = document.createElement('button');
+  btn.id = 'push-btn';
+  btn.className = 'nav-item';
+  btn.style.marginTop = 'auto';
+  const granted = Notification.permission === 'granted';
+  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>${granted ? 'Notificações ativas ✓' : 'Ativar notificações'}`;
+  btn.style.color = granted ? 'var(--green-100)' : '';
+  btn.onclick = async () => {
+    await initPush();
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notificações ativas ✓`;
+    btn.style.color = 'var(--green-100)';
+  };
+  sidebar.appendChild(btn);
+}
+</script>
+<script>
+// Inicializar botão push após o DOM carregar
+document.addEventListener('DOMContentLoaded', () => {
+  // O botão aparece depois do login, então aguarda
+  const observer = new MutationObserver(() => {
+    if (document.getElementById('app')?.classList.contains('active')) {
+      renderPushBtn();
+      observer.disconnect();
+    }
+  });
+  observer.observe(document.getElementById('app'), {attributes: true, attributeFilter: ['class']});
+});
 </script>
 </body>
 </html>
