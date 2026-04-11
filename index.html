@@ -1193,6 +1193,19 @@ td[contenteditable]:focus::after { display: none; }
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>
                 <input type="date" id="ed-date" onchange="autoSave()" title="Data limite">
               </div>
+              <div class="ed-chip ed-chip-date">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <input type="time" id="ed-horario" onchange="autoSave()" title="Horário de vencimento">
+              </div>
+              <div class="ed-chip">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                <select id="ed-lembrete" onchange="autoSave()" style="border:none;outline:none;background:transparent;font-family:var(--font);font-size:11px;font-weight:500;color:inherit;cursor:pointer;padding:0">
+                  <option value="">Sem lembrete</option>
+                  <option value="na_hora">Na hora</option>
+                  <option value="1h_antes">1h antes</option>
+                  <option value="1d_antes">1 dia antes</option>
+                </select>
+              </div>
               <input type="hidden" id="ed-status" value="pendente">
               <button class="ed-chip" id="btn-del-note" onclick="delNote()" style="display:none;color:var(--coral-500);border-color:var(--coral-200)">
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
@@ -2790,6 +2803,8 @@ function editNote(id){
   document.getElementById('ed-body').value=n.body;
   document.getElementById('ed-tags').value=n.tags.join(', ');
   document.getElementById('ed-date').value=n.date;
+  document.getElementById('ed-horario').value=n.horario||'';
+  document.getElementById('ed-lembrete').value=n.lembrete_tipo||'';
   document.getElementById('ed-status').value=n.status;
   updateStatusChip(n.status);
   document.getElementById('btn-del-note').style.display='';
@@ -2836,7 +2851,8 @@ function updateStatusChip(status){
 
 function clearEd(){
   editId=null;
-  ['ed-title','ed-body','ed-tags','ed-date'].forEach(x=>document.getElementById(x).value='');
+  ['ed-title','ed-body','ed-tags','ed-date','ed-horario'].forEach(x=>document.getElementById(x).value='');
+  document.getElementById('ed-lembrete').value='';
   document.getElementById('ed-status').value='pendente';
   updateStatusChip('pendente');
   document.getElementById('btn-del-note').style.display='none';
@@ -2860,13 +2876,15 @@ function saveNote(silent=false){
   if(!title&&!body)return;
   const tags=document.getElementById('ed-tags').value.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
   const date=document.getElementById('ed-date').value;
+  const horario=document.getElementById('ed-horario').value||null;
+  const lembrete_tipo=document.getElementById('ed-lembrete').value||null;
   const status=document.getElementById('ed-status').value;
   tags.forEach(t=>{if(!allTags.includes(t))allTags.push(t);});
   if(editId){
     const n=notes.find(x=>x.id===editId);
-    if(n){ Object.assign(n,{title,body,tags,date,status,ts:Date.now()}); saveAnotacao(n); }
+    if(n){ Object.assign(n,{title,body,tags,date,horario,lembrete_tipo,status,ts:Date.now()}); saveAnotacao(n); }
   } else {
-    const newNote={id:0,title,body,tags,date,status,ts:Date.now()};
+    const newNote={id:0,title,body,tags,date,horario,lembrete_tipo,status,ts:Date.now()};
     notes.push(newNote);
     saveAnotacao(newNote).then(()=>{ editId=newNote.id; });
     document.getElementById('btn-del-note').style.display='';
@@ -3046,12 +3064,25 @@ function openCalModal(eid, defaultDate){
   document.getElementById('modal').innerHTML = `
     <div class="modal-title">${ev?'Editar':'Novo'} Evento</div>
     <div class="m-field"><label>Título</label><input id="cev-title" value="${ev?ev.title:''}" placeholder="Ex: Vencimento contrato..."></div>
-    <div class="m-field"><label>Data</label><input type="date" id="cev-date" value="${ev?ev.date:(defaultDate||'')}"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="m-field"><label>Data</label><input type="date" id="cev-date" value="${ev?ev.date:(defaultDate||'')}"></div>
+      <div class="m-field"><label>Horário <span style="color:var(--slate-400);font-weight:400">(opcional)</span></label><input type="time" id="cev-horario" value="${ev?.horario||''}"></div>
+    </div>
     <div class="m-field"><label>Categoria</label>
       <select id="cev-cat">
         <option value="contrato" ${ev&&ev.cat==='contrato'?'selected':''}>🔴 Contrato / Vencimento</option>
         <option value="lancamento" ${ev&&ev.cat==='lancamento'?'selected':''}>🟢 Lançamento de Produto</option>
         <option value="mentoria" ${ev&&ev.cat==='mentoria'?'selected':''}>🟡 Mentoria</option>
+      </select>
+    </div>
+    <div class="m-field"><label>🔔 Lembrete antecipado</label>
+      <select id="cev-lembrete">
+        <option value="" ${!ev?.lembrete_min?'selected':''}>Sem lembrete</option>
+        <option value="5"  ${ev?.lembrete_min==5?'selected':''}>5 minutos antes</option>
+        <option value="10" ${ev?.lembrete_min==10?'selected':''}>10 minutos antes</option>
+        <option value="15" ${ev?.lembrete_min==15?'selected':''}>15 minutos antes</option>
+        <option value="30" ${ev?.lembrete_min==30?'selected':''}>30 minutos antes</option>
+        <option value="60" ${ev?.lembrete_min==60?'selected':''}>1 hora antes</option>
       </select>
     </div>
     <div class="m-field"><label>Observações</label><textarea id="cev-obs">${ev?ev.obs:''}</textarea></div>
@@ -3068,12 +3099,14 @@ async function saveCalEvent(eid){
   const date = document.getElementById('cev-date').value; if(!date) return;
   const cat = document.getElementById('cev-cat').value;
   const obs = document.getElementById('cev-obs').value.trim();
+  const horario = document.getElementById('cev-horario').value || null;
+  const lembrete_min = parseInt(document.getElementById('cev-lembrete').value) || null;
   if(eid){
     const e=calEvents.find(e=>e.id===eid);
-    Object.assign(e,{title,date,cat,obs});
+    Object.assign(e,{title,date,cat,obs,horario,lembrete_min});
     await saveAgenda(e);
   } else {
-    const ev={id:0,title,date,cat,obs};
+    const ev={id:0,title,date,cat,obs,horario,lembrete_min};
     await saveAgenda(ev);
     calEvents.push(ev);
   }
@@ -3146,14 +3179,14 @@ async function loadAnotacoes(){
   const {data,error} = await sb.from('anotacoes').select('*').order('criado_em',{ascending:false});
   if(error){ console.error('anotacoes',error); return; }
   if(!data.length) return;
-  notes = data.map(r=>({id:r.id,title:r.titulo,body:r.corpo,tags:r.tags||[],date:r.data_limite||'',status:r.status,ts:new Date(r.criado_em).getTime()}));
+  notes = data.map(r=>({id:r.id,title:r.titulo,body:r.corpo,tags:r.tags||[],date:r.data_limite||'',horario:r.horario_venc||null,lembrete_tipo:r.lembrete_tipo||null,status:r.status,ts:new Date(r.criado_em).getTime()}));
 }
 
 async function loadAgenda(){
   const {data,error} = await sb.from('agenda').select('*');
   if(error){ console.error('agenda',error); return; }
   if(!data.length) return;
-  calEvents = data.map(r=>({id:r.id,title:r.titulo,date:r.data,cat:r.categoria,obs:r.obs||''}));
+  calEvents = data.map(r=>({id:r.id,title:r.titulo,date:r.data,cat:r.categoria,obs:r.obs||'',horario:r.horario||null,lembrete_min:r.lembrete_min||null}));
 }
 
 // ── SAVERS ──
@@ -3187,7 +3220,7 @@ async function saveSkuHistorico(contaKey, skuCode, mes){
 
 async function saveAnotacao(note){
   showSync('Salvando…');
-  const payload = {titulo:note.title,corpo:note.body,tags:note.tags,data_limite:note.date||null,status:note.status,updated_at:'now()'};
+  const payload = {titulo:note.title,corpo:note.body,tags:note.tags,data_limite:note.date||null,horario_venc:note.horario||null,lembrete_tipo:note.lembrete_tipo||null,status:note.status,updated_at:'now()'};
   let error;
   if(typeof note.id === 'number' && note.id > 0){
     ({error} = await sb.from('anotacoes').update(payload).eq('id',note.id));
@@ -3207,7 +3240,7 @@ async function deleteAnotacao(id){
 
 async function saveAgenda(ev){
   showSync('Salvando…');
-  const payload = {titulo:ev.title,data:ev.date,categoria:ev.cat,obs:ev.obs||''};
+  const payload = {titulo:ev.title,data:ev.date,categoria:ev.cat,obs:ev.obs||'',horario:ev.horario||null,lembrete_min:ev.lembrete_min||null};
   let error;
   if(ev.id && typeof ev.id==='number'){
     ({error} = await sb.from('agenda').update(payload).eq('id',ev.id));
