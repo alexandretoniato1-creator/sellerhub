@@ -1,7 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" translate="no">
 <head>
 <meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<meta http-equiv="Content-Language" content="pt-BR">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SellerHub</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -3235,38 +3237,21 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 async function initPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-
-  // Registrar service worker inline via blob
-  const swCode = `
-    self.addEventListener('push', e => {
-      const data = e.data ? e.data.json() : {};
-      const title = data.title || 'SellerHub';
-      const options = {
-        body: data.body || '',
-        icon: data.icon || '/icon-192.png',
-        badge: data.badge || '/icon-192.png',
-        tag: data.tag || 'sellerhub',
-        renotify: true,
-        vibrate: [200, 100, 200],
-      };
-      e.waitUntil(self.registration.showNotification(title, options));
-    });
-    self.addEventListener('notificationclick', e => {
-      e.notification.close();
-      e.waitUntil(clients.openWindow('/'));
-    });
-  `;
-  const swBlob = new Blob([swCode], {type: 'application/javascript'});
-  const swUrl = URL.createObjectURL(swBlob);
-
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    alert('Seu navegador não suporta notificações push. Use Chrome ou Edge.');
+    return;
+  }
   try {
-    const reg = await navigator.serviceWorker.register(swUrl, {scope: '/'});
+    // Registrar service worker externo (sw.js no mesmo repositório)
+    const reg = await navigator.serviceWorker.register('./sw.js', {scope: './'});
     await navigator.serviceWorker.ready;
 
     // Pedir permissão
     const perm = await Notification.requestPermission();
-    if (perm !== 'granted') return;
+    if (perm !== 'granted') {
+      alert('Permissão de notificação negada. Habilite nas configurações do navegador.');
+      return;
+    }
 
     // Verificar se já tem inscrição
     let sub = await reg.pushManager.getSubscription();
@@ -3278,19 +3263,23 @@ async function initPush() {
     }
 
     // Enviar inscrição para o servidor
-    await fetch(`${PUSH_FN}/subscribe`, {
+    const res = await fetch(`${PUSH_FN}/subscribe`, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify(sub.toJSON()),
     });
 
-    console.log('✅ Notificações push ativadas');
+    if (res.ok) {
+      console.log('✅ Notificações push ativadas');
+      return true;
+    }
   } catch(e) {
-    console.warn('Push não suportado neste contexto:', e.message);
+    console.warn('Erro ao ativar push:', e.message);
+    alert('Erro ao ativar notificações: ' + e.message);
   }
+  return false;
 }
 
-// Botão de ativar notificações na sidebar
 function renderPushBtn() {
   if (!('Notification' in window)) return;
   const sidebar = document.querySelector('.sidebar-nav');
@@ -3298,14 +3287,23 @@ function renderPushBtn() {
   const btn = document.createElement('button');
   btn.id = 'push-btn';
   btn.className = 'nav-item';
-  btn.style.marginTop = 'auto';
+  btn.style.cssText = 'margin-top:auto;border-top:1px solid var(--slate-700);padding-top:12px';
+  const svgBell = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>`;
   const granted = Notification.permission === 'granted';
-  btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>${granted ? 'Notificações ativas ✓' : 'Ativar notificações'}`;
-  btn.style.color = granted ? 'var(--green-100)' : '';
+  btn.innerHTML = `${svgBell}${granted ? 'Notificações ativas ✓' : 'Ativar notificações'}`;
+  if (granted) btn.style.color = 'var(--green-100)';
   btn.onclick = async () => {
-    await initPush();
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>Notificações ativas ✓`;
-    btn.style.color = 'var(--green-100)';
+    btn.innerHTML = `${svgBell}Ativando…`;
+    btn.disabled = true;
+    const ok = await initPush();
+    btn.disabled = false;
+    if (ok || Notification.permission === 'granted') {
+      btn.innerHTML = `${svgBell}Notificações ativas ✓`;
+      btn.style.color = 'var(--green-100)';
+    } else {
+      btn.innerHTML = `${svgBell}Ativar notificações`;
+      btn.style.color = '';
+    }
   };
   sidebar.appendChild(btn);
 }
