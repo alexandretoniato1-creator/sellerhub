@@ -3525,7 +3525,7 @@ async function loadAnotacoes(){
 async function loadAgenda(){
   const {data,error} = await sb.from('agenda').select('*');
   if(error){ console.error('agenda',error); return; }
-  if(!data.length) return;
+  // Sempre substitui — banco vazio = agenda vazia (não usa exemplos)
   calEvents = data.map(r=>({id:r.id,title:r.titulo,date:r.data,cat:r.categoria,obs:r.obs||'',horario:r.horario||null,lembrete_min:r.lembrete_min||null}));
 }
 
