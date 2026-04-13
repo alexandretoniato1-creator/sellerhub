@@ -3162,12 +3162,36 @@ function delNote(){
 
 // ===== KANBAN =====
 let cols=[{id:'ideia',nome:'Ideia'},{id:'pesquisando',nome:'Pesquisando'},{id:'testando',nome:'Testando'},{id:'aprovado',nome:'Aprovado'},{id:'descartado',nome:'Descartado'}];
-let ideas=[
-  {id:1,nome:'Produto Teste A',link:'https://mercadolivre.com.br',obs:'Boa margem, verificar fornecedor',fat:15000,exp:'Alta',etapa:'ideia',marca:'FW'},
-  {id:2,nome:'Produto Teste B',link:'',obs:'Concorrência alta, analisar',fat:8000,exp:'Média',etapa:'pesquisando',marca:'BTMX'},
-  {id:3,nome:'Produto Teste C',link:'',obs:'Baixo investimento inicial',fat:3000,exp:'Baixa',etapa:'ideia',marca:''}
-];
+let ideas=[];
 let kFilter='todas',kFilterMarca='todas',dragged=null;
+
+async function loadIdeias(){
+  const {data,error}=await sb.from('ideias').select('*').order('created_at',{ascending:true});
+  if(error){console.error('loadIdeias',error);return;}
+  ideas=data.map(r=>({id:r.id,nome:r.nome,marca:r.marca||'',link:r.link||'',obs:r.obs||'',fat:Number(r.fat)||0,exp:r.exp||'Média',etapa:r.etapa||'ideia'}));
+  renderKanban();
+}
+
+async function saveIdeiaDb(idea){
+  showSync('Salvando…');
+  const payload={nome:idea.nome,marca:idea.marca,link:idea.link,obs:idea.obs,fat:idea.fat,exp:idea.exp,etapa:idea.etapa,updated_at:'now()'};
+  let error,newId;
+  if(typeof idea.id==='number' && idea.id>0){
+    ({error}=await sb.from('ideias').update(payload).eq('id',idea.id));
+  } else {
+    const res=await sb.from('ideias').insert(payload).select().single();
+    error=res.error;
+    if(!error) newId=res.data.id;
+  }
+  if(error) console.error('saveIdeiaDb',error);
+  else showSync('Salvo ✓',true);
+  return newId;
+}
+
+async function deleteIdeiaDb(id){
+  const {error}=await sb.from('ideias').delete().eq('id',id);
+  if(error) console.error('deleteIdeiaDb',error);
+}
 
 function getMarcas(){
   const m=new Set(ideas.map(i=>i.marca).filter(Boolean));
@@ -3198,11 +3222,11 @@ function renderKanban(){
           ${c.obs?`<div class="kc-obs">${c.obs}</div>`:''}
           <div class="kc-footer"><span class="kc-revenue">R$ ${c.fat.toLocaleString('pt-BR')}/mês</span><span class="kc-exp exp-${c.exp.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}">${c.exp}</span></div>
           ${c.link?`<a href="${c.link}" target="_blank" class="kc-link">Ver no ML &#8599;</a>`:''}
-          <div class="kc-actions"><button class="btn btn-ghost btn-sm" onclick="openIdea(${c.id})">Editar</button><button class="btn btn-danger btn-sm" onclick="ideas=ideas.filter(i=>i.id!==${c.id});renderKanban()">Excluir</button></div>
+          <div class="kc-actions"><button class="btn btn-ghost btn-sm" onclick="openIdea(${c.id})">Editar</button><button class="btn btn-danger btn-sm" onclick="deleteIdeia(${c.id})">Excluir</button></div>
         </div>`).join('')}</div>
     </div>`}).join('')+`<div class="kanban-add-col" onclick="addCol()">+ Coluna</div>`;
 }
-function drop(e,colId){e.preventDefault();if(dragged!==null){const c=ideas.find(i=>i.id===dragged);if(c)c.etapa=colId;dragged=null;renderKanban()}}
+async function drop(e,colId){e.preventDefault();if(dragged!==null){const c=ideas.find(i=>i.id===dragged);if(c){c.etapa=colId;await saveIdeiaDb(c);}dragged=null;renderKanban()}}
 function addCol(){const n=prompt('Nome da coluna:');if(n){cols.push({id:n.toLowerCase().replace(/\s/g,'_'),nome:n});renderKanban()}}
 function openIdea(eid){
   const idea=eid?ideas.find(i=>i.id===eid):null;
@@ -3222,18 +3246,33 @@ function openIdea(eid){
     <div class="modal-actions"><button class="btn btn-ghost" onclick="closeModal()">Cancelar</button><button class="btn btn-primary" onclick="saveIdea(${eid||'null'})">${idea?'Salvar':'Criar'}</button></div>`;
   document.getElementById('modal-bg').classList.add('active');
 }
-function saveIdea(eid){
+async function saveIdea(eid){
   const nome=document.getElementById('m-nome').value.trim();if(!nome)return;
   const marca=document.getElementById('m-marca').value.trim();
   const link=document.getElementById('m-link').value.trim();
   const obs=document.getElementById('m-obs').value.trim();
   const fat=parseFloat(document.getElementById('m-fat').value)||0;
   const exp=document.getElementById('m-exp').value;
-  if(eid){const c=ideas.find(i=>i.id===eid);Object.assign(c,{nome,marca,link,obs,fat,exp})}
-  else{const etapa=document.getElementById('m-etapa').value;ideas.push({id:Date.now(),nome,marca,link,obs,fat,exp,etapa})}
+  if(eid){
+    const c=ideas.find(i=>i.id===eid);
+    Object.assign(c,{nome,marca,link,obs,fat,exp});
+    await saveIdeiaDb(c);
+  } else {
+    const etapa=document.getElementById('m-etapa').value;
+    const nova={id:0,nome,marca,link,obs,fat,exp,etapa};
+    const newId=await saveIdeiaDb(nova);
+    if(newId) nova.id=newId;
+    ideas.push(nova);
+  }
   closeModal();renderKanban();
 }
 function closeModal(){document.getElementById('modal-bg').classList.remove('active')}
+async function deleteIdeia(id){
+  if(!confirm('Excluir esta ideia?'))return;
+  ideas=ideas.filter(i=>i.id!==id);
+  await deleteIdeiaDb(id);
+  renderKanban();
+}
 
 // ===== AGENDA =====
 let calYear = new Date().getFullYear();
@@ -3519,8 +3558,9 @@ async function initApp(){
     loadSkuHistorico(),
     loadAnotacoes(),
     loadAgenda(),
+    loadIdeias(),
   ]);
-  initTabs(); renderPrec(); renderSkuSel(); renderTagF(); renderNotes(); renderKanban(); renderCal();
+  initTabs(); renderPrec(); renderSkuSel(); renderTagF(); renderNotes(); renderCal();
   renderVG(); initCompPicker(); renderHist(); renderHome();
   showSync('Dados carregados ✓', true);
 }
