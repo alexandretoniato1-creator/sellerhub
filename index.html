@@ -454,6 +454,14 @@ td[contenteditable]:focus::after { display: none; }
 .comp-kpi-val { font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--slate-700); }
 .comp-kpi-val.best { color: var(--green-600); font-weight: 700; }
 .comp-kpi-val.worst { color: var(--coral-500); }
+.comp-summary { background: var(--slate-900); border-radius: var(--radius); padding: 16px 20px; margin-bottom: 16px; }
+.comp-summary-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--slate-400); margin-bottom: 14px; font-family: var(--mono); }
+.comp-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
+.comp-summary-kpi { }
+.comp-summary-label { font-size: 10px; color: var(--slate-400); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+.comp-summary-val { font-family: var(--mono); font-size: 16px; font-weight: 600; color: var(--white); }
+.comp-summary-val.highlight { color: var(--coral-400); }
+.comp-summary-sub { font-size: 10px; color: var(--slate-600); margin-top: 2px; font-family: var(--mono); }
 .insight-box { background: var(--white); border: 1px solid var(--slate-100); border-radius: var(--radius); padding: 14px 16px; display: flex; gap: 10px; align-items: flex-start; }
 .insight-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
 .insight-text { font-size: 13px; color: var(--slate-700); line-height: 1.5; }
@@ -2071,7 +2079,64 @@ function renderComp(){
     worstMap[k] = inverted ? Math.max(...vals) : worst;
   });
 
-  document.getElementById('comp-cards').innerHTML = `<div class="comp-cards-grid">${selected.map(m=>{
+  // ── CARD RESUMO DO PERÍODO ──
+  const totalFat     = selected.reduce((s,m) => s + dataMap[m].fat, 0);
+  const totalPedidos = selected.reduce((s,m) => s + dataMap[m].pedidos, 0);
+  const totalUnidades= selected.reduce((s,m) => s + dataMap[m].unidades, 0);
+  const ticketMedio  = totalPedidos > 0 ? totalFat / totalPedidos : 0;
+  // Médias ponderadas pelo faturamento de cada mês
+  const fatBase = totalFat || 1;
+  const mediaConv   = selected.reduce((s,m) => s + dataMap[m].conv   * dataMap[m].fat, 0) / fatBase;
+  const mediaTacos  = selected.reduce((s,m) => s + dataMap[m].tacos  * dataMap[m].fat, 0) / fatBase;
+  const mediaRebait = selected.reduce((s,m) => s + dataMap[m].rebait * dataMap[m].fat, 0) / fatBase;
+  const mediaMc     = selected.reduce((s,m) => s + dataMap[m].mc     * dataMap[m].fat, 0) / fatBase;
+
+  const mesesLabel = selected.length === 1
+    ? perfMonthFull[perfMonths.indexOf(selected[0])]
+    : `${perfMonthFull[perfMonths.indexOf(selected[0])]} – ${perfMonthFull[perfMonths.indexOf(selected[selected.length-1])]}`;
+
+  const summaryHtml = `<div class="comp-summary">
+    <div class="comp-summary-title">Resumo do período — ${mesesLabel} · ${compConta==='__all__'?'Todas as contas':compConta} · ${selected.length} ${selected.length===1?'mês':'meses'}</div>
+    <div class="comp-summary-grid">
+      <div class="comp-summary-kpi">
+        <div class="comp-summary-label">Faturamento total</div>
+        <div class="comp-summary-val highlight">${fmtBRL(totalFat)}</div>
+        <div class="comp-summary-sub">${fmtBRL(totalFat/selected.length)}/mês</div>
+      </div>
+      <div class="comp-summary-kpi">
+        <div class="comp-summary-label">Pedidos</div>
+        <div class="comp-summary-val">${totalPedidos.toLocaleString('pt-BR')}</div>
+        <div class="comp-summary-sub">${Math.round(totalPedidos/selected.length).toLocaleString('pt-BR')}/mês</div>
+      </div>
+      <div class="comp-summary-kpi">
+        <div class="comp-summary-label">Unidades</div>
+        <div class="comp-summary-val">${totalUnidades.toLocaleString('pt-BR')}</div>
+        <div class="comp-summary-sub">${Math.round(totalUnidades/selected.length).toLocaleString('pt-BR')}/mês</div>
+      </div>
+      <div class="comp-summary-kpi">
+        <div class="comp-summary-label">Ticket médio</div>
+        <div class="comp-summary-val">${fmtBRL(ticketMedio)}</div>
+      </div>
+      <div class="comp-summary-kpi">
+        <div class="comp-summary-label">Conversão média</div>
+        <div class="comp-summary-val">${fmtPct(mediaConv)}</div>
+      </div>
+      <div class="comp-summary-kpi">
+        <div class="comp-summary-label">TACOS médio</div>
+        <div class="comp-summary-val ${mediaTacos>12?'highlight':''}">${fmtPct(mediaTacos)}</div>
+      </div>
+      <div class="comp-summary-kpi">
+        <div class="comp-summary-label">Rebait médio</div>
+        <div class="comp-summary-val">${fmtPct(mediaRebait)}</div>
+      </div>
+      <div class="comp-summary-kpi">
+        <div class="comp-summary-label">M.C. média</div>
+        <div class="comp-summary-val ${mediaMc>0&&mediaMc<15?'highlight':''}">${fmtPct(mediaMc)}</div>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('comp-cards').innerHTML = summaryHtml + `<div class="comp-cards-grid">${selected.map(m=>{
     const d = dataMap[m];
     const mIdx = perfMonths.indexOf(m);
     return `<div class="comp-card">
@@ -2087,7 +2152,7 @@ function renderComp(){
         </div>`;
       }).join('')}
     </div>`;
-  }).join('')}</div>`;
+  }).join('')}</div></div>`;
 }
 
 function perfGoTab(id, btn){
