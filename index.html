@@ -1194,8 +1194,9 @@ td[contenteditable]:focus::after { display: none; }
     <!-- MODAL EDIÇÃO LINHA ML -->
     <div class="modal-bg" id="ml-row-edit-modal" onclick="if(event.target===this)this.classList.remove('active')" style="z-index:1001">
       <div class="modal" style="max-width:380px;width:100%">
-        <div class="modal-title">Editar linha — <span id="ml-row-edit-sku" style="font-family:var(--mono);color:var(--coral-500)"></span></div>
+        <div class="modal-title">Editar linha de importação</div>
         <div class="edit-row-fields" style="grid-template-columns:1fr 1fr">
+          <div class="m-field full"><label>SKU</label><input type="text" id="ml-row-edit-sku" placeholder="SKU" style="font-family:var(--mono);text-transform:uppercase"></div>
           <div class="m-field full"><label>Faturamento (R$)</label><input type="number" step="0.01" id="ml-row-edit-fat" placeholder="0.00"></div>
           <div class="m-field"><label>Pedidos</label><input type="number" id="ml-row-edit-pedidos" placeholder="0"></div>
           <div class="m-field"><label>Unidades</label><input type="number" id="ml-row-edit-unidades" placeholder="0"></div>
@@ -2892,7 +2893,7 @@ let mlEditIdx = null;
 function openMlRowEdit(i) {
   mlEditIdx = i;
   const r = mlImportRows[i];
-  document.getElementById('ml-row-edit-sku').textContent = r.sku;
+  document.getElementById('ml-row-edit-sku').value = r.sku;
   document.getElementById('ml-row-edit-fat').value = r.fat;
   document.getElementById('ml-row-edit-pedidos').value = r.pedidos;
   document.getElementById('ml-row-edit-unidades').value = r.unidades;
@@ -2903,6 +2904,9 @@ function openMlRowEdit(i) {
 function saveMlRowEdit() {
   if (mlEditIdx === null) return;
   const parse = id => { const v=parseFloat(document.getElementById(id).value.replace(',','.')); return isNaN(v)?0:v; };
+  const novoSku = document.getElementById('ml-row-edit-sku').value.trim().toUpperCase();
+  if (!novoSku) { alert('SKU não pode estar vazio.'); return; }
+  mlImportRows[mlEditIdx].sku      = novoSku;
   mlImportRows[mlEditIdx].fat      = parse('ml-row-edit-fat');
   mlImportRows[mlEditIdx].pedidos  = parseInt(document.getElementById('ml-row-edit-pedidos').value)||0;
   mlImportRows[mlEditIdx].unidades = parseInt(document.getElementById('ml-row-edit-unidades').value)||0;
