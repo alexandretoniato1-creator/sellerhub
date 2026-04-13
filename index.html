@@ -1208,7 +1208,11 @@ td[contenteditable]:focus::after { display: none; }
           <div class="m-field full"><label>Faturamento (R$)</label><input type="number" step="0.01" id="ml-row-edit-fat" placeholder="0.00"></div>
           <div class="m-field"><label>Pedidos</label><input type="number" id="ml-row-edit-pedidos" placeholder="0"></div>
           <div class="m-field"><label>Unidades</label><input type="number" id="ml-row-edit-unidades" placeholder="0"></div>
-          <div class="m-field full"><label>Conversão (%)</label><input type="number" step="0.01" id="ml-row-edit-conv" placeholder="0.00"></div>
+          <div class="m-field"><label>Conversão (%)</label><input type="number" step="0.01" id="ml-row-edit-conv" placeholder="0.00"></div>
+          <div class="m-field"><label>Preço de Venda (R$)</label><input type="number" step="0.01" id="ml-row-edit-preco" placeholder="0.00"></div>
+          <div class="m-field"><label>TACOS (%)</label><input type="number" step="0.1" id="ml-row-edit-tacos" placeholder="0.0"></div>
+          <div class="m-field"><label>Rebait (%)</label><input type="number" step="0.1" id="ml-row-edit-rebait" placeholder="0.0"></div>
+          <div class="m-field full"><label>M.C. (%)</label><input type="number" step="0.1" id="ml-row-edit-mc" placeholder="0.0"></div>
         </div>
         <div class="modal-actions">
           <button class="btn btn-ghost" onclick="document.getElementById('ml-row-edit-modal').classList.remove('active')">Cancelar</button>
@@ -1602,6 +1606,8 @@ function go(id,btn){
   if(btn) btn.classList.add('active');
   if(innerWidth<=768)toggleSidebar();
   if(id==='home') renderHome();
+  if(id==='produtos'){ safeRenderProd(); }
+  if(id==='performance'){ renderVG(); }
 }
 
 // ===== HOME DASHBOARD =====
@@ -2176,31 +2182,9 @@ let conta = 'FW';
 let prodSubTab = 'precificacao';
 let skuSelected = '';
 
-// Dados de precificação por conta
+// Dados de precificação por conta — carregados do Supabase
 let D = {};
-D['FW'] = [
-  {sku:'KIT-CABO-USB',  desc:'Kit 3 Cabos USB-C 2m Nylon Trançado', custo:14.50, preco:59.90, rebait:5.2, mc:24.8, tacos:9.1},
-  {sku:'SUPT-CEL-CAR', desc:'Suporte Celular Veicular Magnético 360°', custo:8.20,  preco:34.90, rebait:4.8, mc:21.3, tacos:10.5},
-  {sku:'CARR-SEM-15W',  desc:'Carregador Wireless 15W Fast Charge',   custo:22.00, preco:89.90, rebait:5.5, mc:26.1, tacos:8.7},
-  {sku:'FILM-PROT-14',  desc:'Película Privacidade iPhone 14 Kit 2un', custo:6.80,  preco:29.90, rebait:4.2, mc:18.5, tacos:12.3},
-  {sku:'HUB-USB4P',     desc:'Hub USB 4 Portas USB 3.0 + USB-C',      custo:18.90, preco:74.90, rebait:5.0, mc:22.7, tacos:11.0},
-];
-D['BTMX'] = [
-  {sku:'CAPA-AIR-13',   desc:'Capa Silicone MacBook Air 13" Fosca',   custo:19.00, preco:69.90, rebait:4.5, mc:20.4, tacos:10.8},
-  {sku:'MOUSE-ERGON',   desc:'Mouse Ergonômico Vertical 2.4GHz',      custo:32.00, preco:119.90,rebait:5.8, mc:23.9, tacos:9.4},
-  {sku:'PAD-MOUSE-XL',  desc:'Mousepad Gamer XL 90x40cm RGB',         custo:28.50, preco:99.90, rebait:5.1, mc:22.1, tacos:11.2},
-  {sku:'TECLADO-MINI',  desc:'Teclado Bluetooth Mini Slim Recarr.',    custo:41.00, preco:149.90,rebait:6.0, mc:25.3, tacos:8.9},
-];
-D['Falcom'] = [
-  {sku:'FONE-TWS-PRO',  desc:'Fone Bluetooth TWS Cancelamento Ruído', custo:38.00, preco:129.90,rebait:5.5, mc:19.8, tacos:13.1},
-  {sku:'REL-SMART-FIT', desc:'Smartwatch Fitness GPS HR Monitor',      custo:72.00, preco:249.90,rebait:6.2, mc:17.4, tacos:14.6},
-  {sku:'ALTO-BT-20W',   desc:'Caixa Som Bluetooth 20W IPX5',          custo:55.00, preco:189.90,rebait:5.8, mc:18.9, tacos:13.8},
-];
-D['Logbox'] = [
-  {sku:'KIT-ORG-CAB',   desc:'Kit Organizador Cabos + Velcro 20 peças',custo:9.50, preco:39.90, rebait:4.0, mc:16.8, tacos:14.2},
-  {sku:'SUPT-MONITOR',  desc:'Suporte Monitor Elevador Ajustável',     custo:29.00, preco:99.90, rebait:4.8, mc:18.2, tacos:13.5},
-  {sku:'LUZ-LED-DESK',  desc:'Luminária LED Desk Clip USB Regulável',  custo:21.00, preco:69.90, rebait:4.3, mc:17.5, tacos:14.9},
-];
+contas.forEach(c => { D[c] = []; });
 
 // Dados de performance por SKU — carregados do Supabase
 let skuPerfData = {};
@@ -2265,8 +2249,7 @@ function prodSetConta(c, btn) {
   document.querySelectorAll('#prod-conta-tabs .tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   skuSelected = '';
-  if (prodSubTab === 'precificacao') renderPrec();
-  else { renderSkuSel(); renderSkuPerf(); }
+  safeRenderProd();
 }
 
 let todosMes = '2026-04';
@@ -2277,9 +2260,7 @@ function prodGoTab(id, btn) {
   document.getElementById('prod-'+id).classList.add('active');
   btn.classList.add('active');
   prodSubTab = id;
-  if (id === 'precificacao') renderPrec();
-  else if (id === 'todos-produtos') renderTodosProdutos();
-  else { renderSkuSel(); renderSkuPerf(); }
+  safeRenderProd();
 }
 
 // ---- TODOS OS PRODUTOS ----
@@ -2395,7 +2376,16 @@ function renderDash() {
   document.getElementById('dashboard').innerHTML = h;
 }
 
+// Guard: garante que D[conta] existe e renderiza a aba correta
+function safeRenderProd() {
+  if (!D[conta]) D[conta] = [];
+  if (prodSubTab === 'precificacao') renderPrec();
+  else if (prodSubTab === 'todos-produtos') renderTodosProdutos();
+  else { renderSkuSel(); if(skuSelected) renderSkuPerf(); }
+}
+
 function renderPrec() {
+  if (!D[conta]) D[conta] = [];
   renderDash();
   document.getElementById('tbody').innerHTML = D[conta].map((r,i) => {
     const m = mpa(r);
@@ -2963,6 +2953,10 @@ function openMlRowEdit(i) {
   document.getElementById('ml-row-edit-pedidos').value = r.pedidos;
   document.getElementById('ml-row-edit-unidades').value = r.unidades;
   document.getElementById('ml-row-edit-conv').value = r.conv.toFixed(2);
+  document.getElementById('ml-row-edit-preco').value = r.preco || '';
+  document.getElementById('ml-row-edit-tacos').value = r.tacos || '';
+  document.getElementById('ml-row-edit-rebait').value = r.rebait || '';
+  document.getElementById('ml-row-edit-mc').value = r.mc || '';
   document.getElementById('ml-row-edit-modal').classList.add('active');
 }
 
@@ -2976,6 +2970,10 @@ function saveMlRowEdit() {
   mlImportRows[mlEditIdx].pedidos  = parseInt(document.getElementById('ml-row-edit-pedidos').value)||0;
   mlImportRows[mlEditIdx].unidades = parseInt(document.getElementById('ml-row-edit-unidades').value)||0;
   mlImportRows[mlEditIdx].conv     = parse('ml-row-edit-conv');
+  mlImportRows[mlEditIdx].preco    = parse('ml-row-edit-preco');
+  mlImportRows[mlEditIdx].tacos    = parse('ml-row-edit-tacos');
+  mlImportRows[mlEditIdx].rebait   = parse('ml-row-edit-rebait');
+  mlImportRows[mlEditIdx].mc       = parse('ml-row-edit-mc');
   document.getElementById('ml-row-edit-modal').classList.remove('active');
   renderMLPreview();
 }
@@ -3004,19 +3002,28 @@ async function confirmMLImport() {
       fat: existing.fat + r.fat,
       pedidos: existing.pedidos + r.pedidos,
       unidades: existing.unidades + r.unidades,
-      preco: existing.preco,
-      tacos: existing.tacos,
-      rebait: existing.rebait,
-      mc: existing.mc,
+      preco: r.preco || existing.preco,
+      tacos: r.tacos || existing.tacos,
+      rebait: r.rebait || existing.rebait,
+      mc: r.mc || existing.mc,
       conv: parseFloat(newConv.toFixed(2))
     };
     // Salva no Supabase
     await saveSkuHistorico(importConta, r.sku, importMonth);
-    // Adicionar SKU na precificação se não existir
-    if (!D[importConta].find(d => d.sku === r.sku)) {
-      const novoSku = {sku: r.sku, desc: r.nome.slice(0, 60), custo:0, preco:0, rebait:0, mc:0, tacos:0};
+    // Adicionar/atualizar SKU na precificação
+    const skuExist = D[importConta].find(d => d.sku === r.sku);
+    if (!skuExist) {
+      const novoSku = {sku: r.sku, desc: r.nome.slice(0, 60), custo:0,
+        preco: r.preco||0, rebait: r.rebait||0, mc: r.mc||0, tacos: r.tacos||0};
       D[importConta].push(novoSku);
       await saveSku(importConta, novoSku);
+    } else if (r.preco||r.tacos||r.rebait||r.mc) {
+      // Atualiza campos preenchidos no modal de edição
+      if (r.preco)  skuExist.preco  = r.preco;
+      if (r.tacos)  skuExist.tacos  = r.tacos;
+      if (r.rebait) skuExist.rebait = r.rebait;
+      if (r.mc)     skuExist.mc     = r.mc;
+      await saveSku(importConta, skuExist);
     }
   }
 
@@ -3800,7 +3807,7 @@ async function initApp(){
   // Carrega ajustes manuais por cima da soma dos SKUs
   await loadKpiHistorico();
   calcKpiFromSkus();
-  initTabs(); renderPrec(); renderSkuSel(); renderTagF(); renderNotes(); renderCal();
+  initTabs(); safeRenderProd(); renderTagF(); renderNotes(); renderCal();
   renderVG(); initCompPicker(); renderHist(); renderHome();
   showSync('Dados carregados ✓', true);
 }
