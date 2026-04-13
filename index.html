@@ -73,8 +73,8 @@ body { font-family: var(--font); background: var(--bg); color: var(--slate-900);
 #app.active { display: flex; min-height: 100vh; }
 
 /* SIDEBAR */
-.sidebar { width: 240px; min-height: 100vh; background: var(--slate-900); padding: 24px 0; display: flex; flex-direction: column; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; transition: transform 0.3s ease; }
-.sidebar-logo { padding: 0 24px; margin-bottom: 32px; font-size: 20px; font-weight: 600; color: var(--white); letter-spacing: -0.5px; }
+.sidebar { width: 240px; min-height: 100vh; background: var(--slate-900); padding: 24px 0; padding-top: max(24px, env(safe-area-inset-top)); display: flex; flex-direction: column; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; transition: transform 0.3s ease; }
+.sidebar-logo { padding: 0 24px; margin-bottom: 32px; font-size: 20px; font-weight: 600; color: var(--white); letter-spacing: -0.5px; overflow: visible; white-space: nowrap; }
 .sidebar-logo span { color: var(--coral-500); }
 .sidebar-nav { display: flex; flex-direction: column; gap: 2px; padding: 0 12px; }
 .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); color: var(--slate-200); font-size: 14px; font-weight: 400; cursor: pointer; transition: all var(--transition); border: none; background: none; width: 100%; text-align: left; font-family: var(--font); }
@@ -3699,7 +3699,10 @@ async function initPush() {
 function renderPushBtn() {
   if (!('Notification' in window)) return;
   const sidebar = document.querySelector('.sidebar-nav');
-  if (!sidebar || document.getElementById('push-btn')) return;
+  if (!sidebar) return;
+  // Remove botão anterior se existir (garante re-render correto após reinstall)
+  const old = document.getElementById('push-btn');
+  if (old) old.remove();
   const btn = document.createElement('button');
   btn.id = 'push-btn';
   btn.className = 'nav-item';
@@ -3716,6 +3719,7 @@ function renderPushBtn() {
     if (ok || Notification.permission === 'granted') {
       btn.innerHTML = `${svgBell}Notificações ativas ✓`;
       btn.style.color = 'var(--green-100)';
+      startLembreteChecker();
     } else {
       btn.innerHTML = `${svgBell}Ativar notificações`;
       btn.style.color = '';
@@ -3723,14 +3727,71 @@ function renderPushBtn() {
   };
   sidebar.appendChild(btn);
 }
+
+// ── VERIFICADOR DE LEMBRETES (roda a cada minuto com app aberto) ──
+const _lembretesFired = new Set();
+
+function checkLembretes() {
+  if (Notification.permission !== 'granted') return;
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const hoje = localDateStr();
+
+  // Checar eventos da agenda
+  (calEvents || []).forEach(ev => {
+    if (!ev.horario || !ev.lembrete_min || ev.date !== hoje) return;
+    const [h, m] = ev.horario.split(':').map(Number);
+    const evMin = h * 60 + m;
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const diff = evMin - nowMin;
+    const key = `ev-${ev.id}-${ev.date}`;
+    if (diff <= ev.lembrete_min && diff >= 0 && !_lembretesFired.has(key)) {
+      _lembretesFired.add(key);
+      new Notification(`📅 ${ev.title}`, {
+        body: `${ev.horario} · ${diff === 0 ? 'Agora!' : `em ${diff} min`}`,
+        icon: './icon-192.png',
+        badge: './icon-192.png'
+      });
+    }
+  });
+
+  // Checar anotações com lembrete
+  (notes || []).forEach(n => {
+    if (!n.date || !n.horario || n.status !== 'pendente' || n.date !== hoje) return;
+    const mins = n.lembrete_tipo === '15min' ? 15 : n.lembrete_tipo === '1h' ? 60 : n.lembrete_tipo === '1d' ? null : null;
+    if (!mins) return;
+    const [h, m] = n.horario.split(':').map(Number);
+    const evMin = h * 60 + m;
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const diff = evMin - nowMin;
+    const key = `note-${n.id}-${n.date}`;
+    if (diff <= mins && diff >= 0 && !_lembretesFired.has(key)) {
+      _lembretesFired.add(key);
+      new Notification(`🔔 ${n.title}`, {
+        body: `${n.horario} · ${diff === 0 ? 'Agora!' : `em ${diff} min`}`,
+        icon: './icon-192.png',
+        badge: './icon-192.png'
+      });
+    }
+  });
+}
+
+let _lembreteInterval = null;
+function startLembreteChecker() {
+  if (_lembreteInterval) return;
+  checkLembretes(); // roda imediatamente
+  _lembreteInterval = setInterval(checkLembretes, 60000); // depois a cada 1 min
+  console.log('✅ Verificador de lembretes iniciado');
+}
 </script>
 <script>
 // Inicializar botão push após o DOM carregar
 document.addEventListener('DOMContentLoaded', () => {
-  // O botão aparece depois do login, então aguarda
   const observer = new MutationObserver(() => {
     if (document.getElementById('app')?.classList.contains('active')) {
       renderPushBtn();
+      // Se já tem permissão, inicia o checker automaticamente
+      if (Notification.permission === 'granted') startLembreteChecker();
       observer.disconnect();
     }
   });
