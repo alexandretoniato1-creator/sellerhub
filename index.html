@@ -1105,6 +1105,7 @@ td[contenteditable]:focus::after { display: none; }
                 <th style="text-align:right">Pedidos</th>
                 <th style="text-align:right">Unidades</th>
                 <th style="text-align:right">Preço de Venda</th>
+                <th style="text-align:right">Invest. ADS</th>
                 <th style="text-align:right">TACOS (%)</th>
                 <th style="text-align:right">Rebait (%)</th>
                 <th style="text-align:right">M.C. (%)</th>
@@ -1288,7 +1289,8 @@ td[contenteditable]:focus::after { display: none; }
           <div class="m-field"><label>Pedidos</label><input type="number" id="sku-hist-edit-pedidos" placeholder="0"></div>
           <div class="m-field"><label>Unidades</label><input type="number" id="sku-hist-edit-unidades" placeholder="0"></div>
           <div class="m-field"><label>Preço de Venda (R$)</label><input type="number" step="0.01" id="sku-hist-edit-preco" placeholder="0.00"></div>
-          <div class="m-field"><label>TACOS (%)</label><input type="number" step="0.1" id="sku-hist-edit-tacos" placeholder="0.0"></div>
+          <div class="m-field full"><label>Investimento ADS (R$)</label><input type="number" step="0.01" id="sku-hist-edit-investimento" placeholder="0.00" oninput="calcTacosAuto()"></div>
+          <div class="m-field"><label>TACOS (%) <span id="tacos-auto-hint" style="font-size:10px;color:var(--coral-500);font-weight:600"></span></label><input type="number" step="0.1" id="sku-hist-edit-tacos" placeholder="0.0"></div>
           <div class="m-field"><label>Rebait (%)</label><input type="number" step="0.1" id="sku-hist-edit-rebait" placeholder="0.0"></div>
           <div class="m-field full"><label>M.C. (%)</label><input type="number" step="0.1" id="sku-hist-edit-mc" placeholder="0.0"></div>
         </div>
@@ -2227,7 +2229,7 @@ contas.forEach(c => { skuPerfData[c] = {}; });
 function getSkuPerf(conta, sku, month) {
   if (!skuPerfData[conta]) skuPerfData[conta] = {};
   if (!skuPerfData[conta][sku]) skuPerfData[conta][sku] = {};
-  if (!skuPerfData[conta][sku][month]) skuPerfData[conta][sku][month] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0};
+  if (!skuPerfData[conta][sku][month]) skuPerfData[conta][sku][month] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0,investimento:0};
   return skuPerfData[conta][sku][month];
 }
 
@@ -2238,31 +2240,35 @@ function calcKpiFromSkus() {
     perfMonths.forEach(m => {
       const skus = Object.keys(skuPerfData[c] || {});
       if (!skus.length) return;
-      let fat=0, pedidos=0, unidades=0;
+      let fat=0, pedidos=0, unidades=0, investimento=0;
       let tacosPond=0, rebaitPond=0, mcPond=0, convPond=0;
       skus.forEach(sku => {
         const d = skuPerfData[c][sku][m] || {};
         const f = d.fat || 0;
-        fat      += f;
-        pedidos  += d.pedidos  || 0;
-        unidades += d.unidades || 0;
-        // média ponderada pelo faturamento
+        fat          += f;
+        pedidos      += d.pedidos      || 0;
+        unidades     += d.unidades     || 0;
+        investimento += d.investimento || 0;
         tacosPond  += (d.tacos  || 0) * f;
         rebaitPond += (d.rebait || 0) * f;
         mcPond     += (d.mc     || 0) * f;
         convPond   += (d.conv   || 0) * f;
       });
       const base = fat || 1;
-      // só atualiza se não houver ajuste manual salvo
+      // Se tiver investimento real, calcula TACOS direto; senão usa média ponderada
+      const tacosCalc = investimento > 0 && fat > 0
+        ? investimento / fat * 100
+        : tacosPond / base;
       const adj = kpiAjustes[c]?.[m] || {};
       kpiData[c][m] = {
-        fat:      adj.fat      ?? fat,
-        pedidos:  adj.pedidos  ?? pedidos,
-        unidades: adj.unidades ?? unidades,
-        tacos:    adj.tacos    ?? (tacosPond / base),
-        rebait:   adj.rebait   ?? (rebaitPond / base),
-        mc:       adj.mc       ?? (mcPond / base),
-        conv:     adj.conv     ?? (convPond / base),
+        fat:          adj.fat      ?? fat,
+        pedidos:      adj.pedidos  ?? pedidos,
+        unidades:     adj.unidades ?? unidades,
+        tacos:        adj.tacos    ?? tacosCalc,
+        rebait:       adj.rebait   ?? (rebaitPond / base),
+        mc:           adj.mc       ?? (mcPond / base),
+        conv:         adj.conv     ?? (convPond / base),
+        investimento: investimento,
       };
     });
   });
@@ -2506,11 +2512,16 @@ function renderSkuPerf() {
   const allMonths = perfMonths.map(m => getSkuPerf(conta, sku, m));
   const totalFat = allMonths.reduce((s,d) => s+d.fat, 0);
   const totalPedidos = allMonths.reduce((s,d) => s+d.pedidos, 0);
+  const totalInvestimento = allMonths.reduce((s,d) => s+(d.investimento||0), 0);
   const activeMeses = allMonths.filter(d => d.fat > 0);
   const bestMonth = activeMeses.length ? activeMeses.reduce((a,b) => b.fat>a.fat?b:a) : null;
   const bestMes = bestMonth ? perfMonthFull[allMonths.indexOf(bestMonth)] : '—';
   const avgMC = activeMeses.length ? activeMeses.reduce((s,d) => s+d.mc, 0)/activeMeses.length : 0;
-  const avgTacos = activeMeses.length ? activeMeses.reduce((s,d) => s+d.tacos, 0)/activeMeses.length : 0;
+  // TACOS médio ponderado pelo fat — se tiver investimento usa ele, senão usa o tacos salvo
+  const tacosCalc = totalFat > 0 && totalInvestimento > 0
+    ? totalInvestimento / totalFat * 100
+    : (activeMeses.length ? activeMeses.reduce((s,d) => s+d.tacos, 0)/activeMeses.length : 0);
+  const avgTacos = tacosCalc;
 
   // Delta do último mês ativo vs anterior
   const activeIdxs = allMonths.map((d,i) => d.fat>0?i:-1).filter(i=>i>=0);
@@ -2584,6 +2595,7 @@ function renderSkuPerf() {
       <td style="text-align:right">${d.pedidos>0?d.pedidos:'—'}</td>
       <td style="text-align:right">${d.unidades>0?d.unidades:'—'}</td>
       <td style="text-align:right">${d.preco>0?fmtBRL(d.preco):'—'}</td>
+      <td style="text-align:right;color:var(--blue-600)">${d.investimento>0?fmtBRL(d.investimento):'—'}</td>
       <td style="text-align:right;${d.tacos>15?'color:var(--coral-500)':''}">${d.tacos>0?d.tacos.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right">${d.rebait>0?d.rebait.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right;${d.mc>0&&d.mc<15?'color:var(--coral-500)':d.mc>=22?'color:var(--green-600)':''}">${d.mc>0?d.mc.toFixed(1)+'%':'—'}</td>
@@ -2599,6 +2611,19 @@ function renderSkuPerf() {
   renderSkuChart(sku);
 }
 
+function calcTacosAuto() {
+  const inv = parseFloat(document.getElementById('sku-hist-edit-investimento').value) || 0;
+  const fat = parseFloat(document.getElementById('sku-hist-edit-fat').value) || 0;
+  const hint = document.getElementById('tacos-auto-hint');
+  if (inv > 0 && fat > 0) {
+    const tacos = (inv / fat * 100).toFixed(1);
+    document.getElementById('sku-hist-edit-tacos').value = tacos;
+    hint.textContent = `← calculado automaticamente`;
+  } else {
+    hint.textContent = '';
+  }
+}
+
 function openSkuHistEdit(contaKey, sku, month, mi) {
   const d = getSkuPerf(contaKey, sku, month);
   document.getElementById('sku-hist-edit-title').textContent = `Editar — ${perfMonthFull[mi]}`;
@@ -2609,9 +2634,11 @@ function openSkuHistEdit(contaKey, sku, month, mi) {
   document.getElementById('sku-hist-edit-pedidos').value = d.pedidos>0?d.pedidos:'';
   document.getElementById('sku-hist-edit-unidades').value = d.unidades>0?d.unidades:'';
   document.getElementById('sku-hist-edit-preco').value = d.preco>0?d.preco.toFixed(2):'';
+  document.getElementById('sku-hist-edit-investimento').value = d.investimento>0?d.investimento.toFixed(2):'';
   document.getElementById('sku-hist-edit-tacos').value = d.tacos>0?d.tacos.toFixed(1):'';
   document.getElementById('sku-hist-edit-rebait').value = d.rebait>0?d.rebait.toFixed(1):'';
   document.getElementById('sku-hist-edit-mc').value = d.mc>0?d.mc.toFixed(1):'';
+  document.getElementById('tacos-auto-hint').textContent = '';
   document.getElementById('sku-hist-edit-modal').classList.add('active');
 }
 
@@ -2622,16 +2649,22 @@ function saveSkuHistEdit() {
   const parse = id => { const v=parseFloat(document.getElementById(id).value.replace(',','.')); return isNaN(v)?0:v; };
   if (!skuPerfData[contaKey]) skuPerfData[contaKey] = {};
   if (!skuPerfData[contaKey][sku]) skuPerfData[contaKey][sku] = {};
-  if (!skuPerfData[contaKey][sku][month]) skuPerfData[contaKey][sku][month] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0};
-  skuPerfData[contaKey][sku][month].fat     = parse('sku-hist-edit-fat');
-  skuPerfData[contaKey][sku][month].pedidos = parse('sku-hist-edit-pedidos');
-  skuPerfData[contaKey][sku][month].unidades= parse('sku-hist-edit-unidades');
-  skuPerfData[contaKey][sku][month].preco   = parse('sku-hist-edit-preco');
-  skuPerfData[contaKey][sku][month].tacos   = parse('sku-hist-edit-tacos');
-  skuPerfData[contaKey][sku][month].rebait  = parse('sku-hist-edit-rebait');
-  skuPerfData[contaKey][sku][month].mc      = parse('sku-hist-edit-mc');
+  if (!skuPerfData[contaKey][sku][month]) skuPerfData[contaKey][sku][month] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0,investimento:0};
+  const inv = parse('sku-hist-edit-investimento');
+  const fat = parse('sku-hist-edit-fat');
+  // Se tiver investimento e fat, recalcula TACOS automaticamente
+  const tacosCalc = inv>0 && fat>0 ? parseFloat((inv/fat*100).toFixed(1)) : parse('sku-hist-edit-tacos');
+  skuPerfData[contaKey][sku][month].fat          = fat;
+  skuPerfData[contaKey][sku][month].pedidos      = parse('sku-hist-edit-pedidos');
+  skuPerfData[contaKey][sku][month].unidades     = parse('sku-hist-edit-unidades');
+  skuPerfData[contaKey][sku][month].preco        = parse('sku-hist-edit-preco');
+  skuPerfData[contaKey][sku][month].investimento = inv;
+  skuPerfData[contaKey][sku][month].tacos        = tacosCalc;
+  skuPerfData[contaKey][sku][month].rebait       = parse('sku-hist-edit-rebait');
+  skuPerfData[contaKey][sku][month].mc           = parse('sku-hist-edit-mc');
   document.getElementById('sku-hist-edit-modal').classList.remove('active');
   saveSkuHistorico(contaKey, sku, month);
+  calcKpiFromSkus();
   renderSkuPerf();
 }
 
@@ -2662,8 +2695,11 @@ function openSkuDrawer(sku) {
   const activeData = allMonths.filter(d => d.fat > 0);
   const totalFat = activeData.reduce((s,d)=>s+d.fat,0);
   const totalPedidos = activeData.reduce((s,d)=>s+d.pedidos,0);
+  const totalInvestimento = activeData.reduce((s,d)=>s+(d.investimento||0),0);
   const avgMC = activeData.length ? activeData.reduce((s,d)=>s+d.mc,0)/activeData.length : 0;
-  const avgTacos = activeData.length ? activeData.reduce((s,d)=>s+d.tacos,0)/activeData.length : 0;
+  const avgTacos = totalFat>0 && totalInvestimento>0
+    ? totalInvestimento/totalFat*100
+    : (activeData.length ? activeData.reduce((s,d)=>s+d.tacos,0)/activeData.length : 0);
   const bestIdx = activeData.length ? allMonths.indexOf(activeData.reduce((a,b)=>b.fat>a.fat?b:a)) : -1;
   const bestLabel = bestIdx>=0 ? perfMonthFull[bestIdx] : '—';
 
@@ -2694,6 +2730,7 @@ function openSkuDrawer(sku) {
       <div class="row-expand-kpi"><div class="row-expand-kpi-label">Melhor mês</div><div class="row-expand-kpi-val" style="font-size:13px">${bestLabel}</div></div>
       <div class="row-expand-kpi"><div class="row-expand-kpi-label">M.C. média</div><div class="row-expand-kpi-val" style="${avgMC>0&&avgMC<15?'color:var(--coral-500)':avgMC>=22?'color:var(--green-600)':''}">${avgMC>0?avgMC.toFixed(1)+'%':'—'}</div></div>
       <div class="row-expand-kpi"><div class="row-expand-kpi-label">TACOS médio</div><div class="row-expand-kpi-val" style="${avgTacos>15?'color:var(--coral-500)':''}">${avgTacos>0?avgTacos.toFixed(1)+'%':'—'}</div></div>
+      ${totalInvestimento>0?`<div class="row-expand-kpi"><div class="row-expand-kpi-label">Invest. ADS total</div><div class="row-expand-kpi-val" style="color:var(--blue-600)">${fmtBRL(totalInvestimento)}</div></div>`:''}
     </div>
   </div>
   <div>
@@ -3968,7 +4005,7 @@ async function loadSkuHistorico(){
   data.forEach(r=>{
     if(!skuPerfData[r.conta]) skuPerfData[r.conta]={};
     if(!skuPerfData[r.conta][r.sku]) skuPerfData[r.conta][r.sku]={};
-    skuPerfData[r.conta][r.sku][r.mes]={fat:+r.fat,pedidos:+r.pedidos,unidades:+r.unidades,preco:+r.preco,tacos:+r.tacos,rebait:+r.rebait,mc:+r.mc,conv:+r.conv};
+    skuPerfData[r.conta][r.sku][r.mes]={fat:+r.fat,pedidos:+r.pedidos,unidades:+r.unidades,preco:+r.preco,tacos:+r.tacos,rebait:+r.rebait,mc:+r.mc,conv:+r.conv,investimento:+r.investimento||0};
   });
   // Após carregar SKUs, recalcula kpiData bottom-up
   calcKpiFromSkus();
@@ -4012,7 +4049,7 @@ async function deleteSku(contaKey, skuCode){
 async function saveSkuHistorico(contaKey, skuCode, mes){
   showSync('Salvando…');
   const d = skuPerfData[contaKey]?.[skuCode]?.[mes] || {};
-  const {error} = await sb.from('sku_historico').upsert({conta:contaKey,sku:skuCode,mes,fat:d.fat||0,pedidos:d.pedidos||0,unidades:d.unidades||0,preco:d.preco||0,tacos:d.tacos||0,rebait:d.rebait||0,mc:d.mc||0,conv:d.conv||0,updated_at:'now()'},{onConflict:'conta,sku,mes'});
+  const {error} = await sb.from('sku_historico').upsert({conta:contaKey,sku:skuCode,mes,fat:d.fat||0,pedidos:d.pedidos||0,unidades:d.unidades||0,preco:d.preco||0,tacos:d.tacos||0,rebait:d.rebait||0,mc:d.mc||0,conv:d.conv||0,investimento:d.investimento||0,updated_at:'now()'},{onConflict:'conta,sku,mes'});
   if(error) console.error('saveSkuHistorico',error);
   else showSync('Salvo ✓',true);
 }
