@@ -2685,6 +2685,66 @@ let mlImportRows = []; // dados lidos do xlsx, prontos para edição
 // Histórico de períodos importados: mlPeriods[conta][month] = [{from, to, count, fatTotal, weekNum}]
 let mlPeriods = {};
 
+// Importações salvas no banco para poder desfazer
+let importacoesList = {};
+
+async function loadImportacoes(){
+  const {data,error} = await sb.from('importacoes').select('*').order('created_at',{ascending:true});
+  if(error){ console.error('loadImportacoes',error); return; }
+  importacoesList = {};
+  mlPeriods = {};
+  mlImportCount = {};
+  data.forEach(r=>{
+    if(!importacoesList[r.conta]) importacoesList[r.conta]={};
+    if(!importacoesList[r.conta][r.mes]) importacoesList[r.conta][r.mes]=[];
+    importacoesList[r.conta][r.mes].push({id:r.id,from:r.periodo_de,to:r.periodo_ate,count:r.total_skus,fatTotal:+r.fat_total,itens:r.itens||[],created_at:r.created_at});
+    if(!mlPeriods[r.conta]) mlPeriods[r.conta]={};
+    if(!mlPeriods[r.conta][r.mes]) mlPeriods[r.conta][r.mes]=[];
+    if(!mlImportCount[r.conta]) mlImportCount[r.conta]={};
+    mlImportCount[r.conta][r.mes] = (mlImportCount[r.conta][r.mes]||0)+1;
+    const semana = mlImportCount[r.conta][r.mes];
+    mlPeriods[r.conta][r.mes].push({from:r.periodo_de,to:r.periodo_ate,weekNum:semana,count:r.total_skus,fatTotal:+r.fat_total});
+  });
+}
+
+async function desfazerImportacao(id, contaKey, mes) {
+  const imp = importacoesList[contaKey]?.[mes]?.find(i=>i.id===id);
+  if(!imp) return;
+  const dtStr = imp.created_at ? new Date(imp.created_at).toLocaleString('pt-BR') : '';
+  if(!confirm(`Desfazer importação de ${imp.count} SKUs (${fmtBRL(imp.fatTotal)}) realizada em ${dtStr}?\n\nOs valores serão subtraídos de ${perfMonthFull[perfMonths.indexOf(mes)]}.`)) return;
+  showSync('Desfazendo…');
+  for(const item of imp.itens){
+    const cur = skuPerfData[contaKey]?.[item.sku]?.[mes];
+    if(!cur) continue;
+    const totalPedidos = Math.max(0, cur.pedidos - item.pedidos);
+    const newConv = totalPedidos > 0
+      ? (cur.conv * cur.pedidos - item.conv * item.pedidos) / totalPedidos
+      : 0;
+    skuPerfData[contaKey][item.sku][mes] = {...cur,
+      fat: Math.max(0, cur.fat - item.fat),
+      pedidos: Math.max(0, cur.pedidos - item.pedidos),
+      unidades: Math.max(0, cur.unidades - item.unidades),
+      conv: Math.max(0, parseFloat(newConv.toFixed(2)))
+    };
+    const d = skuPerfData[contaKey][item.sku][mes];
+    if(d.fat===0 && d.pedidos===0){
+      await sb.from('sku_historico').delete().eq('conta',contaKey).eq('sku',item.sku).eq('mes',mes);
+    } else {
+      await saveSkuHistorico(contaKey, item.sku, mes);
+    }
+  }
+  await sb.from('importacoes').delete().eq('id',id);
+  importacoesList[contaKey][mes] = importacoesList[contaKey][mes].filter(i=>i.id!==id);
+  mlPeriods[contaKey][mes] = importacoesList[contaKey][mes].map((p,wi)=>({from:p.from,to:p.to,weekNum:wi+1,count:p.count,fatTotal:p.fatTotal}));
+  mlImportCount[contaKey][mes] = importacoesList[contaKey][mes].length;
+  calcKpiFromSkus();
+  showSync('Desfeito ✓', true);
+  renderCoverageCalendar();
+  renderSkuSel();
+  if(skuSelected) renderSkuPerf();
+  renderHist(); renderVG(); renderHome();
+}
+
 function extractPeriodFromFilename(filename) {
   // Padrão: Relatorio_desempenho_publicacoes_YYYY_MM_DD-YYYY_MM_DD.xlsx
   const match = filename.match(/(\d{4})_(\d{2})_(\d{2})-(\d{4})_(\d{2})_(\d{2})/);
@@ -2723,7 +2783,19 @@ function handleMLImport(input) {
         if (!r[0] || !r[4]) continue;
         const sku = String(r[4]).trim();
         const nome = String(r[1]).trim();
-        const fat = parseFloat(String(r[9]).replace(',','.')) || 0;
+        // O ML exporta faturamento com ponto como separador de milhar (ex: 149.336 = R$149.336)
+        // O XLSX.js lê como float 149.336 — precisamos detectar e corrigir
+        let fat = 0;
+        const fatRaw = r[9];
+        if (typeof fatRaw === 'number') {
+          const fatStr = fatRaw.toString();
+          const decimals = fatStr.includes('.') ? fatStr.split('.')[1].length : 0;
+          // Se tem exatamente 3 casas decimais, é separador de milhar do ML
+          fat = decimals === 3 ? Math.round(fatRaw * 1000) : fatRaw;
+        } else {
+          // Veio como string: remover pontos de milhar, trocar vírgula por ponto
+          fat = parseFloat(String(fatRaw).replace(/\./g,'').replace(',','.')) || 0;
+        }
         const pedidos = parseInt(r[6]) || 0;
         const unidades = parseInt(r[8]) || 0;
         const visitas = parseInt(r[5]) || 0;
@@ -2879,17 +2951,37 @@ async function confirmMLImport() {
     }
   }
 
-  // Incrementar contador + salvar período
+  // Salvar importação no banco para poder desfazer depois
+  const periodFrom = document.getElementById('ml-period-from').value;
+  const periodTo   = document.getElementById('ml-period-to').value;
+  const rowsAtivos = mlImportRows.filter(r=>!r._excluir);
+  const fatTotal = rowsAtivos.reduce((s,r) => s+r.fat, 0);
+  const itens = rowsAtivos.map(r=>({sku:r.sku,nome:r.nome,fat:r.fat,pedidos:r.pedidos,unidades:r.unidades,conv:r.conv}));
+
+  const {data: impData, error: impErr} = await sb.from('importacoes').insert({
+    conta: importConta, mes: importMonth,
+    periodo_de: periodFrom||null, periodo_ate: periodTo||null,
+    total_skus: rowsAtivos.length, fat_total: fatTotal, itens
+  }).select().single();
+  if (impErr) console.error('saveImportacao', impErr);
+  else {
+    // Atualiza lista local
+    if (!importacoesList[importConta]) importacoesList[importConta] = {};
+    if (!importacoesList[importConta][importMonth]) importacoesList[importConta][importMonth] = [];
+    importacoesList[importConta][importMonth].push({
+      id: impData.id, from: periodFrom, to: periodTo,
+      count: rowsAtivos.length, fatTotal, itens,
+      created_at: impData.created_at
+    });
+  }
+
+  // Manter mlPeriods em sincronia para o calendário
   if (!mlImportCount[importConta]) mlImportCount[importConta] = {};
   mlImportCount[importConta][importMonth] = getImportCount(importConta, importMonth) + 1;
   const semana = mlImportCount[importConta][importMonth];
-
-  const periodFrom = document.getElementById('ml-period-from').value;
-  const periodTo   = document.getElementById('ml-period-to').value;
-  const fatTotal = mlImportRows.reduce((s,r) => s+r.fat, 0);
   if (!mlPeriods[importConta]) mlPeriods[importConta] = {};
   if (!mlPeriods[importConta][importMonth]) mlPeriods[importConta][importMonth] = [];
-  mlPeriods[importConta][importMonth].push({ from: periodFrom, to: periodTo, weekNum: semana, count: mlImportRows.length, fatTotal });
+  mlPeriods[importConta][importMonth].push({ from: periodFrom, to: periodTo, weekNum: semana, count: rowsAtivos.length, fatTotal });
 
   showSync('Importado ✓', true);
   closeMlModal();
@@ -2996,16 +3088,22 @@ function renderCoverageCalendar() {
   // Renderizar lista
   const fmtBRLs = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
   let listHtml = `<div class="cov-list">`;
+  const impsDoMes = (importacoesList[conta] && importacoesList[conta][mes]) || [];
   periods.forEach((p, wi) => {
     const col = covColors[wi % 5];
     const periodoStr = (p.from && p.to) ? `${fmtDate(p.from)} → ${fmtDate(p.to)}` : 'Período não informado';
+    const imp = impsDoMes[wi];
+    const dtImp = imp?.created_at ? new Date(imp.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
     listHtml += `<div class="cov-list-item">
       <div class="cov-list-dot" style="background:${col.dot}"></div>
-      <div>
-        <div class="cov-list-label">${p.weekNum}ª importação</div>
+      <div style="flex:1;min-width:0">
+        <div class="cov-list-label">${p.weekNum}ª importação${dtImp?` <span style="font-weight:400;color:var(--slate-400)">${dtImp}</span>`:''}</div>
         <div class="cov-list-period">${periodoStr}</div>
       </div>
-      <div class="cov-list-meta">${p.count} SKUs · ${fmtBRLs(p.fatTotal)}</div>
+      <div class="cov-list-meta" style="display:flex;align-items:center;gap:8px">
+        <span>${p.count} SKUs · ${fmtBRLs(p.fatTotal)}</span>
+        ${imp?`<button class="btn-hub-del" style="font-size:10px;padding:3px 8px" onclick="desfazerImportacao(${imp.id},'${conta}','${mes}')" title="Desfazer esta importação">↩ Desfazer</button>`:''}
+      </div>
     </div>`;
   });
   listHtml += `</div>`;
@@ -3628,6 +3726,7 @@ async function initApp(){
     loadAnotacoes(),
     loadAgenda(),
     loadIdeias(),
+    loadImportacoes(),
   ]);
   // Carrega ajustes manuais por cima da soma dos SKUs
   await loadKpiHistorico();
