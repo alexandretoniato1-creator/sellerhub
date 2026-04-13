@@ -1573,6 +1573,15 @@ function enterApp(){
   }, {passive: true});
 })();
 
+// HELPER: data local correta (evita bug de fuso UTC vs Brasil)
+function localDateStr(d){
+  const dt = d || new Date();
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth()+1).padStart(2,'0');
+  const day = String(dt.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+
 // NAV
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('active')}
 function go(id,btn){
@@ -1623,9 +1632,9 @@ function renderHome(){
   document.getElementById('home-fat-cards').innerHTML = fatCards + totalCard;
 
   // — AGENDA: hoje + próximos 3 dias —
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   const limit = new Date(); limit.setDate(limit.getDate()+3);
-  const limitStr = limit.toISOString().split('T')[0];
+  const limitStr = localDateStr(limit);
   const noteEvts = notes.filter(n=>n.date&&n.date>=today&&n.date<=limitStr&&n.status==='pendente')
     .map(n=>({id:'n'+n.id,title:n.title,date:n.date,cat:'anotacao',isNote:true,noteId:n.id}));
   const calEvts = calEvents.filter(e=>e.date>=today&&e.date<=limitStr);
@@ -1646,7 +1655,7 @@ function renderHome(){
   const overdue = notes.filter(n=>n.date&&n.date<today&&n.status==='pendente')
     .sort((a,b)=>a.date.localeCompare(b.date));
   const soon7 = new Date(); soon7.setDate(soon7.getDate()+7);
-  const soon7Str = soon7.toISOString().split('T')[0];
+  const soon7Str = localDateStr(soon7);
   const upcoming = notes.filter(n=>n.date&&n.date>=today&&n.date<=soon7Str&&n.status==='pendente')
     .sort((a,b)=>a.date.localeCompare(b.date));
 
@@ -2859,7 +2868,7 @@ function renderCoverageCalendar() {
   const [year, month] = mes.split('-').map(Number);
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDay = new Date(year, month-1, 1).getDay(); // 0=Dom
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
 
   // Mapear cada dia para qual importação o cobre
   const dayCoverage = {}; // day (1-based) → weekIdx
@@ -3027,7 +3036,7 @@ function renderNotes(){
   document.getElementById('counter').innerHTML=`<strong>${pending}</strong> pendente${pending!==1?'s':''} · ${notes.length} total`;
   const b=document.getElementById('badge');
   if(pending){b.style.display='';b.textContent=pending;}else b.style.display='none';
-  const today=new Date().toISOString().split('T')[0];
+  const today=localDateStr();
   const sorted=f.sort((a,b)=>{ return b.ts-a.ts; });
   document.getElementById('notes-list').innerHTML=sorted.length?sorted.map(n=>{
     const ov=n.date&&n.date<today&&n.status==='pendente';
@@ -3246,7 +3255,7 @@ const catLabels = {contrato:'Contrato', lancamento:'Lançamento', mentoria:'Ment
 const months = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
 
 let calView = 'month';
-let calSelectedDate = new Date().toISOString().split('T')[0];
+let calSelectedDate = localDateStr();
 
 function setCalView(v){
   calView = v;
@@ -3278,7 +3287,7 @@ function renderCal(){
   document.getElementById('cal-weekdays-row').innerHTML = weekDays.map((d,i)=>
     `<div class="cal-weekday${i===todayDow?' cal-weekday-today':''}">${d}</div>`
   ).join('');
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Dom, 1=Seg...
   const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
   const daysInPrev = new Date(calYear, calMonth, 0).getDate();
@@ -3328,12 +3337,12 @@ function renderCal(){
 }
 
 function renderCalSidebar(){
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   const d = new Date(calSelectedDate + 'T12:00:00');
   const dayNames = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
   const dayNums = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const isToday = calSelectedDate === today;
-  const isTomorrow = calSelectedDate === new Date(Date.now()+86400000).toISOString().split('T')[0];
+  const isTomorrow = calSelectedDate === localDateStr(new Date(Date.now()+86400000));
 
   const label = isToday ? 'Hoje' : isTomorrow ? 'Amanhã' : `${d.getDate()} de ${dayNums[d.getMonth()]}`;
   const sub = `${dayNames[d.getDay()]}${isToday ? ', '+d.getDate()+' de '+dayNums[d.getMonth()] : ''}`;
@@ -3369,7 +3378,7 @@ function renderCalSidebar(){
 }
 
 function renderCalList(){
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateStr();
   const catLabel = {contrato:'Contrato', lancamento:'Lançamento', mentoria:'Mentoria', anotacao:'Anotação'};
 
   // Pegar todos os eventos ordenados por data
@@ -3423,7 +3432,7 @@ function renderCalList(){
 
 function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal(); }
 function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal(); }
-function calGoToday(){ const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); calSelectedDate=n.toISOString().split('T')[0]; renderCal(); }
+function calGoToday(){ const n=new Date(); calYear=n.getFullYear(); calMonth=n.getMonth(); calSelectedDate=localDateStr(n); renderCal(); }
 
 function calEventsForDate(dateStr){ 
   const evts = calEvents.filter(e=>e.date===dateStr);
@@ -3497,7 +3506,7 @@ function fabAction(){
   const p=document.querySelector('.page.active').id;
   if(p==='page-anotacoes'){newNote()}
   else if(p==='page-ideias')openIdea();
-  else if(p==='page-agenda')openCalModal(null,new Date().toISOString().split('T')[0]);
+  else if(p==='page-agenda')openCalModal(null,localDateStr());
   else if(p==='page-produtos' && prodSubTab==='precificacao')addRow();
 }
 
