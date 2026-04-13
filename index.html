@@ -1214,6 +1214,7 @@ td[contenteditable]:focus::after { display: none; }
         <div class="modal-title" id="hist-edit-title">Editar Mês</div>
         <input type="hidden" id="hist-edit-conta">
         <input type="hidden" id="hist-edit-month">
+        <div id="hist-edit-sku-breakdown"></div>
         <div class="edit-row-fields">
           <div class="m-field"><label>Faturamento (R$)</label><input type="number" id="hist-edit-fat" placeholder="0"></div>
           <div class="m-field"><label>Pedidos</label><input type="number" id="hist-edit-pedidos" placeholder="0"></div>
@@ -1257,6 +1258,7 @@ td[contenteditable]:focus::after { display: none; }
         <div class="modal-title" id="sku-hist-edit-title">Editar Mês</div>
         <input type="hidden" id="sku-hist-edit-sku">
         <input type="hidden" id="sku-hist-edit-month">
+        <input type="hidden" id="sku-hist-edit-conta">
         <div class="edit-row-fields">
           <div class="m-field"><label>Faturamento (R$)</label><input type="number" id="sku-hist-edit-fat" placeholder="0"></div>
           <div class="m-field"><label>Pedidos</label><input type="number" id="sku-hist-edit-pedidos" placeholder="0"></div>
@@ -1743,23 +1745,6 @@ perfContas.forEach(c => {
     kpiData[c][m] = {fat:0, pedidos:0, unidades:0, conv:0, tacos:0, rebait:0, mc:0};
   });
 });
-// Sample data para demonstração
-kpiData['FW']['2026-01'] = {fat:48200, pedidos:312, unidades:380, conv:3.2, tacos:9.1, rebait:4.5, mc:22.3};
-kpiData['FW']['2026-02'] = {fat:51800, pedidos:334, unidades:410, conv:3.5, tacos:8.7, rebait:4.5, mc:23.1};
-kpiData['FW']['2026-03'] = {fat:55400, pedidos:358, unidades:445, conv:3.8, tacos:8.2, rebait:4.5, mc:24.0};
-kpiData['FW']['2026-04'] = {fat:59100, pedidos:382, unidades:470, conv:4.1, tacos:7.9, rebait:4.5, mc:24.8};
-kpiData['BTMX']['2026-01'] = {fat:32100, pedidos:198, unidades:240, conv:2.8, tacos:11.2, rebait:3.8, mc:19.5};
-kpiData['BTMX']['2026-02'] = {fat:34500, pedidos:215, unidades:260, conv:2.9, tacos:10.8, rebait:3.8, mc:20.1};
-kpiData['BTMX']['2026-03'] = {fat:36800, pedidos:228, unidades:278, conv:3.1, tacos:10.5, rebait:3.8, mc:20.7};
-kpiData['BTMX']['2026-04'] = {fat:38200, pedidos:240, unidades:295, conv:3.2, tacos:10.1, rebait:3.8, mc:21.2};
-kpiData['Falcom']['2026-01'] = {fat:22500, pedidos:145, unidades:178, conv:2.5, tacos:12.4, rebait:3.2, mc:17.8};
-kpiData['Falcom']['2026-02'] = {fat:23900, pedidos:154, unidades:190, conv:2.6, tacos:12.0, rebait:3.2, mc:18.2};
-kpiData['Falcom']['2026-03'] = {fat:25100, pedidos:162, unidades:200, conv:2.7, tacos:11.7, rebait:3.2, mc:18.6};
-kpiData['Falcom']['2026-04'] = {fat:26800, pedidos:172, unidades:213, conv:2.9, tacos:11.3, rebait:3.2, mc:19.1};
-kpiData['Logbox']['2026-01'] = {fat:18400, pedidos:122, unidades:148, conv:2.2, tacos:13.5, rebait:2.9, mc:16.2};
-kpiData['Logbox']['2026-02'] = {fat:19200, pedidos:128, unidades:155, conv:2.3, tacos:13.1, rebait:2.9, mc:16.7};
-kpiData['Logbox']['2026-03'] = {fat:20500, pedidos:136, unidades:165, conv:2.4, tacos:12.8, rebait:2.9, mc:17.1};
-kpiData['Logbox']['2026-04'] = {fat:21900, pedidos:145, unidades:178, conv:2.6, tacos:12.4, rebait:2.9, mc:17.6};
 
 function getConsolidated(month){
   const r = {fat:0,pedidos:0,unidades:0,conv:0,tacos:0,rebait:0,mc:0};
@@ -1904,9 +1889,10 @@ function toggleHistRow(m){
 
 function openHistEdit(conta, month, mi){
   const d = getHistRow(conta, month);
-  document.getElementById('hist-edit-title').textContent = `Editar — ${perfMonthFull[mi]}`;
+  document.getElementById('hist-edit-title').textContent = `Editar — ${perfMonthFull[mi]} · ${conta}`;
   document.getElementById('hist-edit-conta').value = conta;
   document.getElementById('hist-edit-month').value = month;
+  // Pré-preenche com soma dos SKUs (ou ajuste salvo)
   document.getElementById('hist-edit-fat').value = d.fat>0?d.fat:'';
   document.getElementById('hist-edit-pedidos').value = d.pedidos>0?d.pedidos:'';
   document.getElementById('hist-edit-unidades').value = d.unidades>0?d.unidades:'';
@@ -1914,20 +1900,56 @@ function openHistEdit(conta, month, mi){
   document.getElementById('hist-edit-tacos').value = d.tacos>0?d.tacos.toFixed(1):'';
   document.getElementById('hist-edit-rebait').value = d.rebait>0?d.rebait.toFixed(1):'';
   document.getElementById('hist-edit-mc').value = d.mc>0?d.mc.toFixed(1):'';
+  // Renderiza composição por SKU
+  const skus = Object.keys(skuPerfData[conta]||{});
+  const skuRows = skus.map(sku=>{
+    const s = skuPerfData[conta][sku][month]||{};
+    if(!s.fat && !s.pedidos) return '';
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--slate-700)">${sku}</td>
+      <td style="font-family:var(--mono);font-size:11px;text-align:right">${s.fat>0?fmtBRL(s.fat):'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px;text-align:right;color:var(--slate-400)">${s.pedidos||'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px;text-align:right;color:var(--slate-400)">${s.tacos>0?s.tacos.toFixed(1)+'%':'—'}</td>
+      <td style="font-family:var(--mono);font-size:11px;text-align:right;color:var(--slate-400)">${s.mc>0?s.mc.toFixed(1)+'%':'—'}</td>
+    </tr>`;
+  }).filter(Boolean).join('');
+  const skuBlock = skuRows ? `
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--slate-400);margin-bottom:6px;font-family:var(--mono)">Composição por SKU</div>
+      <div style="background:var(--slate-50);border-radius:var(--radius-sm);overflow:hidden">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="border-bottom:1px solid var(--slate-100)">
+            <th style="text-align:left;padding:6px 10px;font-size:10px;color:var(--slate-400);font-weight:600;font-family:var(--mono)">SKU</th>
+            <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--slate-400);font-weight:600;font-family:var(--mono)">FAT</th>
+            <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--slate-400);font-weight:600;font-family:var(--mono)">PED</th>
+            <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--slate-400);font-weight:600;font-family:var(--mono)">TACOS</th>
+            <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--slate-400);font-weight:600;font-family:var(--mono)">MC</th>
+          </tr></thead>
+          <tbody>${skuRows}</tbody>
+        </table>
+      </div>
+      <div style="font-size:10px;color:var(--slate-400);margin-top:6px;font-style:italic">Os campos abaixo são pré-preenchidos com a soma dos SKUs. Edite só se precisar ajustar.</div>
+    </div>` : '<div style="font-size:12px;color:var(--slate-400);margin-bottom:14px">Nenhum SKU com dados neste mês. Insira os dados em Produtos → Performance por SKU.</div>';
+  document.getElementById('hist-edit-sku-breakdown').innerHTML = skuBlock;
   document.getElementById('hist-edit-modal').classList.add('active');
 }
 
-function saveHistEdit(){
+async function saveHistEdit(){
   const conta = document.getElementById('hist-edit-conta').value;
   const month = document.getElementById('hist-edit-month').value;
   const parse = id => { const v=parseFloat(document.getElementById(id).value.replace(',','.')); return isNaN(v)?0:v; };
-  kpiData[conta][month].fat     = parse('hist-edit-fat');
-  kpiData[conta][month].pedidos = parse('hist-edit-pedidos');
-  kpiData[conta][month].unidades= parse('hist-edit-unidades');
-  kpiData[conta][month].conv    = parse('hist-edit-conv');
-  kpiData[conta][month].tacos   = parse('hist-edit-tacos');
-  kpiData[conta][month].rebait  = parse('hist-edit-rebait');
-  kpiData[conta][month].mc      = parse('hist-edit-mc');
+  const ajuste = {
+    fat:      parse('hist-edit-fat'),
+    pedidos:  parse('hist-edit-pedidos'),
+    unidades: parse('hist-edit-unidades'),
+    conv:     parse('hist-edit-conv'),
+    tacos:    parse('hist-edit-tacos'),
+    rebait:   parse('hist-edit-rebait'),
+    mc:       parse('hist-edit-mc'),
+  };
+  if(!kpiAjustes[conta]) kpiAjustes[conta]={};
+  kpiAjustes[conta][month] = ajuste;
+  calcKpiFromSkus();
   document.getElementById('hist-edit-modal').classList.remove('active');
   saveKpiHistorico(conta, month);
   renderHist();
@@ -2114,42 +2136,56 @@ D['Logbox'] = [
   {sku:'LUZ-LED-DESK',  desc:'Luminária LED Desk Clip USB Regulável',  custo:21.00, preco:69.90, rebait:4.3, mc:17.5, tacos:14.9},
 ];
 
-// Dados de performance por SKU
+// Dados de performance por SKU — carregados do Supabase
 let skuPerfData = {};
 contas.forEach(c => { skuPerfData[c] = {}; });
 
-// FW — dados mensais por SKU
-const _fw = skuPerfData['FW'];
-_fw['KIT-CABO-USB']  = {'2026-01':{fat:8420,pedidos:155,unidades:465,preco:59.90,tacos:9.1,rebait:5.2,mc:24.8,conv:3.8},'2026-02':{fat:9180,pedidos:169,unidades:507,preco:59.90,tacos:8.9,rebait:5.2,mc:25.1,conv:4.0},'2026-03':{fat:9850,pedidos:181,unidades:543,preco:59.90,tacos:8.5,rebait:5.2,mc:25.5,conv:4.2},'2026-04':{fat:11200,pedidos:205,unidades:615,preco:59.90,tacos:8.2,rebait:5.2,mc:25.9,conv:4.5}};
-_fw['SUPT-CEL-CAR']  = {'2026-01':{fat:3850,pedidos:115,unidades:115,preco:34.90,tacos:10.5,rebait:4.8,mc:21.3,conv:3.2},'2026-02':{fat:4200,pedidos:125,unidades:125,preco:34.90,tacos:10.2,rebait:4.8,mc:21.7,conv:3.4},'2026-03':{fat:4550,pedidos:135,unidades:135,preco:34.90,tacos:9.9,rebait:4.8,mc:22.0,conv:3.6},'2026-04':{fat:4900,pedidos:145,unidades:145,preco:34.90,tacos:9.6,rebait:4.8,mc:22.4,conv:3.8}};
-_fw['CARR-SEM-15W']  = {'2026-01':{fat:12500,pedidos:142,unidades:142,preco:89.90,tacos:8.7,rebait:5.5,mc:26.1,conv:3.5},'2026-02':{fat:13800,pedidos:155,unidades:155,preco:89.90,tacos:8.4,rebait:5.5,mc:26.4,conv:3.7},'2026-03':{fat:14900,pedidos:167,unidades:167,preco:89.90,tacos:8.1,rebait:5.5,mc:26.8,conv:3.9},'2026-04':{fat:16200,pedidos:182,unidades:182,preco:89.90,tacos:7.9,rebait:5.5,mc:27.1,conv:4.2}};
-_fw['FILM-PROT-14']  = {'2026-01':{fat:1950,pedidos:68,unidades:136,preco:29.90,tacos:12.3,rebait:4.2,mc:18.5,conv:2.1},'2026-02':{fat:2100,pedidos:73,unidades:146,preco:29.90,tacos:11.9,rebait:4.2,mc:18.9,conv:2.3},'2026-03':{fat:2280,pedidos:79,unidades:158,preco:29.90,tacos:11.5,rebait:4.2,mc:19.2,conv:2.5},'2026-04':{fat:2450,pedidos:85,unidades:170,preco:29.90,tacos:11.2,rebait:4.2,mc:19.5,conv:2.7}};
-_fw['HUB-USB4P']     = {'2026-01':{fat:7200,pedidos:99,unidades:99,preco:74.90,tacos:11.0,rebait:5.0,mc:22.7,conv:2.9},'2026-02':{fat:7800,pedidos:106,unidades:106,preco:74.90,tacos:10.7,rebait:5.0,mc:23.0,conv:3.1},'2026-03':{fat:8350,pedidos:114,unidades:114,preco:74.90,tacos:10.4,rebait:5.0,mc:23.4,conv:3.3},'2026-04':{fat:9100,pedidos:124,unidades:124,preco:74.90,tacos:10.1,rebait:5.0,mc:23.8,conv:3.6}};
-
-// BTMX — dados mensais por SKU
-const _btmx = skuPerfData['BTMX'];
-_btmx['CAPA-AIR-13']  = {'2026-01':{fat:5600,pedidos:82,unidades:82,preco:69.90,tacos:10.8,rebait:4.5,mc:20.4,conv:2.8},'2026-02':{fat:6100,pedidos:88,unidades:88,preco:69.90,tacos:10.5,rebait:4.5,mc:20.8,conv:2.9},'2026-03':{fat:6800,pedidos:98,unidades:98,preco:69.90,tacos:10.2,rebait:4.5,mc:21.1,conv:3.1},'2026-04':{fat:7400,pedidos:107,unidades:107,preco:69.90,tacos:9.9,rebait:4.5,mc:21.5,conv:3.3}};
-_btmx['MOUSE-ERGON']  = {'2026-01':{fat:9800,pedidos:84,unidades:84,preco:119.90,tacos:9.4,rebait:5.8,mc:23.9,conv:3.1},'2026-02':{fat:10500,pedidos:90,unidades:90,preco:119.90,tacos:9.1,rebait:5.8,mc:24.2,conv:3.3},'2026-03':{fat:11200,pedidos:96,unidades:96,preco:119.90,tacos:8.8,rebait:5.8,mc:24.6,conv:3.5},'2026-04':{fat:12100,pedidos:104,unidades:104,preco:119.90,tacos:8.5,rebait:5.8,mc:25.0,conv:3.7}};
-_btmx['PAD-MOUSE-XL'] = {'2026-01':{fat:6200,pedidos:64,unidades:64,preco:99.90,tacos:11.2,rebait:5.1,mc:22.1,conv:2.5},'2026-02':{fat:6700,pedidos:69,unidades:69,preco:99.90,tacos:10.9,rebait:5.1,mc:22.4,conv:2.7},'2026-03':{fat:7100,pedidos:73,unidades:73,preco:99.90,tacos:10.6,rebait:5.1,mc:22.8,conv:2.9},'2026-04':{fat:7700,pedidos:79,unidades:79,preco:99.90,tacos:10.3,rebait:5.1,mc:23.1,conv:3.1}};
-_btmx['TECLADO-MINI'] = {'2026-01':{fat:9200,pedidos:62,unidades:62,preco:149.90,tacos:8.9,rebait:6.0,mc:25.3,conv:2.9},'2026-02':{fat:9900,pedidos:67,unidades:67,preco:149.90,tacos:8.6,rebait:6.0,mc:25.6,conv:3.1},'2026-03':{fat:10800,pedidos:73,unidades:73,preco:149.90,tacos:8.3,rebait:6.0,mc:26.0,conv:3.3},'2026-04':{fat:11600,pedidos:78,unidades:78,preco:149.90,tacos:8.0,rebait:6.0,mc:26.3,conv:3.5}};
-
-// Falcom — dados mensais por SKU
-const _falcom = skuPerfData['Falcom'];
-_falcom['FONE-TWS-PRO']  = {'2026-01':{fat:7800,pedidos:62,unidades:62,preco:129.90,tacos:13.1,rebait:5.5,mc:19.8,conv:2.3},'2026-02':{fat:8200,pedidos:65,unidades:65,preco:129.90,tacos:12.8,rebait:5.5,mc:20.1,conv:2.5},'2026-03':{fat:8700,pedidos:69,unidades:69,preco:129.90,tacos:12.5,rebait:5.5,mc:20.4,conv:2.6},'2026-04':{fat:9400,pedidos:74,unidades:74,preco:129.90,tacos:12.2,rebait:5.5,mc:20.8,conv:2.8}};
-_falcom['REL-SMART-FIT'] = {'2026-01':{fat:8900,pedidos:37,unidades:37,preco:249.90,tacos:14.6,rebait:6.2,mc:17.4,conv:1.8},'2026-02':{fat:9500,pedidos:39,unidades:39,preco:249.90,tacos:14.3,rebait:6.2,mc:17.7,conv:1.9},'2026-03':{fat:10200,pedidos:42,unidades:42,preco:249.90,tacos:14.0,rebait:6.2,mc:18.0,conv:2.0},'2026-04':{fat:11000,pedidos:45,unidades:45,preco:249.90,tacos:13.7,rebait:6.2,mc:18.3,conv:2.1}};
-_falcom['ALTO-BT-20W']   = {'2026-01':{fat:5100,pedidos:28,unidades:28,preco:189.90,tacos:13.8,rebait:5.8,mc:18.9,conv:2.0},'2026-02':{fat:5600,pedidos:31,unidades:31,preco:189.90,tacos:13.5,rebait:5.8,mc:19.2,conv:2.2},'2026-03':{fat:6100,pedidos:33,unidades:33,preco:189.90,tacos:13.2,rebait:5.8,mc:19.5,conv:2.4},'2026-04':{fat:6700,pedidos:36,unidades:36,preco:189.90,tacos:12.9,rebait:5.8,mc:19.8,conv:2.6}};
-
-// Logbox — dados mensais por SKU
-const _logbox = skuPerfData['Logbox'];
-_logbox['KIT-ORG-CAB']  = {'2026-01':{fat:3200,pedidos:82,unidades:82,preco:39.90,tacos:14.2,rebait:4.0,mc:16.8,conv:2.2},'2026-02':{fat:3500,pedidos:89,unidades:89,preco:39.90,tacos:13.9,rebait:4.0,mc:17.1,conv:2.4},'2026-03':{fat:3800,pedidos:97,unidades:97,preco:39.90,tacos:13.6,rebait:4.0,mc:17.4,conv:2.5},'2026-04':{fat:4100,pedidos:104,unidades:104,preco:39.90,tacos:13.3,rebait:4.0,mc:17.7,conv:2.7}};
-_logbox['SUPT-MONITOR'] = {'2026-01':{fat:6100,pedidos:62,unidades:62,preco:99.90,tacos:13.5,rebait:4.8,mc:18.2,conv:2.1},'2026-02':{fat:6600,pedidos:67,unidades:67,preco:99.90,tacos:13.2,rebait:4.8,mc:18.5,conv:2.3},'2026-03':{fat:7000,pedidos:71,unidades:71,preco:99.90,tacos:12.9,rebait:4.8,mc:18.8,conv:2.5},'2026-04':{fat:7600,pedidos:77,unidades:77,preco:99.90,tacos:12.6,rebait:4.8,mc:19.1,conv:2.7}};
-_logbox['LUZ-LED-DESK']  = {'2026-01':{fat:4900,pedidos:72,unidades:72,preco:69.90,tacos:14.9,rebait:4.3,mc:17.5,conv:2.0},'2026-02':{fat:5300,pedidos:78,unidades:78,preco:69.90,tacos:14.6,rebait:4.3,mc:17.8,conv:2.2},'2026-03':{fat:5700,pedidos:83,unidades:83,preco:69.90,tacos:14.3,rebait:4.3,mc:18.1,conv:2.4},'2026-04':{fat:6100,pedidos:89,unidades:89,preco:69.90,tacos:14.0,rebait:4.3,mc:18.4,conv:2.6}};
-
 function getSkuPerf(conta, sku, month) {
+  if (!skuPerfData[conta]) skuPerfData[conta] = {};
   if (!skuPerfData[conta][sku]) skuPerfData[conta][sku] = {};
-  if (!skuPerfData[conta][sku][month]) skuPerfData[conta][sku][month] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0};
+  if (!skuPerfData[conta][sku][month]) skuPerfData[conta][sku][month] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0};
   return skuPerfData[conta][sku][month];
 }
+
+// Calcula kpiData somando sku_historico (bottom-up)
+// Se existir ajuste manual em kpi_historico, sobrescreve campo a campo
+function calcKpiFromSkus() {
+  perfContas.forEach(c => {
+    perfMonths.forEach(m => {
+      const skus = Object.keys(skuPerfData[c] || {});
+      if (!skus.length) return;
+      let fat=0, pedidos=0, unidades=0;
+      let tacosPond=0, rebaitPond=0, mcPond=0, convPond=0;
+      skus.forEach(sku => {
+        const d = skuPerfData[c][sku][m] || {};
+        const f = d.fat || 0;
+        fat      += f;
+        pedidos  += d.pedidos  || 0;
+        unidades += d.unidades || 0;
+        // média ponderada pelo faturamento
+        tacosPond  += (d.tacos  || 0) * f;
+        rebaitPond += (d.rebait || 0) * f;
+        mcPond     += (d.mc     || 0) * f;
+        convPond   += (d.conv   || 0) * f;
+      });
+      const base = fat || 1;
+      // só atualiza se não houver ajuste manual salvo
+      const adj = kpiAjustes[c]?.[m] || {};
+      kpiData[c][m] = {
+        fat:      adj.fat      ?? fat,
+        pedidos:  adj.pedidos  ?? pedidos,
+        unidades: adj.unidades ?? unidades,
+        tacos:    adj.tacos    ?? (tacosPond / base),
+        rebait:   adj.rebait   ?? (rebaitPond / base),
+        mc:       adj.mc       ?? (mcPond / base),
+        conv:     adj.conv     ?? (convPond / base),
+      };
+    });
+  });
+}
+
+// Ajustes manuais por conta/mês (sobrescrevem a soma dos SKUs)
+let kpiAjustes = {};
 
 // ---- TABS DE CONTA ----
 function initTabs() {
@@ -2456,7 +2492,7 @@ function renderSkuPerf() {
       <td style="text-align:right">${d.rebait>0?d.rebait.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right;${d.mc>0&&d.mc<15?'color:var(--coral-500)':d.mc>=22?'color:var(--green-600)':''}">${d.mc>0?d.mc.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right;padding-right:12px">
-        <button class="btn-hub-edit" onclick="openSkuHistEdit('${sku}','${m}',${mi})">✏ Editar</button>
+        <button class="btn-hub-edit" onclick="openSkuHistEdit('${conta}','${sku}','${m}',${mi})">✏ Editar</button>
       </td>
     </tr>`;
   }).join('');
@@ -2464,11 +2500,12 @@ function renderSkuPerf() {
   renderSkuChart(sku);
 }
 
-function openSkuHistEdit(sku, month, mi) {
-  const d = getSkuPerf(conta, sku, month);
+function openSkuHistEdit(contaKey, sku, month, mi) {
+  const d = getSkuPerf(contaKey, sku, month);
   document.getElementById('sku-hist-edit-title').textContent = `Editar — ${perfMonthFull[mi]}`;
   document.getElementById('sku-hist-edit-sku').value = sku;
   document.getElementById('sku-hist-edit-month').value = month;
+  document.getElementById('sku-hist-edit-conta').value = contaKey;
   document.getElementById('sku-hist-edit-fat').value = d.fat>0?d.fat:'';
   document.getElementById('sku-hist-edit-pedidos').value = d.pedidos>0?d.pedidos:'';
   document.getElementById('sku-hist-edit-unidades').value = d.unidades>0?d.unidades:'';
@@ -2482,18 +2519,20 @@ function openSkuHistEdit(sku, month, mi) {
 function saveSkuHistEdit() {
   const sku = document.getElementById('sku-hist-edit-sku').value;
   const month = document.getElementById('sku-hist-edit-month').value;
+  const contaKey = document.getElementById('sku-hist-edit-conta').value || conta;
   const parse = id => { const v=parseFloat(document.getElementById(id).value.replace(',','.')); return isNaN(v)?0:v; };
-  if (!skuPerfData[conta][sku]) skuPerfData[conta][sku] = {};
-  if (!skuPerfData[conta][sku][month]) skuPerfData[conta][sku][month] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0};
-  skuPerfData[conta][sku][month].fat     = parse('sku-hist-edit-fat');
-  skuPerfData[conta][sku][month].pedidos = parse('sku-hist-edit-pedidos');
-  skuPerfData[conta][sku][month].unidades= parse('sku-hist-edit-unidades');
-  skuPerfData[conta][sku][month].preco   = parse('sku-hist-edit-preco');
-  skuPerfData[conta][sku][month].tacos   = parse('sku-hist-edit-tacos');
-  skuPerfData[conta][sku][month].rebait  = parse('sku-hist-edit-rebait');
-  skuPerfData[conta][sku][month].mc      = parse('sku-hist-edit-mc');
+  if (!skuPerfData[contaKey]) skuPerfData[contaKey] = {};
+  if (!skuPerfData[contaKey][sku]) skuPerfData[contaKey][sku] = {};
+  if (!skuPerfData[contaKey][sku][month]) skuPerfData[contaKey][sku][month] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0};
+  skuPerfData[contaKey][sku][month].fat     = parse('sku-hist-edit-fat');
+  skuPerfData[contaKey][sku][month].pedidos = parse('sku-hist-edit-pedidos');
+  skuPerfData[contaKey][sku][month].unidades= parse('sku-hist-edit-unidades');
+  skuPerfData[contaKey][sku][month].preco   = parse('sku-hist-edit-preco');
+  skuPerfData[contaKey][sku][month].tacos   = parse('sku-hist-edit-tacos');
+  skuPerfData[contaKey][sku][month].rebait  = parse('sku-hist-edit-rebait');
+  skuPerfData[contaKey][sku][month].mc      = parse('sku-hist-edit-mc');
   document.getElementById('sku-hist-edit-modal').classList.remove('active');
-  saveSkuHistorico(conta, sku, month);
+  saveSkuHistorico(contaKey, sku, month);
   renderSkuPerf();
 }
 
@@ -3553,13 +3592,15 @@ function fabAction(){
 async function initApp(){
   showSync('Carregando dados…');
   await Promise.all([
-    loadKpiHistorico(),
     loadSkus(),
-    loadSkuHistorico(),
+    loadSkuHistorico(), // já chama calcKpiFromSkus internamente
     loadAnotacoes(),
     loadAgenda(),
     loadIdeias(),
   ]);
+  // Carrega ajustes manuais por cima da soma dos SKUs
+  await loadKpiHistorico();
+  calcKpiFromSkus();
   initTabs(); renderPrec(); renderSkuSel(); renderTagF(); renderNotes(); renderCal();
   renderVG(); initCompPicker(); renderHist(); renderHome();
   showSync('Dados carregados ✓', true);
@@ -3569,18 +3610,18 @@ async function initApp(){
 async function loadKpiHistorico(){
   const {data,error} = await sb.from('kpi_historico').select('*');
   if(error){ console.error('kpi_historico',error); return; }
+  // Carrega ajustes manuais que sobrescrevem a soma dos SKUs
   data.forEach(r=>{
-    if(!kpiData[r.conta]) return;
-    if(!kpiData[r.conta][r.mes]) return;
-    kpiData[r.conta][r.mes] = {fat:+r.fat,pedidos:+r.pedidos,unidades:+r.unidades,conv:+r.conv,tacos:+r.tacos,rebait:+r.rebait,mc:+r.mc};
+    if(!kpiData[r.conta] || !kpiData[r.conta][r.mes]) return;
+    if(!kpiAjustes[r.conta]) kpiAjustes[r.conta]={};
+    kpiAjustes[r.conta][r.mes]={fat:+r.fat,pedidos:+r.pedidos,unidades:+r.unidades,conv:+r.conv,tacos:+r.tacos,rebait:+r.rebait,mc:+r.mc};
   });
 }
 
 async function loadSkus(){
   const {data,error} = await sb.from('skus').select('*');
   if(error){ console.error('skus',error); return; }
-  if(!data.length) return; // mantém dados de exemplo se tabela vazia
-  // Limpa e reconstrói D a partir do banco
+  if(!data.length) return;
   contas.forEach(c=>{ D[c]=[]; });
   data.forEach(r=>{
     if(!D[r.conta]) return;
@@ -3596,6 +3637,8 @@ async function loadSkuHistorico(){
     if(!skuPerfData[r.conta][r.sku]) skuPerfData[r.conta][r.sku]={};
     skuPerfData[r.conta][r.sku][r.mes]={fat:+r.fat,pedidos:+r.pedidos,unidades:+r.unidades,preco:+r.preco,tacos:+r.tacos,rebait:+r.rebait,mc:+r.mc,conv:+r.conv};
   });
+  // Após carregar SKUs, recalcula kpiData bottom-up
+  calcKpiFromSkus();
 }
 
 async function loadAnotacoes(){
