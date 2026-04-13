@@ -2555,6 +2555,8 @@ async function deleteSkuMes(contaKey, sku, month) {
   renderHist();
   renderVG();
 }
+
+function openSkuDrawer(sku) {
   const precRow = D[conta].find(r => r.sku === sku);
   const desc = precRow?.desc || '';
   document.getElementById('sku-drawer-title').textContent = sku;
