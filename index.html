@@ -2492,7 +2492,10 @@ function renderSkuPerf() {
       <td style="text-align:right">${d.rebait>0?d.rebait.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right;${d.mc>0&&d.mc<15?'color:var(--coral-500)':d.mc>=22?'color:var(--green-600)':''}">${d.mc>0?d.mc.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right;padding-right:12px">
-        <button class="btn-hub-edit" onclick="openSkuHistEdit('${conta}','${sku}','${m}',${mi})">✏ Editar</button>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn-hub-edit" onclick="openSkuHistEdit('${conta}','${sku}','${m}',${mi})">✏</button>
+          ${d.fat>0||d.pedidos>0?`<button class="btn-hub-del" onclick="deleteSkuMes('${conta}','${sku}','${m}')">🗑</button>`:''}
+        </div>
       </td>
     </tr>`;
   }).join('');
@@ -2536,7 +2539,22 @@ function saveSkuHistEdit() {
   renderSkuPerf();
 }
 
-function openSkuDrawer(sku) {
+async function deleteSkuMes(contaKey, sku, month) {
+  if (!confirm(`Excluir dados de ${sku} em ${perfMonthFull[perfMonths.indexOf(month)]}?`)) return;
+  // Zera no objeto local
+  if (skuPerfData[contaKey]?.[sku]?.[month]) {
+    skuPerfData[contaKey][sku][month] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0};
+  }
+  // Remove do Supabase
+  const {error} = await sb.from('sku_historico').delete()
+    .eq('conta', contaKey).eq('sku', sku).eq('mes', month);
+  if (error) console.error('deleteSkuMes', error);
+  else showSync('Excluído ✓', true);
+  calcKpiFromSkus();
+  renderSkuPerf();
+  renderHist();
+  renderVG();
+}
   const precRow = D[conta].find(r => r.sku === sku);
   const desc = precRow?.desc || '';
   document.getElementById('sku-drawer-title').textContent = sku;
@@ -2762,8 +2780,8 @@ function renderMLPreview() {
     const existFat = hasData ? existing[r.sku][importMonth].fat : 0;
     const newTotal = existFat + r.fat;
     const totalHint = hasData ? ` <span style="color:var(--slate-400);font-size:10px">(total: ${fmtBRL(newTotal)})</span>` : '';
-    return `<tr class="hub-row-clickable" id="ml-row-${i}">
-      <td style="font-family:var(--mono);font-size:12px;font-weight:600">${r.sku} ${badge}</td>
+    return `<tr class="hub-row-clickable" id="ml-row-${i}" style="${r._excluir?'opacity:0.35;text-decoration:line-through;background:var(--slate-50)':''}">
+      <td style="font-family:var(--mono);font-size:12px;font-weight:600">${r.sku} ${r._excluir?'<span style="font-size:10px;color:var(--coral-500);font-weight:600">IGNORAR</span>':badge}</td>
       <td style="font-size:12px;color:var(--slate-400);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${r.nome}">${r.nome}</td>
       <td style="text-align:right">${fmtBRL(r.fat)}${totalHint}</td>
       <td style="text-align:right">${r.pedidos}</td>
@@ -2771,15 +2789,20 @@ function renderMLPreview() {
       <td style="text-align:right">${r.conv.toFixed(2)}%</td>
       <td style="text-align:right;color:var(--slate-400)">${r.visitas.toLocaleString('pt-BR')}</td>
       <td style="text-align:right;padding-right:12px">
-        <button class="btn-hub-edit" onclick="openMlRowEdit(${i})">✏ Editar</button>
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          ${!r._excluir?`<button class="btn-hub-edit" onclick="openMlRowEdit(${i})">✏</button>`:''}
+          <button class="btn-hub-del" onclick="toggleMlRowExcluir(${i})" title="${r._excluir?'Restaurar':'Ignorar'}">${r._excluir?'↩ Restaurar':'🗑 Ignorar'}</button>
+        </div>
       </td>
     </tr>`;
   }).join('');
 
-  const newCount = mlImportRows.filter(r => !(existing[r.sku] && existing[r.sku][importMonth] && existing[r.sku][importMonth].fat > 0)).length;
-  const updCount = mlImportRows.length - newCount;
+  const ativos = mlImportRows.filter(r=>!r._excluir);
+  const ignorados = mlImportRows.filter(r=>r._excluir).length;
+  const newCount = ativos.filter(r => !(existing[r.sku] && existing[r.sku][importMonth] && existing[r.sku][importMonth].fat > 0)).length;
+  const updCount = ativos.length - newCount;
   document.getElementById('ml-import-info').innerHTML =
-    `${mlImportRows.length} produtos lidos · <span style="color:var(--green-600);font-weight:600">${newCount} novos</span> · <span style="color:var(--amber-600);font-weight:600">${updCount} acumulam</span> · Os valores serão <strong>somados</strong> ao que já existe no mês.`;
+    `${mlImportRows.length} lidos · <span style="color:var(--green-600);font-weight:600">${newCount} novos</span> · <span style="color:var(--amber-600);font-weight:600">${updCount} acumulam</span>${ignorados?` · <span style="color:var(--coral-500);font-weight:600">${ignorados} ignorados</span>`:''}`;
 
   const weekInfo = document.getElementById('ml-week-info');
   const weekText = document.getElementById('ml-week-info-text');
@@ -2814,6 +2837,11 @@ function saveMlRowEdit() {
   renderMLPreview();
 }
 
+function toggleMlRowExcluir(i) {
+  mlImportRows[i]._excluir = !mlImportRows[i]._excluir;
+  renderMLPreview();
+}
+
 async function confirmMLImport() {
   const importConta = document.getElementById('ml-import-conta').value;
   const importMonth = document.getElementById('ml-import-month').value;
@@ -2822,6 +2850,7 @@ async function confirmMLImport() {
 
   showSync('Importando…');
   for (const r of mlImportRows) {
+    if (r._excluir) continue; // pula anúncios marcados para ignorar
     if (!skuPerfData[importConta][r.sku]) skuPerfData[importConta][r.sku] = {};
     const existing = skuPerfData[importConta][r.sku][importMonth] || {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0};
     const totalPedidos = existing.pedidos + r.pedidos;
