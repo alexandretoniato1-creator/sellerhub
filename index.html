@@ -1221,6 +1221,17 @@ td[contenteditable]:focus::after { display: none; }
       </div>
     </div>
 
+    <!-- MODAL DETALHES IMPORTAÇÃO -->
+    <div class="modal-bg" id="imp-detail-modal" onclick="if(event.target===this)this.classList.remove('active')" style="z-index:1001">
+      <div class="modal" style="max-width:620px;width:100%">
+        <div class="modal-title" id="imp-detail-title">Itens da importação</div>
+        <div id="imp-detail-body" style="max-height:400px;overflow-y:auto;margin:16px 0"></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="document.getElementById('imp-detail-modal').classList.remove('active')">Fechar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- MODAL EDIÇÃO HISTÓRICO -->
     <div class="modal-bg" id="hist-edit-modal" onclick="if(event.target===this)this.classList.remove('active')">
       <div class="modal" style="max-width:480px;width:100%">
@@ -1868,7 +1879,10 @@ function renderHist(){
       <td style="text-align:right">${d.rebait>0?fmtPct(d.rebait):'-'}</td>
       <td style="text-align:right;${d.mc>0&&d.mc<15?'color:var(--coral-500)':d.mc>=22?'color:var(--green-600)':''}">${d.mc>0?fmtPct(d.mc):'-'}</td>
       <td style="text-align:right;padding-right:12px">
-        ${histConta!=='__all__'?`<button class="btn-hub-edit" onclick="event.stopPropagation();openHistEdit('${histConta}','${m}',${mi})">✏ Editar</button>`:''}
+        ${histConta!=='__all__'?`<div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn-hub-edit" onclick="event.stopPropagation();openHistEdit('${histConta}','${m}',${mi})">✏</button>
+          ${hasData?`<button class="btn-hub-del" onclick="event.stopPropagation();deleteHistMes('${histConta}','${m}')">🗑</button>`:''}
+        </div>`:''}
       </td>
     </tr>`;
     const expandHtml = isExp ? `<tr class="row-expand-tr">
@@ -1969,6 +1983,26 @@ async function saveHistEdit(){
   saveKpiHistorico(conta, month);
   renderHist();
   renderVG();
+}
+
+async function deleteHistMes(contaKey, mes) {
+  const label = perfMonthFull[perfMonths.indexOf(mes)];
+  if (!confirm(`Excluir todos os dados de ${label} — ${contaKey}?\n\nIsso remove tanto os SKUs quanto o ajuste manual do mês.`)) return;
+  showSync('Excluindo…');
+  // Remove SKUs do mês
+  const skus = Object.keys(skuPerfData[contaKey] || {});
+  for (const sku of skus) {
+    if (skuPerfData[contaKey][sku]?.[mes]?.fat > 0 || skuPerfData[contaKey][sku]?.[mes]?.pedidos > 0) {
+      skuPerfData[contaKey][sku][mes] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0};
+      await sb.from('sku_historico').delete().eq('conta',contaKey).eq('sku',sku).eq('mes',mes);
+    }
+  }
+  // Remove ajuste manual
+  if (kpiAjustes[contaKey]) delete kpiAjustes[contaKey][mes];
+  await sb.from('kpi_historico').delete().eq('conta',contaKey).eq('mes',mes);
+  calcKpiFromSkus();
+  showSync('Excluído ✓', true);
+  renderHist(); renderVG(); renderHome();
 }
 
 function renderHistChart(){
@@ -2333,6 +2367,12 @@ function renderTodosProdutos() {
         <div class="todos-part-bar">
           <span style="font-size:11px;font-family:var(--mono);color:var(--slate-400)">${pct.toFixed(1)}%</span>
           <div class="todos-part-track"><div class="todos-part-fill" style="width:${pct.toFixed(0)}%"></div></div>
+        </div>
+      </td>
+      <td style="text-align:right;padding-right:12px;white-space:nowrap" onclick="event.stopPropagation()">
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn-hub-edit" onclick="goToSkuPerf('${r.sku}')" title="Ver e editar histórico">✏</button>
+          <button class="btn-hub-del" onclick="deleteSkuMes('${conta}','${r.sku}','${mes}')" title="Excluir dados deste mês">🗑</button>
         </div>
       </td>
     </tr>`;
@@ -2801,6 +2841,92 @@ async function desfazerImportacao(id, contaKey, mes) {
   renderHist(); renderVG(); renderHome();
 }
 
+function abrirDetalhesImportacao(id, contaKey, mes) {
+  const imp = importacoesList[contaKey]?.[mes]?.find(i=>i.id===id);
+  if (!imp) return;
+  const dtStr = imp.created_at ? new Date(imp.created_at).toLocaleString('pt-BR') : '';
+  const mesLabel = perfMonthFull[perfMonths.indexOf(mes)];
+  document.getElementById('imp-detail-title').textContent = `Itens — ${mesLabel} · ${contaKey} · ${dtStr}`;
+  const rows = (imp.itens||[]).map((item,i) => `
+    <tr class="hub-tbody">
+      <td style="font-family:var(--mono);font-size:12px;font-weight:600;padding:8px 10px">${item.sku}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:right;padding:8px 10px">${fmtBRL(item.fat||0)}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:right;padding:8px 10px">${item.pedidos||0}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:right;padding:8px 10px">${item.unidades||0}</td>
+      <td style="font-family:var(--mono);font-size:12px;text-align:right;padding:8px 10px">${item.conv>0?item.conv.toFixed(1)+'%':'—'}</td>
+      <td style="text-align:right;padding:8px 10px">
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn-hub-edit" style="font-size:11px" onclick="editarItemImportacao(${id},'${contaKey}','${mes}',${i})">✏</button>
+          <button class="btn-hub-del" style="font-size:11px" onclick="excluirItemImportacao(${id},'${contaKey}','${mes}','${item.sku}')">🗑</button>
+        </div>
+      </td>
+    </tr>`).join('');
+  document.getElementById('imp-detail-body').innerHTML = `
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr style="border-bottom:1.5px solid var(--slate-100);background:var(--slate-50)">
+        <th style="text-align:left;padding:6px 10px;font-size:10px;color:var(--slate-400);font-family:var(--mono)">SKU</th>
+        <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--slate-400);font-family:var(--mono)">FAT</th>
+        <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--slate-400);font-family:var(--mono)">PED</th>
+        <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--slate-400);font-family:var(--mono)">UND</th>
+        <th style="text-align:right;padding:6px 10px;font-size:10px;color:var(--slate-400);font-family:var(--mono)">CONV</th>
+        <th style="padding:6px 10px"></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  document.getElementById('imp-detail-modal').classList.add('active');
+}
+
+async function excluirItemImportacao(id, contaKey, mes, sku) {
+  if (!confirm(`Excluir ${sku} desta importação e subtrair do histórico?`)) return;
+  const imp = importacoesList[contaKey]?.[mes]?.find(i=>i.id===id);
+  if (!imp) return;
+  const item = imp.itens.find(it=>it.sku===sku);
+  if (!item) return;
+  showSync('Excluindo…');
+  // Subtrai do sku_historico
+  const cur = skuPerfData[contaKey]?.[sku]?.[mes];
+  if (cur) {
+    const novoFat = Math.max(0, cur.fat - (item.fat||0));
+    const novoPed = Math.max(0, cur.pedidos - (item.pedidos||0));
+    skuPerfData[contaKey][sku][mes] = {...cur, fat:novoFat, pedidos:novoPed,
+      unidades: Math.max(0, cur.unidades-(item.unidades||0))};
+    if (novoFat===0 && novoPed===0) {
+      await sb.from('sku_historico').delete().eq('conta',contaKey).eq('sku',sku).eq('mes',mes);
+    } else {
+      await saveSkuHistorico(contaKey, sku, mes);
+    }
+  }
+  // Remove item da importação no banco
+  imp.itens = imp.itens.filter(it=>it.sku!==sku);
+  await sb.from('importacoes').update({itens: imp.itens, total_skus: imp.itens.length,
+    fat_total: imp.itens.reduce((s,it)=>s+(it.fat||0),0)}).eq('id',id);
+  calcKpiFromSkus();
+  showSync('Excluído ✓', true);
+  abrirDetalhesImportacao(id, contaKey, mes); // re-render modal
+  renderHist(); renderVG(); renderHome();
+}
+
+async function editarItemImportacao(id, contaKey, mes, idx) {
+  const imp = importacoesList[contaKey]?.[mes]?.find(i=>i.id===id);
+  if (!imp) return;
+  const item = imp.itens[idx];
+  const novoFat = parseFloat(prompt(`FAT de ${item.sku} (atual: ${item.fat||0}):`, item.fat||''));
+  if (isNaN(novoFat)) return;
+  const diff = novoFat - (item.fat||0);
+  imp.itens[idx].fat = novoFat;
+  // Atualiza sku_historico
+  const cur = skuPerfData[contaKey]?.[item.sku]?.[mes];
+  if (cur) {
+    skuPerfData[contaKey][item.sku][mes].fat = Math.max(0, cur.fat + diff);
+    await saveSkuHistorico(contaKey, item.sku, mes);
+  }
+  await sb.from('importacoes').update({itens: imp.itens,
+    fat_total: imp.itens.reduce((s,it)=>s+(it.fat||0),0)}).eq('id',id);
+  calcKpiFromSkus();
+  abrirDetalhesImportacao(id, contaKey, mes);
+  renderHist(); renderVG();
+}
+
 function extractPeriodFromFilename(filename) {
   // Padrão: Relatorio_desempenho_publicacoes_YYYY_MM_DD-YYYY_MM_DD.xlsx
   const match = filename.match(/(\d{4})_(\d{2})_(\d{2})-(\d{4})_(\d{2})_(\d{2})/);
@@ -3178,6 +3304,7 @@ function renderCoverageCalendar() {
       </div>
       <div class="cov-list-meta" style="display:flex;align-items:center;gap:8px">
         <span>${p.count} SKUs · ${fmtBRLs(p.fatTotal)}</span>
+        ${imp?`<button class="btn-hub-edit" style="font-size:10px;padding:3px 8px" onclick="abrirDetalhesImportacao(${imp.id},'${conta}','${mes}')" title="Ver e editar itens">✏ Itens</button>`:''}
         ${imp?`<button class="btn-hub-del" style="font-size:10px;padding:3px 8px" onclick="desfazerImportacao(${imp.id},'${conta}','${mes}')" title="Desfazer esta importação">↩ Desfazer</button>`:''}
       </div>
     </div>`;
