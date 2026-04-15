@@ -794,6 +794,42 @@ td[contenteditable]:focus::after { display: none; }
   border-radius: 50%;
 }
 .ptr-spin.spinning { animation: spin .6s linear infinite; }
+
+/* ── MENTORIA ── */
+#page-mentoria { padding: 0 !important; }
+.ment-btn-ghost { padding:6px 14px;border-radius:6px;border:1px solid #D6D3CD;background:transparent;color:#78716C;font-family:var(--font);font-size:13px;cursor:pointer;transition:all .15s; }
+.ment-btn-ghost:hover { background:#F5F2EC;color:#1C1917; }
+.ment-btn-primary { padding:6px 14px;border-radius:6px;border:none;background:#2D6A4F;color:white;font-family:var(--font);font-size:13px;cursor:pointer;font-weight:500;transition:all .15s; }
+.ment-btn-primary:hover { background:#1B4332; }
+.ment-label { display:block;font-size:10px;font-family:var(--mono);color:#A8A29E;margin-bottom:4px;letter-spacing:.04em; }
+.ment-input { width:100%;padding:7px 10px;border:1px solid #E4DFD4;border-radius:6px;font-family:var(--font);font-size:13px;color:#1C1917;background:#F5F2EC;outline:none;transition:border .15s; }
+.ment-input:focus { border-color:#1C1917; }
+.ment-ptab { padding:9px 18px;font-size:13px;color:#A8A29E;cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;font-family:var(--font);transition:all .15s;margin-bottom:-1px; }
+.ment-ptab:hover { color:#57534E; }
+.ment-ptab.active { color:#1C1917;border-bottom-color:#1C1917;font-weight:500; }
+.ment-tab { display:none; }
+.ment-tab.active { display:block; }
+.ment-aluno-card { padding:12px 14px;border-radius:7px;cursor:pointer;transition:all .15s;margin-bottom:4px;border:1px solid transparent; }
+.ment-aluno-card:hover { background:#1C1917; }
+.ment-aluno-card.active { background:#1C1917;border-color:#86EFAC; }
+.ment-sessao-item { display:flex;align-items:center;gap:14px;padding:13px 16px;background:white;border:1px solid #E4DFD4;border-radius:10px;margin-bottom:6px;transition:all .15s; }
+.ment-sessao-item:hover { border-color:#1C1917;box-shadow:0 2px 12px rgba(0,0,0,.06); }
+.ment-snum { width:32px;height:32px;border-radius:50%;background:#F5F2EC;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:13px;color:#78716C;flex-shrink:0; }
+.ment-snum.done { background:#E8F5EE;color:#2D6A4F; }
+.ment-snum.current { background:#FEF3C7;color:#92400E; }
+.ment-sa { display:flex;gap:6px;opacity:0;transition:opacity .15s; }
+.ment-sessao-item:hover .ment-sa { opacity:1; }
+.ment-sa-btn { padding:4px 9px;border-radius:5px;border:1px solid #E4DFD4;background:transparent;color:#78716C;font-size:11px;cursor:pointer;font-family:var(--font);transition:all .1s;white-space:nowrap; }
+.ment-sa-btn:hover { background:#F5F2EC; }
+.ment-badge { font-size:9px;font-family:var(--mono);padding:2px 7px;border-radius:3px;letter-spacing:.04em; }
+.ment-badge.realizada { background:#E8F5EE;color:#2D6A4F; }
+.ment-badge.agendada { background:#FEF3C7;color:#92400E; }
+.ment-badge.cancelada { background:#FFF1F2;color:#9F1239; }
+.ment-ms-sitem { display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1C1917; }
+.ment-ms-sitem:last-child { border-bottom:none; }
+.ment-ms-snum { width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;background:#1C1917;color:#57534E;flex-shrink:0; }
+.ment-ms-snum.done { background:rgba(134,239,172,.1);color:#86EFAC; }
+.ment-ms-snum.current { background:rgba(252,211,77,.1);color:#FCD34D; }
 </style>
 </head>
 <body>
@@ -848,6 +884,10 @@ td[contenteditable]:focus::after { display: none; }
       <button class="nav-item" onclick="go('ideias',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
         Ideias
+      </button>
+      <button class="nav-item" onclick="go('mentoria',this)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Mentoria
       </button>
     </div>
   </nav>
@@ -1482,7 +1522,191 @@ td[contenteditable]:focus::after { display: none; }
 
       </div>
     </div>
+
+    <!-- MENTORIA -->
+    <div class="page" id="page-mentoria" style="padding:0;overflow:hidden;height:100%">
+      <div id="ment-app" style="display:flex;height:100%;overflow:hidden">
+
+        <!-- sidebar mentorados -->
+        <div id="ment-sidebar" style="width:260px;flex-shrink:0;background:var(--slate-800);display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--slate-700)">
+          <div style="padding:20px 18px 14px;border-bottom:1px solid var(--slate-700)">
+            <div style="font-size:11px;font-family:var(--mono);color:var(--slate-400);letter-spacing:.08em;margin-bottom:10px">MENTORADOS</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--slate-700);border-radius:6px;overflow:hidden">
+              <div style="background:var(--slate-800);padding:10px 8px;text-align:center">
+                <div style="font-size:20px;font-weight:600;color:#86EFAC;font-family:var(--mono)" id="ment-stat-ativos">0</div>
+                <div style="font-size:9px;color:var(--slate-500);letter-spacing:.06em">ATIVOS</div>
+              </div>
+              <div style="background:var(--slate-800);padding:10px 8px;text-align:center">
+                <div style="font-size:20px;font-weight:600;color:#86EFAC;font-family:var(--mono)" id="ment-stat-aulas">0</div>
+                <div style="font-size:9px;color:var(--slate-500);letter-spacing:.06em">AULAS/MÊS</div>
+              </div>
+              <div style="background:var(--slate-800);padding:10px 8px;text-align:center">
+                <div style="font-size:20px;font-weight:600;color:#86EFAC;font-family:var(--mono)" id="ment-stat-agend">0</div>
+                <div style="font-size:9px;color:var(--slate-500);letter-spacing:.06em">AGENDADAS</div>
+              </div>
+            </div>
+          </div>
+          <div id="ment-alunos-list" style="flex:1;overflow-y:auto;padding:8px"></div>
+          <div style="padding:10px">
+            <button onclick="mentOpenNovoAluno()" style="width:100%;padding:10px;border:1px dashed var(--slate-600);border-radius:6px;background:transparent;color:var(--slate-500);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#86EFAC';this.style.color='#86EFAC'" onmouseout="this.style.borderColor='var(--slate-600)';this.style.color='var(--slate-500)'">+ Novo mentorado</button>
+          </div>
+        </div>
+
+        <!-- conteúdo principal -->
+        <div id="ment-main" style="flex:1;overflow-y:auto;background:#F5F2EC">
+
+          <div id="ment-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#A8A29E">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+            <div style="font-size:15px;color:#78716C">Selecione um mentorado</div>
+            <div style="font-size:12px;opacity:.6">ou adicione um novo para começar</div>
+          </div>
+
+          <div id="ment-perfil" style="display:none">
+            <!-- header -->
+            <div style="background:#1C1917;padding:28px 36px;display:flex;align-items:flex-start;gap:20px">
+              <div id="ment-pa-avatar" style="width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-family:Georgia,serif;font-weight:500;flex-shrink:0"></div>
+              <div style="flex:1">
+                <div id="ment-pa-nome" style="font-family:Georgia,serif;font-size:24px;font-weight:400;color:#F5F2EC;margin-bottom:4px"></div>
+                <div style="font-family:var(--mono);font-size:11px;color:#57534E;display:flex;gap:14px;flex-wrap:wrap">
+                  <span id="ment-pa-contato"></span>
+                  <span id="ment-pa-desde"></span>
+                  <span id="ment-pa-total"></span>
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-shrink:0">
+                <button onclick="mentEditarAluno()" class="ment-btn-ghost">Editar</button>
+                <button onclick="mentEntrarModoSessao()" style="padding:7px 14px;border-radius:6px;border:1px solid #FCD34D;background:transparent;color:#FCD34D;font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s">▶ Modo sessão</button>
+                <button onclick="mentAbrirNovaSessao()" class="ment-btn-primary">+ Nova sessão</button>
+              </div>
+            </div>
+
+            <!-- pacote banner -->
+            <div id="ment-pacote-banner" style="margin:20px 36px 0;padding:16px 20px;background:#EDE9E0;border:1px solid #E4DFD4;border-radius:10px;display:flex;align-items:center;gap:20px;flex-wrap:wrap"></div>
+
+            <!-- tabs -->
+            <div style="display:flex;border-bottom:1px solid #E4DFD4;margin:20px 36px 0;gap:0">
+              <button class="ment-ptab active" onclick="mentSwitchTab('sessoes',this)">Sessões</button>
+              <button class="ment-ptab" onclick="mentSwitchTab('obs',this)">Observações & Ideias</button>
+              <button class="ment-ptab" onclick="mentSwitchTab('historico',this)">Histórico de pacotes</button>
+            </div>
+
+            <!-- tab sessoes -->
+            <div class="ment-tab active" id="ment-tab-sessoes" style="padding:24px 36px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <div style="font-family:Georgia,serif;font-size:17px;font-weight:400;color:#1C1917">Sessões do pacote atual</div>
+                <button onclick="mentAbrirNovaSessao()" class="ment-btn-ghost" style="font-size:12px">+ Agendar sessão</button>
+              </div>
+              <div id="ment-nova-sessao-form" style="display:none;background:white;border:1px solid #E4DFD4;border-radius:10px;padding:18px;margin-bottom:14px">
+                <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap">
+                  <div style="flex:1;min-width:160px"><label class="ment-label">TÍTULO</label><input id="ment-ns-titulo" class="ment-input" placeholder="Diagnóstico, ADS, Anúncios..."></div>
+                  <div style="width:140px"><label class="ment-label">DATA</label><input id="ment-ns-data" class="ment-input" type="date"></div>
+                  <div style="width:110px"><label class="ment-label">HORÁRIO</label><input id="ment-ns-hora" class="ment-input" type="time"></div>
+                </div>
+                <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+                  <div style="width:150px"><label class="ment-label">STATUS</label><select id="ment-ns-status" class="ment-input"><option value="agendada">Agendada</option><option value="realizada">Realizada</option><option value="cancelada">Cancelada</option></select></div>
+                  <div style="flex:1;min-width:160px"><label class="ment-label">OBSERVAÇÃO</label><input id="ment-ns-obs" class="ment-input" placeholder="Opcional"></div>
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                  <button onclick="mentFecharNovaSessao()" class="ment-btn-ghost">Cancelar</button>
+                  <button onclick="mentSalvarSessao()" class="ment-btn-primary">Salvar</button>
+                </div>
+              </div>
+              <div id="ment-sessoes-lista"></div>
+            </div>
+
+            <!-- tab obs -->
+            <div class="ment-tab" id="ment-tab-obs" style="padding:24px 36px;display:none">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+                <div style="background:white;border:1px solid #E4DFD4;border-radius:10px;padding:18px">
+                  <div style="font-family:Georgia,serif;font-size:15px;margin-bottom:10px;color:#1C1917">Observações gerais</div>
+                  <textarea id="ment-obs-geral" style="width:100%;border:none;outline:none;font-family:var(--font);font-size:13px;color:#57534E;line-height:1.7;resize:none;min-height:130px;background:transparent" placeholder="Contexto, comportamento, evolução..."></textarea>
+                  <button onclick="mentSalvarObs()" class="ment-btn-ghost" style="margin-top:8px;font-size:12px">Salvar</button>
+                </div>
+                <div style="background:white;border:1px solid #E4DFD4;border-radius:10px;padding:18px">
+                  <div style="font-family:Georgia,serif;font-size:15px;margin-bottom:10px;color:#1C1917">Ideias para próximas aulas</div>
+                  <textarea id="ment-obs-ideias" style="width:100%;border:none;outline:none;font-family:var(--font);font-size:13px;color:#57534E;line-height:1.7;resize:none;min-height:130px;background:transparent" placeholder="Temas, abordagens, pontos a aprofundar..."></textarea>
+                  <button onclick="mentSalvarObs()" class="ment-btn-ghost" style="margin-top:8px;font-size:12px">Salvar</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- tab historico -->
+            <div class="ment-tab" id="ment-tab-historico" style="padding:24px 36px;display:none">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <div style="font-family:Georgia,serif;font-size:17px;font-weight:400;color:#1C1917">Histórico de pacotes</div>
+                <button onclick="mentOpenNovoPacote()" class="ment-btn-ghost" style="font-size:12px">+ Novo pacote</button>
+              </div>
+              <div id="ment-historico-lista"></div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
+
+  <!-- MODO SESSÃO OVERLAY -->
+  <div id="ment-modo-sessao" style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:400;flex-direction:column;overflow-y:auto">
+    <div style="display:flex;align-items:center;padding:0 36px;height:50px;border-bottom:1px solid #1C1917;flex-shrink:0">
+      <span style="font-family:var(--mono);font-size:10px;color:#3C3835;letter-spacing:.1em">MODO SESSÃO</span>
+      <div style="flex:1"></div>
+      <button onclick="mentSairModoSessao()" style="padding:5px 12px;border-radius:6px;border:1px solid #3C3835;background:transparent;color:#57534E;font-family:var(--font);font-size:12px;cursor:pointer">← Voltar</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:24px;padding:36px 48px 32px;border-bottom:1px solid #1C1917">
+      <div id="ment-ms-avatar" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:Georgia,serif;flex-shrink:0"></div>
+      <div style="flex:1">
+        <div id="ment-ms-nome" style="font-family:Georgia,serif;font-size:32px;font-weight:400;color:#F5F2EC;margin-bottom:6px"></div>
+        <div style="font-family:var(--mono);font-size:11px;color:#57534E;display:flex;gap:18px">
+          <span id="ment-ms-contato"></span><span id="ment-ms-desde"></span>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.08em;margin-bottom:8px">PROGRESSO DO PACOTE</div>
+        <div id="ment-ms-dots" style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:6px"></div>
+        <div id="ment-ms-prog-text" style="font-family:var(--mono);font-size:11px;color:#57534E"></div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#1C1917;border-bottom:1px solid #1C1917">
+      <div style="background:#0f0f0f;padding:22px 0;text-align:center">
+        <div style="font-family:Georgia,serif;font-size:36px;color:#86EFAC;line-height:1;margin-bottom:6px" id="ment-ms-realizadas">0</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">AULAS REALIZADAS</div>
+      </div>
+      <div style="background:#0f0f0f;padding:22px 0;text-align:center">
+        <div style="font-family:Georgia,serif;font-size:36px;color:#86EFAC;line-height:1;margin-bottom:6px" id="ment-ms-restantes">0</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">AULAS RESTANTES</div>
+      </div>
+      <div style="background:#0f0f0f;padding:22px 0;text-align:center">
+        <div style="font-family:Georgia,serif;font-size:36px;color:#86EFAC;line-height:1;margin-bottom:6px" id="ment-ms-mes">0</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">AULAS ESTE MÊS</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1C1917;flex:1">
+      <div style="background:#0f0f0f;padding:28px 36px">
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:16px">SESSÕES DO PACOTE</div>
+        <div id="ment-ms-sessoes"></div>
+      </div>
+      <div style="background:#0f0f0f;padding:28px 36px">
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:16px">PRÓXIMA SESSÃO</div>
+        <div id="ment-ms-proxima"></div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-top:24px;margin-bottom:16px">IDEIAS & TEMAS PLANEJADOS</div>
+        <div id="ment-ms-ideias"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MENTORIA -->
+  <div id="ment-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:450;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+    <div style="background:white;border-radius:12px;padding:28px;width:460px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.15)">
+      <div id="ment-modal-title" style="font-family:Georgia,serif;font-size:18px;font-weight:400;margin-bottom:4px"></div>
+      <div id="ment-modal-sub" style="font-size:12px;color:#78716C;margin-bottom:20px"></div>
+      <div id="ment-modal-body"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+        <button onclick="mentCloseModal()" class="ment-btn-ghost">Cancelar</button>
+        <button onclick="mentModalConfirm()" class="ment-btn-primary" id="ment-modal-confirm">Salvar</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <button class="fab" id="fab" onclick="fabAction()">+</button>
@@ -4250,6 +4474,399 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   observer.observe(document.getElementById('app'), {attributes: true, attributeFilter: ['class']});
 });
+</script>
+
+<script>
+// ══════════════════════════════
+//  MENTORIA — módulo standalone
+// ══════════════════════════════
+const MENT_URL = 'https://kztxwempjmuqjrwulyqh.supabase.co';
+const MENT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6dHh3ZW1wam11cWpyd3VseXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDkyMzE5NzMsImV4cCI6MjAyNDgwNzk3M30.oUtvMjomMEFRkDmXQpzeBGQcO1wwqKxpRSHbKbqO3_I';
+
+async function mentFetch(path, opts={}) {
+  const res = await fetch(`${MENT_URL}/rest/v1/${path}`, {
+    headers: {'apikey':MENT_KEY,'Authorization':`Bearer ${MENT_KEY}`,'Content-Type':'application/json','Prefer':opts.prefer||'return=representation',...(opts.headers||{})},
+    ...opts
+  });
+  if (!res.ok) throw new Error(await res.text());
+  const t = await res.text(); return t ? JSON.parse(t) : null;
+}
+
+let mentAlunos=[], mentPacotes=[], mentSessoes=[];
+let mentAtivoId=null, mentEditandoAluno=null, mentEditandoSessao=null;
+let mentLoaded=false;
+
+const MENT_CORES=[
+  {cor:'#2D6A4F',cor_text:'#D1FAE5'},{cor:'#1E3A5F',cor_text:'#DBEAFE'},
+  {cor:'#92400E',cor_text:'#FEF3C7'},{cor:'#6B21A8',cor_text:'#F3E8FF'},
+  {cor:'#9F1239',cor_text:'#FFE4E6'},{cor:'#1e4d3a',cor_text:'#ECFDF5'},
+];
+
+async function mentInit() {
+  if (mentLoaded) return;
+  try {
+    const [a,p,s] = await Promise.all([
+      mentFetch('mentoria_alunos?select=*&order=criado_em.asc'),
+      mentFetch('mentoria_pacotes?select=*&order=criado_em.asc'),
+      mentFetch('mentoria_sessoes?select=*&order=numero.asc'),
+    ]);
+    mentAlunos=a||[]; mentPacotes=p||[]; mentSessoes=s||[];
+    mentLoaded=true;
+    mentRenderSidebar(); mentAtualizarStats();
+  } catch(e){ console.error('mentoria load error',e); }
+}
+
+function mentGetPacoteAtivo(aid){ return mentPacotes.find(p=>p.aluno_id===aid&&p.status==='ativo'); }
+function mentGetSessoes(aid,pid){ return mentSessoes.filter(s=>s.aluno_id===aid&&(!pid||s.pacote_id===pid)); }
+function mentIniciais(n){ return n.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase(); }
+function mentFmtData(d){ if(!d)return'—'; const[y,m,dia]=d.split('-'); return`${dia}/${m}/${y}`; }
+
+function mentAtualizarStats(){
+  const ativos=mentAlunos.filter(a=>mentGetPacoteAtivo(a.id)).length;
+  const agend=mentSessoes.filter(s=>s.status==='agendada'&&s.data).length;
+  const mes=mentSessoes.filter(s=>{
+    if(!s.data)return false;
+    const d=new Date(s.data+'T00:00:00'),n=new Date();
+    return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
+  }).length;
+  document.getElementById('ment-stat-ativos').textContent=ativos;
+  document.getElementById('ment-stat-agend').textContent=agend;
+  document.getElementById('ment-stat-aulas').textContent=mes;
+}
+
+function mentRenderSidebar(){
+  const list=document.getElementById('ment-alunos-list');
+  list.innerHTML='';
+  if(!mentAlunos.length){
+    list.innerHTML='<div style="padding:16px;font-size:12px;color:var(--slate-500);text-align:center">Nenhum mentorado ainda</div>';
+    return;
+  }
+  mentAlunos.forEach(a=>{
+    const pac=mentGetPacoteAtivo(a.id);
+    const sess=pac?mentGetSessoes(a.id,pac.id):[];
+    const real=sess.filter(s=>s.status==='realizada').length;
+    const prox=sess.find(s=>s.status==='agendada'&&s.data);
+    let dots='';
+    for(let i=0;i<4;i++){
+      const s=sess[i];
+      const cls=!s?'':'background:'+(s.status==='realizada'?'#86EFAC':prox&&prox.id===s.id?'#FCD34D':'#3C3835');
+      dots+=`<div style="width:7px;height:7px;border-radius:50%;${cls||'background:#3C3835'}"></div>`;
+    }
+    const card=document.createElement('div');
+    card.className='ment-aluno-card'+(mentAtivoId===a.id?' active':'');
+    card.onclick=()=>mentAbrirPerfil(a.id);
+    card.innerHTML=`
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:7px">
+        <div style="width:30px;height:30px;border-radius:50%;background:${a.cor};color:${a.cor_text};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${mentIniciais(a.nome)}</div>
+        <div>
+          <div style="font-size:13px;font-weight:500;color:#E7E5E4">${a.nome}</div>
+          <div style="font-size:10px;color:#57534E;font-family:var(--mono)">${pac?`Pacote #${pac.numero}`:'Sem pacote ativo'}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">${dots}<span style="font-size:10px;color:#57534E;font-family:var(--mono);margin-left:auto">${prox?mentFmtData(prox.data):'—'}</span></div>`;
+    list.appendChild(card);
+  });
+}
+
+function mentAbrirPerfil(id){
+  mentAtivoId=id;
+  const a=mentAlunos.find(x=>x.id===id); if(!a)return;
+  document.getElementById('ment-empty').style.display='none';
+  document.getElementById('ment-perfil').style.display='block';
+  // header
+  const av=document.getElementById('ment-pa-avatar');
+  av.textContent=mentIniciais(a.nome); av.style.background=a.cor; av.style.color=a.cor_text;
+  document.getElementById('ment-pa-nome').textContent=a.nome;
+  document.getElementById('ment-pa-contato').textContent=a.contato||'';
+  document.getElementById('ment-pa-desde').textContent=`desde ${mentFmtData(a.inicio)}`;
+  const tot=mentGetSessoes(a.id).filter(s=>s.status==='realizada').length;
+  document.getElementById('ment-pa-total').textContent=`${tot} aula${tot!==1?'s':''} realizadas`;
+  mentRenderPacoteBanner(id); mentRenderSessoes(id); mentRenderHistorico(id);
+  document.getElementById('ment-obs-geral').value=a.obs||'';
+  document.getElementById('ment-obs-ideias').value=a.ideias||'';
+  mentSwitchTab('sessoes',document.querySelector('.ment-ptab'));
+  mentRenderSidebar();
+}
+
+function mentRenderPacoteBanner(aid){
+  const pac=mentGetPacoteAtivo(aid);
+  const el=document.getElementById('ment-pacote-banner');
+  if(!pac){
+    el.innerHTML=`<div><div style="font-size:9px;font-family:var(--mono);color:#A8A29E;margin-bottom:4px">SEM PACOTE ATIVO</div><div style="font-size:13px;font-weight:500">Nenhum pacote em andamento</div></div><button onclick="mentOpenNovoPacote()" class="ment-btn-primary" style="margin-left:auto">Criar pacote</button>`;
+    return;
+  }
+  const sess=mentGetSessoes(aid,pac.id);
+  const real=sess.filter(s=>s.status==='realizada').length;
+  let dots='';
+  for(let i=0;i<4;i++){
+    const s=sess[i];
+    const bg=!s?'#E4DFD4':s.status==='realizada'?'#2D6A4F':s.status==='agendada'?'#F59E0B':'#E4DFD4';
+    dots+=`<div style="width:11px;height:11px;border-radius:50%;background:${bg}"></div>`;
+  }
+  el.innerHTML=`<div><div style="font-size:9px;font-family:var(--mono);color:#A8A29E;margin-bottom:4px">PACOTE ATUAL</div><div style="font-size:13px;font-weight:500">Pacote #${pac.numero} — R$ ${pac.valor}</div></div><div style="display:flex;gap:6px;margin-left:auto">${dots}</div><div style="font-size:11px;font-family:var(--mono);color:#A8A29E;margin-left:14px">${real}/4 aulas · início ${mentFmtData(pac.inicio)}</div><button onclick="mentOpenNovoPacote()" class="ment-btn-ghost" style="margin-left:14px;font-size:12px">Renovar</button>`;
+}
+
+function mentRenderSessoes(aid){
+  const pac=mentGetPacoteAtivo(aid);
+  const lista=document.getElementById('ment-sessoes-lista');
+  lista.innerHTML='';
+  if(!pac){lista.innerHTML='<div style="padding:20px;text-align:center;font-size:13px;color:#A8A29E;border:1px dashed #E4DFD4;border-radius:8px">Crie um pacote para adicionar sessões</div>';return;}
+  const sess=mentGetSessoes(aid,pac.id).sort((a,b)=>a.numero-b.numero);
+  if(!sess.length){lista.innerHTML='<div style="padding:20px;text-align:center;font-size:13px;color:#A8A29E;border:1px dashed #E4DFD4;border-radius:8px">Nenhuma sessão cadastrada</div>';return;}
+  sess.forEach(s=>{
+    const prox=sess.find(x=>x.status==='agendada'&&x.data);
+    const cls=s.status==='realizada'?'done':prox&&prox.id===s.id?'current':'';
+    const item=document.createElement('div');
+    item.className='ment-sessao-item';
+    item.innerHTML=`
+      <div class="ment-snum ${cls}">${s.numero}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:500;color:#1C1917;margin-bottom:2px">${s.titulo||`Sessão ${s.numero}`}</div>
+        <div style="font-size:11px;color:#A8A29E;font-family:var(--mono)">${s.data?mentFmtData(s.data)+(s.hora?' · '+s.hora:''):'Data não definida'}${s.obs?' · '+s.obs:''}</div>
+      </div>
+      <select class="ment-badge ${s.status}" onchange="mentMudarStatus('${s.id}',this.value);this.className='ment-badge '+this.value" onclick="event.stopPropagation()" style="border:none;cursor:pointer;font-family:var(--mono);font-size:9px;padding:2px 5px;border-radius:3px">
+        <option value="agendada" ${s.status==='agendada'?'selected':''}>agendada</option>
+        <option value="realizada" ${s.status==='realizada'?'selected':''}>realizada</option>
+        <option value="cancelada" ${s.status==='cancelada'?'selected':''}>cancelada</option>
+      </select>
+      <div class="ment-sa">
+        <button class="ment-sa-btn" onclick="mentEditarSessao('${s.id}');event.stopPropagation()">Editar</button>
+        <button class="ment-sa-btn" style="color:#9F1239;border-color:#FECDD3" onclick="mentDeletarSessao('${s.id}');event.stopPropagation()">✕</button>
+      </div>`;
+    lista.appendChild(item);
+  });
+}
+
+function mentRenderHistorico(aid){
+  const lista=document.getElementById('ment-historico-lista');
+  lista.innerHTML='';
+  const pacs=mentPacotes.filter(p=>p.aluno_id===aid).sort((a,b)=>b.numero-a.numero);
+  if(!pacs.length){lista.innerHTML='<div style="padding:20px;text-align:center;font-size:13px;color:#A8A29E">Nenhum pacote</div>';return;}
+  pacs.forEach(p=>{
+    const real=mentGetSessoes(aid,p.id).filter(s=>s.status==='realizada').length;
+    const badgeStyle=p.status==='ativo'?'background:#E8F5EE;color:#2D6A4F':p.status==='concluido'?'background:#F3F4F6;color:#6B7280':'background:#FEF3C7;color:#92400E';
+    lista.innerHTML+=`<div style="display:flex;align-items:center;gap:14px;padding:14px 18px;background:white;border:1px solid #E4DFD4;border-radius:10px;margin-bottom:6px">
+      <div style="font-family:Georgia,serif;font-size:18px;color:#A8A29E;width:28px;text-align:center">#${p.numero}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:500">Pacote de 4 aulas — R$ ${p.valor}</div><div style="font-size:11px;color:#A8A29E;font-family:var(--mono)">Início ${mentFmtData(p.inicio)} · ${real}/4 realizadas</div></div>
+      <span style="font-size:9px;font-family:var(--mono);padding:3px 8px;border-radius:4px;${badgeStyle}">${p.status.replace('_',' ')}</span>
+    </div>`;
+  });
+}
+
+function mentSwitchTab(tab, btn){
+  document.querySelectorAll('.ment-ptab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  else document.querySelectorAll('.ment-ptab')[['sessoes','obs','historico'].indexOf(tab)]?.classList.add('active');
+  ['sessoes','obs','historico'].forEach(t=>{
+    const el=document.getElementById('ment-tab-'+t);
+    el.style.display=t===tab?'block':'none';
+    el.classList.toggle('active',t===tab);
+  });
+}
+
+// ── SESSÕES ──
+function mentAbrirNovaSessao(){
+  const f=document.getElementById('ment-nova-sessao-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+  if(f.style.display==='block'){
+    document.getElementById('ment-ns-data').value=new Date().toISOString().split('T')[0];
+    mentEditandoSessao=null;
+  }
+}
+function mentFecharNovaSessao(){
+  document.getElementById('ment-nova-sessao-form').style.display='none';
+  mentEditandoSessao=null;
+}
+async function mentSalvarSessao(){
+  const titulo=document.getElementById('ment-ns-titulo').value.trim();
+  const data=document.getElementById('ment-ns-data').value;
+  const hora=document.getElementById('ment-ns-hora').value;
+  const status=document.getElementById('ment-ns-status').value;
+  const obs=document.getElementById('ment-ns-obs').value.trim();
+  const pac=mentGetPacoteAtivo(mentAtivoId);
+  if(!pac){alert('Crie um pacote primeiro');return;}
+  try{
+    if(mentEditandoSessao){
+      await mentFetch(`mentoria_sessoes?id=eq.${mentEditandoSessao}`,{method:'PATCH',body:JSON.stringify({titulo,data:data||null,hora:hora||null,status,obs})});
+      const s=mentSessoes.find(x=>x.id===mentEditandoSessao);
+      if(s)Object.assign(s,{titulo,data,hora,status,obs});
+    } else {
+      const num=mentGetSessoes(mentAtivoId,pac.id).length+1;
+      const [n]=await mentFetch('mentoria_sessoes',{method:'POST',body:JSON.stringify({aluno_id:mentAtivoId,pacote_id:pac.id,numero:num,titulo,data:data||null,hora:hora||null,status,obs,canvas_json:null})});
+      mentSessoes.push(n);
+    }
+    mentFecharNovaSessao();
+    document.getElementById('ment-ns-titulo').value='';
+    document.getElementById('ment-ns-obs').value='';
+    mentRenderSessoes(mentAtivoId); mentRenderPacoteBanner(mentAtivoId);
+    mentAtualizarStats(); mentRenderSidebar();
+  }catch(e){alert('Erro ao salvar sessão');console.error(e);}
+}
+function mentEditarSessao(id){
+  const s=mentSessoes.find(x=>x.id===id); if(!s)return;
+  mentEditandoSessao=id;
+  document.getElementById('ment-nova-sessao-form').style.display='block';
+  document.getElementById('ment-ns-titulo').value=s.titulo||'';
+  document.getElementById('ment-ns-data').value=s.data||'';
+  document.getElementById('ment-ns-hora').value=s.hora||'';
+  document.getElementById('ment-ns-status').value=s.status||'agendada';
+  document.getElementById('ment-ns-obs').value=s.obs||'';
+}
+async function mentMudarStatus(id,st){
+  try{
+    await mentFetch(`mentoria_sessoes?id=eq.${id}`,{method:'PATCH',body:JSON.stringify({status:st})});
+    const s=mentSessoes.find(x=>x.id===id); if(s)s.status=st;
+    mentRenderPacoteBanner(mentAtivoId); mentAtualizarStats(); mentRenderSidebar();
+  }catch(e){console.error(e);}
+}
+async function mentDeletarSessao(id){
+  if(!confirm('Remover esta sessão?'))return;
+  try{
+    await mentFetch(`mentoria_sessoes?id=eq.${id}`,{method:'DELETE',headers:{'Prefer':''}});
+    mentSessoes=mentSessoes.filter(s=>s.id!==id);
+    mentRenderSessoes(mentAtivoId); mentRenderPacoteBanner(mentAtivoId);
+    mentAtualizarStats(); mentRenderSidebar();
+  }catch(e){console.error(e);}
+}
+
+// ── OBS ──
+async function mentSalvarObs(){
+  const a=mentAlunos.find(x=>x.id===mentAtivoId); if(!a)return;
+  a.obs=document.getElementById('ment-obs-geral').value;
+  a.ideias=document.getElementById('ment-obs-ideias').value;
+  try{
+    await mentFetch(`mentoria_alunos?id=eq.${a.id}`,{method:'PATCH',body:JSON.stringify({obs:a.obs,ideias:a.ideias})});
+  }catch(e){console.error(e);}
+}
+
+// ── ALUNOS ──
+function mentOpenNovoAluno(){
+  mentEditandoAluno=null;
+  document.getElementById('ment-modal-title').textContent='Novo mentorado';
+  document.getElementById('ment-modal-sub').textContent='Preencha os dados básicos.';
+  document.getElementById('ment-modal-body').innerHTML=`
+    <div style="margin-bottom:10px"><label class="ment-label">NOME</label><input id="ment-m-nome" class="ment-input" placeholder="Nome completo"></div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div style="flex:1"><label class="ment-label">CONTATO</label><input id="ment-m-contato" class="ment-input" placeholder="WhatsApp ou e-mail"></div>
+      <div style="width:140px"><label class="ment-label">INÍCIO</label><input id="ment-m-inicio" class="ment-input" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+    </div>
+    <div><label class="ment-label">OBSERVAÇÃO INICIAL</label><textarea id="ment-m-obs" class="ment-input" style="min-height:70px;resize:none" placeholder="Contexto, objetivo..."></textarea></div>`;
+  document.getElementById('ment-modal').style.display='flex';
+}
+function mentEditarAluno(){
+  const a=mentAlunos.find(x=>x.id===mentAtivoId); if(!a)return;
+  mentEditandoAluno=a.id;
+  document.getElementById('ment-modal-title').textContent='Editar mentorado';
+  document.getElementById('ment-modal-sub').textContent='Atualize os dados.';
+  document.getElementById('ment-modal-body').innerHTML=`
+    <div style="margin-bottom:10px"><label class="ment-label">NOME</label><input id="ment-m-nome" class="ment-input" value="${a.nome||''}"></div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div style="flex:1"><label class="ment-label">CONTATO</label><input id="ment-m-contato" class="ment-input" value="${a.contato||''}"></div>
+      <div style="width:140px"><label class="ment-label">INÍCIO</label><input id="ment-m-inicio" class="ment-input" type="date" value="${a.inicio||''}"></div>
+    </div>
+    <div><label class="ment-label">OBSERVAÇÃO</label><textarea id="ment-m-obs" class="ment-input" style="min-height:70px;resize:none">${a.obs||''}</textarea></div>`;
+  document.getElementById('ment-modal').style.display='flex';
+}
+function mentCloseModal(){ document.getElementById('ment-modal').style.display='none'; }
+async function mentModalConfirm(){
+  const nome=document.getElementById('ment-m-nome')?.value.trim();
+  const contato=document.getElementById('ment-m-contato')?.value.trim();
+  const inicio=document.getElementById('ment-m-inicio')?.value;
+  const obs=document.getElementById('ment-m-obs')?.value.trim();
+  if(!nome){alert('Informe o nome');return;}
+  try{
+    if(mentEditandoAluno){
+      await mentFetch(`mentoria_alunos?id=eq.${mentEditandoAluno}`,{method:'PATCH',body:JSON.stringify({nome,contato,inicio:inicio||null,obs})});
+      const a=mentAlunos.find(x=>x.id===mentEditandoAluno);
+      if(a)Object.assign(a,{nome,contato,inicio,obs});
+      mentAbrirPerfil(mentEditandoAluno);
+    } else {
+      const cor=MENT_CORES[mentAlunos.length%MENT_CORES.length];
+      const [n]=await mentFetch('mentoria_alunos',{method:'POST',body:JSON.stringify({nome,contato,inicio:inicio||null,obs,ideias:'',...cor})});
+      mentAlunos.push(n); mentRenderSidebar(); mentAtualizarStats();
+    }
+    mentCloseModal(); mentRenderSidebar();
+  }catch(e){alert('Erro ao salvar');console.error(e);}
+}
+
+// ── PACOTES ──
+function mentOpenNovoPacote(){
+  document.getElementById('ment-modal-title').textContent='Novo pacote';
+  document.getElementById('ment-modal-sub').textContent='4 aulas · 1 por semana';
+  document.getElementById('ment-modal-body').innerHTML=`
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <div style="flex:1"><label class="ment-label">VALOR (R$)</label><input id="ment-p-valor" class="ment-input" type="number" value="800"></div>
+      <div style="flex:1"><label class="ment-label">INÍCIO</label><input id="ment-p-inicio" class="ment-input" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
+    </div>
+    <div><label class="ment-label">STATUS</label><select id="ment-p-status" class="ment-input"><option value="ativo">Ativo</option><option value="aguardando_pagamento">Aguardando pagamento</option><option value="concluido">Concluído</option></select></div>`;
+  document.getElementById('ment-modal-confirm').onclick=mentSalvarPacote;
+  document.getElementById('ment-modal').style.display='flex';
+}
+async function mentSalvarPacote(){
+  const valor=parseFloat(document.getElementById('ment-p-valor')?.value)||0;
+  const inicio=document.getElementById('ment-p-inicio')?.value;
+  const status=document.getElementById('ment-p-status')?.value;
+  const num=mentPacotes.filter(p=>p.aluno_id===mentAtivoId).length+1;
+  try{
+    const [n]=await mentFetch('mentoria_pacotes',{method:'POST',body:JSON.stringify({aluno_id:mentAtivoId,valor,inicio:inicio||null,status,numero:num})});
+    mentPacotes.push(n); mentCloseModal();
+    mentRenderPacoteBanner(mentAtivoId); mentRenderHistorico(mentAtivoId);
+    mentRenderSessoes(mentAtivoId); mentRenderSidebar(); mentAtualizarStats();
+  }catch(e){alert('Erro ao criar pacote');console.error(e);}
+}
+
+// ── MODO SESSÃO ──
+function mentEntrarModoSessao(){
+  const a=mentAlunos.find(x=>x.id===mentAtivoId); if(!a)return;
+  const pac=mentGetPacoteAtivo(a.id);
+  const sess=pac?mentGetSessoes(a.id,pac.id):[];
+  const real=sess.filter(s=>s.status==='realizada').length;
+  const prox=sess.find(s=>s.status==='agendada'&&s.data);
+  const av=document.getElementById('ment-ms-avatar');
+  av.textContent=mentIniciais(a.nome); av.style.background=a.cor; av.style.color=a.cor_text;
+  document.getElementById('ment-ms-nome').textContent=a.nome;
+  document.getElementById('ment-ms-contato').textContent=a.contato||'';
+  document.getElementById('ment-ms-desde').textContent=`mentorado desde ${mentFmtData(a.inicio)}`;
+  let dots='';
+  for(let i=0;i<4;i++){
+    const s=sess[i];
+    const bg=!s?'#2a2a28':s.status==='realizada'?'#86EFAC':prox&&prox.id===s.id?'#FCD34D':'#2a2a28';
+    dots+=`<div style="width:14px;height:14px;border-radius:50%;background:${bg}"></div>`;
+  }
+  document.getElementById('ment-ms-dots').innerHTML=dots;
+  document.getElementById('ment-ms-prog-text').textContent=`${real} de 4 aulas realizadas`;
+  const mes=sess.filter(s=>{
+    if(!s.data)return false;
+    const d=new Date(s.data+'T00:00:00'),n=new Date();
+    return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
+  }).length;
+  document.getElementById('ment-ms-realizadas').textContent=real;
+  document.getElementById('ment-ms-restantes').textContent=4-real;
+  document.getElementById('ment-ms-mes').textContent=mes;
+  // sessões
+  const sl=document.getElementById('ment-ms-sessoes');
+  sl.innerHTML=sess.length?sess.sort((a,b)=>a.numero-b.numero).map(s=>{
+    const isP=prox&&prox.id===s.id;
+    const cls=s.status==='realizada'?'done':isP?'current':'';
+    const badgeColor=s.status==='realizada'?'#86EFAC':s.status==='agendada'?'#FCD34D':'#F87171';
+    return`<div class="ment-ms-sitem"><div class="ment-ms-snum ${cls}">${s.numero}</div><div style="flex:1"><div style="font-size:12px;color:#D6D3CD">${s.titulo||`Sessão ${s.numero}`}</div><div style="font-size:10px;color:#3C3835;font-family:var(--mono)">${s.data?mentFmtData(s.data)+(s.hora?' · '+s.hora:''):'—'}</div></div><span style="font-size:9px;font-family:var(--mono);padding:2px 6px;border-radius:3px;background:rgba(134,239,172,.08);color:${badgeColor}">${s.status}</span></div>`;
+  }).join(''):'<div style="color:#2a2a28;font-size:12px;font-family:var(--mono)">Sem sessões cadastradas</div>';
+  // próxima
+  const pe=document.getElementById('ment-ms-proxima');
+  pe.innerHTML=prox?`<div style="background:#1C1917;border-radius:8px;padding:16px 18px"><div style="font-family:var(--mono);font-size:9px;color:#3C3835;margin-bottom:6px">AGENDADA</div><div style="font-family:Georgia,serif;font-size:20px;color:#FCD34D;margin-bottom:3px">${mentFmtData(prox.data)}${prox.hora?' · '+prox.hora:''}</div><div style="font-size:12px;color:#A8A29E">${prox.titulo||`Sessão ${prox.numero}`}</div></div>`:'<div style="color:#2a2a28;font-size:12px;font-family:var(--mono)">Nenhuma sessão agendada</div>';
+  // ideias
+  document.getElementById('ment-ms-ideias').innerHTML=a.ideias&&a.ideias.trim()?`<div style="font-size:13px;color:#57534E;line-height:1.8;font-style:italic;white-space:pre-wrap">${a.ideias}</div>`:'<div style="color:#2a2a28;font-size:12px;font-family:var(--mono)">Nenhuma ideia registrada</div>';
+  const ms=document.getElementById('ment-modo-sessao');
+  ms.style.display='flex'; ms.scrollTop=0;
+}
+function mentSairModoSessao(){ document.getElementById('ment-modo-sessao').style.display='none'; }
+
+// Hook na função go() para carregar mentoria ao entrar na aba
+const _goOriginal = go;
+function go(id, btn){
+  _goOriginal(id, btn);
+  if(id==='mentoria') mentInit();
+}
 </script>
 </body>
 </html>
