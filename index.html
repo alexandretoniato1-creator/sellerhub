@@ -1553,7 +1553,7 @@ td[contenteditable]:focus::after { display: none; }
         </div>
 
         <!-- conteúdo principal -->
-        <div id="ment-main" style="flex:1;overflow-y:auto;background:#F5F2EC">
+        <div id="ment-main" style="flex:1;overflow-y:auto;background:#F5F2EC;position:relative">
 
           <div id="ment-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#A8A29E">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -1640,62 +1640,61 @@ td[contenteditable]:focus::after { display: none; }
             </div>
 
           </div>
-        </div>
-      </div>
-    </div>
 
-  </main>
-
-  <!-- MODO SESSÃO OVERLAY -->
-  <div id="ment-modo-sessao" style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:400;flex-direction:column;overflow-y:auto">
-    <div style="display:flex;align-items:center;padding:0 36px;height:50px;border-bottom:1px solid #1C1917;flex-shrink:0">
+          <!-- MODO SESSÃO OVERLAY — cobre só o ment-main -->
+          <div id="ment-modo-sessao" style="display:none;position:absolute;inset:0;background:#0f0f0f;z-index:50;flex-direction:column;overflow-y:auto">
+    <div style="display:flex;align-items:center;padding:0 28px;height:48px;border-bottom:1px solid #1C1917;flex-shrink:0">
       <span style="font-family:var(--mono);font-size:10px;color:#3C3835;letter-spacing:.1em">MODO SESSÃO</span>
       <div style="flex:1"></div>
       <button onclick="mentSairModoSessao()" style="padding:5px 12px;border-radius:6px;border:1px solid #3C3835;background:transparent;color:#57534E;font-family:var(--font);font-size:12px;cursor:pointer">← Voltar</button>
     </div>
-    <div style="display:flex;align-items:center;gap:24px;padding:36px 48px 32px;border-bottom:1px solid #1C1917">
-      <div id="ment-ms-avatar" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:Georgia,serif;flex-shrink:0"></div>
+    <div style="display:flex;align-items:center;gap:20px;padding:28px 36px 24px;border-bottom:1px solid #1C1917">
+      <div id="ment-ms-avatar" style="width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-family:Georgia,serif;flex-shrink:0"></div>
       <div style="flex:1">
-        <div id="ment-ms-nome" style="font-family:Georgia,serif;font-size:32px;font-weight:400;color:#F5F2EC;margin-bottom:6px"></div>
-        <div style="font-family:var(--mono);font-size:11px;color:#57534E;display:flex;gap:18px">
+        <div id="ment-ms-nome" style="font-family:Georgia,serif;font-size:26px;font-weight:400;color:#F5F2EC;margin-bottom:4px"></div>
+        <div style="font-family:var(--mono);font-size:11px;color:#57534E;display:flex;gap:16px;flex-wrap:wrap">
           <span id="ment-ms-contato"></span><span id="ment-ms-desde"></span>
         </div>
       </div>
       <div style="text-align:right">
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.08em;margin-bottom:8px">PROGRESSO DO PACOTE</div>
-        <div id="ment-ms-dots" style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:6px"></div>
-        <div id="ment-ms-prog-text" style="font-family:var(--mono);font-size:11px;color:#57534E"></div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.08em;margin-bottom:6px">PROGRESSO DO PACOTE</div>
+        <div id="ment-ms-dots" style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:5px"></div>
+        <div id="ment-ms-prog-text" style="font-family:var(--mono);font-size:10px;color:#57534E"></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#1C1917;border-bottom:1px solid #1C1917">
-      <div style="background:#0f0f0f;padding:22px 0;text-align:center">
-        <div style="font-family:Georgia,serif;font-size:36px;color:#86EFAC;line-height:1;margin-bottom:6px" id="ment-ms-realizadas">0</div>
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">AULAS REALIZADAS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#1C1917;border-bottom:1px solid #1C1917;flex-shrink:0">
+      <div style="background:#0f0f0f;padding:18px 0;text-align:center">
+        <div style="font-family:Georgia,serif;font-size:30px;color:#86EFAC;line-height:1;margin-bottom:4px" id="ment-ms-realizadas">0</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">REALIZADAS</div>
       </div>
-      <div style="background:#0f0f0f;padding:22px 0;text-align:center">
-        <div style="font-family:Georgia,serif;font-size:36px;color:#86EFAC;line-height:1;margin-bottom:6px" id="ment-ms-restantes">0</div>
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">AULAS RESTANTES</div>
+      <div style="background:#0f0f0f;padding:18px 0;text-align:center">
+        <div style="font-family:Georgia,serif;font-size:30px;color:#86EFAC;line-height:1;margin-bottom:4px" id="ment-ms-restantes">0</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">RESTANTES</div>
       </div>
-      <div style="background:#0f0f0f;padding:22px 0;text-align:center">
-        <div style="font-family:Georgia,serif;font-size:36px;color:#86EFAC;line-height:1;margin-bottom:6px" id="ment-ms-mes">0</div>
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">AULAS ESTE MÊS</div>
+      <div style="background:#0f0f0f;padding:18px 0;text-align:center">
+        <div style="font-family:Georgia,serif;font-size:30px;color:#86EFAC;line-height:1;margin-bottom:4px" id="ment-ms-mes">0</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">ESTE MÊS</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1C1917;flex:1">
-      <div style="background:#0f0f0f;padding:28px 36px">
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:16px">SESSÕES DO PACOTE</div>
+      <div style="background:#0f0f0f;padding:24px 28px;overflow-y:auto">
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:14px">SESSÕES DO PACOTE</div>
         <div id="ment-ms-sessoes"></div>
       </div>
-      <div style="background:#0f0f0f;padding:28px 36px">
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:16px">PRÓXIMA SESSÃO</div>
+      <div style="background:#0f0f0f;padding:24px 28px;overflow-y:auto">
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:14px">PRÓXIMA SESSÃO</div>
         <div id="ment-ms-proxima"></div>
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-top:24px;margin-bottom:16px">IDEIAS & TEMAS PLANEJADOS</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-top:20px;margin-bottom:14px">IDEIAS & TEMAS</div>
         <div id="ment-ms-ideias"></div>
       </div>
     </div>
-  </div>
+  </div><!-- /ment-modo-sessao -->
 
-  <!-- MODAL MENTORIA -->
+        </div><!-- /ment-main -->
+      </div><!-- /ment-app -->
+    </div><!-- /page-mentoria -->
+
+  </main>
   <div id="ment-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:450;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
     <div style="background:white;border-radius:12px;padding:28px;width:460px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.15)">
       <div id="ment-modal-title" style="font-family:Georgia,serif;font-size:18px;font-weight:400;margin-bottom:4px"></div>
@@ -4561,7 +4560,7 @@ function mentRenderSidebar(){
         <div style="width:30px;height:30px;border-radius:50%;background:${a.cor};color:${a.cor_text};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${mentIniciais(a.nome)}</div>
         <div>
           <div style="font-size:13px;font-weight:500;color:#E7E5E4">${a.nome}</div>
-          <div style="font-size:10px;color:#57534E;font-family:var(--mono)">${pac?`Pacote #${pac.numero}`:'Sem pacote ativo'}</div>
+          <div style="font-size:10px;color:#57534E;font-family:var(--mono)">${pac?(pac.nome||`Pacote #${pac.numero}`):'Sem pacote ativo'}</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:4px">${dots}<span style="font-size:10px;color:#57534E;font-family:var(--mono);margin-left:auto">${prox?mentFmtData(prox.data):'—'}</span></div>`;
@@ -4604,7 +4603,32 @@ function mentRenderPacoteBanner(aid){
     const bg=!s?'#E4DFD4':s.status==='realizada'?'#2D6A4F':s.status==='agendada'?'#F59E0B':'#E4DFD4';
     dots+=`<div style="width:11px;height:11px;border-radius:50%;background:${bg}"></div>`;
   }
-  el.innerHTML=`<div><div style="font-size:9px;font-family:var(--mono);color:#A8A29E;margin-bottom:4px">PACOTE ATUAL</div><div style="font-size:13px;font-weight:500">Pacote #${pac.numero} — R$ ${pac.valor}</div></div><div style="display:flex;gap:6px;margin-left:auto">${dots}</div><div style="font-size:11px;font-family:var(--mono);color:#A8A29E;margin-left:14px">${real}/4 aulas · início ${mentFmtData(pac.inicio)}</div><button onclick="mentOpenNovoPacote()" class="ment-btn-ghost" style="margin-left:14px;font-size:12px">Renovar</button>`;
+  const nomePac = pac.nome || `Pacote #${pac.numero}`;
+  el.innerHTML=`
+    <div style="flex:1">
+      <div style="font-size:9px;font-family:var(--mono);color:#A8A29E;margin-bottom:4px">PACOTE ATUAL</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <input id="ment-pac-nome-input" value="${nomePac}" 
+          style="font-size:13px;font-weight:500;color:#1C1917;background:transparent;border:none;border-bottom:1px dashed #D6D3CD;outline:none;padding:2px 0;min-width:160px;max-width:280px;font-family:var(--font)"
+          onblur="mentSalvarNomePacote('${pac.id}',this.value)"
+          onkeydown="if(event.key==='Enter')this.blur()"
+          title="Clique para editar o nome">
+        <span style="font-size:11px;color:#A8A29E">— R$ ${pac.valor}</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px">${dots}</div>
+    <div style="font-size:11px;font-family:var(--mono);color:#A8A29E;margin-left:14px">${real}/4 · ${mentFmtData(pac.inicio)}</div>
+    <button onclick="mentOpenNovoPacote()" class="ment-btn-ghost" style="margin-left:14px;font-size:12px">Renovar</button>`;
+}
+
+async function mentSalvarNomePacote(pacId, nome){
+  const pac=mentPacotes.find(p=>p.id===pacId); if(!pac)return;
+  const novoNome=nome.trim()||`Pacote #${pac.numero}`;
+  try{
+    await mentFetch(`mentoria_pacotes?id=eq.${pacId}`,{method:'PATCH',body:JSON.stringify({nome:novoNome})});
+    pac.nome=novoNome;
+    mentRenderSidebar();
+  }catch(e){console.error('Erro ao salvar nome do pacote',e);}
 }
 
 function mentRenderSessoes(aid){
@@ -4632,6 +4656,7 @@ function mentRenderSessoes(aid){
       </select>
       <div class="ment-sa">
         <button class="ment-sa-btn" onclick="mentEditarSessao('${s.id}');event.stopPropagation()">Editar</button>
+        <button class="ment-sa-btn" onclick="mentAbrirCanvas('${s.id}');event.stopPropagation()">${s.canvas_json?'▶ Canvas':'+ Canvas'}</button>
         <button class="ment-sa-btn" style="color:#9F1239;border-color:#FECDD3" onclick="mentDeletarSessao('${s.id}');event.stopPropagation()">✕</button>
       </div>`;
     lista.appendChild(item);
@@ -4730,6 +4755,10 @@ async function mentDeletarSessao(id){
   }catch(e){console.error(e);}
 }
 
+function mentAbrirCanvas(sessaoId){
+  window.open(`canvas.html?sessao=${sessaoId}`, '_blank');
+}
+
 // ── OBS ──
 async function mentSalvarObs(){
   const a=mentAlunos.find(x=>x.id===mentAtivoId); if(!a)return;
@@ -4795,6 +4824,7 @@ function mentOpenNovoPacote(){
   document.getElementById('ment-modal-title').textContent='Novo pacote';
   document.getElementById('ment-modal-sub').textContent='4 aulas · 1 por semana';
   document.getElementById('ment-modal-body').innerHTML=`
+    <div style="margin-bottom:10px"><label class="ment-label">NOME DO PACOTE</label><input id="ment-p-nome" class="ment-input" placeholder="Ex: Pacote ADS Abril, Diagnóstico Inicial..."></div>
     <div style="display:flex;gap:10px;margin-bottom:10px">
       <div style="flex:1"><label class="ment-label">VALOR (R$)</label><input id="ment-p-valor" class="ment-input" type="number" value="800"></div>
       <div style="flex:1"><label class="ment-label">INÍCIO</label><input id="ment-p-inicio" class="ment-input" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
@@ -4804,12 +4834,13 @@ function mentOpenNovoPacote(){
   document.getElementById('ment-modal').style.display='flex';
 }
 async function mentSalvarPacote(){
+  const nome=document.getElementById('ment-p-nome')?.value.trim();
   const valor=parseFloat(document.getElementById('ment-p-valor')?.value)||0;
   const inicio=document.getElementById('ment-p-inicio')?.value;
   const status=document.getElementById('ment-p-status')?.value;
   const num=mentPacotes.filter(p=>p.aluno_id===mentAtivoId).length+1;
   try{
-    const [n]=await mentFetch('mentoria_pacotes',{method:'POST',body:JSON.stringify({aluno_id:mentAtivoId,valor,inicio:inicio||null,status,numero:num})});
+    const [n]=await mentFetch('mentoria_pacotes',{method:'POST',body:JSON.stringify({aluno_id:mentAtivoId,nome:nome||null,valor,inicio:inicio||null,status,numero:num})});
     mentPacotes.push(n); mentCloseModal();
     mentRenderPacoteBanner(mentAtivoId); mentRenderHistorico(mentAtivoId);
     mentRenderSessoes(mentAtivoId); mentRenderSidebar(); mentAtualizarStats();
