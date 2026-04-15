@@ -1845,6 +1845,7 @@ function go(id,btn){
   if(id==='home') renderHome();
   if(id==='produtos'){ safeRenderProd(); }
   if(id==='performance'){ renderVG(); }
+  if(id==='mentoria'){ mentInit(); }
 }
 
 // ===== HOME DASHBOARD =====
@@ -4861,12 +4862,7 @@ function mentEntrarModoSessao(){
 }
 function mentSairModoSessao(){ document.getElementById('ment-modo-sessao').style.display='none'; }
 
-// Hook na função go() para carregar mentoria ao entrar na aba
-const _goOriginal = go;
-function go(id, btn){
-  _goOriginal(id, btn);
-  if(id==='mentoria') mentInit();
-}
+// fim do módulo mentoria
 </script>
 </body>
 </html>
