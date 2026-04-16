@@ -5223,11 +5223,11 @@ function mentEntrarModoSessao(){
 function mentSairModoSessao(){ document.getElementById('ment-modo-sessao').style.display='none'; }
 
 // Hook na função go() para carregar mentoria ao entrar na aba
-const _goOriginal = go;
-function go(id, btn){
+const _goOriginal = window.go;
+window.go = function(id, btn){
   _goOriginal(id, btn);
   if(id==='mentoria') mentInit();
-}
+};
 </script>
 </body>
 </html>
