@@ -1124,13 +1124,23 @@ td[contenteditable]:focus::after { display: none; }
               <option value="">— Selecione um SKU —</option>
             </select>
           </div>
-          <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <div class="perf-section-label" style="margin-bottom:6px">Importar relatório ML</div>
-            <button class="btn btn-ghost" onclick="document.getElementById('ml-file-input').click()" style="gap:8px">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Selecionar .xlsx
-            </button>
-            <input type="file" id="ml-file-input" accept=".xlsx" style="display:none" onchange="handleMLImport(this)">
+          <div style="margin-left:auto;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <div class="perf-section-label" style="margin-bottom:6px">Importar Planilha SellerHub</div>
+              <button class="btn btn-primary" onclick="document.getElementById('hub-file-input').click()" style="gap:8px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                Importar planilha
+              </button>
+              <input type="file" id="hub-file-input" accept=".xlsx" style="display:none" onchange="handleHubImport(this)">
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <div class="perf-section-label" style="margin-bottom:6px">Importar relatório ML</div>
+              <button class="btn btn-ghost" onclick="document.getElementById('ml-file-input').click()" style="gap:8px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Selecionar .xlsx
+              </button>
+              <input type="file" id="ml-file-input" accept=".xlsx" style="display:none" onchange="handleMLImport(this)">
+            </div>
           </div>
         </div>
         <div id="sku-perf-cards" style="margin-bottom:20px"></div>
@@ -1258,6 +1268,90 @@ td[contenteditable]:focus::after { display: none; }
         <div class="modal-actions">
           <button class="btn btn-ghost" onclick="document.getElementById('ml-row-edit-modal').classList.remove('active')">Cancelar</button>
           <button class="btn btn-primary" onclick="saveMlRowEdit()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL IMPORTAÇÃO PLANILHA SELLERHUB -->
+    <div class="modal-bg" id="hub-modal-bg" onclick="if(event.target===this)closeHubModal()">
+      <div class="modal" style="max-width:860px;width:100%">
+        <div class="modal-title" style="display:flex;align-items:center;gap:10px">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--coral-500)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Importar Planilha SellerHub
+        </div>
+
+        <!-- Tabs de aba -->
+        <div class="tabs" style="margin-bottom:16px" id="hub-imp-tabs">
+          <button class="tab active" onclick="hubImpTab('sku',this)">Performance SKU <span id="hub-imp-sku-count" style="font-size:10px;color:var(--coral-500);font-weight:700"></span></button>
+          <button class="tab" onclick="hubImpTab('prec',this)">Precificação <span id="hub-imp-prec-count" style="font-size:10px;color:var(--coral-500);font-weight:700"></span></button>
+          <button class="tab" onclick="hubImpTab('perf',this)">Performance Mensal <span id="hub-imp-perf-count" style="font-size:10px;color:var(--coral-500);font-weight:700"></span></button>
+        </div>
+
+        <!-- Aba Performance SKU -->
+        <div id="hub-imp-sku-panel">
+          <div class="table-wrap" style="overflow-x:auto;max-height:340px;overflow-y:auto">
+            <table>
+              <thead class="hub-thead"><tr>
+                <th>Conta</th><th>SKU</th><th>Mês</th>
+                <th style="text-align:right">Fat. (R$)</th>
+                <th style="text-align:right">Pedidos</th>
+                <th style="text-align:right">Unid.</th>
+                <th style="text-align:right">Preço</th>
+                <th style="text-align:right">Invest.</th>
+                <th style="text-align:right">Conv.</th>
+                <th style="text-align:right">TACOS</th>
+                <th style="text-align:right">Rebait</th>
+                <th style="text-align:right">M.C.</th>
+                <th>Status</th>
+              </tr></thead>
+              <tbody class="hub-tbody" id="hub-imp-sku-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Aba Precificação -->
+        <div id="hub-imp-prec-panel" style="display:none">
+          <div class="table-wrap" style="overflow-x:auto;max-height:340px;overflow-y:auto">
+            <table>
+              <thead class="hub-thead"><tr>
+                <th>Conta</th><th>SKU</th><th>Descrição</th>
+                <th style="text-align:right">Custo</th>
+                <th style="text-align:right">Preço</th>
+                <th style="text-align:right">Rebait</th>
+                <th style="text-align:right">M.C.</th>
+                <th style="text-align:right">TACOS</th>
+                <th>Status</th>
+              </tr></thead>
+              <tbody class="hub-tbody" id="hub-imp-prec-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Aba Performance Mensal -->
+        <div id="hub-imp-perf-panel" style="display:none">
+          <div class="table-wrap" style="overflow-x:auto;max-height:340px;overflow-y:auto">
+            <table>
+              <thead class="hub-thead"><tr>
+                <th>Conta</th><th>Mês</th>
+                <th style="text-align:right">Fat. (R$)</th>
+                <th style="text-align:right">Pedidos</th>
+                <th style="text-align:right">Unid.</th>
+                <th style="text-align:right">Conv.</th>
+                <th style="text-align:right">TACOS</th>
+                <th style="text-align:right">Rebait</th>
+                <th style="text-align:right">M.C.</th>
+                <th>Status</th>
+              </tr></thead>
+              <tbody class="hub-tbody" id="hub-imp-perf-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="hub-imp-summary" style="font-size:12px;color:var(--slate-400);margin-top:12px"></div>
+
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="closeHubModal()">Cancelar</button>
+          <button class="btn btn-primary" onclick="confirmHubImport()" id="hub-imp-confirm-btn">Confirmar importação</button>
         </div>
       </div>
     </div>
@@ -1553,7 +1647,7 @@ td[contenteditable]:focus::after { display: none; }
         </div>
 
         <!-- conteúdo principal -->
-        <div id="ment-main" style="flex:1;overflow-y:auto;background:#F5F2EC;position:relative">
+        <div id="ment-main" style="flex:1;overflow-y:auto;background:#F5F2EC">
 
           <div id="ment-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#A8A29E">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -1640,61 +1734,62 @@ td[contenteditable]:focus::after { display: none; }
             </div>
 
           </div>
+        </div>
+      </div>
+    </div>
 
-          <!-- MODO SESSÃO OVERLAY — cobre só o ment-main -->
-          <div id="ment-modo-sessao" style="display:none;position:absolute;inset:0;background:#0f0f0f;z-index:50;flex-direction:column;overflow-y:auto">
-    <div style="display:flex;align-items:center;padding:0 28px;height:48px;border-bottom:1px solid #1C1917;flex-shrink:0">
+  </main>
+
+  <!-- MODO SESSÃO OVERLAY -->
+  <div id="ment-modo-sessao" style="display:none;position:fixed;inset:0;background:#0f0f0f;z-index:400;flex-direction:column;overflow-y:auto">
+    <div style="display:flex;align-items:center;padding:0 36px;height:50px;border-bottom:1px solid #1C1917;flex-shrink:0">
       <span style="font-family:var(--mono);font-size:10px;color:#3C3835;letter-spacing:.1em">MODO SESSÃO</span>
       <div style="flex:1"></div>
       <button onclick="mentSairModoSessao()" style="padding:5px 12px;border-radius:6px;border:1px solid #3C3835;background:transparent;color:#57534E;font-family:var(--font);font-size:12px;cursor:pointer">← Voltar</button>
     </div>
-    <div style="display:flex;align-items:center;gap:20px;padding:28px 36px 24px;border-bottom:1px solid #1C1917">
-      <div id="ment-ms-avatar" style="width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-family:Georgia,serif;flex-shrink:0"></div>
+    <div style="display:flex;align-items:center;gap:24px;padding:36px 48px 32px;border-bottom:1px solid #1C1917">
+      <div id="ment-ms-avatar" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-family:Georgia,serif;flex-shrink:0"></div>
       <div style="flex:1">
-        <div id="ment-ms-nome" style="font-family:Georgia,serif;font-size:26px;font-weight:400;color:#F5F2EC;margin-bottom:4px"></div>
-        <div style="font-family:var(--mono);font-size:11px;color:#57534E;display:flex;gap:16px;flex-wrap:wrap">
+        <div id="ment-ms-nome" style="font-family:Georgia,serif;font-size:32px;font-weight:400;color:#F5F2EC;margin-bottom:6px"></div>
+        <div style="font-family:var(--mono);font-size:11px;color:#57534E;display:flex;gap:18px">
           <span id="ment-ms-contato"></span><span id="ment-ms-desde"></span>
         </div>
       </div>
       <div style="text-align:right">
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.08em;margin-bottom:6px">PROGRESSO DO PACOTE</div>
-        <div id="ment-ms-dots" style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:5px"></div>
-        <div id="ment-ms-prog-text" style="font-family:var(--mono);font-size:10px;color:#57534E"></div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.08em;margin-bottom:8px">PROGRESSO DO PACOTE</div>
+        <div id="ment-ms-dots" style="display:flex;gap:8px;justify-content:flex-end;margin-bottom:6px"></div>
+        <div id="ment-ms-prog-text" style="font-family:var(--mono);font-size:11px;color:#57534E"></div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#1C1917;border-bottom:1px solid #1C1917;flex-shrink:0">
-      <div style="background:#0f0f0f;padding:18px 0;text-align:center">
-        <div style="font-family:Georgia,serif;font-size:30px;color:#86EFAC;line-height:1;margin-bottom:4px" id="ment-ms-realizadas">0</div>
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">REALIZADAS</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:#1C1917;border-bottom:1px solid #1C1917">
+      <div style="background:#0f0f0f;padding:22px 0;text-align:center">
+        <div style="font-family:Georgia,serif;font-size:36px;color:#86EFAC;line-height:1;margin-bottom:6px" id="ment-ms-realizadas">0</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">AULAS REALIZADAS</div>
       </div>
-      <div style="background:#0f0f0f;padding:18px 0;text-align:center">
-        <div style="font-family:Georgia,serif;font-size:30px;color:#86EFAC;line-height:1;margin-bottom:4px" id="ment-ms-restantes">0</div>
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">RESTANTES</div>
+      <div style="background:#0f0f0f;padding:22px 0;text-align:center">
+        <div style="font-family:Georgia,serif;font-size:36px;color:#86EFAC;line-height:1;margin-bottom:6px" id="ment-ms-restantes">0</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">AULAS RESTANTES</div>
       </div>
-      <div style="background:#0f0f0f;padding:18px 0;text-align:center">
-        <div style="font-family:Georgia,serif;font-size:30px;color:#86EFAC;line-height:1;margin-bottom:4px" id="ment-ms-mes">0</div>
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">ESTE MÊS</div>
+      <div style="background:#0f0f0f;padding:22px 0;text-align:center">
+        <div style="font-family:Georgia,serif;font-size:36px;color:#86EFAC;line-height:1;margin-bottom:6px" id="ment-ms-mes">0</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em">AULAS ESTE MÊS</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#1C1917;flex:1">
-      <div style="background:#0f0f0f;padding:24px 28px;overflow-y:auto">
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:14px">SESSÕES DO PACOTE</div>
+      <div style="background:#0f0f0f;padding:28px 36px">
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:16px">SESSÕES DO PACOTE</div>
         <div id="ment-ms-sessoes"></div>
       </div>
-      <div style="background:#0f0f0f;padding:24px 28px;overflow-y:auto">
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:14px">PRÓXIMA SESSÃO</div>
+      <div style="background:#0f0f0f;padding:28px 36px">
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-bottom:16px">PRÓXIMA SESSÃO</div>
         <div id="ment-ms-proxima"></div>
-        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-top:20px;margin-bottom:14px">IDEIAS & TEMAS</div>
+        <div style="font-family:var(--mono);font-size:9px;color:#3C3835;letter-spacing:.1em;margin-top:24px;margin-bottom:16px">IDEIAS & TEMAS PLANEJADOS</div>
         <div id="ment-ms-ideias"></div>
       </div>
     </div>
-  </div><!-- /ment-modo-sessao -->
+  </div>
 
-        </div><!-- /ment-main -->
-      </div><!-- /ment-app -->
-    </div><!-- /page-mentoria -->
-
-  </main>
+  <!-- MODAL MENTORIA -->
   <div id="ment-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:450;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
     <div style="background:white;border-radius:12px;padding:28px;width:460px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.15)">
       <div id="ment-modal-title" style="font-family:Georgia,serif;font-size:18px;font-weight:400;margin-bottom:4px"></div>
@@ -1844,7 +1939,6 @@ function go(id,btn){
   if(id==='home') renderHome();
   if(id==='produtos'){ safeRenderProd(); }
   if(id==='performance'){ renderVG(); }
-  if(id==='mentoria'){ mentInit(); }
 }
 
 // ===== HOME DASHBOARD =====
@@ -3464,6 +3558,273 @@ function closeMlModal() {
   mlImportRows = [];
 }
 
+// ===== IMPORTAÇÃO PLANILHA SELLERHUB =====
+let hubImportData = { sku: [], prec: [], perf: [] };
+
+function handleHubImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      hubImportData = { sku: [], prec: [], perf: [] };
+
+      // --- ABA: Performance SKU ---
+      const skuSheet = wb.Sheets['Performance SKU'];
+      if (skuSheet) {
+        const rows = XLSX.utils.sheet_to_json(skuSheet, {header:1, defval:''});
+        for (let i = 4; i < rows.length; i++) { // linha 5+ (idx 4+), pula header e exemplo
+          const r = rows[i];
+          const contaVal = String(r[0]||'').trim();
+          const skuVal = String(r[1]||'').trim();
+          const mesVal = String(r[2]||'').trim();
+          if (!contaVal || !skuVal || !mesVal) continue;
+          if (!perfContas.includes(contaVal)) continue;
+          if (!perfMonths.includes(mesVal)) continue;
+          hubImportData.sku.push({
+            conta: contaVal, sku: skuVal.toUpperCase(), mes: mesVal,
+            fat: parseFloat(r[3])||0, pedidos: parseInt(r[4])||0, unidades: parseInt(r[5])||0,
+            preco: parseFloat(r[6])||0, investimento: parseFloat(r[7])||0,
+            conv: parseFloat(r[8])||0, tacos: parseFloat(r[9])||0,
+            rebait: parseFloat(r[10])||0, mc: parseFloat(r[11])||0
+          });
+        }
+      }
+
+      // --- ABA: Precificação ---
+      const precSheet = wb.Sheets['Precificação'] || wb.Sheets['Precificacao'];
+      if (precSheet) {
+        const rows = XLSX.utils.sheet_to_json(precSheet, {header:1, defval:''});
+        for (let i = 4; i < rows.length; i++) {
+          const r = rows[i];
+          const contaVal = String(r[0]||'').trim();
+          const skuVal = String(r[1]||'').trim();
+          if (!contaVal || !skuVal) continue;
+          if (!perfContas.includes(contaVal)) continue;
+          hubImportData.prec.push({
+            conta: contaVal, sku: skuVal.toUpperCase(), desc: String(r[2]||'').trim(),
+            custo: parseFloat(r[3])||0, preco: parseFloat(r[4])||0,
+            rebait: parseFloat(r[5])||0, mc: parseFloat(r[6])||0, tacos: parseFloat(r[7])||0
+          });
+        }
+      }
+
+      // --- ABA: Performance Mensal ---
+      const perfSheet = wb.Sheets['Performance Mensal'];
+      if (perfSheet) {
+        const rows = XLSX.utils.sheet_to_json(perfSheet, {header:1, defval:''});
+        for (let i = 4; i < rows.length; i++) {
+          const r = rows[i];
+          const contaVal = String(r[0]||'').trim();
+          const mesVal = String(r[1]||'').trim();
+          if (!contaVal || !mesVal) continue;
+          if (!perfContas.includes(contaVal)) continue;
+          if (!perfMonths.includes(mesVal)) continue;
+          hubImportData.perf.push({
+            conta: contaVal, mes: mesVal,
+            fat: parseFloat(r[2])||0, pedidos: parseInt(r[3])||0, unidades: parseInt(r[4])||0,
+            conv: parseFloat(r[5])||0, tacos: parseFloat(r[6])||0,
+            rebait: parseFloat(r[7])||0, mc: parseFloat(r[8])||0
+          });
+        }
+      }
+
+      const total = hubImportData.sku.length + hubImportData.prec.length + hubImportData.perf.length;
+      if (!total) { alert('Nenhum dado encontrado. Verifique se a planilha segue o modelo SellerHub (abas: Performance SKU, Precificação, Performance Mensal).'); return; }
+
+      renderHubPreview();
+      document.getElementById('hub-modal-bg').classList.add('active');
+    } catch(err) {
+      alert('Erro ao ler a planilha.\n\n' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function hubImpTab(tab, btn) {
+  document.querySelectorAll('#hub-imp-tabs .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('hub-imp-sku-panel').style.display = tab==='sku' ? '' : 'none';
+  document.getElementById('hub-imp-prec-panel').style.display = tab==='prec' ? '' : 'none';
+  document.getElementById('hub-imp-perf-panel').style.display = tab==='perf' ? '' : 'none';
+}
+
+function renderHubPreview() {
+  const fBRL = v => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fPct = v => v > 0 ? v.toFixed(1)+'%' : '—';
+  const mesLabel = m => perfMonthFull[perfMonths.indexOf(m)] || m;
+
+  // SKU tab
+  document.getElementById('hub-imp-sku-tbody').innerHTML = hubImportData.sku.map(r => {
+    const existing = skuPerfData[r.conta]?.[r.sku]?.[r.mes];
+    const hasData = existing && (existing.fat > 0 || existing.pedidos > 0);
+    const badge = hasData
+      ? '<span class="ml-import-badge update">atualiza</span>'
+      : '<span class="ml-import-badge new">novo</span>';
+    return `<tr>
+      <td style="font-weight:600">${r.conta}</td>
+      <td style="font-family:var(--mono);font-size:12px">${r.sku}</td>
+      <td>${mesLabel(r.mes)}</td>
+      <td style="text-align:right;font-family:var(--mono)">${r.fat>0?fBRL(r.fat):'—'}</td>
+      <td style="text-align:right">${r.pedidos||'—'}</td>
+      <td style="text-align:right">${r.unidades||'—'}</td>
+      <td style="text-align:right">${r.preco>0?fBRL(r.preco):'—'}</td>
+      <td style="text-align:right">${r.investimento>0?fBRL(r.investimento):'—'}</td>
+      <td style="text-align:right">${fPct(r.conv)}</td>
+      <td style="text-align:right">${fPct(r.tacos)}</td>
+      <td style="text-align:right">${fPct(r.rebait)}</td>
+      <td style="text-align:right">${fPct(r.mc)}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="13" style="text-align:center;color:var(--slate-400);padding:20px">Nenhum dado na aba "Performance SKU"</td></tr>';
+
+  // Prec tab
+  document.getElementById('hub-imp-prec-tbody').innerHTML = hubImportData.prec.map(r => {
+    const existing = D[r.conta]?.find(d => d.sku === r.sku);
+    const badge = existing
+      ? '<span class="ml-import-badge update">atualiza</span>'
+      : '<span class="ml-import-badge new">novo</span>';
+    return `<tr>
+      <td style="font-weight:600">${r.conta}</td>
+      <td style="font-family:var(--mono);font-size:12px">${r.sku}</td>
+      <td style="font-size:12px;color:var(--slate-500);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.desc}</td>
+      <td style="text-align:right">${r.custo>0?fBRL(r.custo):'—'}</td>
+      <td style="text-align:right">${r.preco>0?fBRL(r.preco):'—'}</td>
+      <td style="text-align:right">${fPct(r.rebait)}</td>
+      <td style="text-align:right">${fPct(r.mc)}</td>
+      <td style="text-align:right">${fPct(r.tacos)}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--slate-400);padding:20px">Nenhum dado na aba "Precificação"</td></tr>';
+
+  // Perf Mensal tab
+  document.getElementById('hub-imp-perf-tbody').innerHTML = hubImportData.perf.map(r => {
+    const existing = kpiData[r.conta]?.[r.mes];
+    const hasData = existing && (existing.fat > 0 || existing.pedidos > 0);
+    const badge = hasData
+      ? '<span class="ml-import-badge update">atualiza</span>'
+      : '<span class="ml-import-badge new">novo</span>';
+    return `<tr>
+      <td style="font-weight:600">${r.conta}</td>
+      <td>${mesLabel(r.mes)}</td>
+      <td style="text-align:right;font-family:var(--mono)">${r.fat>0?fBRL(r.fat):'—'}</td>
+      <td style="text-align:right">${r.pedidos||'—'}</td>
+      <td style="text-align:right">${r.unidades||'—'}</td>
+      <td style="text-align:right">${fPct(r.conv)}</td>
+      <td style="text-align:right">${fPct(r.tacos)}</td>
+      <td style="text-align:right">${fPct(r.rebait)}</td>
+      <td style="text-align:right">${fPct(r.mc)}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--slate-400);padding:20px">Nenhum dado na aba "Performance Mensal"</td></tr>';
+
+  // Counts
+  const skuNew = hubImportData.sku.filter(r => !(skuPerfData[r.conta]?.[r.sku]?.[r.mes]?.fat > 0)).length;
+  const skuUpd = hubImportData.sku.length - skuNew;
+  const precNew = hubImportData.prec.filter(r => !D[r.conta]?.find(d => d.sku === r.sku)).length;
+  const precUpd = hubImportData.prec.length - precNew;
+
+  document.getElementById('hub-imp-sku-count').textContent = hubImportData.sku.length ? `(${hubImportData.sku.length})` : '';
+  document.getElementById('hub-imp-prec-count').textContent = hubImportData.prec.length ? `(${hubImportData.prec.length})` : '';
+  document.getElementById('hub-imp-perf-count').textContent = hubImportData.perf.length ? `(${hubImportData.perf.length})` : '';
+
+  let summaryParts = [];
+  if (hubImportData.sku.length) summaryParts.push(`<strong>SKU:</strong> ${hubImportData.sku.length} linhas (${skuNew} novos, ${skuUpd} atualizam)`);
+  if (hubImportData.prec.length) summaryParts.push(`<strong>Precificação:</strong> ${hubImportData.prec.length} SKUs (${precNew} novos, ${precUpd} atualizam)`);
+  if (hubImportData.perf.length) summaryParts.push(`<strong>Performance Mensal:</strong> ${hubImportData.perf.length} registros`);
+  document.getElementById('hub-imp-summary').innerHTML = summaryParts.join(' · ');
+}
+
+async function confirmHubImport() {
+  showSync('Importando planilha…');
+  let countSku = 0, countPrec = 0, countPerf = 0;
+
+  // 1) Precificação primeiro (cadastro base)
+  for (const r of hubImportData.prec) {
+    const existing = D[r.conta]?.find(d => d.sku === r.sku);
+    if (existing) {
+      if (r.desc) existing.desc = r.desc;
+      if (r.custo > 0) existing.custo = r.custo;
+      if (r.preco > 0) existing.preco = r.preco;
+      if (r.rebait > 0) existing.rebait = r.rebait;
+      if (r.mc > 0) existing.mc = r.mc;
+      if (r.tacos > 0) existing.tacos = r.tacos;
+      await saveSku(r.conta, existing);
+    } else {
+      const novoSku = {sku: r.sku, desc: r.desc, custo: r.custo, preco: r.preco, rebait: r.rebait, mc: r.mc, tacos: r.tacos};
+      if (!D[r.conta]) D[r.conta] = [];
+      D[r.conta].push(novoSku);
+      await saveSku(r.conta, novoSku);
+    }
+    countPrec++;
+  }
+
+  // 2) Performance por SKU
+  for (const r of hubImportData.sku) {
+    if (!skuPerfData[r.conta]) skuPerfData[r.conta] = {};
+    if (!skuPerfData[r.conta][r.sku]) skuPerfData[r.conta][r.sku] = {};
+    const tacosCalc = r.tacos > 0 ? r.tacos : (r.investimento > 0 && r.fat > 0 ? r.investimento / r.fat * 100 : 0);
+    skuPerfData[r.conta][r.sku][r.mes] = {
+      fat: r.fat, pedidos: r.pedidos, unidades: r.unidades,
+      preco: r.preco, investimento: r.investimento,
+      conv: r.conv, tacos: tacosCalc, rebait: r.rebait, mc: r.mc
+    };
+    await saveSkuHistorico(r.conta, r.sku, r.mes);
+    // Auto-cadastrar na precificação se não existir
+    const skuExist = D[r.conta]?.find(d => d.sku === r.sku);
+    if (!skuExist) {
+      const novoSku = {sku: r.sku, desc:'', custo:0, preco: r.preco||0, rebait: r.rebait||0, mc: r.mc||0, tacos: tacosCalc||0};
+      if (!D[r.conta]) D[r.conta] = [];
+      D[r.conta].push(novoSku);
+      await saveSku(r.conta, novoSku);
+    }
+    countSku++;
+  }
+
+  // 3) Performance Mensal (ajustes manuais por conta)
+  for (const r of hubImportData.perf) {
+    if (!kpiAjustes[r.conta]) kpiAjustes[r.conta] = {};
+    kpiAjustes[r.conta][r.mes] = {
+      fat: r.fat, pedidos: r.pedidos, unidades: r.unidades,
+      conv: r.conv, tacos: r.tacos, rebait: r.rebait, mc: r.mc
+    };
+    countPerf++;
+  }
+
+  // Recalcula KPIs
+  calcKpiFromSkus();
+
+  // Salvar ajustes de Performance Mensal no Supabase
+  for (const r of hubImportData.perf) {
+    await saveKpiHistorico(r.conta, r.mes);
+  }
+
+  showSync('Importado ✓', true);
+  closeHubModal();
+
+  // Refresh tudo
+  renderPrec();
+  renderSkuSel();
+  if (skuSelected) renderSkuPerf();
+  renderHist();
+  renderVG();
+  renderHome();
+
+  let msg = '✓ Importação concluída!\n\n';
+  if (countPrec) msg += `• ${countPrec} SKUs na Precificação\n`;
+  if (countSku) msg += `• ${countSku} registros de Performance por SKU\n`;
+  if (countPerf) msg += `• ${countPerf} registros de Performance Mensal\n`;
+  alert(msg);
+}
+
+function closeHubModal() {
+  document.getElementById('hub-modal-bg').classList.remove('active');
+  hubImportData = { sku: [], prec: [], perf: [] };
+}
+
 // Atualizar prévia quando mudar conta ou mês no modal
 document.addEventListener('DOMContentLoaded', () => {
   ['ml-import-conta','ml-import-month'].forEach(id => {
@@ -4481,7 +4842,7 @@ document.addEventListener('DOMContentLoaded', () => {
 //  MENTORIA — módulo standalone
 // ══════════════════════════════
 const MENT_URL = 'https://kztxwempjmuqjrwulyqh.supabase.co';
-const MENT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6dHh3ZW1wam11cWpyd3VseXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMTA5OTcsImV4cCI6MjA4OTY4Njk5N30.RaBUC7eIH3_dCMwLN7cvLntkKrYNjzl1Fn9Swej9r-Y';
+const MENT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6dHh3ZW1wam11cWpyd3VseXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDkyMzE5NzMsImV4cCI6MjAyNDgwNzk3M30.oUtvMjomMEFRkDmXQpzeBGQcO1wwqKxpRSHbKbqO3_I';
 
 async function mentFetch(path, opts={}) {
   const res = await fetch(`${MENT_URL}/rest/v1/${path}`, {
@@ -4560,7 +4921,7 @@ function mentRenderSidebar(){
         <div style="width:30px;height:30px;border-radius:50%;background:${a.cor};color:${a.cor_text};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0">${mentIniciais(a.nome)}</div>
         <div>
           <div style="font-size:13px;font-weight:500;color:#E7E5E4">${a.nome}</div>
-          <div style="font-size:10px;color:#57534E;font-family:var(--mono)">${pac?(pac.nome||`Pacote #${pac.numero}`):'Sem pacote ativo'}</div>
+          <div style="font-size:10px;color:#57534E;font-family:var(--mono)">${pac?`Pacote #${pac.numero}`:'Sem pacote ativo'}</div>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:4px">${dots}<span style="font-size:10px;color:#57534E;font-family:var(--mono);margin-left:auto">${prox?mentFmtData(prox.data):'—'}</span></div>`;
@@ -4603,32 +4964,7 @@ function mentRenderPacoteBanner(aid){
     const bg=!s?'#E4DFD4':s.status==='realizada'?'#2D6A4F':s.status==='agendada'?'#F59E0B':'#E4DFD4';
     dots+=`<div style="width:11px;height:11px;border-radius:50%;background:${bg}"></div>`;
   }
-  const nomePac = pac.nome || `Pacote #${pac.numero}`;
-  el.innerHTML=`
-    <div style="flex:1">
-      <div style="font-size:9px;font-family:var(--mono);color:#A8A29E;margin-bottom:4px">PACOTE ATUAL</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <input id="ment-pac-nome-input" value="${nomePac}" 
-          style="font-size:13px;font-weight:500;color:#1C1917;background:transparent;border:none;border-bottom:1px dashed #D6D3CD;outline:none;padding:2px 0;min-width:160px;max-width:280px;font-family:var(--font)"
-          onblur="mentSalvarNomePacote('${pac.id}',this.value)"
-          onkeydown="if(event.key==='Enter')this.blur()"
-          title="Clique para editar o nome">
-        <span style="font-size:11px;color:#A8A29E">— R$ ${pac.valor}</span>
-      </div>
-    </div>
-    <div style="display:flex;gap:6px">${dots}</div>
-    <div style="font-size:11px;font-family:var(--mono);color:#A8A29E;margin-left:14px">${real}/4 · ${mentFmtData(pac.inicio)}</div>
-    <button onclick="mentOpenNovoPacote()" class="ment-btn-ghost" style="margin-left:14px;font-size:12px">Renovar</button>`;
-}
-
-async function mentSalvarNomePacote(pacId, nome){
-  const pac=mentPacotes.find(p=>p.id===pacId); if(!pac)return;
-  const novoNome=nome.trim()||`Pacote #${pac.numero}`;
-  try{
-    await mentFetch(`mentoria_pacotes?id=eq.${pacId}`,{method:'PATCH',body:JSON.stringify({nome:novoNome})});
-    pac.nome=novoNome;
-    mentRenderSidebar();
-  }catch(e){console.error('Erro ao salvar nome do pacote',e);}
+  el.innerHTML=`<div><div style="font-size:9px;font-family:var(--mono);color:#A8A29E;margin-bottom:4px">PACOTE ATUAL</div><div style="font-size:13px;font-weight:500">Pacote #${pac.numero} — R$ ${pac.valor}</div></div><div style="display:flex;gap:6px;margin-left:auto">${dots}</div><div style="font-size:11px;font-family:var(--mono);color:#A8A29E;margin-left:14px">${real}/4 aulas · início ${mentFmtData(pac.inicio)}</div><button onclick="mentOpenNovoPacote()" class="ment-btn-ghost" style="margin-left:14px;font-size:12px">Renovar</button>`;
 }
 
 function mentRenderSessoes(aid){
@@ -4656,7 +4992,6 @@ function mentRenderSessoes(aid){
       </select>
       <div class="ment-sa">
         <button class="ment-sa-btn" onclick="mentEditarSessao('${s.id}');event.stopPropagation()">Editar</button>
-        <button class="ment-sa-btn" onclick="mentAbrirCanvas('${s.id}');event.stopPropagation()">${s.canvas_json?'▶ Canvas':'+ Canvas'}</button>
         <button class="ment-sa-btn" style="color:#9F1239;border-color:#FECDD3" onclick="mentDeletarSessao('${s.id}');event.stopPropagation()">✕</button>
       </div>`;
     lista.appendChild(item);
@@ -4755,10 +5090,6 @@ async function mentDeletarSessao(id){
   }catch(e){console.error(e);}
 }
 
-function mentAbrirCanvas(sessaoId){
-  window.open(`canvas.html?sessao=${sessaoId}`, '_blank');
-}
-
 // ── OBS ──
 async function mentSalvarObs(){
   const a=mentAlunos.find(x=>x.id===mentAtivoId); if(!a)return;
@@ -4824,7 +5155,6 @@ function mentOpenNovoPacote(){
   document.getElementById('ment-modal-title').textContent='Novo pacote';
   document.getElementById('ment-modal-sub').textContent='4 aulas · 1 por semana';
   document.getElementById('ment-modal-body').innerHTML=`
-    <div style="margin-bottom:10px"><label class="ment-label">NOME DO PACOTE</label><input id="ment-p-nome" class="ment-input" placeholder="Ex: Pacote ADS Abril, Diagnóstico Inicial..."></div>
     <div style="display:flex;gap:10px;margin-bottom:10px">
       <div style="flex:1"><label class="ment-label">VALOR (R$)</label><input id="ment-p-valor" class="ment-input" type="number" value="800"></div>
       <div style="flex:1"><label class="ment-label">INÍCIO</label><input id="ment-p-inicio" class="ment-input" type="date" value="${new Date().toISOString().split('T')[0]}"></div>
@@ -4834,13 +5164,12 @@ function mentOpenNovoPacote(){
   document.getElementById('ment-modal').style.display='flex';
 }
 async function mentSalvarPacote(){
-  const nome=document.getElementById('ment-p-nome')?.value.trim();
   const valor=parseFloat(document.getElementById('ment-p-valor')?.value)||0;
   const inicio=document.getElementById('ment-p-inicio')?.value;
   const status=document.getElementById('ment-p-status')?.value;
   const num=mentPacotes.filter(p=>p.aluno_id===mentAtivoId).length+1;
   try{
-    const [n]=await mentFetch('mentoria_pacotes',{method:'POST',body:JSON.stringify({aluno_id:mentAtivoId,nome:nome||null,valor,inicio:inicio||null,status,numero:num})});
+    const [n]=await mentFetch('mentoria_pacotes',{method:'POST',body:JSON.stringify({aluno_id:mentAtivoId,valor,inicio:inicio||null,status,numero:num})});
     mentPacotes.push(n); mentCloseModal();
     mentRenderPacoteBanner(mentAtivoId); mentRenderHistorico(mentAtivoId);
     mentRenderSessoes(mentAtivoId); mentRenderSidebar(); mentAtualizarStats();
@@ -4893,7 +5222,12 @@ function mentEntrarModoSessao(){
 }
 function mentSairModoSessao(){ document.getElementById('ment-modo-sessao').style.display='none'; }
 
-// fim do módulo mentoria
+// Hook na função go() para carregar mentoria ao entrar na aba
+const _goOriginal = go;
+function go(id, btn){
+  _goOriginal(id, btn);
+  if(id==='mentoria') mentInit();
+}
 </script>
 </body>
 </html>
