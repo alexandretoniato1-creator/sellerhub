@@ -1811,8 +1811,8 @@ td[contenteditable]:focus::after { display: none; }
 
 <script>
 // ── SUPABASE ──
-const SUPA_URL = 'https://kztxwempjmuqjrwulyqh.supabase.co';
-const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6dHh3ZW1wam11cWpyd3VseXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMTA5OTcsImV4cCI6MjA4OTY4Njk5N30.RaBUC7eIH3_dCMwLN7cvLntkKrYNjzl1Fn9Swej9r-Y';
+const SUPA_URL = 'https://dtvnoqmavqoftqyurtyv.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dm5vcW1hdnFvZnRxeXVydHl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzkxNzMsImV4cCI6MjA5MTk1NTE3M30.-u_di6GZcn9B2jCMzN59fVEvGFmlQ5lU5AVvck3xRc4';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 function showSync(msg='Salvando…', ok=false){
@@ -4680,7 +4680,7 @@ async function deleteAgenda(id){
 }
 
 // ── NOTIFICAÇÕES PUSH ──
-const PUSH_FN = 'https://kztxwempjmuqjrwulyqh.supabase.co/functions/v1/push-notify';
+const PUSH_FN = 'https://dtvnoqmavqoftqyurtyv.supabase.co/functions/v1/push-notify';
 const VAPID_PUBLIC = 'BGAQf_FV8ZfzTOe-B8nvxA8ayN5jvR0I1rqY4GVTN24Y31T2o4M5g8n9QaS916jfE5T4bDCs7-sAQOkq-RG9Cew';
 
 function urlBase64ToUint8Array(base64String) {
@@ -4841,8 +4841,8 @@ document.addEventListener('DOMContentLoaded', () => {
 // ══════════════════════════════
 //  MENTORIA — módulo standalone
 // ══════════════════════════════
-const MENT_URL = 'https://kztxwempjmuqjrwulyqh.supabase.co';
-const MENT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6dHh3ZW1wam11cWpyd3VseXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MDkyMzE5NzMsImV4cCI6MjAyNDgwNzk3M30.oUtvMjomMEFRkDmXQpzeBGQcO1wwqKxpRSHbKbqO3_I';
+const MENT_URL = 'https://dtvnoqmavqoftqyurtyv.supabase.co';
+const MENT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dm5vcW1hdnFvZnRxeXVydHl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzkxNzMsImV4cCI6MjA5MTk1NTE3M30.-u_di6GZcn9B2jCMzN59fVEvGFmlQ5lU5AVvck3xRc4';
 
 async function mentFetch(path, opts={}) {
   const res = await fetch(`${MENT_URL}/rest/v1/${path}`, {
