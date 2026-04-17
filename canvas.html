@@ -419,8 +419,8 @@ function showToast(msg){const t=document.getElementById('toast');t.textContent=m
 function esc(s){return(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 // ── SUPABASE ──
-const SB_URL='https://kztxwempjmuqjrwulyqh.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt6dHh3ZW1wam11cWpyd3VseXFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxMTA5OTcsImV4cCI6MjA4OTY4Njk5N30.RaBUC7eIH3_dCMwLN7cvLntkKrYNjzl1Fn9Swej9r-Y';
+const SB_URL='https://dtvnoqmavqoftqyurtyv.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dm5vcW1hdnFvZnRxeXVydHl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzkxNzMsImV4cCI6MjA5MTk1NTE3M30.-u_di6GZcn9B2jCMzN59fVEvGFmlQ5lU5AVvck3xRc4';
 let currentSessaoId=null;
 
 async function sbFetch(path,opts={}){
