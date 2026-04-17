@@ -55,18 +55,20 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: var(--font); background: var(--bg); color: var(--slate-900); overflow-x: hidden; }
 
-/* PASSWORD */
+/* LOGIN */
 #pw-screen { position: fixed; inset: 0; z-index: 1000; background: var(--slate-900); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 24px; }
 #pw-screen.hidden { display: none; }
 .pw-logo { font-size: 28px; font-weight: 600; color: var(--white); letter-spacing: -0.5px; }
 .pw-logo span { color: var(--coral-500); }
-.pw-wrap { display: flex; flex-direction: column; gap: 12px; align-items: center; }
-.pw-input { width: 280px; padding: 12px 16px; border: 1px solid var(--slate-600); border-radius: var(--radius); background: var(--slate-700); color: var(--white); font-family: var(--font); font-size: 15px; outline: none; text-align: center; transition: border var(--transition); }
+.pw-wrap { display: flex; flex-direction: column; gap: 12px; align-items: center; width: 280px; }
+.pw-label { width: 280px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-400); margin-bottom: -6px; text-align: left; font-family: var(--font); }
+.pw-input { width: 280px; padding: 12px 16px; border: 1px solid var(--slate-600); border-radius: var(--radius); background: var(--slate-700); color: var(--white); font-family: var(--font); font-size: 15px; outline: none; text-align: left; transition: border var(--transition); }
 .pw-input::placeholder { color: var(--slate-400); }
 .pw-input:focus { border-color: var(--coral-500); }
-.pw-btn { width: 280px; padding: 12px; background: var(--coral-500); color: var(--white); border: none; border-radius: var(--radius); font-family: var(--font); font-size: 15px; font-weight: 500; cursor: pointer; transition: background var(--transition); }
+.pw-btn { width: 280px; padding: 12px; background: var(--coral-500); color: var(--white); border: none; border-radius: var(--radius); font-family: var(--font); font-size: 15px; font-weight: 500; cursor: pointer; transition: background var(--transition); margin-top: 4px; }
 .pw-btn:hover { background: var(--coral-600); }
 .pw-error { color: var(--coral-400); font-size: 13px; min-height: 20px; }
+.pw-loading { color: var(--slate-400); font-size: 13px; min-height: 20px; }
 
 /* LAYOUT */
 #app { display: none; }
@@ -795,6 +797,82 @@ td[contenteditable]:focus::after { display: none; }
 }
 .ptr-spin.spinning { animation: spin .6s linear infinite; }
 
+/* ── ADMIN TOOLBAR ── */
+.admin-toolbar {
+  position: fixed; bottom: 20px; right: 20px; z-index: 500;
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+}
+.admin-toolbar.hidden { display: none; }
+.admin-fab {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--slate-900); color: var(--white); border: 1.5px solid var(--slate-600);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px; transition: all var(--transition);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+.admin-fab:hover { background: var(--slate-700); border-color: var(--coral-500); }
+.admin-fab.active { background: var(--coral-500); border-color: var(--coral-500); }
+.admin-panel {
+  background: var(--slate-900); border: 1px solid var(--slate-600);
+  border-radius: var(--radius); padding: 16px; width: 220px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  display: none; flex-direction: column; gap: 6px;
+}
+.admin-panel.open { display: flex; }
+.admin-panel-title {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--slate-400); margin-bottom: 4px;
+  font-family: var(--mono);
+}
+.admin-toggle-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 5px 0; border-bottom: 1px solid var(--slate-700);
+}
+.admin-toggle-row:last-of-type { border-bottom: none; }
+.admin-toggle-label { font-size: 12px; color: var(--slate-200); font-family: var(--font); }
+.admin-toggle {
+  width: 32px; height: 18px; border-radius: 9px;
+  background: var(--slate-600); border: none; cursor: pointer;
+  position: relative; transition: background var(--transition); flex-shrink: 0;
+}
+.admin-toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%; background: var(--white);
+  transition: transform var(--transition);
+}
+.admin-toggle.on { background: var(--coral-500); }
+.admin-toggle.on::after { transform: translateX(14px); }
+.admin-divider { height: 1px; background: var(--slate-700); margin: 4px 0; }
+.admin-btn-sm {
+  width: 100%; padding: 7px 10px; border-radius: var(--radius-sm);
+  background: var(--slate-700); color: var(--slate-200); border: none;
+  font-family: var(--font); font-size: 12px; cursor: pointer;
+  transition: all var(--transition); text-align: left;
+}
+.admin-btn-sm:hover { background: var(--slate-600); color: var(--white); }
+
+/* Sidebar collapsed */
+body.sidebar-collapsed .sidebar { width: 0 !important; transform: translateX(-240px) !important; overflow: hidden; }
+body.sidebar-collapsed .main { margin-left: 0 !important; }
+body.sidebar-collapsed .hamburger { display: none; }
+
+/* Nav item hidden in presentation mode */
+.nav-item.pres-hidden { display: none !important; }
+
+/* User badge on sidebar bottom */
+.sidebar-user-badge {
+  margin: auto 12px 12px;
+  padding: 8px 12px; border-radius: var(--radius-sm);
+  background: var(--slate-700); border: 1px solid var(--slate-600);
+  display: flex; align-items: center; gap: 8px;
+}
+.sidebar-user-role { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.sidebar-user-role.admin { color: var(--coral-400); }
+.sidebar-user-role.mentorado { color: #86EFAC; }
+.sidebar-user-name { font-size: 12px; color: var(--slate-200); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sidebar-logout { background: none; border: none; cursor: pointer; color: var(--slate-400); font-size: 16px; padding: 2px 4px; transition: color var(--transition); }
+.sidebar-logout:hover { color: var(--coral-400); }
+
 /* ── MENTORIA ── */
 #page-mentoria { padding: 0 !important; }
 .ment-btn-ghost { padding:6px 14px;border-radius:6px;border:1px solid #D6D3CD;background:transparent;color:#78716C;font-family:var(--font);font-size:13px;cursor:pointer;transition:all .15s; }
@@ -847,9 +925,13 @@ td[contenteditable]:focus::after { display: none; }
 <div id="pw-screen">
   <div class="pw-logo">Seller<span>Hub</span></div>
   <div class="pw-wrap">
-    <input type="password" class="pw-input" id="pw-input" placeholder="Senha de acesso" autofocus>
+    <span class="pw-label">Usuário</span>
+    <input type="text" class="pw-input" id="pw-user" placeholder="seu usuário" autocomplete="username" autocapitalize="none">
+    <span class="pw-label">Senha</span>
+    <input type="password" class="pw-input" id="pw-input" placeholder="sua senha" autocomplete="current-password">
     <button class="pw-btn" onclick="checkPw()">Entrar</button>
     <div class="pw-error" id="pw-error"></div>
+    <div class="pw-loading" id="pw-loading"></div>
   </div>
 </div>
 
@@ -889,8 +971,31 @@ td[contenteditable]:focus::after { display: none; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         Mentoria
       </button>
+      <button class="nav-item" id="nav-usuarios" onclick="go('usuarios',this);loadUsers()" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="23" y2="17"/><line x1="20" y1="14" x2="26" y2="14"/></svg>
+        Usuários
+      </button>
+    </div>
+    <!-- User badge -->
+    <div class="sidebar-user-badge" id="sidebar-user-badge">
+      <span class="sidebar-user-role" id="sidebar-user-role">Admin</span>
+      <span class="sidebar-user-name" id="sidebar-user-name">—</span>
+      <button class="sidebar-logout" onclick="logout()" title="Sair">⏏</button>
     </div>
   </nav>
+
+  <!-- ADMIN TOOLBAR (só aparece para admin) -->
+  <div class="admin-toolbar hidden" id="admin-toolbar">
+    <div class="admin-panel" id="admin-panel">
+      <div class="admin-panel-title">🎛 Modo Apresentação</div>
+      <!-- Toggles de abas -->
+      <div id="admin-nav-toggles"></div>
+      <div class="admin-divider"></div>
+      <button class="admin-btn-sm" id="admin-collapse-btn" onclick="adminCollapseAll()">⬛ Minimizar sidebar</button>
+      <button class="admin-btn-sm" id="admin-expand-btn" onclick="adminExpandAll()" style="display:none">☰ Restaurar sidebar</button>
+    </div>
+    <button class="admin-fab" id="admin-fab" onclick="toggleAdminPanel()" title="Ferramentas de apresentação">🎛</button>
+  </div>
 
   <main class="main">
     <!-- HOME -->
@@ -933,6 +1038,28 @@ td[contenteditable]:focus::after { display: none; }
         </div>
         <div id="home-notes"></div>
       </div>
+    </div>
+
+    <!-- USUÁRIOS (admin only) -->
+    <div class="page" id="page-usuarios">
+      <div class="page-title">Usuários</div>
+      <div class="page-subtitle">Gerencie o acesso de mentorados ao sistema</div>
+      <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center">
+        <button class="btn btn-primary" onclick="openNovoUsuario()">+ Novo usuário</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead class="hub-thead"><tr>
+            <th>Usuário</th>
+            <th>Perfil</th>
+            <th>Mentorado vinculado</th>
+            <th>Status</th>
+            <th></th>
+          </tr></thead>
+          <tbody class="hub-tbody" id="users-tbody"></tbody>
+        </table>
+      </div>
+      <div id="users-empty" style="display:none;text-align:center;padding:40px;color:var(--slate-400);font-size:14px">Nenhum usuário cadastrado</div>
     </div>
 
     <!-- PERFORMANCE -->
@@ -1642,7 +1769,7 @@ td[contenteditable]:focus::after { display: none; }
           </div>
           <div id="ment-alunos-list" style="flex:1;overflow-y:auto;padding:8px"></div>
           <div style="padding:10px">
-            <button onclick="mentOpenNovoAluno()" style="width:100%;padding:10px;border:1px dashed var(--slate-600);border-radius:6px;background:transparent;color:var(--slate-500);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#86EFAC';this.style.color='#86EFAC'" onmouseout="this.style.borderColor='var(--slate-600)';this.style.color='var(--slate-500)'">+ Novo mentorado</button>
+            <button id="ment-btn-novo-aluno" onclick="mentOpenNovoAluno()" style="width:100%;padding:10px;border:1px dashed var(--slate-600);border-radius:6px;background:transparent;color:var(--slate-500);font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='#86EFAC';this.style.color='#86EFAC'" onmouseout="this.style.borderColor='var(--slate-600)';this.style.color='var(--slate-500)'">+ Novo mentorado</button>
           </div>
         </div>
 
@@ -1668,9 +1795,9 @@ td[contenteditable]:focus::after { display: none; }
                 </div>
               </div>
               <div style="display:flex;gap:8px;flex-shrink:0">
-                <button onclick="mentEditarAluno()" class="ment-btn-ghost">Editar</button>
+                <button id="ment-btn-editar-aluno" onclick="mentEditarAluno()" class="ment-btn-ghost">Editar</button>
                 <button onclick="mentEntrarModoSessao()" style="padding:7px 14px;border-radius:6px;border:1px solid #FCD34D;background:transparent;color:#FCD34D;font-family:var(--font);font-size:12px;cursor:pointer;transition:all .15s">▶ Modo sessão</button>
-                <button onclick="mentAbrirNovaSessao()" class="ment-btn-primary">+ Nova sessão</button>
+                <button id="ment-btn-nova-sessao-header" onclick="mentAbrirNovaSessao()" class="ment-btn-primary">+ Nova sessão</button>
               </div>
             </div>
 
@@ -1828,25 +1955,163 @@ function showSync(msg='Salvando…', ok=false){
 function hideSync(){ document.getElementById('sync-indicator')?.classList.remove('visible'); }
 
 // PASSWORD + SESSÃO PERSISTENTE
-const PW='Ale07042000';
-const SESSION_KEY='sellerhub_auth';
+const SESSION_KEY='sellerhub_auth_v2';
+
+// Estado do usuário atual
+let currentUser = null; // { username, role, aluno_id }
 
 document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')checkPw()});
+document.getElementById('pw-user').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('pw-input').focus()});
 
-function checkPw(){
-  if(document.getElementById('pw-input').value===PW){
-    localStorage.setItem(SESSION_KEY, btoa(Date.now().toString()));
+async function checkPw(){
+  const username = (document.getElementById('pw-user').value||'').trim();
+  const password = document.getElementById('pw-input').value;
+  const errEl = document.getElementById('pw-error');
+  const loadEl = document.getElementById('pw-loading');
+  errEl.textContent = '';
+  if(!username){ errEl.textContent='Informe o usuário'; return; }
+  if(!password){ errEl.textContent='Informe a senha'; return; }
+
+  loadEl.textContent = 'Verificando…';
+  try {
+    const { data, error } = await sb
+      .from('app_users')
+      .select('*')
+      .eq('username', username)
+      .eq('password_hash', password)
+      .eq('active', true)
+      .single();
+
+    loadEl.textContent = '';
+    if(error || !data){
+      errEl.textContent = 'Usuário ou senha incorretos';
+      document.getElementById('pw-input').value = '';
+      return;
+    }
+    currentUser = { username: data.username, role: data.role, aluno_id: data.aluno_id };
+    localStorage.setItem(SESSION_KEY, btoa(JSON.stringify({ ...currentUser, ts: Date.now() })));
     enterApp();
-  } else {
-    document.getElementById('pw-error').textContent='Senha incorreta';
-    document.getElementById('pw-input').value='';
+  } catch(e){
+    loadEl.textContent = '';
+    errEl.textContent = 'Erro de conexão. Tente novamente.';
   }
+}
+
+function logout(){
+  localStorage.removeItem(SESSION_KEY);
+  currentUser = null;
+  location.reload();
 }
 
 function enterApp(){
   document.getElementById('pw-screen').classList.add('hidden');
   document.getElementById('app').classList.add('active');
+  applyUserRole();
   initApp();
+}
+
+function applyUserRole(){
+  if(!currentUser) return;
+  // Badge
+  document.getElementById('sidebar-user-name').textContent = currentUser.username;
+  const roleEl = document.getElementById('sidebar-user-role');
+  roleEl.textContent = currentUser.role === 'admin' ? 'Admin' : 'Mentorado';
+  roleEl.className = 'sidebar-user-role ' + currentUser.role;
+
+  if(currentUser.role === 'mentorado'){
+    // Esconde todas as abas exceto mentoria
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      const onclick = btn.getAttribute('onclick') || '';
+      if(!onclick.includes("'mentoria'")) btn.style.display = 'none';
+    });
+    // Oculta botões admin da mentoria (serão aplicados depois que mentInit rodar)
+    // Usamos MutationObserver para esperar os elementos aparecerem
+    applyMentoradoRestrictions();
+    // Vai direto para mentoria
+    go('mentoria', document.querySelector('.nav-item[onclick*="mentoria"]'));
+  } else {
+    // Admin: mostra toolbar de apresentação e aba de usuários
+    document.getElementById('admin-toolbar').classList.remove('hidden');
+    document.getElementById('nav-usuarios').style.display = '';
+    // Garante que Home fique ativo
+    document.getElementById('nav-home').classList.add('active');
+    buildAdminToggles();
+  }
+}
+
+function applyMentoradoRestrictions(){
+  // Oculta botões que mentorado não deve ver
+  const toHide = [
+    'ment-btn-novo-aluno',
+    'ment-btn-editar-aluno',
+    'ment-btn-nova-sessao-header',
+  ];
+  toHide.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.style.display = 'none';
+  });
+  // Agenda checagem periódica (para elementos que renderizam dinamicamente)
+  const observer = new MutationObserver(() => {
+    toHide.forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+    // Oculta também botões de nova sessão que aparecem dinamicamente
+    document.querySelectorAll('.ment-btn-primary, button[onclick*="mentAbrirNovaSessao"], button[onclick*="mentOpenNovoPacote"]').forEach(btn => {
+      if(!btn.id || btn.id !== 'ment-modal-confirm') btn.style.display = 'none';
+    });
+  });
+  observer.observe(document.getElementById('page-mentoria'), { childList: true, subtree: true });
+}
+
+function buildAdminToggles(){
+  const nav = document.querySelectorAll('.nav-item');
+  const container = document.getElementById('admin-nav-toggles');
+  container.innerHTML = '';
+  nav.forEach(btn => {
+    const onclick = btn.getAttribute('onclick') || '';
+    const label = btn.textContent.trim().split('\n').pop().trim();
+    const id = 'toggle_' + label.replace(/\s/g,'_');
+    const row = document.createElement('div');
+    row.className = 'admin-toggle-row';
+    row.innerHTML = `
+      <span class="admin-toggle-label">${label}</span>
+      <button class="admin-toggle on" id="${id}" onclick="adminToggleNav(this,'${label}')"></button>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function adminToggleNav(btn, label){
+  btn.classList.toggle('on');
+  const isOn = btn.classList.contains('on');
+  document.querySelectorAll('.nav-item').forEach(navBtn => {
+    const navLabel = navBtn.textContent.trim().split('\n').pop().trim();
+    if(navLabel === label){
+      navBtn.classList.toggle('pres-hidden', !isOn);
+    }
+  });
+}
+
+function toggleAdminPanel(){
+  const panel = document.getElementById('admin-panel');
+  const fab = document.getElementById('admin-fab');
+  panel.classList.toggle('open');
+  fab.classList.toggle('active');
+}
+
+let sidebarCollapsed = false;
+function adminCollapseAll(){
+  sidebarCollapsed = true;
+  document.body.classList.add('sidebar-collapsed');
+  document.getElementById('admin-expand-btn').style.display = '';
+  document.getElementById('admin-collapse-btn').style.display = 'none';
+}
+function adminExpandAll(){
+  sidebarCollapsed = false;
+  document.body.classList.remove('sidebar-collapsed');
+  document.getElementById('admin-expand-btn').style.display = 'none';
+  document.getElementById('admin-collapse-btn').style.display = '';
 }
 
 // Verificar sessão salva ao carregar
@@ -1854,10 +2119,14 @@ function enterApp(){
   const saved = localStorage.getItem(SESSION_KEY);
   if(saved){
     try {
-      const ts = parseInt(atob(saved));
-      const age = Date.now() - ts;
+      const obj = JSON.parse(atob(saved));
+      const age = Date.now() - (obj.ts || 0);
       const sevenDays = 7 * 24 * 60 * 60 * 1000;
-      if(age < sevenDays){ enterApp(); return; }
+      if(age < sevenDays && obj.username && obj.role){
+        currentUser = { username: obj.username, role: obj.role, aluno_id: obj.aluno_id };
+        enterApp();
+        return;
+      }
     } catch(e){}
     localStorage.removeItem(SESSION_KEY);
   }
@@ -4866,14 +5135,24 @@ const MENT_CORES=[
 async function mentInit() {
   if (mentLoaded) return;
   try {
+    // Se for mentorado, filtra só os dados dele
+    const alunoFilter = (currentUser && currentUser.role === 'mentorado' && currentUser.aluno_id)
+      ? `?id=eq.${currentUser.aluno_id}&select=*`
+      : '?select=*&order=criado_em.asc';
+
     const [a,p,s] = await Promise.all([
-      mentFetch('mentoria_alunos?select=*&order=criado_em.asc'),
+      mentFetch('mentoria_alunos' + alunoFilter),
       mentFetch('mentoria_pacotes?select=*&order=criado_em.asc'),
       mentFetch('mentoria_sessoes?select=*&order=numero.asc'),
     ]);
     mentAlunos=a||[]; mentPacotes=p||[]; mentSessoes=s||[];
     mentLoaded=true;
     mentRenderSidebar(); mentAtualizarStats();
+
+    // Se for mentorado e só tem 1 aluno, abre automaticamente
+    if(currentUser && currentUser.role === 'mentorado' && mentAlunos.length === 1){
+      mentAbrirPerfil(mentAlunos[0].id);
+    }
   } catch(e){ console.error('mentoria load error',e); }
 }
 
@@ -5233,6 +5512,134 @@ window.go = function(id, btn){
   _goOriginal(id, btn);
   if(id==='mentoria') mentInit();
 };
+
+// ── GERENCIAMENTO DE USUÁRIOS (admin only) ──
+let usersData = [];
+let usersMentorados = [];
+
+async function loadUsers(){
+  try {
+    const [u, a] = await Promise.all([
+      sb.from('app_users').select('*').order('created_at'),
+      sb.from('mentoria_alunos').select('id,nome').order('nome'),
+    ]);
+    usersData = u.data || [];
+    usersMentorados = a.data || [];
+    renderUsers();
+  } catch(e){ console.error('loadUsers error',e); }
+}
+
+function renderUsers(){
+  const tbody = document.getElementById('users-tbody');
+  const empty = document.getElementById('users-empty');
+  if(!usersData.length){ tbody.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display='none';
+  tbody.innerHTML = usersData.map(u => {
+    const aluno = usersMentorados.find(a => a.id === u.aluno_id);
+    const roleBadge = u.role === 'admin'
+      ? `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--coral-50);color:var(--coral-600)">Admin</span>`
+      : `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:#E8F5EE;color:#2D6A4F">Mentorado</span>`;
+    const statusBadge = u.active
+      ? `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--green-50);color:var(--green-600)">Ativo</span>`
+      : `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--slate-100);color:var(--slate-400)">Inativo</span>`;
+    return `<tr>
+      <td style="font-family:var(--mono);font-size:12px;font-weight:500">${u.username}</td>
+      <td>${roleBadge}</td>
+      <td style="font-size:12px;color:var(--slate-600)">${aluno ? aluno.nome : u.role === 'admin' ? '—' : '<span style="color:var(--coral-400)">Não vinculado</span>'}</td>
+      <td>${statusBadge}</td>
+      <td style="text-align:right;padding-right:12px">
+        <div style="display:flex;gap:6px;justify-content:flex-end">
+          <button class="btn-hub-edit" onclick="openEditUsuario('${u.id}')">Editar</button>
+          ${u.username !== 'admin' ? `<button class="btn-hub-del" onclick="toggleUserActive('${u.id}',${!u.active})">${u.active ? 'Desativar' : 'Ativar'}</button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openNovoUsuario(){
+  openUserModal(null);
+}
+function openEditUsuario(id){
+  const u = usersData.find(x => x.id === id);
+  if(u) openUserModal(u);
+}
+
+function openUserModal(user){
+  const alunoOptions = usersMentorados.map(a =>
+    `<option value="${a.id}" ${user && user.aluno_id === a.id ? 'selected' : ''}>${a.nome}</option>`
+  ).join('');
+
+  const isEdit = !!user;
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-title">${isEdit ? 'Editar usuário' : 'Novo usuário'}</div>
+    <div class="edit-row-fields" style="grid-template-columns:1fr 1fr;margin-top:16px">
+      <div class="m-field full"><label>Usuário (login)</label>
+        <input type="text" id="um-username" value="${user ? user.username : ''}" placeholder="ex: joao.silva" autocapitalize="none" style="font-family:var(--mono)">
+      </div>
+      <div class="m-field full"><label>Senha ${isEdit ? '(deixe em branco para manter)' : ''}</label>
+        <input type="text" id="um-password" value="${isEdit ? '' : ''}" placeholder="senha de acesso">
+      </div>
+      <div class="m-field"><label>Perfil</label>
+        <select id="um-role" onchange="toggleAlunoField(this.value)">
+          <option value="mentorado" ${!user || user.role === 'mentorado' ? 'selected' : ''}>Mentorado</option>
+          <option value="admin" ${user && user.role === 'admin' ? 'selected' : ''}>Admin</option>
+        </select>
+      </div>
+      <div class="m-field" id="um-aluno-field" ${user && user.role === 'admin' ? 'style="display:none"' : ''}>
+        <label>Mentorado vinculado</label>
+        <select id="um-aluno">
+          <option value="">— Nenhum —</option>
+          ${alunoOptions}
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveUser(${isEdit ? `'${user.id}'` : 'null'})">${isEdit ? 'Salvar' : 'Criar'}</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.add('active');
+}
+
+function toggleAlunoField(role){
+  document.getElementById('um-aluno-field').style.display = role === 'admin' ? 'none' : '';
+}
+
+async function saveUser(id){
+  const username = (document.getElementById('um-username').value||'').trim().toLowerCase();
+  const password = (document.getElementById('um-password').value||'').trim();
+  const role     = document.getElementById('um-role').value;
+  const aluno_id = document.getElementById('um-aluno')?.value || null;
+
+  if(!username){ alert('Informe o usuário'); return; }
+  if(!id && !password){ alert('Informe a senha'); return; }
+
+  const payload = { username, role, aluno_id: role === 'mentorado' && aluno_id ? aluno_id : null };
+  if(password) payload.password_hash = password;
+
+  try {
+    if(id){
+      const { error } = await sb.from('app_users').update(payload).eq('id', id);
+      if(error) throw error;
+    } else {
+      const { error } = await sb.from('app_users').insert({ ...payload, password_hash: password });
+      if(error) throw error;
+    }
+    closeModal();
+    await loadUsers();
+  } catch(e){
+    alert('Erro ao salvar: ' + (e.message || 'tente novamente'));
+    console.error(e);
+  }
+}
+
+async function toggleUserActive(id, active){
+  try {
+    await sb.from('app_users').update({ active }).eq('id', id);
+    await loadUsers();
+  } catch(e){ alert('Erro ao atualizar status'); }
+}
 </script>
 </body>
 </html>
