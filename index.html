@@ -4992,6 +4992,7 @@ function mentRenderSessoes(aid){
       </select>
       <div class="ment-sa">
         <button class="ment-sa-btn" onclick="mentEditarSessao('${s.id}');event.stopPropagation()">Editar</button>
+        <button class="ment-sa-btn" onclick="mentAbrirCanvas('${s.id}');event.stopPropagation()">${s.canvas_json?'▶ Canvas':'+ Canvas'}</button>
         <button class="ment-sa-btn" style="color:#9F1239;border-color:#FECDD3" onclick="mentDeletarSessao('${s.id}');event.stopPropagation()">✕</button>
       </div>`;
     lista.appendChild(item);
@@ -5088,6 +5089,10 @@ async function mentDeletarSessao(id){
     mentRenderSessoes(mentAtivoId); mentRenderPacoteBanner(mentAtivoId);
     mentAtualizarStats(); mentRenderSidebar();
   }catch(e){console.error(e);}
+}
+
+function mentAbrirCanvas(sessaoId){
+  window.open(`canvas.html?sessao=${sessaoId}`, '_blank');
 }
 
 // ── OBS ──
