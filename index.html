@@ -696,6 +696,7 @@ td[contenteditable]:focus::after { display: none; }
   border-radius: 50%; animation: spin .6s linear infinite; flex-shrink: 0;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
@@ -5271,7 +5272,7 @@ function mentRenderSessoes(aid){
       </select>
       <div class="ment-sa">
         <button class="ment-sa-btn" onclick="mentEditarSessao('${s.id}');event.stopPropagation()">Editar</button>
-        <button class="ment-sa-btn" onclick="mentAbrirCanvas('${s.id}');event.stopPropagation()">${s.canvas_json?'▶ Canvas':'+ Canvas'}</button>
+        <button class="ment-sa-btn" onclick="mentAbrirCanvas('${s.id}');event.stopPropagation()" style="${currentUser&&currentUser.role==='mentorado'?'color:#22c55e;border-color:#22c55e44':''}">&#x25B6; Canvas</button>
         <button class="ment-sa-btn" style="color:#9F1239;border-color:#FECDD3" onclick="mentDeletarSessao('${s.id}');event.stopPropagation()">✕</button>
       </div>`;
     lista.appendChild(item);
@@ -5371,7 +5372,35 @@ async function mentDeletarSessao(id){
 }
 
 function mentAbrirCanvas(sessaoId){
-  window.open(`canvas.html?sessao=${sessaoId}`, '_blank');
+  if(currentUser && currentUser.role === 'admin'){
+    // Admin abre em nova aba para editar
+    window.open(`canvas.html?sessao=${sessaoId}`, '_blank');
+  } else {
+    // Aluno vê inline dentro do app
+    abrirCanvasViewer(sessaoId);
+  }
+}
+
+function abrirCanvasViewer(sessaoId){
+  let overlay = document.getElementById('canvas-viewer-overlay');
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'canvas-viewer-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:450;background:#0f0f0f;display:flex;flex-direction:column;';
+    overlay.innerHTML = `
+      <div style="display:flex;align-items:center;padding:0 20px;height:48px;border-bottom:1px solid #1C1917;flex-shrink:0;gap:12px">
+        <div style="width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e88;animation:pulse 1.5s infinite"></div>
+        <span style="font-family:var(--mono);font-size:11px;color:#3C3835">CANVAS AO VIVO</span>
+        <div style="flex:1"></div>
+        <button onclick="document.getElementById('canvas-viewer-overlay').style.display='none'" style="padding:5px 12px;border-radius:6px;border:1px solid #3C3835;background:transparent;color:#57534E;font-family:var(--font);font-size:12px;cursor:pointer">← Voltar</button>
+      </div>
+      <iframe id="canvas-iframe" src="canvas.html?sessao=${sessaoId}&view=1" style="flex:1;border:none;width:100%;"></iframe>
+    `;
+    document.body.appendChild(overlay);
+  } else {
+    document.getElementById('canvas-iframe').src = `canvas.html?sessao=${sessaoId}&view=1`;
+    overlay.style.display = 'flex';
+  }
 }
 
 // ── OBS ──
