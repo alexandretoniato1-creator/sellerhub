@@ -414,7 +414,7 @@ td[contenteditable]:focus::after { display: none; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 
 /* FAB */
-.fab { display: none; position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; background: var(--coral-500); color: var(--white); border: none; border-radius: 50%; font-size: 28px; cursor: pointer; box-shadow: 0 4px 16px rgba(216,90,48,0.35); z-index: 90; transition: transform var(--transition); align-items: center; justify-content: center; }
+.fab { display: none; position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; background: var(--coral-500); color: var(--white); border: none; border-radius: 50%; font-size: 28px; cursor: pointer; box-shadow: 0 4px 16px rgba(216,90,48,0.35); z-index: 95; transition: transform var(--transition); align-items: center; justify-content: center; }
 .fab:hover { transform: scale(1.05); }
 
 /* HAMBURGER */
@@ -909,6 +909,41 @@ body.sidebar-collapsed .hamburger { display: none; }
 .ment-ms-snum { width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;background:#1C1917;color:#57534E;flex-shrink:0; }
 .ment-ms-snum.done { background:rgba(134,239,172,.1);color:#86EFAC; }
 .ment-ms-snum.current { background:rgba(252,211,77,.1);color:#FCD34D; }
+
+/* ── CATEGORIAS AGENDA — importância ── */
+.cat-imp-green  { --cat-bg:var(--green-50);  --cat-text:var(--green-600);  --cat-border:var(--green-100);  --cat-dot:var(--green-600); }
+.cat-imp-yellow { --cat-bg:var(--amber-50);  --cat-text:var(--amber-600);  --cat-border:var(--amber-100);  --cat-dot:var(--amber-600); }
+.cat-imp-red    { --cat-bg:var(--coral-50);  --cat-text:var(--coral-600);  --cat-border:var(--coral-200);  --cat-dot:var(--coral-500); }
+.cal-pill.cat-dyn      { background:var(--cat-bg); color:var(--cat-text); }
+.cal-event-bar.cat-dyn { background:var(--cat-dot); }
+.badge-dyn             { background:var(--cat-bg); color:var(--cat-text); border:1px solid var(--cat-border); }
+.home-evt-dot.cat-dyn  { background:var(--cat-dot); }
+.cat-manage-row { display:flex; align-items:center; gap:10px; padding:9px 14px; border:1px solid var(--slate-100); border-radius:var(--radius-sm); margin-bottom:6px; background:var(--white); transition:box-shadow var(--transition); }
+.cat-manage-row:hover { box-shadow:var(--shadow); }
+.cat-manage-emoji { font-size:18px; width:28px; text-align:center; flex-shrink:0; }
+.cat-manage-nome  { flex:1; font-size:13px; font-weight:500; color:var(--slate-800); }
+.cat-imp-badge { font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; }
+.cat-imp-badge.green  { background:var(--green-50);  color:var(--green-600); }
+.cat-imp-badge.yellow { background:var(--amber-50);  color:var(--amber-600); }
+.cat-imp-badge.red    { background:var(--coral-50);  color:var(--coral-600); }
+.imp-selector { display:flex; gap:6px; margin-top:8px; }
+.imp-btn { flex:1; padding:8px 4px; border-radius:var(--radius-sm); border:2px solid transparent; cursor:pointer; font-family:var(--font); font-size:12px; font-weight:600; transition:all var(--transition); text-align:center; }
+.imp-btn.green  { background:var(--green-50);  color:var(--green-600);  border-color:var(--green-100); }
+.imp-btn.yellow { background:var(--amber-50);  color:var(--amber-600);  border-color:var(--amber-100); }
+.imp-btn.red    { background:var(--coral-50);  color:var(--coral-600);  border-color:var(--coral-200); }
+.imp-btn.selected.green  { border-color:var(--green-600);  box-shadow:0 0 0 3px rgba(59,109,17,.12); }
+.imp-btn.selected.yellow { border-color:var(--amber-600);  box-shadow:0 0 0 3px rgba(133,79,11,.12); }
+.imp-btn.selected.red    { border-color:var(--coral-500);  box-shadow:0 0 0 3px rgba(216,90,48,.12); }
+.cal-manage-cats-btn { font-size:11px; color:var(--slate-400); background:none; border:none; cursor:pointer; padding:4px 8px; border-radius:var(--radius-sm); font-family:var(--font); transition:all var(--transition); }
+.cal-manage-cats-btn:hover { color:var(--coral-500); background:var(--coral-50); }
+
+/* ── FIX MOBILE: FAB não sobrepõe botão "Novo evento" ── */
+@media (max-width: 768px) {
+  .cal-sidebar-add { padding-bottom: calc(24px + 56px + 16px); }
+  .admin-toolbar { bottom:20px; right:auto; left:16px; align-items:flex-start; z-index:90; }
+  .admin-panel { left:0; right:auto; }
+  .cal-list-view { padding-bottom: calc(24px + 56px + 16px); }
+}
 </style>
 </head>
 <body>
@@ -5670,5 +5705,305 @@ async function toggleUserActive(id, active){
   } catch(e){ alert('Erro ao atualizar status'); }
 }
 </script>
+
+<script>
+// ══════════════════════════════════════════════
+//  PATCH — Categorias dinâmicas + lembrete livre
+// ══════════════════════════════════════════════
+let agendaCats = [];
+
+function catImpClass(cor) { return `cat-imp-${cor || 'green'}`; }
+function catById(id) { return agendaCats.find(c => c.id === id) || null; }
+function catOfEvent(ev) {
+  if (ev.cat_id) return catById(ev.cat_id);
+  const legadoMap = { contrato:'red', lancamento:'green', mentoria:'yellow', anotacao:'green' };
+  const emojiMap  = { contrato:'📋', lancamento:'🚀', mentoria:'🎓', anotacao:'📝' };
+  return { id:null, nome:ev.cat, emoji: emojiMap[ev.cat]||'📅', cor: legadoMap[ev.cat]||'green' };
+}
+
+async function loadAgendaCategorias() {
+  try {
+    const { data, error } = await sb.from('agenda_categorias').select('*').eq('ativo',true).order('ordem');
+    if (error) throw error;
+    agendaCats = data || [];
+  } catch(e) { console.error('loadAgendaCategorias',e); agendaCats=[]; }
+}
+
+// ── openCalModal sobrescrito ──
+window.openCalModal = function(eid, defaultDate) {
+  const isNoteEvt = typeof eid==='string' && eid && eid.startsWith('n');
+  if (isNoteEvt) { alert('Este evento vem de uma Anotação. Edite-o na aba Anotações.'); return; }
+  const ev = eid ? calEvents.find(e=>e.id===eid) : null;
+  const evCat = ev ? catOfEvent(ev) : null;
+  const catOptions = agendaCats.map(c =>
+    `<option value="${c.id}" ${evCat && evCat.id===c.id?'selected':''}>${c.emoji} ${c.nome}</option>`
+  ).join('');
+  const lemAtual = ev?.lembrete_min || '';
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-title">${ev?'Editar':'Novo'} Evento</div>
+    <div class="m-field"><label>Título</label>
+      <input id="cev-title" value="${ev?ev.title:''}" placeholder="Ex: Reunião com fornecedor…"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="m-field"><label>Data</label>
+        <input type="date" id="cev-date" value="${ev?ev.date:(defaultDate||'')}"></div>
+      <div class="m-field"><label>Horário <span style="color:var(--slate-400);font-weight:400">(opcional)</span></label>
+        <input type="time" id="cev-horario" value="${ev?.horario||''}"></div>
+    </div>
+    <div class="m-field"><label>Categoria</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="cev-cat-id" style="flex:1;padding:8px 12px;border:1px solid var(--slate-100);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;outline:none">
+          ${catOptions}
+        </select>
+        <button type="button" class="cal-manage-cats-btn" onclick="openGerenciarCategorias()">⚙ Gerenciar</button>
+      </div>
+    </div>
+    <div class="m-field">
+      <label>🔔 Lembrete antecipado <span style="color:var(--slate-400);font-weight:400">(minutos antes)</span></label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input type="number" id="cev-lembrete" min="0" max="10080" value="${lemAtual}" placeholder="Ex: 30"
+          style="width:100px;padding:8px 12px;border:1px solid var(--slate-100);border-radius:var(--radius-sm);font-family:var(--mono);font-size:14px;outline:none">
+        <div style="display:flex;gap:4px;flex-wrap:wrap">
+          ${[5,10,15,30,60,120,1440].map(m=>`
+            <button type="button" onclick="document.getElementById('cev-lembrete').value=${m}"
+              style="padding:4px 10px;border-radius:20px;border:1px solid var(--slate-100);background:var(--slate-50);font-family:var(--font);font-size:11px;font-weight:500;color:var(--slate-600);cursor:pointer;transition:all .15s"
+              onmouseover="this.style.borderColor='var(--coral-400)';this.style.color='var(--coral-600)'"
+              onmouseout="this.style.borderColor='var(--slate-100)';this.style.color='var(--slate-600)'">
+              ${m<60?m+'min':m===60?'1h':m===120?'2h':'1 dia'}
+            </button>`).join('')}
+          <button type="button" onclick="document.getElementById('cev-lembrete').value=''"
+            style="padding:4px 10px;border-radius:20px;border:1px solid var(--slate-100);background:var(--slate-50);font-family:var(--font);font-size:11px;font-weight:500;color:var(--slate-400);cursor:pointer">
+            nenhum
+          </button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--slate-400);margin-top:4px">Digite qualquer valor ou use os atalhos</div>
+    </div>
+    <div class="m-field"><label>Observações</label><textarea id="cev-obs">${ev?ev.obs:''}</textarea></div>
+    <div class="modal-actions">
+      ${ev?`<button class="btn btn-danger" onclick="delCalEvent(${eid})">Excluir</button>`:''}
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCalEventNew(${eid||'null'})">${ev?'Salvar':'Criar'}</button>
+    </div>`;
+  document.getElementById('modal-bg').classList.add('active');
+};
+
+window.saveCalEventNew = async function(eid) {
+  const title = document.getElementById('cev-title').value.trim(); if(!title) return;
+  const date  = document.getElementById('cev-date').value;         if(!date)  return;
+  const catId = parseInt(document.getElementById('cev-cat-id').value)||null;
+  const obs   = document.getElementById('cev-obs').value.trim();
+  const horario = document.getElementById('cev-horario').value||null;
+  const lemRaw  = document.getElementById('cev-lembrete').value;
+  const lembrete_min = lemRaw!==''?parseInt(lemRaw)||null:null;
+  const catObj = catById(catId);
+  const catLegado = catObj?(catObj.cor==='red'?'contrato':catObj.cor==='green'?'lancamento':'mentoria'):'anotacao';
+  if(eid){
+    const e=calEvents.find(e=>e.id===eid);
+    Object.assign(e,{title,date,cat:catLegado,cat_id:catId,obs,horario,lembrete_min});
+    await saveAgendaNew(e);
+  } else {
+    const ev={id:0,title,date,cat:catLegado,cat_id:catId,obs,horario,lembrete_min};
+    await saveAgendaNew(ev); calEvents.push(ev);
+  }
+  closeModal(); renderCal();
+};
+
+async function saveAgendaNew(ev){
+  showSync('Salvando…');
+  const payload={titulo:ev.title,data:ev.date,categoria:ev.cat,cat_id:ev.cat_id||null,obs:ev.obs||'',horario:ev.horario||null,lembrete_min:ev.lembrete_min||null};
+  let error;
+  if(ev.id&&typeof ev.id==='number'){
+    ({error}=await sb.from('agenda').update(payload).eq('id',ev.id));
+  } else {
+    const res=await sb.from('agenda').insert(payload).select().single();
+    error=res.error; if(!error)ev.id=res.data.id;
+  }
+  if(error)console.error('saveAgendaNew',error); else showSync('Salvo ✓',true);
+}
+
+// ── loadAgenda sobrescrito para incluir cat_id ──
+window.loadAgenda = async function(){
+  const{data,error}=await sb.from('agenda').select('*');
+  if(error){console.error('agenda',error);return;}
+  calEvents=data.map(r=>({id:r.id,title:r.titulo,date:r.data,cat:r.categoria,cat_id:r.cat_id||null,obs:r.obs||'',horario:r.horario||null,lembrete_min:r.lembrete_min||null}));
+};
+
+// ── initApp sobrescrito para carregar categorias ──
+const _initAppOrigCat=window.initApp;
+window.initApp=async function(){
+  await loadAgendaCategorias();
+  await _initAppOrigCat();
+};
+
+// ── Renderização sidebar com categorias dinâmicas ──
+function renderCalSidebarDyn(){
+  const evts=calEventsForDate(calSelectedDate); if(!evts.length)return;
+  document.getElementById('cal-sidebar-events').innerHTML=evts.map(e=>{
+    const cat=catOfEvent(e);
+    const cls=cat?catImpClass(cat.cor):'';
+    const emoji=cat?cat.emoji:'📅';
+    const nome=cat?cat.nome:(e.cat||'');
+    const timeStr=e.horario?e.horario.slice(0,5):'';
+    const lemStr=e.lembrete_min?` · 🔔 ${e.lembrete_min<60?e.lembrete_min+'min':e.lembrete_min===60?'1h':e.lembrete_min===120?'2h':'1 dia'} antes`:'';
+    return`<div class="cal-event-item" onclick="openCalModal(${typeof e.id==='number'?e.id:"'"+e.id+"'"}, null)">
+      <div class="cal-event-bar cat-dyn ${cls}"></div>
+      <div class="cal-event-content">
+        <div class="cal-event-title">${emoji} ${e.title}</div>
+        <div class="cal-event-time">${timeStr
+          ?`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${timeStr}${lemStr}`
+          :'Dia inteiro'}</div>
+        <span class="cal-event-cat-badge badge-dyn ${cls}">${nome}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+const _renderCalOrigPatch=window.renderCal;
+window.renderCal=function(){
+  _renderCalOrigPatch();
+  // Re-renderiza pills com emojis das categorias dinâmicas
+  const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cell=document.querySelector(`.cal-day[onclick*="'${dateStr}'"]`);
+    if(!cell)continue;
+    const evts=calEventsForDate(dateStr); if(!evts.length)continue;
+    const pillsWrap=cell.querySelector('.cal-events'); if(!pillsWrap)continue;
+    pillsWrap.innerHTML=evts.slice(0,2).map(e=>{
+      const cat=catOfEvent(e);
+      const cls=cat?catImpClass(cat.cor):'';
+      const emoji=cat?cat.emoji:'📅';
+      return`<div class="cal-pill cat-dyn ${cls}"
+        onclick="event.stopPropagation();calSelectDay('${dateStr}');openCalModal(${typeof e.id==='number'?e.id:"'"+e.id+"'"}, null)">
+        <span class="cal-pill-dot" style="background:var(--cat-dot)"></span>${emoji} ${e.title}
+      </div>`;
+    }).join('')+(evts.length>2?`<div class="cal-more">+${evts.length-2}</div>`:'');
+  }
+  renderCalSidebarDyn();
+};
+
+// ══════════════════════════════════════════════
+//  GERENCIAR CATEGORIAS
+// ══════════════════════════════════════════════
+let catEditId=null, catEditCor='green';
+
+function openGerenciarCategorias(){
+  closeModal();
+  renderCatModal();
+  document.getElementById('cat-modal-bg').style.display='flex';
+}
+
+function renderCatModal(){
+  const lista=document.getElementById('cat-lista');
+  if(!lista)return;
+  lista.innerHTML=agendaCats.map(c=>`
+    <div class="cat-manage-row">
+      <div class="cat-manage-emoji">${c.emoji}</div>
+      <div class="cat-manage-nome">${c.nome}</div>
+      <span class="cat-imp-badge ${c.cor}">${c.cor==='green'?'🟢 Normal':c.cor==='yellow'?'🟡 Atenção':'🔴 Urgente'}</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn-hub-edit" onclick="openCatEdit(${c.id})">✏</button>
+        <button class="btn-hub-del" onclick="deleteCat(${c.id})">🗑</button>
+      </div>
+    </div>`).join('')||'<div style="text-align:center;color:var(--slate-400);padding:20px;font-size:13px">Nenhuma categoria</div>';
+}
+
+function openCatEdit(id){
+  const c=id?agendaCats.find(x=>x.id===id):null;
+  catEditId=id||null; catEditCor=c?c.cor:'green';
+  document.getElementById('cat-edit-nome').value=c?c.nome:'';
+  document.getElementById('cat-edit-emoji').value=c?c.emoji:'📅';
+  updateImpBtns(catEditCor);
+  document.getElementById('cat-form-panel').style.display='';
+  document.getElementById('cat-edit-nome').focus();
+}
+
+function updateImpBtns(cor){
+  catEditCor=cor;
+  document.querySelectorAll('.imp-btn').forEach(b=>b.classList.toggle('selected',b.dataset.cor===cor));
+}
+
+async function saveCat(){
+  const nome=document.getElementById('cat-edit-nome').value.trim();
+  const emoji=document.getElementById('cat-edit-emoji').value.trim()||'📅';
+  if(!nome){alert('Informe o nome da categoria');return;}
+  showSync('Salvando…');
+  try{
+    if(catEditId){
+      const{error}=await sb.from('agenda_categorias').update({nome,emoji,cor:catEditCor}).eq('id',catEditId);
+      if(error)throw error;
+      const c=agendaCats.find(x=>x.id===catEditId);
+      if(c)Object.assign(c,{nome,emoji,cor:catEditCor});
+    } else {
+      const{data,error}=await sb.from('agenda_categorias').insert({nome,emoji,cor:catEditCor,ordem:agendaCats.length+1}).select().single();
+      if(error)throw error;
+      agendaCats.push(data);
+    }
+    showSync('Salvo ✓',true);
+    document.getElementById('cat-form-panel').style.display='none';
+    catEditId=null; renderCatModal(); renderCal();
+  }catch(e){console.error('saveCat',e);alert('Erro ao salvar categoria');}
+}
+
+async function deleteCat(id){
+  if(!confirm('Excluir esta categoria?'))return;
+  const{error}=await sb.from('agenda_categorias').update({ativo:false}).eq('id',id);
+  if(!error){agendaCats=agendaCats.filter(c=>c.id!==id);renderCatModal();renderCal();showSync('Excluído ✓',true);}
+}
+
+// ── Injetar modal de categorias no DOM ──
+(function(){
+  const div=document.createElement('div');
+  div.id='cat-modal-bg';
+  div.style.cssText='display:none;position:fixed;inset:0;background:rgba(44,44,42,.5);z-index:250;align-items:center;justify-content:center;padding:20px';
+  div.onclick=function(e){if(e.target===div)div.style.display='none';};
+  div.innerHTML=`
+    <div class="modal" style="max-width:520px;width:100%">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="modal-title" style="margin:0">Categorias da Agenda</div>
+        <button class="btn btn-primary btn-sm" onclick="openCatEdit(null)">+ Nova categoria</button>
+      </div>
+      <div id="cat-form-panel" style="display:none;background:var(--slate-50);border:1px solid var(--slate-100);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+        <div style="display:flex;gap:10px;margin-bottom:12px">
+          <div class="m-field" style="width:70px;margin:0"><label>Emoji</label>
+            <input id="cat-edit-emoji" style="font-size:20px;text-align:center;padding:6px;width:100%;border:1px solid var(--slate-100);border-radius:var(--radius-sm);outline:none" maxlength="2" placeholder="📅">
+          </div>
+          <div class="m-field" style="flex:1;margin:0"><label>Nome</label>
+            <input id="cat-edit-nome" placeholder="Ex: Campanha sazonal…" style="width:100%;padding:8px 12px;border:1px solid var(--slate-100);border-radius:var(--radius-sm);font-family:var(--font);font-size:14px;outline:none">
+          </div>
+        </div>
+        <div class="m-field" style="margin:0"><label>Importância / Cor</label>
+          <div class="imp-selector">
+            <button type="button" class="imp-btn green selected" data-cor="green" onclick="updateImpBtns('green')">🟢 Normal</button>
+            <button type="button" class="imp-btn yellow" data-cor="yellow" onclick="updateImpBtns('yellow')">🟡 Atenção</button>
+            <button type="button" class="imp-btn red" data-cor="red" onclick="updateImpBtns('red')">🔴 Urgente</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('cat-form-panel').style.display='none'">Cancelar</button>
+          <button class="btn btn-primary btn-sm" onclick="saveCat()">Salvar</button>
+        </div>
+      </div>
+      <div id="cat-lista"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:16px">
+        <button class="btn btn-ghost" onclick="document.getElementById('cat-modal-bg').style.display='none'">Fechar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(div);
+})();
+
+// ── Botão ⚙ Categorias na legenda da agenda ──
+document.addEventListener('DOMContentLoaded',()=>{
+  const calHeader=document.querySelector('.cal-header .cal-legend');
+  if(calHeader){
+    const btn=document.createElement('button');
+    btn.className='cal-manage-cats-btn';
+    btn.textContent='⚙ Categorias';
+    btn.onclick=openGerenciarCategorias;
+    calHeader.parentElement.insertBefore(btn,calHeader.nextSibling);
+  }
+});
+</script>
+
 </body>
 </html>
