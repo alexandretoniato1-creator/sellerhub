@@ -1224,7 +1224,21 @@ body.sidebar-collapsed .hamburger { display: none; }
         <div class="table-wrap"><table><thead class="hub-thead"><tr>
           <th>SKU</th><th>Descrição</th><th style="text-align:right">Custo</th><th style="text-align:right">Preço Venda</th><th style="text-align:right">Rebait</th><th style="text-align:right">M.C.</th><th style="text-align:right">TACOS</th><th style="text-align:right">MPA</th><th></th>
         </tr></thead><tbody class="hub-tbody" id="tbody"></tbody></table></div>
-        <div class="table-actions"><button class="btn btn-primary" onclick="addRow()">+ Novo SKU</button></div>
+        <div class="table-actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <button class="btn btn-primary" onclick="addRow()">+ Novo SKU</button>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--slate-400)">Precificação</span>
+            <button class="btn btn-ghost" onclick="document.getElementById('prec-file-input').click()" style="gap:6px" title="Importar planilha de Precificação (.xlsx)">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Importar
+            </button>
+            <input type="file" id="prec-file-input" accept=".xlsx" style="display:none" onchange="handlePrecImport(this)">
+            <button class="btn btn-ghost" onclick="exportPrecXLSX()" style="gap:6px" title="Exportar Precificação atual como .xlsx">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Exportar
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- SUB-ABA: TODOS OS PRODUTOS -->
@@ -1303,6 +1317,13 @@ body.sidebar-collapsed .hamburger { display: none; }
                 Selecionar .xlsx
               </button>
               <input type="file" id="ml-file-input" accept=".xlsx" style="display:none" onchange="handleMLImport(this)">
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+              <div class="perf-section-label" style="margin-bottom:6px">Exportar Planilha Base</div>
+              <button class="btn btn-ghost" onclick="exportBaseXLSX()" style="gap:8px" title="Baixar planilha modelo para a empresa preencher">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Baixar modelo .xlsx
+              </button>
             </div>
           </div>
         </div>
@@ -4132,6 +4153,231 @@ async function confirmHubImport() {
   if (countSku) msg += `• ${countSku} registros de Performance por SKU\n`;
   if (countPerf) msg += `• ${countPerf} registros de Performance Mensal\n`;
   alert(msg);
+}
+
+
+// ===== PRECIFICAÇÃO — IMPORTAR (aba separada) =====
+function handlePrecImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array'});
+      const precSheet = wb.Sheets['Precificação'] || wb.Sheets['Precificacao'] || wb.Sheets[wb.SheetNames[0]];
+      if (!precSheet) { alert('Nenhuma aba de Precificação encontrada no arquivo.'); return; }
+      const rows = XLSX.utils.sheet_to_json(precSheet, {header:1, defval:''});
+
+      // Detecta linha de header (procura por "SKU" ou "Conta")
+      let startRow = 1;
+      for (let i = 0; i < Math.min(rows.length, 8); i++) {
+        const r = rows[i];
+        if (r.some(c => String(c).trim().toUpperCase() === 'SKU')) {
+          startRow = i + 1;
+          break;
+        }
+      }
+
+      let novos = 0, atualizados = 0, erros = 0;
+      for (let i = startRow; i < rows.length; i++) {
+        const r = rows[i];
+        // Detecta se tem coluna Conta (col 0 = conta, col 1 = sku) ou sem (col 0 = sku)
+        let contaVal, skuVal, descVal, custoVal, precoVal, rebaitVal, mcVal, tacosVal;
+        const col0 = String(r[0]||'').trim();
+        const isPossibleConta = ['FW','BTMX','FALCOM','LOGBOX'].includes(col0.toUpperCase());
+
+        if (isPossibleConta) {
+          contaVal = col0;
+          skuVal   = String(r[1]||'').trim().toUpperCase();
+          descVal  = String(r[2]||'').trim();
+          custoVal = parseFloat(String(r[3]).replace(',','.')) || 0;
+          precoVal = parseFloat(String(r[4]).replace(',','.')) || 0;
+          rebaitVal= parseFloat(String(r[5]).replace(',','.')) || 0;
+          mcVal    = parseFloat(String(r[6]).replace(',','.')) || 0;
+          tacosVal = parseFloat(String(r[7]).replace(',','.')) || 0;
+        } else {
+          // sem coluna Conta — usa a conta selecionada atualmente
+          contaVal = conta;
+          skuVal   = col0.toUpperCase();
+          descVal  = String(r[1]||'').trim();
+          custoVal = parseFloat(String(r[2]).replace(',','.')) || 0;
+          precoVal = parseFloat(String(r[3]).replace(',','.')) || 0;
+          rebaitVal= parseFloat(String(r[4]).replace(',','.')) || 0;
+          mcVal    = parseFloat(String(r[5]).replace(',','.')) || 0;
+          tacosVal = parseFloat(String(r[6]).replace(',','.')) || 0;
+        }
+
+        if (!skuVal) continue;
+        if (!D[contaVal]) { erros++; continue; }
+
+        const existing = D[contaVal].find(d => d.sku === skuVal);
+        if (existing) {
+          if (descVal)    existing.desc   = descVal;
+          if (custoVal>0) existing.custo  = custoVal;
+          if (precoVal>0) existing.preco  = precoVal;
+          if (rebaitVal>0)existing.rebait = rebaitVal;
+          if (mcVal>0)    existing.mc     = mcVal;
+          if (tacosVal>0) existing.tacos  = tacosVal;
+          saveSku(contaVal, existing);
+          atualizados++;
+        } else {
+          const novoSku = {sku:skuVal, desc:descVal, custo:custoVal, preco:precoVal, rebait:rebaitVal, mc:mcVal, tacos:tacosVal};
+          D[contaVal].push(novoSku);
+          saveSku(contaVal, novoSku);
+          novos++;
+        }
+      }
+
+      renderPrec();
+      renderSkuSel();
+      const msg = `✓ Precificação importada!
+
+• ${novos} novos SKUs
+• ${atualizados} atualizados${erros>0?`
+• ${erros} linha(s) ignoradas (conta inválida)`:''}`;
+      alert(msg);
+    } catch(err) {
+      alert('Erro ao ler a planilha de Precificação.
+
+' + err.message);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ===== PRECIFICAÇÃO — EXPORTAR =====
+function exportPrecXLSX() {
+  if (!D[conta] || !D[conta].length) {
+    alert('Nenhum SKU cadastrado na conta ' + conta + ' para exportar.');
+    return;
+  }
+  const fmtN = v => v > 0 ? v : '';
+  const wb = XLSX.utils.book_new();
+  const headerStyle = { font:{bold:true} };
+
+  // Instrução no topo
+  const instrucoes = [
+    ['PRECIFICAÇÃO — ' + conta.toUpperCase()],
+    ['Exportado em ' + new Date().toLocaleDateString('pt-BR') + ' | SellerHub'],
+    [],
+    ['Conta', 'SKU', 'Descrição', 'Custo (R$)', 'Preço Venda (R$)', 'Rebait (%)', 'M.C. (%)', 'TACOS (%)', 'MPA (%)']
+  ];
+
+  D[conta].forEach(r => {
+    instrucoes.push([
+      conta,
+      r.sku || '',
+      r.desc || '',
+      fmtN(r.custo),
+      fmtN(r.preco),
+      fmtN(r.rebait),
+      fmtN(r.mc),
+      fmtN(r.tacos),
+      fmtN(mpa(r))
+    ]);
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet(instrucoes);
+  // Larguras de coluna
+  ws['!cols'] = [{wch:10},{wch:18},{wch:28},{wch:13},{wch:15},{wch:11},{wch:10},{wch:11},{wch:10}];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Precificação');
+  const now = new Date();
+  const stamp = now.toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Precificacao_${conta}_${stamp}.xlsx`);
+}
+
+// ===== PLANILHA BASE — EXPORTAR (modelo para empresa preencher) =====
+function exportBaseXLSX() {
+  const wb = XLSX.utils.book_new();
+  const now = new Date();
+  const stamp = now.toISOString().slice(0,10);
+
+  // ── ABA: Instruções ──
+  const instrRows = [
+    ['GUIA DE PREENCHIMENTO — SELLERHUB'],
+    [],
+    ['ABA', 'DESCRIÇÃO'],
+    ['Performance Mensal', 'KPIs consolidados por CONTA e MÊS. Preencher 1 linha por conta/mês.'],
+    ['Performance SKU', 'KPIs detalhados por SKU, CONTA e MÊS. Cada produto tem sua linha.'],
+    [],
+    ['CAMPO', 'COMO PREENCHER'],
+    ['Conta', 'FW, BTMX, Falcom ou Logbox'],
+    ['Mês', 'Formato 2026-01, 2026-02, ..., 2026-12'],
+    ['SKU', 'Código do produto (ex: FW-CABO-001)'],
+    ['Faturamento (R$)', 'Valor total vendido no período, sem centavos (ex: 85000)'],
+    ['Pedidos', 'Quantidade de pedidos realizados'],
+    ['Unidades', 'Quantidade de unidades vendidas'],
+    ['Conversão (%)', 'Taxa de conversão em % (ex: 3.2 = 3,2%)'],
+    ['TACOS (%)', 'Investimento ADS / Faturamento × 100 (ex: 9.5 = 9,5%)'],
+    ['Rebait (%)', 'Comissão + taxas do marketplace em % (ex: 12.0)'],
+    ['M.C. (%)', 'Margem de Contribuição em % (ex: 22.5)'],
+    ['Investimento ADS (R$)', 'Valor investido em publicidade no período'],
+    ['Preço Venda (R$)', 'Preço de venda atual do anúncio (com centavos)'],
+    [],
+    ['DICAS IMPORTANTES'],
+    ['Exemplo', 'A linha 5 (azul) em cada aba é um EXEMPLO. Pode apagar ou substituir.'],
+    ['Decimais', 'Use PONTO como separador decimal (3.2, não 3,2).'],
+    ['Ordem', 'Preencha primeiro Performance SKU, depois Performance Mensal.'],
+    ['Exportado em', stamp + ' via SellerHub'],
+  ];
+  const wsInstr = XLSX.utils.aoa_to_sheet(instrRows);
+  wsInstr['!cols'] = [{wch:22},{wch:70}];
+  XLSX.utils.book_append_sheet(wb, wsInstr, 'Instruções');
+
+  // ── ABA: Performance Mensal ──
+  const headerMensal = ['Conta','Mês','Faturamento (R$)','Pedidos','Unidades','Conversão (%)','TACOS (%)','Rebait (%)','M.C. (%)'];
+  const exemploMensal = ['FW','2026-04','85000','320','480','3.2','9.5','12','22.5'];
+  const wsMensal = XLSX.utils.aoa_to_sheet([
+    ['PERFORMANCE MENSAL POR CONTA'],
+    ['Preencha uma linha por conta/mês. Campos obrigatórios: Conta, Mês, Faturamento, Pedidos.'],
+    [],
+    headerMensal,
+    exemploMensal,
+  ]);
+  wsMensal['!cols'] = [{wch:10},{wch:10},{wch:16},{wch:10},{wch:10},{wch:14},{wch:11},{wch:11},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, wsMensal, 'Performance Mensal');
+
+  // ── ABA: Performance SKU ──
+  // Pré-popula com os SKUs cadastrados na Precificação como referência
+  const headerSKU = ['Conta','SKU','Mês','Faturamento (R$)','Pedidos','Unidades','Preço Venda (R$)','Investimento ADS (R$)','Conversão (%)','TACOS (%)','Rebait (%)','M.C. (%)'];
+  const exemploSKU = ['FW','FW-CABO-001','2026-04','12500','85','120','149.90','1187.50','4.1','9.5','12','24.3'];
+
+  const skuRows = [
+    ['PERFORMANCE POR SKU (MENSAL)'],
+    ['Uma linha por SKU/mês. Campos obrigatórios: Conta, SKU, Mês, Faturamento.'],
+    [],
+    headerSKU,
+    exemploSKU,
+  ];
+
+  // Adiciona SKUs já cadastrados como referência (em branco para preencher)
+  contas.forEach(c => {
+    if (D[c] && D[c].length) {
+      D[c].forEach(r => {
+        if (r.sku) {
+          skuRows.push([c, r.sku, '', '', '', '', r.preco||'', '', '', '', r.rebait||'', '']);
+        }
+      });
+    }
+  });
+
+  const wsSKU = XLSX.utils.aoa_to_sheet(skuRows);
+  wsSKU['!cols'] = [{wch:10},{wch:18},{wch:10},{wch:15},{wch:10},{wch:10},{wch:15},{wch:18},{wch:14},{wch:11},{wch:11},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, wsSKU, 'Performance SKU');
+
+  XLSX.writeFile(wb, `SellerHub_Planilha_Base_${stamp}.xlsx`);
+  alert('✓ Planilha base exportada!
+
+Arquivo: SellerHub_Planilha_Base_' + stamp + '.xlsx
+
+Envie para a empresa preencher as abas:
+• Performance Mensal
+• Performance SKU
+
+(Os SKUs já cadastrados foram incluídos como referência na aba Performance SKU.)');
 }
 
 function closeHubModal() {
