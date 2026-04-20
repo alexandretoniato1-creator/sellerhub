@@ -1259,6 +1259,13 @@ body.sidebar-collapsed .hamburger { display: none; }
             <option value="2026-12">Dezembro 2026</option>
           </select>
           <span style="font-size:12px;color:var(--slate-400);margin-left:4px">Clique em um SKU para ver o histórico completo</span>
+          <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <div class="perf-section-label" style="margin-bottom:4px">Planilha Base</div>
+            <button class="btn btn-ghost" onclick="exportBaseXLSX()" style="gap:6px" title="Baixar planilha modelo para a empresa preencher">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Baixar modelo .xlsx
+            </button>
+          </div>
         </div>
         <div id="todos-summary-cards" style="margin-bottom:16px"></div>
         <!-- COBERTURA DE IMPORTAÇÕES -->
@@ -1318,13 +1325,7 @@ body.sidebar-collapsed .hamburger { display: none; }
               </button>
               <input type="file" id="ml-file-input" accept=".xlsx" style="display:none" onchange="handleMLImport(this)">
             </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-              <div class="perf-section-label" style="margin-bottom:6px">Exportar Planilha Base</div>
-              <button class="btn btn-ghost" onclick="exportBaseXLSX()" style="gap:8px" title="Baixar planilha modelo para a empresa preencher">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Baixar modelo .xlsx
-              </button>
-            </div>
+
           </div>
         </div>
         <div id="sku-perf-cards" style="margin-bottom:20px"></div>
