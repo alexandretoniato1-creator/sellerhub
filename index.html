@@ -4236,9 +4236,7 @@ function handlePrecImport(input) {
       const msg = '✓ Precificação importada!\n\n• ' + novos + ' novos SKUs\n• ' + atualizados + ' atualizados' + parteErros;
       alert(msg);
     } catch(err) {
-      alert('Erro ao ler a planilha de Precificação.
-
-' + err.message);
+      alert('Erro ao ler a planilha de Precificação.\n\n' + err.message);
     }
   };
   reader.readAsArrayBuffer(file);
@@ -4366,15 +4364,7 @@ function exportBaseXLSX() {
   XLSX.utils.book_append_sheet(wb, wsSKU, 'Performance SKU');
 
   XLSX.writeFile(wb, `SellerHub_Planilha_Base_${stamp}.xlsx`);
-  alert('✓ Planilha base exportada!
-
-Arquivo: SellerHub_Planilha_Base_' + stamp + '.xlsx
-
-Envie para a empresa preencher as abas:
-• Performance Mensal
-• Performance SKU
-
-(Os SKUs já cadastrados foram incluídos como referência na aba Performance SKU.)');
+  alert('✓ Planilha base exportada!\n\nArquivo: SellerHub_Planilha_Base_' + stamp + '.xlsx\n\nEnvie para a empresa preencher as abas:\n• Performance Mensal\n• Performance SKU\n\n(Os SKUs já cadastrados foram incluídos como referência na aba Performance SKU.).');
 }
 
 function closeHubModal() {
