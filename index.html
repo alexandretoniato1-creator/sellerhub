@@ -2933,7 +2933,7 @@ function renderTodosProdutos() {
       if (pd.fat > 0) { delta = d.fat > 0 ? (d.fat - pd.fat) / pd.fat * 100 : null; break; }
     }
     return { sku, desc, fat: d.fat, pedidos: d.pedidos, unidades: d.unidades,
-             conv: d.conv, tacos: precRow?.tacos || 0, mc: precRow?.mc || 0, delta };
+             conv: d.conv, tacos: d.tacos || 0, mc: d.mc || 0, delta };
   }).filter(r => r.fat > 0).sort((a,b) => b.fat - a.fat);
 
   const empty = document.getElementById('todos-empty');
@@ -3785,21 +3785,14 @@ async function confirmMLImport() {
     };
     // Salva no Supabase
     await saveSkuHistorico(importConta, r.sku, importMonth);
-    // Adicionar/atualizar SKU na precificação
+    // Auto-cadastrar SKU na precificação se não existir (só nome, sem dados de performance)
     const skuExist = D[importConta].find(d => d.sku === r.sku);
     if (!skuExist) {
-      const novoSku = {sku: r.sku, desc: r.nome.slice(0, 60), custo:0,
-        preco: r.preco||0, rebait: r.rebait||0, mc: r.mc||0, tacos: r.tacos||0};
+      const novoSku = {sku: r.sku, desc: r.nome.slice(0, 60), custo:0, preco:0, rebait:0, mc:0, tacos:0};
       D[importConta].push(novoSku);
       await saveSku(importConta, novoSku);
-    } else if (r.preco||r.tacos||r.rebait||r.mc) {
-      // Atualiza campos preenchidos no modal de edição
-      if (r.preco)  skuExist.preco  = r.preco;
-      if (r.tacos)  skuExist.tacos  = r.tacos;
-      if (r.rebait) skuExist.rebait = r.rebait;
-      if (r.mc)     skuExist.mc     = r.mc;
-      await saveSku(importConta, skuExist);
     }
+    // Não atualiza campos da Precificação — ela é usada apenas como calculadora
   }
 
   // Salvar importação no banco para poder desfazer depois
@@ -3984,19 +3977,15 @@ async function confirmHubImport() {
 
     await saveSkuHistorico(r.conta, r.sku, r.mes);
 
-    // Auto-cadastrar SKU na precificação se não existir
+    // Auto-cadastrar SKU na precificação se não existir (só identificação, sem dados de performance)
     const skuExist = D[r.conta]?.find(d => d.sku === r.sku);
     if (!skuExist) {
-      const novoSku = {sku: r.sku, desc:'', custo:0, preco: r.preco||0, rebait: r.rebait||0, mc:0, tacos: r.tacos||0};
+      const novoSku = {sku: r.sku, desc:'', custo:0, preco:0, rebait:0, mc:0, tacos:0};
       if (!D[r.conta]) D[r.conta] = [];
       D[r.conta].push(novoSku);
       await saveSku(r.conta, novoSku);
-    } else {
-      if (r.preco > 0)  skuExist.preco  = r.preco;
-      if (r.rebait > 0) skuExist.rebait = r.rebait;
-      if (r.tacos > 0)  skuExist.tacos  = r.tacos;
-      await saveSku(r.conta, skuExist);
     }
+    // Não atualiza campos da Precificação — ela é usada apenas como calculadora
     count++;
   }
 
