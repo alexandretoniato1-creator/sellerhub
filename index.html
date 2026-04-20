@@ -4232,11 +4232,8 @@ function handlePrecImport(input) {
 
       renderPrec();
       renderSkuSel();
-      const msg = `✓ Precificação importada!
-
-• ${novos} novos SKUs
-• ${atualizados} atualizados${erros>0?`
-• ${erros} linha(s) ignoradas (conta inválida)`:''}`;
+      const parteErros = erros > 0 ? '\n• ' + erros + ' linha(s) ignoradas (conta inválida)' : '';
+      const msg = '✓ Precificação importada!\n\n• ' + novos + ' novos SKUs\n• ' + atualizados + ' atualizados' + parteErros;
       alert(msg);
     } catch(err) {
       alert('Erro ao ler a planilha de Precificação.
