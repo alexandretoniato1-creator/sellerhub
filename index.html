@@ -1260,12 +1260,11 @@ body.sidebar-collapsed .hamburger { display: none; }
           </select>
           <span style="font-size:12px;color:var(--slate-400);margin-left:4px">Clique em um SKU para ver o histórico completo</span>
           <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <div class="perf-section-label" style="margin-bottom:4px">Importar Relatório ML</div>
-            <button class="btn btn-ghost" onclick="document.getElementById('ml-file-input').click()" style="gap:6px">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Selecionar .xlsx
+            <div class="perf-section-label" style="margin-bottom:4px">Planilha Base</div>
+            <button class="btn btn-ghost" onclick="exportBaseXLSX()" style="gap:6px" title="Baixar planilha modelo para a empresa preencher">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Baixar modelo .xlsx
             </button>
-            <input type="file" id="ml-file-input" accept=".xlsx" style="display:none" onchange="handleMLImport(this)">
           </div>
         </div>
         <div id="todos-summary-cards" style="margin-bottom:16px"></div>
@@ -1319,11 +1318,12 @@ body.sidebar-collapsed .hamburger { display: none; }
               <input type="file" id="hub-file-input" accept=".xlsx" style="display:none" onchange="handleHubImport(this)">
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-              <div class="perf-section-label" style="margin-bottom:6px">Planilha Base</div>
-              <button class="btn btn-ghost" onclick="exportBaseXLSX()" style="gap:8px" title="Baixar planilha modelo para a empresa preencher">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Baixar modelo .xlsx
+              <div class="perf-section-label" style="margin-bottom:6px">Importar relatório ML</div>
+              <button class="btn btn-ghost" onclick="document.getElementById('ml-file-input').click()" style="gap:8px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Selecionar .xlsx
               </button>
+              <input type="file" id="ml-file-input" accept=".xlsx" style="display:none" onchange="handleMLImport(this)">
             </div>
 
           </div>
@@ -1465,12 +1465,7 @@ body.sidebar-collapsed .hamburger { display: none; }
           Importar Planilha SellerHub
         </div>
 
-        <!-- Tabs de aba -->
-        <div class="tabs" style="margin-bottom:16px" id="hub-imp-tabs">
-          <button class="tab active" onclick="hubImpTab('sku',this)">Performance SKU <span id="hub-imp-sku-count" style="font-size:10px;color:var(--coral-500);font-weight:700"></span></button>
-          <button class="tab" onclick="hubImpTab('prec',this)">Precificação <span id="hub-imp-prec-count" style="font-size:10px;color:var(--coral-500);font-weight:700"></span></button>
-          <button class="tab" onclick="hubImpTab('perf',this)">Performance Mensal <span id="hub-imp-perf-count" style="font-size:10px;color:var(--coral-500);font-weight:700"></span></button>
-        </div>
+        <!-- Sem abas — apenas Performance SKU -->
 
         <!-- Aba Performance SKU -->
         <div id="hub-imp-sku-panel">
@@ -1478,59 +1473,19 @@ body.sidebar-collapsed .hamburger { display: none; }
             <table>
               <thead class="hub-thead"><tr>
                 <th>Conta</th><th>SKU</th><th>Mês</th>
-                <th style="text-align:right">Fat. (R$)</th>
-                <th style="text-align:right">Pedidos</th>
-                <th style="text-align:right">Unid.</th>
-                <th style="text-align:right">Preço</th>
-                <th style="text-align:right">Invest.</th>
-                <th style="text-align:right">Conv.</th>
-                <th style="text-align:right">TACOS</th>
-                <th style="text-align:right">Rebait</th>
-                <th style="text-align:right">M.C.</th>
+                <th style="text-align:right">Preço Venda</th>
+                <th style="text-align:right">Invest. ADS</th>
+                <th style="text-align:right">TACOS (%)</th>
+                <th style="text-align:right">Rebait (%)</th>
                 <th>Status</th>
+                <th style="text-align:center">Ação</th>
               </tr></thead>
               <tbody class="hub-tbody" id="hub-imp-sku-tbody"></tbody>
             </table>
           </div>
         </div>
 
-        <!-- Aba Precificação -->
-        <div id="hub-imp-prec-panel" style="display:none">
-          <div class="table-wrap" style="overflow-x:auto;max-height:340px;overflow-y:auto">
-            <table>
-              <thead class="hub-thead"><tr>
-                <th>Conta</th><th>SKU</th><th>Descrição</th>
-                <th style="text-align:right">Custo</th>
-                <th style="text-align:right">Preço</th>
-                <th style="text-align:right">Rebait</th>
-                <th style="text-align:right">M.C.</th>
-                <th style="text-align:right">TACOS</th>
-                <th>Status</th>
-              </tr></thead>
-              <tbody class="hub-tbody" id="hub-imp-prec-tbody"></tbody>
-            </table>
-          </div>
-        </div>
 
-        <!-- Aba Performance Mensal -->
-        <div id="hub-imp-perf-panel" style="display:none">
-          <div class="table-wrap" style="overflow-x:auto;max-height:340px;overflow-y:auto">
-            <table>
-              <thead class="hub-thead"><tr>
-                <th>Conta</th><th>Mês</th>
-                <th style="text-align:right">Fat. (R$)</th>
-                <th style="text-align:right">Pedidos</th>
-                <th style="text-align:right">Unid.</th>
-                <th style="text-align:right">Conv.</th>
-                <th style="text-align:right">TACOS</th>
-                <th style="text-align:right">Rebait</th>
-                <th style="text-align:right">M.C.</th>
-                <th>Status</th>
-              </tr></thead>
-              <tbody class="hub-tbody" id="hub-imp-perf-tbody"></tbody>
-            </table>
-          </div>
-        </div>
 
         <div id="hub-imp-summary" style="font-size:12px;color:var(--slate-400);margin-top:12px"></div>
 
@@ -2636,9 +2591,12 @@ async function saveHistEdit(){
   kpiAjustes[conta][month] = ajuste;
   calcKpiFromSkus();
   document.getElementById('hist-edit-modal').classList.remove('active');
-  saveKpiHistorico(conta, month);
+  showSync('Salvando ajuste…');
+  await saveKpiHistorico(conta, month);
+  showSync('Salvo ✓', true);
   renderHist();
   renderVG();
+  renderHome();
 }
 
 async function deleteHistMes(contaKey, mes) {
@@ -3906,70 +3864,31 @@ function handleHubImport(input) {
     try {
       const data = new Uint8Array(e.target.result);
       const wb = XLSX.read(data, {type:'array'});
-      hubImportData = { sku: [], prec: [], perf: [] };
+      hubImportData = { sku: [] };
 
       // --- ABA: Performance SKU ---
       const skuSheet = wb.Sheets['Performance SKU'];
       if (skuSheet) {
         const rows = XLSX.utils.sheet_to_json(skuSheet, {header:1, defval:''});
-        for (let i = 4; i < rows.length; i++) { // linha 5+ (idx 4+), pula header e exemplo
+        for (let i = 4; i < rows.length; i++) {
           const r = rows[i];
           const contaVal = String(r[0]||'').trim();
-          const skuVal = String(r[1]||'').trim();
-          const mesVal = String(r[2]||'').trim();
+          const skuVal   = String(r[1]||'').trim();
+          const mesVal   = String(r[2]||'').trim();
           if (!contaVal || !skuVal || !mesVal) continue;
           if (!perfContas.includes(contaVal)) continue;
           if (!perfMonths.includes(mesVal)) continue;
           hubImportData.sku.push({
             conta: contaVal, sku: skuVal.toUpperCase(), mes: mesVal,
-            fat: parseFloat(r[3])||0, pedidos: parseInt(r[4])||0, unidades: parseInt(r[5])||0,
-            preco: parseFloat(r[6])||0, investimento: parseFloat(r[7])||0,
-            conv: parseFloat(r[8])||0, tacos: parseFloat(r[9])||0,
-            rebait: parseFloat(r[10])||0, mc: parseFloat(r[11])||0
+            preco: parseFloat(r[3])||0,
+            investimento: parseFloat(r[4])||0,
+            tacos: parseFloat(r[5])||0,
+            rebait: parseFloat(r[6])||0
           });
         }
       }
 
-      // --- ABA: Precificação ---
-      const precSheet = wb.Sheets['Precificação'] || wb.Sheets['Precificacao'];
-      if (precSheet) {
-        const rows = XLSX.utils.sheet_to_json(precSheet, {header:1, defval:''});
-        for (let i = 4; i < rows.length; i++) {
-          const r = rows[i];
-          const contaVal = String(r[0]||'').trim();
-          const skuVal = String(r[1]||'').trim();
-          if (!contaVal || !skuVal) continue;
-          if (!perfContas.includes(contaVal)) continue;
-          hubImportData.prec.push({
-            conta: contaVal, sku: skuVal.toUpperCase(), desc: String(r[2]||'').trim(),
-            custo: parseFloat(r[3])||0, preco: parseFloat(r[4])||0,
-            rebait: parseFloat(r[5])||0, mc: parseFloat(r[6])||0, tacos: parseFloat(r[7])||0
-          });
-        }
-      }
-
-      // --- ABA: Performance Mensal ---
-      const perfSheet = wb.Sheets['Performance Mensal'];
-      if (perfSheet) {
-        const rows = XLSX.utils.sheet_to_json(perfSheet, {header:1, defval:''});
-        for (let i = 4; i < rows.length; i++) {
-          const r = rows[i];
-          const contaVal = String(r[0]||'').trim();
-          const mesVal = String(r[1]||'').trim();
-          if (!contaVal || !mesVal) continue;
-          if (!perfContas.includes(contaVal)) continue;
-          if (!perfMonths.includes(mesVal)) continue;
-          hubImportData.perf.push({
-            conta: contaVal, mes: mesVal,
-            fat: parseFloat(r[2])||0, pedidos: parseInt(r[3])||0, unidades: parseInt(r[4])||0,
-            conv: parseFloat(r[5])||0, tacos: parseFloat(r[6])||0,
-            rebait: parseFloat(r[7])||0, mc: parseFloat(r[8])||0
-          });
-        }
-      }
-
-      const total = hubImportData.sku.length + hubImportData.prec.length + hubImportData.perf.length;
-      if (!total) { alert('Nenhum dado encontrado. Verifique se a planilha segue o modelo SellerHub (abas: Performance SKU, Precificação, Performance Mensal).'); return; }
+      if (!hubImportData.sku.length) { alert('Nenhum dado encontrado. Verifique se a planilha tem a aba "Performance SKU" com os campos: Conta, SKU, Mês, Preço Venda, Investimento ADS, TACOS (%), Rebait (%).'); return; }
 
       renderHubPreview();
       document.getElementById('hub-modal-bg').classList.add('active');
@@ -3980,180 +3899,120 @@ function handleHubImport(input) {
   reader.readAsArrayBuffer(file);
 }
 
-function hubImpTab(tab, btn) {
-  document.querySelectorAll('#hub-imp-tabs .tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('hub-imp-sku-panel').style.display = tab==='sku' ? '' : 'none';
-  document.getElementById('hub-imp-prec-panel').style.display = tab==='prec' ? '' : 'none';
-  document.getElementById('hub-imp-perf-panel').style.display = tab==='perf' ? '' : 'none';
-}
+// hubImpTab removido — modal agora tem apenas aba Performance SKU
 
 function renderHubPreview() {
   const fBRL = v => 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
   const fPct = v => v > 0 ? v.toFixed(1)+'%' : '—';
   const mesLabel = m => perfMonthFull[perfMonths.indexOf(m)] || m;
 
-  // SKU tab
-  document.getElementById('hub-imp-sku-tbody').innerHTML = hubImportData.sku.map(r => {
+  document.getElementById('hub-imp-sku-tbody').innerHTML = hubImportData.sku.map((r, idx) => {
     const existing = skuPerfData[r.conta]?.[r.sku]?.[r.mes];
-    const hasData = existing && (existing.fat > 0 || existing.pedidos > 0);
+    const hasData = existing && (existing.preco > 0 || existing.investimento > 0 || existing.tacos > 0 || existing.rebait > 0);
     const badge = hasData
       ? '<span class="ml-import-badge update">atualiza</span>'
       : '<span class="ml-import-badge new">novo</span>';
-    return `<tr>
+    return `<tr id="hub-row-${idx}">
       <td style="font-weight:600">${r.conta}</td>
       <td style="font-family:var(--mono);font-size:12px">${r.sku}</td>
       <td>${mesLabel(r.mes)}</td>
-      <td style="text-align:right;font-family:var(--mono)">${r.fat>0?fBRL(r.fat):'—'}</td>
-      <td style="text-align:right">${r.pedidos||'—'}</td>
-      <td style="text-align:right">${r.unidades||'—'}</td>
-      <td style="text-align:right">${r.preco>0?fBRL(r.preco):'—'}</td>
-      <td style="text-align:right">${r.investimento>0?fBRL(r.investimento):'—'}</td>
-      <td style="text-align:right">${fPct(r.conv)}</td>
+      <td style="text-align:right;font-family:var(--mono)">${r.preco>0?fBRL(r.preco):'—'}</td>
+      <td style="text-align:right;font-family:var(--mono)">${r.investimento>0?fBRL(r.investimento):'—'}</td>
       <td style="text-align:right">${fPct(r.tacos)}</td>
       <td style="text-align:right">${fPct(r.rebait)}</td>
-      <td style="text-align:right">${fPct(r.mc)}</td>
       <td>${badge}</td>
+      <td style="text-align:center">
+        <button class="btn-hub-edit" onclick="hubEditRow(${idx})" title="Editar linha">✏</button>
+      </td>
     </tr>`;
-  }).join('') || '<tr><td colspan="13" style="text-align:center;color:var(--slate-400);padding:20px">Nenhum dado na aba "Performance SKU"</td></tr>';
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--slate-400);padding:20px">Nenhum dado encontrado na aba "Performance SKU"</td></tr>';
 
-  // Prec tab
-  document.getElementById('hub-imp-prec-tbody').innerHTML = hubImportData.prec.map(r => {
-    const existing = D[r.conta]?.find(d => d.sku === r.sku);
-    const badge = existing
-      ? '<span class="ml-import-badge update">atualiza</span>'
-      : '<span class="ml-import-badge new">novo</span>';
-    return `<tr>
-      <td style="font-weight:600">${r.conta}</td>
-      <td style="font-family:var(--mono);font-size:12px">${r.sku}</td>
-      <td style="font-size:12px;color:var(--slate-500);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.desc}</td>
-      <td style="text-align:right">${r.custo>0?fBRL(r.custo):'—'}</td>
-      <td style="text-align:right">${r.preco>0?fBRL(r.preco):'—'}</td>
-      <td style="text-align:right">${fPct(r.rebait)}</td>
-      <td style="text-align:right">${fPct(r.mc)}</td>
-      <td style="text-align:right">${fPct(r.tacos)}</td>
-      <td>${badge}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--slate-400);padding:20px">Nenhum dado na aba "Precificação"</td></tr>';
+  const total = hubImportData.sku.length;
+  document.getElementById('hub-imp-summary').innerHTML = total
+    ? `<strong>${total}</strong> linha${total>1?'s':''} encontrada${total>1?'s':''}. Revise os dados e clique em Confirmar.`
+    : '';
+}
 
-  // Perf Mensal tab
-  document.getElementById('hub-imp-perf-tbody').innerHTML = hubImportData.perf.map(r => {
-    const existing = kpiData[r.conta]?.[r.mes];
-    const hasData = existing && (existing.fat > 0 || existing.pedidos > 0);
-    const badge = hasData
-      ? '<span class="ml-import-badge update">atualiza</span>'
-      : '<span class="ml-import-badge new">novo</span>';
-    return `<tr>
-      <td style="font-weight:600">${r.conta}</td>
-      <td>${mesLabel(r.mes)}</td>
-      <td style="text-align:right;font-family:var(--mono)">${r.fat>0?fBRL(r.fat):'—'}</td>
-      <td style="text-align:right">${r.pedidos||'—'}</td>
-      <td style="text-align:right">${r.unidades||'—'}</td>
-      <td style="text-align:right">${fPct(r.conv)}</td>
-      <td style="text-align:right">${fPct(r.tacos)}</td>
-      <td style="text-align:right">${fPct(r.rebait)}</td>
-      <td style="text-align:right">${fPct(r.mc)}</td>
-      <td>${badge}</td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--slate-400);padding:20px">Nenhum dado na aba "Performance Mensal"</td></tr>';
+// Editar linha no preview antes de confirmar
+function hubEditRow(idx) {
+  const r = hubImportData.sku[idx];
+  const fBRL = v => v > 0 ? v : '';
+  const row = document.getElementById(`hub-row-${idx}`);
+  row.innerHTML = `
+    <td style="font-weight:600">${r.conta}</td>
+    <td style="font-family:var(--mono);font-size:12px">${r.sku}</td>
+    <td>${perfMonthFull[perfMonths.indexOf(r.mes)] || r.mes}</td>
+    <td><input type="number" id="hub-e-preco-${idx}" value="${fBRL(r.preco)}" placeholder="0" style="width:80px;padding:4px 6px;border:1px solid var(--coral-400);border-radius:4px;font-family:var(--mono);font-size:12px;text-align:right"></td>
+    <td><input type="number" id="hub-e-inv-${idx}" value="${fBRL(r.investimento)}" placeholder="0" style="width:80px;padding:4px 6px;border:1px solid var(--coral-400);border-radius:4px;font-family:var(--mono);font-size:12px;text-align:right"></td>
+    <td><input type="number" id="hub-e-tacos-${idx}" value="${r.tacos>0?r.tacos:''}" placeholder="0.0" step="0.1" style="width:60px;padding:4px 6px;border:1px solid var(--coral-400);border-radius:4px;font-family:var(--mono);font-size:12px;text-align:right"></td>
+    <td><input type="number" id="hub-e-rebait-${idx}" value="${r.rebait>0?r.rebait:''}" placeholder="0.0" step="0.1" style="width:60px;padding:4px 6px;border:1px solid var(--coral-400);border-radius:4px;font-family:var(--mono);font-size:12px;text-align:right"></td>
+    <td></td>
+    <td style="text-align:center">
+      <button class="btn btn-primary" style="padding:3px 10px;font-size:11px" onclick="hubSaveRow(${idx})">✓</button>
+    </td>`;
+}
 
-  // Counts
-  const skuNew = hubImportData.sku.filter(r => !(skuPerfData[r.conta]?.[r.sku]?.[r.mes]?.fat > 0)).length;
-  const skuUpd = hubImportData.sku.length - skuNew;
-  const precNew = hubImportData.prec.filter(r => !D[r.conta]?.find(d => d.sku === r.sku)).length;
-  const precUpd = hubImportData.prec.length - precNew;
-
-  document.getElementById('hub-imp-sku-count').textContent = hubImportData.sku.length ? `(${hubImportData.sku.length})` : '';
-  document.getElementById('hub-imp-prec-count').textContent = hubImportData.prec.length ? `(${hubImportData.prec.length})` : '';
-  document.getElementById('hub-imp-perf-count').textContent = hubImportData.perf.length ? `(${hubImportData.perf.length})` : '';
-
-  let summaryParts = [];
-  if (hubImportData.sku.length) summaryParts.push(`<strong>SKU:</strong> ${hubImportData.sku.length} linhas (${skuNew} novos, ${skuUpd} atualizam)`);
-  if (hubImportData.prec.length) summaryParts.push(`<strong>Precificação:</strong> ${hubImportData.prec.length} SKUs (${precNew} novos, ${precUpd} atualizam)`);
-  if (hubImportData.perf.length) summaryParts.push(`<strong>Performance Mensal:</strong> ${hubImportData.perf.length} registros`);
-  document.getElementById('hub-imp-summary').innerHTML = summaryParts.join(' · ');
+function hubSaveRow(idx) {
+  const parse = id => { const v = parseFloat(document.getElementById(id)?.value); return isNaN(v) ? 0 : v; };
+  hubImportData.sku[idx].preco       = parse(`hub-e-preco-${idx}`);
+  hubImportData.sku[idx].investimento = parse(`hub-e-inv-${idx}`);
+  hubImportData.sku[idx].tacos       = parse(`hub-e-tacos-${idx}`);
+  hubImportData.sku[idx].rebait      = parse(`hub-e-rebait-${idx}`);
+  renderHubPreview();
 }
 
 async function confirmHubImport() {
   showSync('Importando planilha…');
-  let countSku = 0, countPrec = 0, countPerf = 0;
+  let count = 0;
 
-  // 1) Precificação primeiro (cadastro base)
-  for (const r of hubImportData.prec) {
-    const existing = D[r.conta]?.find(d => d.sku === r.sku);
-    if (existing) {
-      if (r.desc) existing.desc = r.desc;
-      if (r.custo > 0) existing.custo = r.custo;
-      if (r.preco > 0) existing.preco = r.preco;
-      if (r.rebait > 0) existing.rebait = r.rebait;
-      if (r.mc > 0) existing.mc = r.mc;
-      if (r.tacos > 0) existing.tacos = r.tacos;
-      await saveSku(r.conta, existing);
-    } else {
-      const novoSku = {sku: r.sku, desc: r.desc, custo: r.custo, preco: r.preco, rebait: r.rebait, mc: r.mc, tacos: r.tacos};
-      if (!D[r.conta]) D[r.conta] = [];
-      D[r.conta].push(novoSku);
-      await saveSku(r.conta, novoSku);
-    }
-    countPrec++;
-  }
-
-  // 2) Performance por SKU
   for (const r of hubImportData.sku) {
     if (!skuPerfData[r.conta]) skuPerfData[r.conta] = {};
     if (!skuPerfData[r.conta][r.sku]) skuPerfData[r.conta][r.sku] = {};
-    const tacosCalc = r.tacos > 0 ? r.tacos : (r.investimento > 0 && r.fat > 0 ? r.investimento / r.fat * 100 : 0);
-    skuPerfData[r.conta][r.sku][r.mes] = {
-      fat: r.fat, pedidos: r.pedidos, unidades: r.unidades,
-      preco: r.preco, investimento: r.investimento,
-      conv: r.conv, tacos: tacosCalc, rebait: r.rebait, mc: r.mc
-    };
+    if (!skuPerfData[r.conta][r.sku][r.mes]) skuPerfData[r.conta][r.sku][r.mes] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0,investimento:0};
+
+    // Mescla: só atualiza os 4 campos complementares, sem tocar em fat/pedidos/unidades/conv
+    const entry = skuPerfData[r.conta][r.sku][r.mes];
+    if (r.preco > 0)        entry.preco        = r.preco;
+    if (r.investimento > 0) entry.investimento = r.investimento;
+    if (r.tacos > 0)        entry.tacos        = r.tacos;
+    if (r.rebait > 0)       entry.rebait       = r.rebait;
+
+    // Recalcula TACOS se tiver investimento e faturamento
+    if (entry.investimento > 0 && entry.fat > 0) {
+      entry.tacos = entry.investimento / entry.fat * 100;
+    }
+
     await saveSkuHistorico(r.conta, r.sku, r.mes);
-    // Auto-cadastrar na precificação se não existir
+
+    // Auto-cadastrar SKU na precificação se não existir
     const skuExist = D[r.conta]?.find(d => d.sku === r.sku);
     if (!skuExist) {
-      const novoSku = {sku: r.sku, desc:'', custo:0, preco: r.preco||0, rebait: r.rebait||0, mc: r.mc||0, tacos: tacosCalc||0};
+      const novoSku = {sku: r.sku, desc:'', custo:0, preco: r.preco||0, rebait: r.rebait||0, mc:0, tacos: r.tacos||0};
       if (!D[r.conta]) D[r.conta] = [];
       D[r.conta].push(novoSku);
       await saveSku(r.conta, novoSku);
+    } else {
+      if (r.preco > 0)  skuExist.preco  = r.preco;
+      if (r.rebait > 0) skuExist.rebait = r.rebait;
+      if (r.tacos > 0)  skuExist.tacos  = r.tacos;
+      await saveSku(r.conta, skuExist);
     }
-    countSku++;
+    count++;
   }
 
-  // 3) Performance Mensal (ajustes manuais por conta)
-  for (const r of hubImportData.perf) {
-    if (!kpiAjustes[r.conta]) kpiAjustes[r.conta] = {};
-    kpiAjustes[r.conta][r.mes] = {
-      fat: r.fat, pedidos: r.pedidos, unidades: r.unidades,
-      conv: r.conv, tacos: r.tacos, rebait: r.rebait, mc: r.mc
-    };
-    countPerf++;
-  }
-
-  // Recalcula KPIs
   calcKpiFromSkus();
-
-  // Salvar ajustes de Performance Mensal no Supabase
-  for (const r of hubImportData.perf) {
-    await saveKpiHistorico(r.conta, r.mes);
-  }
-
   showSync('Importado ✓', true);
   closeHubModal();
 
-  // Refresh tudo
   renderPrec();
   renderSkuSel();
   if (skuSelected) renderSkuPerf();
+  renderTodosProdutos();
   renderHist();
   renderVG();
   renderHome();
 
-  let msg = '✓ Importação concluída!\n\n';
-  if (countPrec) msg += `• ${countPrec} SKUs na Precificação\n`;
-  if (countSku) msg += `• ${countSku} registros de Performance por SKU\n`;
-  if (countPerf) msg += `• ${countPerf} registros de Performance Mensal\n`;
-  alert(msg);
+  alert(`✓ Importação concluída!\n\n• ${count} SKU${count!==1?'s':''} atualizados com Preço, Investimento ADS, TACOS e Rebait.\n\nOs dados do Relatório ML (faturamento, pedidos, unidades, conversão) foram preservados.`);
 }
 
 
@@ -4295,82 +4154,56 @@ function exportBaseXLSX() {
   const instrRows = [
     ['GUIA DE PREENCHIMENTO — SELLERHUB'],
     [],
-    ['ABA', 'DESCRIÇÃO'],
-    ['Performance Mensal', 'KPIs consolidados por CONTA e MÊS. Preencher 1 linha por conta/mês.'],
-    ['Performance SKU', 'KPIs detalhados por SKU, CONTA e MÊS. Cada produto tem sua linha.'],
-    [],
     ['CAMPO', 'COMO PREENCHER'],
-    ['Conta', 'FW, BTMX, Falcom ou Logbox'],
-    ['Mês', 'Formato 2026-01, 2026-02, ..., 2026-12'],
+    ['Conta', 'FW, BTMX, Falcom ou Logbox — exatamente como escrito'],
     ['SKU', 'Código do produto (ex: FW-CABO-001)'],
-    ['Faturamento (R$)', 'Valor total vendido no período, sem centavos (ex: 85000)'],
-    ['Pedidos', 'Quantidade de pedidos realizados'],
-    ['Unidades', 'Quantidade de unidades vendidas'],
-    ['Conversão (%)', 'Taxa de conversão em % (ex: 3.2 = 3,2%)'],
-    ['TACOS (%)', 'Investimento ADS / Faturamento × 100 (ex: 9.5 = 9,5%)'],
-    ['Rebait (%)', 'Comissão + taxas do marketplace em % (ex: 12.0)'],
-    ['M.C. (%)', 'Margem de Contribuição em % (ex: 22.5)'],
-    ['Investimento ADS (R$)', 'Valor investido em publicidade no período'],
-    ['Preço Venda (R$)', 'Preço de venda atual do anúncio (com centavos)'],
+    ['Mês', 'Formato 2026-01, 2026-02, ..., 2026-12'],
+    ['Preço Venda (R$)', 'Preço atual do anúncio. Ex: 149.90'],
+    ['Investimento ADS (R$)', 'Total investido em publicidade no período. Ex: 1187.50'],
+    ['TACOS (%)', 'Investimento ADS ÷ Faturamento × 100. Ex: 9.5 = 9,5%'],
+    ['Rebait (%)', 'Comissão + taxas do marketplace. Ex: 12.0 = 12%'],
     [],
-    ['DICAS IMPORTANTES'],
-    ['Exemplo', 'A linha 5 (azul) em cada aba é um EXEMPLO. Pode apagar ou substituir.'],
-    ['Decimais', 'Use PONTO como separador decimal (3.2, não 3,2).'],
-    ['Ordem', 'Preencha primeiro Performance SKU, depois Performance Mensal.'],
+    ['IMPORTANTE'],
+    ['Decimais', 'Use PONTO como separador decimal (9.5, não 9,5)'],
+    ['Linha exemplo', 'A linha 5 é um EXEMPLO — pode apagar ou substituir'],
     ['Exportado em', stamp + ' via SellerHub'],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instrRows);
-  wsInstr['!cols'] = [{wch:22},{wch:70}];
+  wsInstr['!cols'] = [{wch:22},{wch:55}];
   XLSX.utils.book_append_sheet(wb, wsInstr, 'Instruções');
 
-  // ── ABA: Performance Mensal ──
-  const headerMensal = ['Conta','Mês','Faturamento (R$)','Pedidos','Unidades','Conversão (%)','TACOS (%)','Rebait (%)','M.C. (%)'];
-  const exemploMensal = ['FW','2026-04','85000','320','480','3.2','9.5','12','22.5'];
-  const wsMensal = XLSX.utils.aoa_to_sheet([
-    ['PERFORMANCE MENSAL POR CONTA'],
-    ['Preencha uma linha por conta/mês. Campos obrigatórios: Conta, Mês, Faturamento, Pedidos.'],
-    [],
-    headerMensal,
-    exemploMensal,
-  ]);
-  wsMensal['!cols'] = [{wch:10},{wch:10},{wch:16},{wch:10},{wch:10},{wch:14},{wch:11},{wch:11},{wch:10}];
-  XLSX.utils.book_append_sheet(wb, wsMensal, 'Performance Mensal');
-
   // ── ABA: Performance SKU ──
-  // Pré-popula com os SKUs cadastrados na Precificação como referência
-  const headerSKU = ['Conta','SKU','Mês','Faturamento (R$)','Pedidos','Unidades','Preço Venda (R$)','Investimento ADS (R$)','Conversão (%)','TACOS (%)','Rebait (%)','M.C. (%)'];
-  const exemploSKU = ['FW','FW-CABO-001','2026-04','12500','85','120','149.90','1187.50','4.1','9.5','12','24.3'];
+  const header = ['Conta','SKU','Mês','Preço Venda (R$)','Investimento ADS (R$)','TACOS (%)','Rebait (%)'];
+  const exemplo = ['FW','FW-CABO-001','2026-04','149.90','1187.50','9.5','12.0'];
 
   const skuRows = [
-    ['PERFORMANCE POR SKU (MENSAL)'],
-    ['Uma linha por SKU/mês. Campos obrigatórios: Conta, SKU, Mês, Faturamento.'],
+    ['DADOS COMPLEMENTARES POR SKU'],
+    ['Preencha uma linha por SKU/mês. Campos obrigatórios: Conta, SKU, Mês.'],
     [],
-    headerSKU,
-    exemploSKU,
+    header,
+    exemplo,
   ];
 
-  // Adiciona SKUs já cadastrados como referência (em branco para preencher)
-  contas.forEach(c => {
-    if (D[c] && D[c].length) {
-      D[c].forEach(r => {
-        if (r.sku) {
-          skuRows.push([c, r.sku, '', '', '', '', r.preco||'', '', '', '', r.rebait||'', '']);
-        }
+  // Pré-popula com os SKUs já cadastrados como referência
+  contas.forEach(ct => {
+    if (D[ct] && D[ct].length) {
+      D[ct].forEach(r => {
+        if (r.sku) skuRows.push([ct, r.sku, '', r.preco||'', '', '', r.rebait||'']);
       });
     }
   });
 
   const wsSKU = XLSX.utils.aoa_to_sheet(skuRows);
-  wsSKU['!cols'] = [{wch:10},{wch:18},{wch:10},{wch:15},{wch:10},{wch:10},{wch:15},{wch:18},{wch:14},{wch:11},{wch:11},{wch:10}];
+  wsSKU['!cols'] = [{wch:10},{wch:18},{wch:10},{wch:16},{wch:20},{wch:12},{wch:12}];
   XLSX.utils.book_append_sheet(wb, wsSKU, 'Performance SKU');
 
   XLSX.writeFile(wb, `SellerHub_Planilha_Base_${stamp}.xlsx`);
-  alert('✓ Planilha base exportada!\n\nArquivo: SellerHub_Planilha_Base_' + stamp + '.xlsx\n\nEnvie para a empresa preencher as abas:\n• Performance Mensal\n• Performance SKU\n\n(Os SKUs já cadastrados foram incluídos como referência na aba Performance SKU.).');
+  alert('✓ Planilha base exportada!\n\nArquivo: SellerHub_Planilha_Base_' + stamp + '.xlsx\n\nEnvie para a empresa preencher:\n• Preço de Venda\n• Investimento ADS\n• TACOS (%)\n• Rebait (%)\n\n(Os SKUs já cadastrados foram incluídos como referência.)');
 }
 
 function closeHubModal() {
   document.getElementById('hub-modal-bg').classList.remove('active');
-  hubImportData = { sku: [], prec: [], perf: [] };
+  hubImportData = { sku: [] };
 }
 
 // Atualizar prévia quando mudar conta ou mês no modal
