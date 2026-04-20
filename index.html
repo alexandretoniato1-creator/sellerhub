@@ -2048,33 +2048,39 @@ function enterApp(){
 
 function applyUserRole(){
   if(!currentUser) return;
-  // Badge
+  // Badge lateral
   document.getElementById('sidebar-user-name').textContent = currentUser.username;
   const roleEl = document.getElementById('sidebar-user-role');
-  roleEl.textContent = currentUser.role === 'admin' ? 'Admin' : 'Mentorado';
+  const roleLabels = { admin: 'Admin', mentorado: 'Mentorado', colaborador: 'Colaborador' };
+  roleEl.textContent = roleLabels[currentUser.role] || currentUser.role;
   roleEl.className = 'sidebar-user-role ' + currentUser.role;
 
-  if(currentUser.role === 'mentorado'){
-    // Aplica abas permitidas — se não tiver configurado, libera só mentoria
-    const abas = currentUser.abas_permitidas || ['mentoria'];
-    document.querySelectorAll('.nav-item').forEach(btn => {
-      const key = btn.dataset.navKey || '';
-      // Usuários nunca aparece para mentorado
-      if(key === 'usuarios'){ btn.style.display = 'none'; return; }
-      btn.style.display = abas.includes(key) ? '' : 'none';
-    });
-    applyMentoradoRestrictions();
-    // Vai para a primeira aba permitida
-    const primeiraAba = abas[0] || 'mentoria';
-    const btnAlvo = document.querySelector(`.nav-item[data-nav-key="${primeiraAba}"]`);
-    go(primeiraAba, btnAlvo);
-  } else {
+  if(currentUser.role === 'admin'){
     // Admin: mostra toolbar de apresentação e aba de usuários
     document.getElementById('admin-toolbar').classList.remove('hidden');
     document.getElementById('nav-usuarios').style.display = '';
-    // Garante que Home fique ativo
     document.getElementById('nav-home').classList.add('active');
     buildAdminToggles();
+  } else {
+    // Mentorado ou Colaborador: aplica abas configuráveis
+    const defaultAbas = currentUser.role === 'colaborador'
+      ? ['home','performance','produtos','anotacoes','agenda','ideias']
+      : ['mentoria'];
+    const abas = currentUser.abas_permitidas || defaultAbas;
+
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      const key = btn.dataset.navKey || '';
+      if(key === 'usuarios'){ btn.style.display = 'none'; return; }
+      btn.style.display = abas.includes(key) ? '' : 'none';
+    });
+
+    if(currentUser.role === 'mentorado'){
+      applyMentoradoRestrictions();
+    }
+
+    const primeiraAba = abas[0] || (currentUser.role === 'colaborador' ? 'home' : 'mentoria');
+    const btnAlvo = document.querySelector(`.nav-item[data-nav-key="${primeiraAba}"]`);
+    go(primeiraAba, btnAlvo);
   }
 }
 
@@ -2108,9 +2114,9 @@ function buildAdminToggles(){
   const container = document.getElementById('admin-nav-toggles');
   container.innerHTML = '';
   nav.forEach(btn => {
-    const label = btn.dataset.navLabel || btn.getAttribute('onclick') || '';
-    if(!label) return;
-    const key = btn.dataset.navKey || label;
+    const label = btn.dataset.navLabel || '';
+    const key = btn.dataset.navKey || '';
+    if(!label || !key) return;
     const id = 'toggle_' + key;
     const row = document.createElement('div');
     row.className = 'admin-toggle-row';
@@ -5605,6 +5611,8 @@ function renderUsers(){
     const aluno = usersMentorados.find(a => a.id === u.aluno_id);
     const roleBadge = u.role === 'admin'
       ? `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--coral-50);color:var(--coral-600)">Admin</span>`
+      : u.role === 'colaborador'
+      ? `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--blue-50);color:var(--blue-600)">Colaborador</span>`
       : `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:#E8F5EE;color:#2D6A4F">Mentorado</span>`;
     const statusBadge = u.active
       ? `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--green-50);color:var(--green-600)">Ativo</span>`
@@ -5638,7 +5646,7 @@ function openUserModal(user){
   ).join('');
 
   const isEdit = !!user;
-  const isMentorado = !user || user.role === 'mentorado';
+  const currentRole = user ? user.role : 'mentorado';
 
   const todasAbas = [
     { key: 'home',        label: 'Home' },
@@ -5649,7 +5657,10 @@ function openUserModal(user){
     { key: 'ideias',      label: 'Ideias' },
     { key: 'mentoria',    label: 'Mentoria' },
   ];
-  const abasSalvas = user && user.abas_permitidas ? user.abas_permitidas : ['home','performance','produtos','anotacoes','agenda','ideias','mentoria'];
+  const defaultAbas = currentRole === 'colaborador'
+    ? ['home','performance','produtos','anotacoes','agenda','ideias']
+    : ['home','performance','produtos','anotacoes','agenda','ideias','mentoria'];
+  const abasSalvas = user && user.abas_permitidas ? user.abas_permitidas : defaultAbas;
 
   const abasToggles = todasAbas.map(a => {
     const checked = abasSalvas.includes(a.key);
@@ -5659,6 +5670,9 @@ function openUserModal(user){
     </div>`;
   }).join('');
 
+  const showAluno = currentRole === 'mentorado';
+  const showAbas = currentRole !== 'admin';
+
   document.getElementById('modal').innerHTML = `
     <div class="modal-title">${isEdit ? 'Editar usuário' : 'Novo usuário'}</div>
     <div class="edit-row-fields" style="grid-template-columns:1fr 1fr;margin-top:16px">
@@ -5666,15 +5680,16 @@ function openUserModal(user){
         <input type="text" id="um-username" value="${user ? user.username : ''}" placeholder="ex: joao.silva" autocapitalize="none" style="font-family:var(--mono)">
       </div>
       <div class="m-field full"><label>Senha ${isEdit ? '(deixe em branco para manter)' : ''}</label>
-        <input type="text" id="um-password" value="${isEdit ? '' : ''}" placeholder="senha de acesso">
+        <input type="text" id="um-password" value="" placeholder="senha de acesso">
       </div>
       <div class="m-field"><label>Perfil</label>
         <select id="um-role" onchange="toggleAlunoField(this.value)">
-          <option value="mentorado" ${!user || user.role === 'mentorado' ? 'selected' : ''}>Mentorado</option>
-          <option value="admin" ${user && user.role === 'admin' ? 'selected' : ''}>Admin</option>
+          <option value="mentorado" ${currentRole === 'mentorado' ? 'selected' : ''}>Mentorado</option>
+          <option value="colaborador" ${currentRole === 'colaborador' ? 'selected' : ''}>Colaborador</option>
+          <option value="admin" ${currentRole === 'admin' ? 'selected' : ''}>Admin</option>
         </select>
       </div>
-      <div class="m-field" id="um-aluno-field" ${user && user.role === 'admin' ? 'style="display:none"' : ''}>
+      <div class="m-field" id="um-aluno-field" style="${showAluno ? '' : 'display:none'}">
         <label>Mentorado vinculado</label>
         <select id="um-aluno">
           <option value="">— Nenhum —</option>
@@ -5682,7 +5697,7 @@ function openUserModal(user){
         </select>
       </div>
     </div>
-    <div class="m-field" id="um-abas-section" style="margin-top:8px;${user && user.role === 'admin' ? 'display:none' : ''}">
+    <div class="m-field" id="um-abas-section" style="margin-top:8px;${showAbas ? '' : 'display:none'}">
       <label style="margin-bottom:8px;display:block">Abas visíveis para este usuário</label>
       ${abasToggles}
     </div>
@@ -5695,9 +5710,25 @@ function openUserModal(user){
 }
 
 function toggleAlunoField(role){
-  document.getElementById('um-aluno-field').style.display = role === 'admin' ? 'none' : '';
+  // Campo "Mentorado vinculado" só para role mentorado
+  const alunoField = document.getElementById('um-aluno-field');
+  if(alunoField) alunoField.style.display = role === 'mentorado' ? '' : 'none';
+  // Seção de abas oculta apenas para admin
   const abasSection = document.getElementById('um-abas-section');
   if(abasSection) abasSection.style.display = role === 'admin' ? 'none' : '';
+  // Ajusta defaults de abas conforme role selecionado
+  if(role === 'colaborador'){
+    const semMentoria = ['home','performance','produtos','anotacoes','agenda','ideias'];
+    ['home','performance','produtos','anotacoes','agenda','ideias','mentoria'].forEach(k => {
+      const btn = document.getElementById('aba-toggle-' + k);
+      if(btn){ if(semMentoria.includes(k)) btn.classList.add('on'); else btn.classList.remove('on'); }
+    });
+  } else if(role === 'mentorado'){
+    ['home','performance','produtos','anotacoes','agenda','ideias','mentoria'].forEach(k => {
+      const btn = document.getElementById('aba-toggle-' + k);
+      if(btn) btn.classList.add('on');
+    });
+  }
 }
 
 async function saveUser(id){
@@ -5709,15 +5740,15 @@ async function saveUser(id){
   if(!username){ alert('Informe o usuário'); return; }
   if(!id && !password){ alert('Informe a senha'); return; }
 
-  // Coleta abas selecionadas (só para mentorado)
+  // Coleta abas selecionadas (só para não-admin)
   let abas_permitidas = null;
-  if(role === 'mentorado'){
+  if(role !== 'admin'){
     const todasAbas = ['home','performance','produtos','anotacoes','agenda','ideias','mentoria'];
     abas_permitidas = todasAbas.filter(k => {
-      const btn = document.getElementById(`aba-toggle-${k}`);
+      const btn = document.getElementById('aba-toggle-' + k);
       return btn && btn.classList.contains('on');
     });
-    if(!abas_permitidas.length) abas_permitidas = ['mentoria'];
+    if(!abas_permitidas.length) abas_permitidas = role === 'colaborador' ? ['home'] : ['mentoria'];
   }
 
   const payload = { username, role, aluno_id: role === 'mentorado' && aluno_id ? aluno_id : null, abas_permitidas };
