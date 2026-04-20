@@ -1260,11 +1260,12 @@ body.sidebar-collapsed .hamburger { display: none; }
           </select>
           <span style="font-size:12px;color:var(--slate-400);margin-left:4px">Clique em um SKU para ver o histórico completo</span>
           <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <div class="perf-section-label" style="margin-bottom:4px">Planilha Base</div>
-            <button class="btn btn-ghost" onclick="exportBaseXLSX()" style="gap:6px" title="Baixar planilha modelo para a empresa preencher">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Baixar modelo .xlsx
+            <div class="perf-section-label" style="margin-bottom:4px">Importar Relatório ML</div>
+            <button class="btn btn-ghost" onclick="document.getElementById('ml-file-input').click()" style="gap:6px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Selecionar .xlsx
             </button>
+            <input type="file" id="ml-file-input" accept=".xlsx" style="display:none" onchange="handleMLImport(this)">
           </div>
         </div>
         <div id="todos-summary-cards" style="margin-bottom:16px"></div>
@@ -1318,12 +1319,11 @@ body.sidebar-collapsed .hamburger { display: none; }
               <input type="file" id="hub-file-input" accept=".xlsx" style="display:none" onchange="handleHubImport(this)">
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-              <div class="perf-section-label" style="margin-bottom:6px">Importar relatório ML</div>
-              <button class="btn btn-ghost" onclick="document.getElementById('ml-file-input').click()" style="gap:8px">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                Selecionar .xlsx
+              <div class="perf-section-label" style="margin-bottom:6px">Planilha Base</div>
+              <button class="btn btn-ghost" onclick="exportBaseXLSX()" style="gap:8px" title="Baixar planilha modelo para a empresa preencher">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Baixar modelo .xlsx
               </button>
-              <input type="file" id="ml-file-input" accept=".xlsx" style="display:none" onchange="handleMLImport(this)">
             </div>
 
           </div>
@@ -5522,8 +5522,7 @@ function mentRenderPacoteBanner(aid){
     const bg=!s?'#E4DFD4':s.status==='realizada'?'#2D6A4F':s.status==='agendada'?'#F59E0B':'#E4DFD4';
     dots+=`<div style="width:11px;height:11px;border-radius:50%;background:${bg}"></div>`;
   }
-  const nomePacote = pac.nome || `Pacote #${pac.numero}`;
-  el.innerHTML=`<div><div style="font-size:9px;font-family:var(--mono);color:#A8A29E;margin-bottom:4px">PACOTE ATUAL</div><div style="font-size:13px;font-weight:500">${nomePacote}</div></div><div style="display:flex;gap:6px;margin-left:auto">${dots}</div><div style="font-size:11px;font-family:var(--mono);color:#A8A29E;margin-left:14px">${real}/${pac.total_aulas||4} aulas · início ${mentFmtData(pac.inicio)}</div><button onclick="mentOpenEditPacote()" class="ment-btn-ghost" style="margin-left:14px;font-size:12px">✏ Editar</button><button onclick="mentOpenNovoPacote()" class="ment-btn-ghost" style="margin-left:6px;font-size:12px">Renovar</button>`;
+  el.innerHTML=`<div><div style="font-size:9px;font-family:var(--mono);color:#A8A29E;margin-bottom:4px">PACOTE ATUAL</div><div style="font-size:13px;font-weight:500">Pacote #${pac.numero} — R$ ${pac.valor}</div></div><div style="display:flex;gap:6px;margin-left:auto">${dots}</div><div style="font-size:11px;font-family:var(--mono);color:#A8A29E;margin-left:14px">${real}/4 aulas · início ${mentFmtData(pac.inicio)}</div><button onclick="mentOpenNovoPacote()" class="ment-btn-ghost" style="margin-left:14px;font-size:12px">Renovar</button>`;
 }
 
 function mentRenderSessoes(aid){
@@ -5768,41 +5767,6 @@ async function mentSalvarPacote(){
   }catch(e){alert('Erro ao criar pacote');console.error(e);}
 }
 
-function mentOpenEditPacote(){
-  const pac=mentGetPacoteAtivo(mentAtivoId);
-  if(!pac)return;
-  document.getElementById('ment-modal-title').textContent='Editar pacote';
-  document.getElementById('ment-modal-sub').textContent='Altere os dados do pacote atual';
-  document.getElementById('ment-modal-body').innerHTML=`
-    <div style="margin-bottom:10px"><label class="ment-label">NOME DO PACOTE</label><input id="ment-ep-nome" class="ment-input" type="text" placeholder="Ex: Pacote Mensal, Pacote Básico…" value="${pac.nome||''}"></div>
-    <div style="display:flex;gap:10px;margin-bottom:10px">
-      <div style="flex:1"><label class="ment-label">VALOR (R$)</label><input id="ment-ep-valor" class="ment-input" type="number" value="${pac.valor||0}"></div>
-      <div style="flex:1"><label class="ment-label">TOTAL DE AULAS</label><input id="ment-ep-total" class="ment-input" type="number" min="1" value="${pac.total_aulas||4}"></div>
-    </div>
-    <div style="display:flex;gap:10px;margin-bottom:10px">
-      <div style="flex:1"><label class="ment-label">INÍCIO</label><input id="ment-ep-inicio" class="ment-input" type="date" value="${pac.inicio||''}"></div>
-      <div style="flex:1"><label class="ment-label">STATUS</label><select id="ment-ep-status" class="ment-input"><option value="ativo" ${pac.status==='ativo'?'selected':''}>Ativo</option><option value="aguardando_pagamento" ${pac.status==='aguardando_pagamento'?'selected':''}>Aguardando pagamento</option><option value="concluido" ${pac.status==='concluido'?'selected':''}>Concluído</option></select></div>
-    </div>`;
-  document.getElementById('ment-modal-confirm').onclick=mentSalvarEditPacote;
-  document.getElementById('ment-modal').style.display='flex';
-}
-async function mentSalvarEditPacote(){
-  const pac=mentGetPacoteAtivo(mentAtivoId);
-  if(!pac)return;
-  const nome=document.getElementById('ment-ep-nome')?.value.trim()||'';
-  const valor=parseFloat(document.getElementById('ment-ep-valor')?.value)||0;
-  const total_aulas=parseInt(document.getElementById('ment-ep-total')?.value)||4;
-  const inicio=document.getElementById('ment-ep-inicio')?.value;
-  const status=document.getElementById('ment-ep-status')?.value;
-  try{
-    await mentFetch(`mentoria_pacotes?id=eq.${pac.id}`,{method:'PATCH',body:JSON.stringify({nome,valor,total_aulas,inicio:inicio||null,status})});
-    Object.assign(pac,{nome,valor,total_aulas,inicio:inicio||null,status});
-    mentCloseModal();
-    mentRenderPacoteBanner(mentAtivoId); mentRenderHistorico(mentAtivoId);
-    mentRenderSessoes(mentAtivoId); mentRenderSidebar(); mentAtualizarStats();
-  }catch(e){alert('Erro ao salvar pacote');console.error(e);}
-}
-
 // ── MODO SESSÃO ──
 function mentEntrarModoSessao(){
   const a=mentAlunos.find(x=>x.id===mentAtivoId); if(!a)return;
@@ -5822,15 +5786,14 @@ function mentEntrarModoSessao(){
     dots+=`<div style="width:14px;height:14px;border-radius:50%;background:${bg}"></div>`;
   }
   document.getElementById('ment-ms-dots').innerHTML=dots;
-  const totalAulas=pac?.total_aulas||4;
-  document.getElementById('ment-ms-prog-text').textContent=`${real} de ${totalAulas} aulas realizadas`;
+  document.getElementById('ment-ms-prog-text').textContent=`${real} de 4 aulas realizadas`;
   const mes=sess.filter(s=>{
     if(!s.data)return false;
     const d=new Date(s.data+'T00:00:00'),n=new Date();
     return d.getMonth()===n.getMonth()&&d.getFullYear()===n.getFullYear();
   }).length;
   document.getElementById('ment-ms-realizadas').textContent=real;
-  document.getElementById('ment-ms-restantes').textContent=totalAulas-real;
+  document.getElementById('ment-ms-restantes').textContent=4-real;
   document.getElementById('ment-ms-mes').textContent=mes;
   // sessões
   const sl=document.getElementById('ment-ms-sessoes');
