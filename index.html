@@ -6687,8 +6687,12 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 /* ── ANOTAÇÕES — TO-DO REDESIGN ─────────── */
 
-/* Esconde seção de tags e filtros avançados */
-.notes-filters { display: none !important; }
+/* Esconde só as tags — mantém status pills */
+.notes-filters .filter-seg,
+.notes-filters .tags-list,
+.notes-filters .tag-add-btn { display: none !important; }
+.notes-filters .filter-seg:first-child,
+.notes-filters .status-pills { display: block !important; display: flex !important; }
 .notes-sidebar-top { padding: 14px 14px 0; border-bottom: none; }
 
 /* Toolbar acima da lista */
@@ -7023,61 +7027,183 @@ body.theme-teal .home-fat-card.total {
 body.theme-indigo .coral-500, body.theme-indigo .dash-value.neg { color: #5B5BD6; }
 body.theme-teal   .coral-500, body.theme-teal   .dash-value.neg { color: #2D9596; }
 
+/* ── MOBILE OVERRIDES — premium fixes ───────── */
+@media (max-width: 768px) {
+  /* Desativa rail sidebar no mobile — usa o padrão original */
+  .sidebar {
+    width: 240px !important;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease !important;
+    overflow: visible !important;
+  }
+  .sidebar.open { transform: translateX(0) !important; width: 240px !important; }
+  .sidebar:hover { width: 240px !important; box-shadow: none; }
+  .sidebar::before { display: none !important; }
+  .sidebar-logo { opacity: 1 !important; }
+  .nav-item-text { opacity: 1 !important; transform: none !important; }
+  .nav-badge { opacity: 1 !important; }
+  .sidebar-user-name, .sidebar-user-role, .sidebar-logout { opacity: 1 !important; }
+
+  /* Main: padding correto para mobile */
+  .main { margin-left: 0 !important; padding: 68px 16px 100px !important; background: #F7F6F2; }
+
+  /* Hamburger: teal theme */
+  .hamburger { background: #1A1A18 !important; border-radius: 8px !important; }
+
+  /* Login: card full-width no mobile */
+  .pw-wrap { width: 90vw !important; max-width: 340px; padding: 24px 20px !important; border-radius: 16px !important; }
+  .pw-input, .pw-btn { width: 100% !important; }
+  .pw-logo { font-size: 28px !important; }
+
+  /* KPI cards: fonte menor */
+  .dash-value { font-size: 20px !important; }
+  .vg-kpi-value { font-size: 20px !important; }
+  #page-performance .vg-kpi-value { font-size: 22px !important; }
+  #ment-ms-realizadas, #ment-ms-restantes, #ment-ms-mes { font-size: 36px !important; letter-spacing: -1px !important; }
+  #ment-ms-nome { font-size: 22px !important; }
+
+  /* Home fat cards: 2 colunas */
+  .home-fat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .home-fat-card { padding: 12px 14px !important; border-radius: 10px !important; }
+  .home-fat-value { font-size: 16px !important; }
+
+  /* Page title menor */
+  .page-title { font-size: 20px !important; }
+  .page-subtitle { font-size: 12px !important; margin-bottom: 16px !important; }
+
+  /* Modais: full width */
+  .modal { border-radius: 12px !important; padding: 20px 16px !important; }
+
+  /* SKU drawer */
+  .sku-drawer { border-radius: 0 !important; }
+
+  /* Notas: layout empilhado */
+  .notes-layout { border-radius: var(--radius) !important; }
+  .notes-filters { padding: 8px 14px !important; }
+  .status-pills { flex-wrap: wrap !important; gap: 6px !important; }
+
+  /* Kanban: padding extra no final */
+  .kanban-board { padding-bottom: 100px !important; }
+
+  /* Performance: tabs com scroll */
+  .perf-subtabs { gap: 0 !important; }
+
+  /* Modo sessão mentoria mobile */
+  #ment-modo-sessao > div:nth-child(2) { padding: 24px 20px 20px !important; }
+  #ment-ms-nome { font-size: 24px !important; }
+  #ment-modo-sessao > div:nth-child(3) { grid-template-columns: 1fr 1fr 1fr !important; }
+  #ment-modo-sessao > div:nth-child(4) { grid-template-columns: 1fr !important; }
+
+  /* Admin toolbar: esquerda no mobile */
+  .admin-toolbar { bottom: 20px !important; right: auto !important; left: 16px !important; }
+
+  /* Comp summary */
+  .comp-summary { padding: 14px 16px !important; border-radius: 10px !important; }
+  .comp-summary-val { font-size: 16px !important; }
+
+  /* Botão nova nota */
+  #notes-new-btn-wrap { padding: 10px 14px 20px !important; }
+}
+
+/* ── TEAL BAKED IN — padronizar coral → teal ── */
+:root {
+  --accent:      #2D9596;
+  --accent-dark: #1E6B6C;
+  --accent-soft: rgba(45,149,150,.08);
+  --accent-pale: #E6F6F6;
+  --accent-mid:  #6CC2C3;
+  --coral-500: #2D9596;
+  --coral-600: #1E6B6C;
+  --coral-400: #6CC2C3;
+  --coral-200: #A8DCDC;
+  --coral-50:  #E6F6F6;
+  --coral-900: #0D3E3E;
+  --coral-700: #1A5C5C;
+}
+/* Botão e estados primários */
+.btn-primary { background: #2D9596 !important; }
+.btn-primary:hover { background: #1E6B6C !important; }
+.pw-btn { background: #2D9596 !important; box-shadow: 0 4px 16px rgba(45,149,150,.35) !important; }
+.pw-btn:hover { background: #1E6B6C !important; }
+/* Tabs */
+.tab.active, .perf-subtab.active { color: #2D9596 !important; border-bottom-color: #2D9596 !important; }
+/* Nav ativo */
+.nav-item.active { background: #2D9596 !important; box-shadow: 0 2px 12px rgba(45,149,150,.35) !important; }
+/* Links */
+.home-section-link { color: #2D9596 !important; }
+.home-section-link:hover { color: #1E6B6C !important; }
+.kc-link { color: #2D9596 !important; }
+/* Valores negativos / destaques */
+td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
+/* Barras */
+.bar-fill.coral { background: #2D9596 !important; }
+.conv-fill { background: #2D9596 !important; }
+.todos-part-fill { background: #6CC2C3 !important; }
+.vg-contrib-fill { background: #6CC2C3 !important; }
+/* Calendário */
+.cal-pill.contrato { background: #E6F6F6 !important; color: #1A5C5C !important; }
+.bar-contrato, .dot-contrato, .home-evt-dot.contrato { background: #2D9596 !important; }
+.badge-contrato { background: #E6F6F6 !important; color: #1A5C5C !important; }
+.cal-sidebar-add-btn { background: #2D9596 !important; }
+.cal-sidebar-add-btn:hover { background: #1E6B6C !important; }
+.cal-today-btn:hover { background: #E6F6F6 !important; border-color: #6CC2C3 !important; color: #1A5C5C !important; }
+.cal-day.today { background: #E6F6F6 !important; }
+.cal-day.today .cal-day-num { background: #2D9596 !important; color: #fff !important; }
+/* Botões de ação em tabelas */
+.btn-hub-edit { color: #2D9596 !important; border-color: #A8DCDC !important; }
+.btn-hub-edit:hover { background: #E6F6F6 !important; }
+/* Chips editor */
+.ed-chip:hover { border-color: #2D9596 !important; color: #2D9596 !important; }
+.ed-chip.active-pendente { background: #E6F6F6 !important; border-color: #A8DCDC !important; color: #1E6B6C !important; }
+/* Notas */
+.note-card.active { background: #E6F6F6 !important; }
+.note-card::before, .note-card.active::before { background: #2D9596 !important; }
+.note-card:hover::after { border-color: #2D9596 !important; }
+.note-card.active::after { border-color: #2D9596 !important; background: #E6F6F6 !important; }
+.note-card.concluida::after { background: #2D9596 !important; border-color: #2D9596 !important; }
+.note-date-badge.overdue { color: #2D9596 !important; }
+.notes-list-count strong { color: #2D9596 !important; }
+.notes-search:focus { border-color: #2D9596 !important; }
+.notes-filter-pill.active { background: #2D9596 !important; border-color: #2D9596 !important; }
+.status-pill.active { background: #1A1A18 !important; border-color: #1A1A18 !important; }
+.tag-row.active .tag-row-name { color: #1E6B6C !important; }
+.tag-row.active { background: #E6F6F6 !important; }
+/* Modal / Inputs focus */
+.m-field input:focus, .m-field textarea:focus, .m-field select:focus { border-color: #2D9596 !important; box-shadow: 0 0 0 3px rgba(45,149,150,.10) !important; }
+.pw-input:focus { border-color: #2D9596 !important; box-shadow: 0 0 0 3px rgba(45,149,150,.15) !important; }
+.perf-select:focus { border-color: #2D9596 !important; box-shadow: 0 0 0 3px rgba(45,149,150,.10) !important; }
+/* Home */
+.home-fat-card.total { background: linear-gradient(135deg, #2D9596 0%, #1E6B6C 100%) !important; box-shadow: 0 4px 16px rgba(45,149,150,.3) !important; }
+.home-evt-row:hover { background: #E6F6F6 !important; border-color: #6CC2C3 !important; }
+.home-evt-today { color: #2D9596 !important; background: #E6F6F6 !important; border-color: #A8DCDC !important; }
+.home-note-date { color: #2D9596 !important; }
+.home-note-row:hover { background: #E6F6F6 !important; }
+/* Sync */
+#ptr-indicator { background: #2D9596 !important; }
+/* Performance champion */
+.perf-champion { background: #E6F6F6 !important; border-color: #A8DCDC !important; color: #1E6B6C !important; }
+/* Comp picker */
+.comp-month-btn.active { background: #2D9596 !important; border-color: #2D9596 !important; }
+.comp-month-btn:hover { border-color: #6CC2C3 !important; color: #1E6B6C !important; }
+/* Kanban */
+.kanban-add-col:hover { border-color: #2D9596 !important; color: #2D9596 !important; }
+/* Cal manage cats btn */
+.cal-manage-cats-btn:hover { color: #2D9596 !important; background: #E6F6F6 !important; }
+/* Tag add btn */
+.tag-add-btn:hover { color: #2D9596 !important; background: #E6F6F6 !important; }
+/* todos row */
+.todos-row:hover .todos-sku { color: #1E6B6C !important; }
+.todos-row:hover { background: #E6F6F6 !important; }
+/* Delta negativo não deve ser teal — mantém vermelho */
+.delta-down { color: #C0392B !important; }
+
 </style>
 
-<!-- ─── TWEAKS PANEL ─────────────────────── -->
-<div id="tweaks-panel" style="
-  position:fixed; bottom:80px; right:24px; z-index:600;
-  background:#1A1A18; border:1px solid rgba(255,255,255,.1);
-  border-radius:16px; padding:20px; width:240px;
-  box-shadow:0 8px 32px rgba(0,0,0,.35);
-  display:none; flex-direction:column; gap:14px;
-  font-family:'DM Sans',sans-serif;
-">
-  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:rgba(255,255,255,.35);font-family:'JetBrains Mono',monospace">Tweaks</div>
-
-  <!-- Tema de cores -->
-  <div>
-    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:8px">Cor de acento</div>
-    <div style="display:flex;gap:6px">
-      <button onclick="setTheme('coral')" id="tw-coral" style="flex:1;padding:8px 4px;border-radius:8px;border:2px solid #D85A30;background:#D85A30;color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s">Coral</button>
-      <button onclick="setTheme('indigo')" id="tw-indigo" style="flex:1;padding:8px 4px;border-radius:8px;border:2px solid rgba(255,255,255,.1);background:rgba(91,91,214,.2);color:rgba(255,255,255,.6);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s">Índigo</button>
-      <button onclick="setTheme('teal')" id="tw-teal" style="flex:1;padding:8px 4px;border-radius:8px;border:2px solid rgba(255,255,255,.1);background:rgba(45,149,150,.2);color:rgba(255,255,255,.6);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s">Teal</button>
-    </div>
-  </div>
-
-  <!-- Densidade -->
-  <div>
-    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:8px">Densidade da tabela</div>
-    <div style="display:flex;gap:6px">
-      <button onclick="setDensity('compact')" id="tw-compact" style="flex:1;padding:6px 4px;border-radius:8px;border:2px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Compacto</button>
-      <button onclick="setDensity('normal')" id="tw-normal" style="flex:1;padding:6px 4px;border-radius:8px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Normal</button>
-    </div>
-  </div>
-
-  <!-- Sidebar width -->
-  <div>
-    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.55);margin-bottom:8px">Sidebar</div>
-    <div style="display:flex;gap:6px">
-      <button onclick="setSidebar('icons')" id="tw-icons" style="flex:1;padding:6px 4px;border-radius:8px;border:2px solid rgba(255,255,255,.1);background:transparent;color:rgba(255,255,255,.5);font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Só ícones</button>
-      <button onclick="setSidebar('full')" id="tw-full" style="flex:1;padding:6px 4px;border-radius:8px;border:2px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">Completa</button>
-    </div>
-  </div>
-</div>
-
-<!-- Botão flutuante de Tweaks -->
-<button id="tweaks-fab" onclick="toggleTweaks()" style="
-  position:fixed; bottom:24px; right:24px; z-index:601;
-  width:44px; height:44px; border-radius:12px;
-  background:#1A1A18; border:1px solid rgba(255,255,255,.15);
-  color:rgba(255,255,255,.7); font-size:18px; cursor:pointer;
-  box-shadow:0 4px 16px rgba(0,0,0,.3); display:flex;
-  align-items:center; justify-content:center;
-  transition:all .18s;
-" title="Tweaks">⚙</button>
-
-<style id="density-style"></style>
-<style id="sidebar-style"></style>
+<!-- ─── SCRIPTS ───────────────────────────── -->
+<style id="density-style">
+  .hub-tbody td { padding: 7px 14px !important; font-size: 11.5px !important; }
+  .hub-tbody td:first-child { padding-left: 20px !important; }
+</style>
 
 <script>
 // ── Mentoria: role-based layout ──────────────
@@ -7092,18 +7218,15 @@ body.theme-teal   .coral-500, body.theme-teal   .dash-value.neg { color: #2D9596
       document.body.classList.remove('role-mentorado');
     }
   }
-  // Observe changes to role element
   const observer = new MutationObserver(applyRole);
   const target = document.getElementById('sidebar-user-role');
   if (target) observer.observe(target, { childList: true, characterData: true, subtree: true });
-  // Also run after app loads
   setTimeout(applyRole, 1200);
   setTimeout(applyRole, 3000);
 })();
 
 // ── Notes TO-DO redesign: inject toolbar + footer button ──
 (function initNotesRedesign() {
-  // Wait for DOM to be ready
   function setup() {
     const sidebar = document.getElementById('notes-sidebar');
     if (!sidebar) return;
@@ -7181,98 +7304,8 @@ body.theme-teal   .coral-500, body.theme-teal   .dash-value.neg { color: #2D9596
   document.head.appendChild(style);
 })();
 
-// ── Tweaks Logic ──────────────────────────────
-const TWEAK_DEFAULS = /*EDITMODE-BEGIN*/{
-  "theme": "teal",
-  "density": "compact",
-  "sidebar": "full"
-}/*EDITMODE-END*/;
-
-let tweakState = { ...TWEAK_DEFAULS };
-
-function toggleTweaks() {
-  const p = document.getElementById('tweaks-panel');
-  const open = p.style.display === 'flex';
-  p.style.display = open ? 'none' : 'flex';
-  document.getElementById('tweaks-fab').style.background = open ? '#1A1A18' : '#333330';
-}
-
-function setTheme(t) {
-  tweakState.theme = t;
-  document.body.classList.remove('theme-coral','theme-indigo','theme-teal');
-  if (t !== 'coral') document.body.classList.add('theme-' + t);
-  ['coral','indigo','teal'].forEach(id => {
-    const btn = document.getElementById('tw-' + id);
-    const active = id === t;
-    btn.style.borderColor = active ? (id==='coral'?'#D85A30':id==='indigo'?'#5B5BD6':'#2D9596') : 'rgba(255,255,255,.1)';
-    btn.style.background = active ? (id==='coral'?'#D85A30':id==='indigo'?'rgba(91,91,214,.8)':'rgba(45,149,150,.8)') : 'rgba(255,255,255,.04)';
-    btn.style.color = active ? '#fff' : 'rgba(255,255,255,.5)';
-  });
-  postEdits();
-}
-
-function setDensity(d) {
-  tweakState.density = d;
-  const s = document.getElementById('density-style');
-  if (d === 'compact') {
-    s.textContent = '.hub-tbody td { padding: 7px 14px !important; font-size: 11.5px !important; } .hub-tbody td:first-child { padding-left: 20px !important; }';
-  } else {
-    s.textContent = '';
-  }
-  ['compact','normal'].forEach(id => {
-    const btn = document.getElementById('tw-' + id);
-    const active = id === d;
-    btn.style.borderColor = active ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.1)';
-    btn.style.background = active ? 'rgba(255,255,255,.08)' : 'transparent';
-    btn.style.color = active ? '#fff' : 'rgba(255,255,255,.5)';
-  });
-  postEdits();
-}
-
-function setSidebar(mode) {
-  tweakState.sidebar = mode;
-  const s = document.getElementById('sidebar-style');
-  if (mode === 'icons') {
-    s.textContent = `
-      .sidebar { width: 60px !important; }
-      .sidebar-logo, .nav-item span, .sidebar-user-name, .sidebar-user-role, .nav-badge, .sidebar-logout { display: none !important; }
-      .sidebar-nav { padding: 0 6px !important; }
-      .nav-item { justify-content: center !important; padding: 10px !important; }
-      .nav-item svg { width: 20px !important; height: 20px !important; }
-      .sidebar-user-badge { padding: 8px !important; justify-content: center !important; }
-      .main { margin-left: 60px !important; }
-    `;
-  } else {
-    s.textContent = '';
-  }
-  ['icons','full'].forEach(id => {
-    const btn = document.getElementById('tw-' + id);
-    const active = id === mode;
-    btn.style.borderColor = active ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.1)';
-    btn.style.background = active ? 'rgba(255,255,255,.08)' : 'transparent';
-    btn.style.color = active ? '#fff' : 'rgba(255,255,255,.5)';
-  });
-  postEdits();
-}
-
-function postEdits() {
-  window.parent.postMessage({ type: '__edit_mode_set_keys', edits: tweakState }, '*');
-}
-
-// Host edit-mode integration
-window.addEventListener('message', e => {
-  if (e.data?.type === '__activate_edit_mode') document.getElementById('tweaks-panel').style.display = 'flex';
-  if (e.data?.type === '__deactivate_edit_mode') document.getElementById('tweaks-panel').style.display = 'none';
-});
-window.parent.postMessage({ type: '__edit_mode_available' }, '*');
-
-// Apply saved state on load
+// ── Login tagline ─────────────────────────────
 (function init() {
-  setTheme(tweakState.theme);
-  setDensity(tweakState.density);
-  setSidebar(tweakState.sidebar);
-
-  // Add tagline below logo on login
   const pwWrap = document.querySelector('.pw-wrap');
   if (pwWrap && !document.querySelector('.pw-tagline')) {
     const tag = document.createElement('div');
