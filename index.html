@@ -56,19 +56,67 @@
 body { font-family: var(--font); background: var(--bg); color: var(--slate-900); overflow-x: hidden; }
 
 /* LOGIN */
-#pw-screen { position: fixed; inset: 0; z-index: 1000; background: var(--slate-900); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 24px; }
+#pw-screen {
+  position: fixed; inset: 0; z-index: 1000;
+  background: var(--slate-900);
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(45,149,150,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(45,149,150,0.08) 0%, transparent 50%);
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  padding: 24px;
+}
 #pw-screen.hidden { display: none; }
-.pw-logo { font-size: 28px; font-weight: 600; color: var(--white); letter-spacing: -0.5px; }
-.pw-logo span { color: var(--coral-500); }
-.pw-wrap { display: flex; flex-direction: column; gap: 12px; align-items: center; width: 280px; }
-.pw-label { width: 280px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-400); margin-bottom: -6px; text-align: left; font-family: var(--font); }
-.pw-input { width: 280px; padding: 12px 16px; border: 1px solid var(--slate-600); border-radius: var(--radius); background: var(--slate-700); color: var(--white); font-family: var(--font); font-size: 15px; outline: none; text-align: left; transition: border var(--transition); }
-.pw-input::placeholder { color: var(--slate-400); }
-.pw-input:focus { border-color: var(--coral-500); }
-.pw-btn { width: 280px; padding: 12px; background: var(--coral-500); color: var(--white); border: none; border-radius: var(--radius); font-family: var(--font); font-size: 15px; font-weight: 500; cursor: pointer; transition: background var(--transition); margin-top: 4px; }
-.pw-btn:hover { background: var(--coral-600); }
-.pw-error { color: var(--coral-400); font-size: 13px; min-height: 20px; }
-.pw-loading { color: var(--slate-400); font-size: 13px; min-height: 20px; }
+.pw-logo {
+  font-size: 32px; font-weight: 700; color: var(--white);
+  letter-spacing: -1px; margin-bottom: 8px; text-align: center;
+}
+.pw-logo span { color: #2D9596; }
+.pw-tagline-top {
+  font-size: 13px; color: var(--slate-400); margin-bottom: 32px;
+  text-align: center; letter-spacing: 0.3px;
+}
+.pw-wrap {
+  display: flex; flex-direction: column; gap: 16px;
+  width: 100%; max-width: 380px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 32px 28px;
+  backdrop-filter: blur(10px);
+}
+.pw-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--slate-400); margin-bottom: -8px;
+  text-align: left; font-family: var(--font);
+}
+.pw-input {
+  width: 100%; padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  background: rgba(255,255,255,0.06);
+  color: var(--white); font-family: var(--font); font-size: 15px;
+  outline: none; transition: all var(--transition);
+}
+.pw-input::placeholder { color: var(--slate-600); }
+.pw-input:focus {
+  border-color: #2D9596 !important;
+  background: rgba(255,255,255,0.09);
+  box-shadow: 0 0 0 3px rgba(45,149,150,0.15) !important;
+}
+.pw-btn {
+  width: 100%; padding: 14px;
+  background: #2D9596; color: var(--white);
+  border: none; border-radius: var(--radius);
+  font-family: var(--font); font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all var(--transition);
+  margin-top: 4px;
+  box-shadow: 0 4px 16px rgba(45,149,150,0.35);
+  letter-spacing: 0.2px;
+}
+.pw-btn:hover { background: #1E6B6C; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(45,149,150,0.4); }
+.pw-btn:active { transform: translateY(0); }
+.pw-error { color: #6CC2C3; font-size: 13px; min-height: 20px; text-align: center; }
+.pw-loading { color: var(--slate-400); font-size: 13px; min-height: 20px; text-align: center; }
 
 /* LAYOUT */
 #app { display: none; }
@@ -7045,64 +7093,144 @@ body.theme-teal   .coral-500, body.theme-teal   .dash-value.neg { color: #2D9596
   .sidebar-user-name, .sidebar-user-role, .sidebar-logout { opacity: 1 !important; }
 
   /* Main: padding correto para mobile */
-  .main { margin-left: 0 !important; padding: 68px 16px 100px !important; background: #F7F6F2; }
+  .main { margin-left: 0 !important; padding: 68px 14px 100px !important; background: #F7F6F2; }
 
   /* Hamburger: teal theme */
-  .hamburger { background: #1A1A18 !important; border-radius: 8px !important; }
+  .hamburger { display: flex !important; background: #1A1A18 !important; border-radius: 8px !important; }
 
-  /* Login: card full-width no mobile */
-  .pw-wrap { width: 90vw !important; max-width: 340px; padding: 24px 20px !important; border-radius: 16px !important; }
-  .pw-input, .pw-btn { width: 100% !important; }
+  /* ── LOGIN MOBILE ── */
+  #pw-screen { padding: 20px; }
   .pw-logo { font-size: 28px !important; }
+  .pw-wrap { padding: 24px 20px !important; max-width: 100% !important; }
 
-  /* KPI cards: fonte menor */
-  .dash-value { font-size: 20px !important; }
-  .vg-kpi-value { font-size: 20px !important; }
-  #page-performance .vg-kpi-value { font-size: 22px !important; }
-  #ment-ms-realizadas, #ment-ms-restantes, #ment-ms-mes { font-size: 36px !important; letter-spacing: -1px !important; }
-  #ment-ms-nome { font-size: 22px !important; }
+  /* ── PÁGINA — TÍTULOS ── */
+  .page-title { font-size: 19px !important; }
+  .page-subtitle { font-size: 12px !important; margin-bottom: 14px !important; }
 
-  /* Home fat cards: 2 colunas */
+  /* ── KPI CARDS ── */
+  .dash-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .dash-card { padding: 12px 12px !important; }
+  .dash-value { font-size: 18px !important; }
+  .dash-label { font-size: 10px !important; }
+  .vg-kpi-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .vg-kpi-value { font-size: 18px !important; }
+  #page-performance .vg-kpi-value { font-size: 20px !important; }
+
+  /* ── CHARTS ── */
+  .charts-row { grid-template-columns: 1fr !important; gap: 10px !important; }
+  .chart-box { padding: 12px !important; }
+
+  /* ── TABELAS — scroll horizontal com indicador ── */
+  .table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; border-radius: 10px !important; }
+  table { min-width: 500px; }
+  th, td { padding: 8px 10px !important; font-size: 11px !important; }
+  th { font-size: 9px !important; }
+  .hub-tbody td { padding: 9px 10px !important; font-size: 11px !important; }
+  .hub-tbody td:first-child { padding-left: 12px !important; }
+  .hub-thead th:first-child { padding-left: 12px !important; }
+
+  /* ── HOME FAT CARDS ── */
   .home-fat-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
-  .home-fat-card { padding: 12px 14px !important; border-radius: 10px !important; }
-  .home-fat-value { font-size: 16px !important; }
+  .home-fat-card { padding: 12px 12px !important; border-radius: 10px !important; }
+  .home-fat-value { font-size: 15px !important; }
+  .home-fat-label { font-size: 10px !important; }
 
-  /* Page title menor */
-  .page-title { font-size: 20px !important; }
-  .page-subtitle { font-size: 12px !important; margin-bottom: 16px !important; }
+  /* ── TABS ── */
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; gap: 0 !important; padding-bottom: 0 !important; }
+  .tab { white-space: nowrap; padding: 8px 12px !important; font-size: 12px !important; flex-shrink: 0; }
+  .perf-subtabs { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap !important; gap: 0 !important; }
+  .perf-subtab { white-space: nowrap; flex-shrink: 0; padding: 8px 14px !important; font-size: 12px !important; }
 
-  /* Modais: full width */
-  .modal { border-radius: 12px !important; padding: 20px 16px !important; }
+  /* ── MODAIS ── */
+  .modal-bg { align-items: flex-end !important; padding: 0 !important; }
+  .modal {
+    border-radius: 16px 16px 0 0 !important;
+    padding: 20px 16px 32px !important;
+    max-height: 90vh !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .edit-row-fields { grid-template-columns: 1fr !important; }
+  .edit-row-fields .m-field.full { grid-column: 1 !important; }
 
-  /* SKU drawer */
-  .sku-drawer { border-radius: 0 !important; }
+  /* ── SKU DRAWER ── */
+  .sku-drawer { width: 100% !important; max-width: 100% !important; border-radius: 0 !important; }
 
-  /* Notas: layout empilhado */
-  .notes-layout { border-radius: var(--radius) !important; }
+  /* ── ANOTAÇÕES — layout empilhado no mobile ── */
+  .notes-layout {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+    min-height: unset !important;
+    border-radius: 10px !important;
+  }
+  .notes-sidebar {
+    border-right: none !important;
+    border-bottom: 1px solid var(--slate-100);
+    max-height: 55vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .notes-list-wrap { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
   .notes-filters { padding: 8px 14px !important; }
   .status-pills { flex-wrap: wrap !important; gap: 6px !important; }
+  .note-editor-wrap { min-height: 300px; }
+  .note-editor-body { padding: 0 16px !important; }
+  .note-editor-header { padding: 12px 16px 0 !important; }
+  .editor-title-big { font-size: 20px !important; padding: 14px 0 6px !important; }
+  .editor-body-big { font-size: 14px !important; min-height: 160px !important; }
+  .note-editor-footer { padding: 10px 16px !important; flex-wrap: wrap !important; gap: 6px !important; }
+  #notes-new-btn-wrap { padding: 10px 14px 14px !important; }
 
-  /* Kanban: padding extra no final */
+  /* ── AGENDA — calendário mobile ── */
+  .agenda-layout { grid-template-columns: 1fr !important; }
+  .cal-sidebar { display: none !important; }
+  .agenda-wrap { height: auto !important; }
+  .cal-day { min-height: 44px !important; padding: 4px 3px !important; }
+  .cal-day-num { font-size: 11px !important; width: 20px !important; height: 20px !important; }
+  .cal-pill { font-size: 9px !important; padding: 1px 3px !important; }
+
+  /* ── KANBAN ── */
   .kanban-board { padding-bottom: 100px !important; }
+  .kanban-col { min-width: 220px !important; width: 220px !important; }
 
-  /* Performance: tabs com scroll */
-  .perf-subtabs { gap: 0 !important; }
+  /* ── PERFORMANCE ── */
+  .perf-vg-controls { gap: 8px !important; }
+  .perf-select { font-size: 12px !important; padding: 7px 10px !important; }
+  .insights-grid { grid-template-columns: 1fr !important; }
+  .comp-cards-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .comp-summary { padding: 14px 16px !important; border-radius: 10px !important; }
+  .comp-summary-val { font-size: 14px !important; }
+  .comp-summary-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
 
-  /* Modo sessão mentoria mobile */
+  /* ── MENTORIA ── */
+  #ment-ms-realizadas, #ment-ms-restantes, #ment-ms-mes { font-size: 36px !important; letter-spacing: -1px !important; }
+  #ment-ms-nome { font-size: 22px !important; }
   #ment-modo-sessao > div:nth-child(2) { padding: 24px 20px 20px !important; }
-  #ment-ms-nome { font-size: 24px !important; }
   #ment-modo-sessao > div:nth-child(3) { grid-template-columns: 1fr 1fr 1fr !important; }
   #ment-modo-sessao > div:nth-child(4) { grid-template-columns: 1fr !important; }
+  .ment-aluno-card { padding: 10px 12px !important; }
 
-  /* Admin toolbar: esquerda no mobile */
+  /* ── ADMIN ── */
   .admin-toolbar { bottom: 20px !important; right: auto !important; left: 16px !important; }
 
-  /* Comp summary */
-  .comp-summary { padding: 14px 16px !important; border-radius: 10px !important; }
-  .comp-summary-val { font-size: 16px !important; }
+  /* ── TABLE ACTIONS ── */
+  .table-actions { flex-wrap: wrap !important; gap: 6px !important; }
+  .btn { padding: 8px 12px !important; font-size: 12px !important; }
+  .btn-sm { padding: 5px 9px !important; font-size: 11px !important; }
 
-  /* Botão nova nota */
-  #notes-new-btn-wrap { padding: 10px 14px 20px !important; }
+  /* ── ROW EXPAND ── */
+  .row-expand-panel { flex-direction: column !important; gap: 12px !important; padding: 12px !important; }
+  .row-expand-section { min-width: unset !important; width: 100% !important; }
+  .row-expand-kpis { gap: 8px !important; }
+  .row-expand-kpi { min-width: unset !important; flex: 1 !important; min-width: 90px !important; }
+
+  /* ── FAB ── */
+  .fab { display: flex !important; }
+
+  /* ── TOOLBARS GERAIS ── */
+  .kanban-toolbar { flex-wrap: wrap !important; gap: 8px !important; }
+  .perf-vg-controls { flex-wrap: wrap !important; }
 }
 
 /* ── TEAL BAKED IN — padronizar coral → teal ── */
@@ -7306,12 +7434,17 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
 // ── Login tagline ─────────────────────────────
 (function init() {
-  const pwWrap = document.querySelector('.pw-wrap');
-  if (pwWrap && !document.querySelector('.pw-tagline')) {
-    const tag = document.createElement('div');
-    tag.className = 'pw-tagline';
-    tag.textContent = 'gestão de vendas';
-    pwWrap.parentNode.insertBefore(tag, pwWrap.nextSibling);
+  const pwScreen = document.getElementById('pw-screen');
+  if (pwScreen && !document.querySelector('.pw-tagline-top')) {
+    // Add tagline above card
+    const pwWrap = pwScreen.querySelector('.pw-wrap');
+    const logo = pwScreen.querySelector('.pw-logo');
+    if (logo && pwWrap && !pwScreen.querySelector('.pw-tagline-top')) {
+      const tag = document.createElement('div');
+      tag.className = 'pw-tagline-top';
+      tag.textContent = 'gestão de vendas';
+      logo.after(tag);
+    }
   }
 })();
 </script>
