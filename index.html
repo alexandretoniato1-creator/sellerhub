@@ -1358,8 +1358,8 @@ body.sidebar-collapsed .hamburger { display: none; }
                 <option value="">— Selecione um SKU —</option>
               </select>
               <div id="sku-sel-actions" style="display:none;gap:6px">
-                <button class="btn-hub-edit" onclick="abrirRenameSku()" style="padding:6px 10px;font-size:11px" title="Renomear código do SKU">✏ Editar SKU</button>
-                <button class="btn-hub-del" onclick="excluirSkuCompleto()" style="padding:6px 10px;font-size:11px" title="Excluir SKU e todo o histórico">🗑 Excluir SKU</button>
+                <button class="btn-hub-edit" onclick="abrirRenameSku()" style="padding:6px 10px;font-size:11px">✏ Editar SKU</button>
+                <button class="btn-hub-del" onclick="excluirSkuCompleto()" style="padding:6px 10px;font-size:11px">🗑 Excluir SKU</button>
               </div>
             </div>
           </div>
@@ -1382,11 +1382,11 @@ body.sidebar-collapsed .hamburger { display: none; }
           </div>
         </div>
 
-        <!-- PAINEL DE COBERTURA DE IMPORTAÇÕES DO SKU -->
-        <div id="sku-coverage-panel" style="display:none;margin-bottom:20px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-            <div class="perf-section-label" style="margin-bottom:0">Cobertura de importações no mês</div>
-            <select class="perf-select" id="sku-cov-mes-sel" onchange="skuCovMes=this.value;renderSkuCoverage()" style="font-size:12px">
+        <!-- PAINEL: importações SellerHub do SKU selecionado -->
+        <div id="sku-hub-coverage-panel" style="display:none;margin-bottom:20px;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:16px 20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+            <div class="perf-section-label" style="margin-bottom:0">Importações SellerHub — Planilha</div>
+            <select class="perf-select" id="sku-hub-mes-sel" onchange="skuHubMes=this.value;renderSkuHubCoverage()" style="font-size:12px">
               <option value="2026-01">Janeiro 2026</option>
               <option value="2026-02">Fevereiro 2026</option>
               <option value="2026-03">Março 2026</option>
@@ -1401,10 +1401,7 @@ body.sidebar-collapsed .hamburger { display: none; }
               <option value="2026-12">Dezembro 2026</option>
             </select>
           </div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
-            <div id="sku-cov-mini-cal" style="flex-shrink:0"></div>
-            <div id="sku-cov-import-list" style="flex:1;min-width:200px"></div>
-          </div>
+          <div id="sku-hub-coverage-list"></div>
         </div>
 
         <div id="sku-perf-cards" style="margin-bottom:20px"></div>
@@ -1557,7 +1554,8 @@ body.sidebar-collapsed .hamburger { display: none; }
                 <th style="text-align:right">TACOS (%)</th>
                 <th style="text-align:right">Rebait (%)</th>
                 <th>Status</th>
-                <th style="text-align:center">Ação</th>
+                <th style="text-align:center">Editar</th>
+                <th style="text-align:center">Excluir</th>
               </tr></thead>
               <tbody class="hub-tbody" id="hub-imp-sku-tbody"></tbody>
             </table>
@@ -3208,131 +3206,62 @@ function renderSkuSel() {
   sel.value = skuSelected;
 }
 
-// Mês atual visualizado no painel de cobertura do SKU
-let skuCovMes = '2026-04';
+let skuHubMes = '2026-04';
 
-// Renderiza painel de cobertura de importações filtrado pelo SKU selecionado
-function renderSkuCoverage() {
+// Painel de importações SellerHub filtrado pelo SKU selecionado
+function renderSkuHubCoverage() {
   const sku = skuSelected;
-  const panel = document.getElementById('sku-coverage-panel');
+  const panel = document.getElementById('sku-hub-coverage-panel');
+  const list  = document.getElementById('sku-hub-coverage-list');
   if (!sku) { panel.style.display = 'none'; return; }
 
-  const mes = skuCovMes;
+  const mes = skuHubMes;
   const mesIdx = perfMonths.indexOf(mes);
-  const impsDoMes = (importacoesList[conta] && importacoesList[conta][mes]) || [];
-  // Filtra só as importações que contêm esse SKU
-  const impsDoSku = impsDoMes.filter(imp => imp.itens && imp.itens.some(it => it.sku === sku));
-  // Reconstrói periods apenas com as importações desse SKU
-  const periods = impsDoSku.map((imp, wi) => ({
-    from: imp.from, to: imp.to, weekNum: wi + 1,
-    count: imp.count, fatTotal: imp.fatTotal, id: imp.id, created_at: imp.created_at
-  }));
+  const impsDoMes = (hubImportacoesList[conta] && hubImportacoesList[conta][mes]) || [];
 
-  // Sem importações neste mês para este SKU
-  if (!periods.length) {
-    panel.style.display = '';
-    document.getElementById('sku-cov-mini-cal').innerHTML = '';
-    document.getElementById('sku-cov-import-list').innerHTML =
-      `<div style="padding:16px;font-size:13px;color:var(--slate-400)">Nenhuma importação encontrada para <strong>${sku}</strong> em ${perfMonthFull[mesIdx]}.</div>`;
-    return;
-  }
   panel.style.display = '';
 
-  const [year, month] = mes.split('-').map(Number);
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const firstDay = new Date(year, month-1, 1).getDay();
-  const today = localDateStr();
-
-  // Mapear dias cobertos
-  const dayCoverage = {};
-  periods.forEach((p, wi) => {
-    if (!p.from || !p.to) return;
-    const from = new Date(p.from + 'T00:00:00');
-    const to   = new Date(p.to   + 'T00:00:00');
-    for (let d = 1; d <= daysInMonth; d++) {
-      const date = new Date(year, month-1, d);
-      if (date >= from && date <= to) dayCoverage[d] = wi;
-    }
-  });
-
-  // Lacunas
-  const todayDate = new Date(today + 'T00:00:00');
-  const monthEnd  = new Date(year, month-1, daysInMonth);
-  const limitDate = todayDate < monthEnd ? todayDate : monthEnd;
-  const gaps = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(year, month-1, d);
-    if (date <= limitDate && !(d in dayCoverage)) gaps.push(d);
+  if (!impsDoMes.length) {
+    list.innerHTML = `<div style="font-size:13px;color:var(--slate-400);padding:8px 0">
+      Nenhuma importação SellerHub registrada para ${perfMonthFull[mesIdx]}.
+    </div>`;
+    return;
   }
 
-  // Mini calendário
-  const weekdays = ['D','S','T','Q','Q','S','S'];
-  let calHtml = `<div class="cov-cal"><div class="cov-cal-title">${perfMonthFull[mesIdx]}</div><div class="cov-cal-grid">`;
-  weekdays.forEach(w => { calHtml += `<div class="cov-weekday">${w}</div>`; });
-  for (let i = 0; i < firstDay; i++) calHtml += `<div class="cov-day other-month"></div>`;
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday = dateStr === today;
-    const wi = dayCoverage[d];
-    const isGap = gaps.includes(d);
-    let cls = 'cov-day';
-    let title = '';
-    if (wi !== undefined) {
-      cls += ` cov-w${wi % 5}`;
-      title = `${periods[wi].weekNum}ª importação (${fmtDate(periods[wi].from)} → ${fmtDate(periods[wi].to)})`;
-    } else if (isGap) {
-      cls += ' gap'; title = 'Sem cobertura';
-    } else {
-      cls += ' uncovered';
-    }
-    if (isToday) cls += ' today-marker';
-    calHtml += `<div class="${cls}" title="${title}">${d}</div>`;
-  }
-  calHtml += `</div></div>`;
-  document.getElementById('sku-cov-mini-cal').innerHTML = calHtml;
+  const fBRL = v => 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const fPct = v => v > 0 ? v.toFixed(1)+'%' : '—';
 
-  // Lista de importações do SKU
-  const fmtBRLs = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:0, maximumFractionDigits:0});
-  let listHtml = `<div class="cov-list">`;
-  periods.forEach((p, wi) => {
+  list.innerHTML = impsDoMes.map((imp, wi) => {
+    const dtImp = imp.created_at
+      ? new Date(imp.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      : '';
+    const itemDoSku = imp.itens.find(it => it.sku === sku);
+    const skuNaImp = !!itemDoSku;
     const col = covColors[wi % 5];
-    const periodoStr = (p.from && p.to) ? `${fmtDate(p.from)} → ${fmtDate(p.to)}` : 'Período não informado';
-    const dtImp = p.created_at ? new Date(p.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-    // Valor só deste SKU nesta importação
-    const impOriginal = impsDoSku[wi];
-    const itemDoSku = impOriginal?.itens?.find(it => it.sku === sku);
-    const fatSku = itemDoSku ? fmtBRLs(itemDoSku.fat || 0) : '—';
-    listHtml += `<div class="cov-list-item">
+
+    return `<div class="cov-list-item" style="${!skuNaImp ? 'opacity:0.45' : ''}">
       <div class="cov-list-dot" style="background:${col.dot}"></div>
       <div style="flex:1;min-width:0">
-        <div class="cov-list-label">${p.weekNum}ª importação${dtImp ? ` <span style="font-weight:400;color:var(--slate-400)">${dtImp}</span>` : ''}</div>
-        <div class="cov-list-period">${periodoStr}</div>
+        <div class="cov-list-label">${wi+1}ª importação${dtImp ? ` <span style="font-weight:400;color:var(--slate-400)">${dtImp}</span>` : ''}
+          ${!skuNaImp ? `<span style="font-size:10px;color:var(--slate-400);margin-left:6px">(SKU não está nesta importação)</span>` : ''}
+        </div>
+        <div class="cov-list-period" style="margin-top:3px">
+          ${imp.count} SKUs no total
+          ${skuNaImp ? `· <span style="font-family:var(--mono);font-size:11px">Preço: ${fBRL(itemDoSku.preco)} · Invest: ${fBRL(itemDoSku.investimento)} · TACOS: ${fPct(itemDoSku.tacos)} · Rebait: ${fPct(itemDoSku.rebait)}</span>` : ''}
+        </div>
       </div>
-      <div class="cov-list-meta" style="display:flex;align-items:center;gap:8px">
-        <span style="font-family:var(--mono);font-size:11px">${fatSku}</span>
-        ${impOriginal ? `<button class="btn-hub-edit" style="font-size:10px;padding:3px 8px" onclick="abrirDetalhesImportacao(${impOriginal.id},'${conta}','${mes}')" title="Ver itens">✏ Itens</button>` : ''}
-        ${impOriginal ? `<button class="btn-hub-del" style="font-size:10px;padding:3px 8px" onclick="desfazerImportacao(${impOriginal.id},'${conta}','${mes}')" title="Desfazer toda esta importação">↩ Desfazer</button>` : ''}
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <button class="btn-hub-del" style="font-size:10px;padding:3px 8px;white-space:nowrap"
+          onclick="desfazerHubImportacao(${imp.id},'${conta}','${mes}')"
+          title="Desfazer importação inteira (todos os SKUs)">↩ Desfazer tudo</button>
+        ${skuNaImp ? `<button class="btn-hub-del" style="font-size:10px;padding:3px 8px;white-space:nowrap;background:var(--amber-50);border-color:var(--amber-100);color:var(--amber-600)"
+          onclick="desfazerHubSkuUnico(${imp.id},'${conta}','${mes}','${sku}')"
+          title="Desfazer só este SKU nesta importação">↩ Só este SKU</button>` : ''}
       </div>
     </div>`;
-  });
-  listHtml += `</div>`;
-
-  if (gaps.length > 0) {
-    const gapRanges = gaps.reduce((acc, d) => {
-      if (!acc.length || d !== acc[acc.length-1].end + 1) acc.push({start:d, end:d});
-      else acc[acc.length-1].end = d;
-      return acc;
-    }, []);
-    const gapStr = gapRanges.map(r => r.start === r.end ? `dia ${r.start}` : `dias ${r.start}–${r.end}`).join(', ');
-    listHtml += `<div class="cov-gap-alert">⚠ Lacuna detectada: ${gapStr} sem importação</div>`;
-  } else {
-    listHtml += `<div class="cov-ok-msg">✓ Todos os dias até hoje estão cobertos</div>`;
-  }
-
-  document.getElementById('sku-cov-import-list').innerHTML = listHtml;
+  }).join('');
 }
 
-// Abre modal para renomear código do SKU
 function abrirRenameSku() {
   if (!skuSelected) return;
   document.getElementById('sku-rename-old').value = skuSelected;
@@ -3349,14 +3278,12 @@ async function confirmarRenameSku() {
   if (D[conta].find(r => r.sku === newSku)) { alert(`O SKU "${newSku}" já existe nesta conta.`); return; }
 
   showSync('Renomeando…');
-  // Precificação
   const precRow = D[conta].find(r => r.sku === oldSku);
   if (precRow) {
     precRow.sku = newSku;
     await sb.from('precificacao').delete().eq('conta', conta).eq('sku', oldSku);
     await saveSku(conta, precRow);
   }
-  // Histórico de performance
   if (skuPerfData[conta]?.[oldSku]) {
     skuPerfData[conta][newSku] = skuPerfData[conta][oldSku];
     delete skuPerfData[conta][oldSku];
@@ -3375,7 +3302,6 @@ async function confirmarRenameSku() {
   renderSkuPerf();
 }
 
-// Exclui o SKU selecionado completamente (precificação + todo histórico)
 async function excluirSkuCompleto() {
   if (!skuSelected) return;
   const mesesComDado = perfMonths.filter(m => {
@@ -3390,7 +3316,6 @@ async function excluirSkuCompleto() {
   const idx = D[conta].findIndex(r => r.sku === skuSelected);
   if (idx >= 0) { D[conta].splice(idx, 1); await sb.from('precificacao').delete().eq('conta', conta).eq('sku', skuSelected); }
   if (skuPerfData[conta]) delete skuPerfData[conta][skuSelected];
-
   skuSelected = '';
   showSync('Excluído ✓', true);
   calcKpiFromSkus();
@@ -3409,7 +3334,7 @@ function renderSkuPerf() {
   if (!sku) {
     empty.style.display = ''; wrap.style.display = 'none'; cards.innerHTML = '';
     if (actions) actions.style.display = 'none';
-    renderSkuCoverage();
+    renderSkuHubCoverage();
     return;
   }
   empty.style.display = 'none'; wrap.style.display = '';
@@ -3477,7 +3402,7 @@ function renderSkuPerf() {
     </div>
   </div>`;
 
-  renderSkuCoverage();
+  renderSkuHubCoverage();
 
   // Tabela histórica com botão editar
   document.getElementById('sku-hist-tbody').innerHTML = perfMonths.map((m, mi) => {
@@ -4145,6 +4070,77 @@ function closeMlModal() {
 // ===== IMPORTAÇÃO PLANILHA SELLERHUB =====
 let hubImportData = { sku: [], prec: [], perf: [] };
 
+// Histórico de importações SellerHub para poder desfazer
+let hubImportacoesList = {}; // hubImportacoesList[conta][mes] = [{id, count, itens, created_at}]
+
+async function loadHubImportacoes() {
+  const { data, error } = await sb.from('importacoes').select('*')
+    .eq('tipo', 'hub').order('created_at', { ascending: true });
+  if (error) { console.error('loadHubImportacoes', error); return; }
+  hubImportacoesList = {};
+  (data || []).forEach(r => {
+    if (!hubImportacoesList[r.conta]) hubImportacoesList[r.conta] = {};
+    if (!hubImportacoesList[r.conta][r.mes]) hubImportacoesList[r.conta][r.mes] = [];
+    hubImportacoesList[r.conta][r.mes].push({
+      id: r.id, count: r.total_skus, itens: r.itens || [], created_at: r.created_at
+    });
+  });
+}
+
+// Desfaz importação Hub inteira (zera preco/investimento/tacos/rebait de todos os SKUs)
+async function desfazerHubImportacao(id, contaKey, mes) {
+  const imp = hubImportacoesList[contaKey]?.[mes]?.find(i => i.id === id);
+  if (!imp) return;
+  const dtStr = imp.created_at ? new Date(imp.created_at).toLocaleString('pt-BR') : '';
+  if (!confirm(`Desfazer importação SellerHub de ${imp.count} SKU(s) realizada em ${dtStr}?\n\nIsso vai zerar Preço, Investimento ADS, TACOS e Rebait de todos os SKUs dessa importação em ${perfMonthFull[perfMonths.indexOf(mes)]}.\n\nOs dados de faturamento/pedidos (Relatório ML) NÃO serão afetados.`)) return;
+
+  showSync('Desfazendo…');
+  for (const item of imp.itens) {
+    const entry = skuPerfData[contaKey]?.[item.sku]?.[mes];
+    if (!entry) continue;
+    entry.preco = 0; entry.investimento = 0; entry.tacos = 0; entry.rebait = 0;
+    if (entry.fat > 0 || entry.pedidos > 0) {
+      await saveSkuHistorico(contaKey, item.sku, mes);
+    } else {
+      await sb.from('sku_historico').delete().eq('conta', contaKey).eq('sku', item.sku).eq('mes', mes);
+    }
+  }
+  await sb.from('importacoes').delete().eq('id', id);
+  hubImportacoesList[contaKey][mes] = hubImportacoesList[contaKey][mes].filter(i => i.id !== id);
+  calcKpiFromSkus();
+  showSync('Desfeito ✓', true);
+  renderSkuPerf();
+  renderHist(); renderVG(); renderHome();
+}
+
+// Desfaz apenas um SKU específico de uma importação Hub
+async function desfazerHubSkuUnico(id, contaKey, mes, sku) {
+  if (!confirm(`Desfazer apenas o SKU "${sku}" desta importação?\n\nZera Preço, Investimento ADS, TACOS e Rebait somente deste SKU em ${perfMonthFull[perfMonths.indexOf(mes)]}.\n\nOs outros SKUs da importação não serão afetados.`)) return;
+
+  showSync('Desfazendo…');
+  const entry = skuPerfData[contaKey]?.[sku]?.[mes];
+  if (entry) {
+    entry.preco = 0; entry.investimento = 0; entry.tacos = 0; entry.rebait = 0;
+    if (entry.fat > 0 || entry.pedidos > 0) {
+      await saveSkuHistorico(contaKey, sku, mes);
+    } else {
+      await sb.from('sku_historico').delete().eq('conta', contaKey).eq('sku', sku).eq('mes', mes);
+    }
+  }
+  // Remove o item do registro da importação no banco
+  const imp = hubImportacoesList[contaKey]?.[mes]?.find(i => i.id === id);
+  if (imp) {
+    imp.itens = imp.itens.filter(it => it.sku !== sku);
+    await sb.from('importacoes').update({ itens: imp.itens, total_skus: imp.itens.length }).eq('id', id);
+  }
+  calcKpiFromSkus();
+  showSync('Desfeito ✓', true);
+  renderSkuPerf();
+  renderHist(); renderVG(); renderHome();
+}
+
+
+
 function handleHubImport(input) {
   const file = input.files[0];
   if (!file) return;
@@ -4202,6 +4198,22 @@ function renderHubPreview() {
     const badge = hasData
       ? '<span class="ml-import-badge update">atualiza</span>'
       : '<span class="ml-import-badge new">novo</span>';
+    if (r._excluir) {
+      return `<tr id="hub-row-${idx}" style="opacity:0.35;text-decoration:line-through;background:var(--slate-50)">
+        <td style="font-weight:600">${r.conta}</td>
+        <td style="font-family:var(--mono);font-size:12px">${r.sku}</td>
+        <td>${mesLabel(r.mes)}</td>
+        <td style="text-align:right;font-family:var(--mono)">—</td>
+        <td style="text-align:right;font-family:var(--mono)">—</td>
+        <td style="text-align:right">—</td>
+        <td style="text-align:right">—</td>
+        <td><span style="font-size:10px;font-weight:600;color:var(--coral-500)">IGNORAR</span></td>
+        <td style="text-align:center">—</td>
+        <td style="text-align:center">
+          <button class="btn-hub-edit" style="font-size:10px;padding:3px 8px" onclick="hubToggleExcluir(${idx})" title="Restaurar linha">↩ Restaurar</button>
+        </td>
+      </tr>`;
+    }
     return `<tr id="hub-row-${idx}">
       <td style="font-weight:600">${r.conta}</td>
       <td style="font-family:var(--mono);font-size:12px">${r.sku}</td>
@@ -4214,13 +4226,22 @@ function renderHubPreview() {
       <td style="text-align:center">
         <button class="btn-hub-edit" onclick="hubEditRow(${idx})" title="Editar linha">✏</button>
       </td>
+      <td style="text-align:center">
+        <button class="btn-hub-del" onclick="hubToggleExcluir(${idx})" title="Remover este SKU da importação">🗑</button>
+      </td>
     </tr>`;
-  }).join('') || '<tr><td colspan="9" style="text-align:center;color:var(--slate-400);padding:20px">Nenhum dado encontrado na aba "Performance SKU"</td></tr>';
+  }).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--slate-400);padding:20px">Nenhum dado encontrado na aba "Performance SKU"</td></tr>';
 
+  const ativos = hubImportData.sku.filter(r => !r._excluir);
+  const ignorados = hubImportData.sku.filter(r => r._excluir).length;
   const total = hubImportData.sku.length;
-  document.getElementById('hub-imp-summary').innerHTML = total
-    ? `<strong>${total}</strong> linha${total>1?'s':''} encontrada${total>1?'s':''}. Revise os dados e clique em Confirmar.`
-    : '';
+  document.getElementById('hub-imp-summary').innerHTML =
+    `<strong>${total}</strong> linha${total>1?'s':''} encontrada${total>1?'s':''} · <span style="color:var(--green-600);font-weight:600">${ativos.length} serão importadas</span>${ignorados ? ` · <span style="color:var(--coral-500);font-weight:600">${ignorados} ignoradas</span>` : ''}. Revise os dados e clique em Confirmar.`;
+}
+
+function hubToggleExcluir(idx) {
+  hubImportData.sku[idx]._excluir = !hubImportData.sku[idx]._excluir;
+  renderHubPreview();
 }
 
 // Editar linha no preview antes de confirmar
@@ -4239,7 +4260,8 @@ function hubEditRow(idx) {
     <td></td>
     <td style="text-align:center">
       <button class="btn btn-primary" style="padding:3px 10px;font-size:11px" onclick="hubSaveRow(${idx})">✓</button>
-    </td>`;
+    </td>
+    <td></td>`;
 }
 
 function hubSaveRow(idx) {
@@ -4254,27 +4276,25 @@ function hubSaveRow(idx) {
 async function confirmHubImport() {
   showSync('Importando planilha…');
   let count = 0;
+  const ativos = hubImportData.sku.filter(r => !r._excluir);
 
-  for (const r of hubImportData.sku) {
+  for (const r of ativos) {
     if (!skuPerfData[r.conta]) skuPerfData[r.conta] = {};
     if (!skuPerfData[r.conta][r.sku]) skuPerfData[r.conta][r.sku] = {};
     if (!skuPerfData[r.conta][r.sku][r.mes]) skuPerfData[r.conta][r.sku][r.mes] = {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0,investimento:0};
 
-    // Mescla: só atualiza os 4 campos complementares, sem tocar em fat/pedidos/unidades/conv
     const entry = skuPerfData[r.conta][r.sku][r.mes];
     if (r.preco > 0)        entry.preco        = r.preco;
     if (r.investimento > 0) entry.investimento = r.investimento;
     if (r.tacos > 0)        entry.tacos        = r.tacos;
     if (r.rebait > 0)       entry.rebait       = r.rebait;
 
-    // Recalcula TACOS se tiver investimento e faturamento
     if (entry.investimento > 0 && entry.fat > 0) {
       entry.tacos = entry.investimento / entry.fat * 100;
     }
 
     await saveSkuHistorico(r.conta, r.sku, r.mes);
 
-    // Auto-cadastrar SKU na precificação se não existir (só identificação, sem dados de performance)
     const skuExist = D[r.conta]?.find(d => d.sku === r.sku);
     if (!skuExist) {
       const novoSku = {sku: r.sku, desc:'', custo:0, preco:0, rebait:0, mc:0, tacos:0};
@@ -4282,14 +4302,35 @@ async function confirmHubImport() {
       D[r.conta].push(novoSku);
       await saveSku(r.conta, novoSku);
     }
-    // Não atualiza campos da Precificação — ela é usada apenas como calculadora
     count++;
+  }
+
+  // Salvar no banco para poder desfazer depois (agrupado por conta+mês)
+  const grupos = {};
+  ativos.forEach(r => {
+    const key = `${r.conta}||${r.mes}`;
+    if (!grupos[key]) grupos[key] = { conta: r.conta, mes: r.mes, itens: [] };
+    grupos[key].itens.push({ sku: r.sku, preco: r.preco, investimento: r.investimento, tacos: r.tacos, rebait: r.rebait });
+  });
+  for (const key of Object.keys(grupos)) {
+    const g = grupos[key];
+    const { data: impData, error: impErr } = await sb.from('importacoes').insert({
+      conta: g.conta, mes: g.mes,
+      periodo_de: null, periodo_ate: null,
+      total_skus: g.itens.length, fat_total: 0,
+      itens: g.itens, tipo: 'hub'
+    }).select().single();
+    if (impErr) { console.error('saveHubImportacao', impErr); continue; }
+    if (!hubImportacoesList[g.conta]) hubImportacoesList[g.conta] = {};
+    if (!hubImportacoesList[g.conta][g.mes]) hubImportacoesList[g.conta][g.mes] = [];
+    hubImportacoesList[g.conta][g.mes].push({
+      id: impData.id, count: g.itens.length, itens: g.itens, created_at: impData.created_at
+    });
   }
 
   calcKpiFromSkus();
   showSync('Importado ✓', true);
   closeHubModal();
-
   renderPrec();
   renderSkuSel();
   if (skuSelected) renderSkuPerf();
@@ -4297,7 +4338,6 @@ async function confirmHubImport() {
   renderHist();
   renderVG();
   renderHome();
-
   alert(`✓ Importação concluída!\n\n• ${count} SKU${count!==1?'s':''} atualizados com Preço, Investimento ADS, TACOS e Rebait.\n\nOs dados do Relatório ML (faturamento, pedidos, unidades, conversão) foram preservados.`);
 }
 
@@ -5219,6 +5259,7 @@ async function initApp(){
     loadAgenda(),
     loadIdeias(),
     loadImportacoes(),
+    loadHubImportacoes(),
   ]);
   // Carrega ajustes manuais por cima da soma dos SKUs
   await loadKpiHistorico();
