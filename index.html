@@ -682,6 +682,33 @@ td[contenteditable]:focus::after { display: none; }
 .ml-import-badge.update { background:var(--amber-50); color:var(--amber-600); border:1px solid var(--amber-100); }
 
 /* PRODUTOS — SKU PERF */
+/* Badges de cobertura mensal */
+.sku-cob-badge {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 8px 10px; border-radius: var(--radius-sm);
+  border: 1.5px solid; min-width: 72px; position: relative;
+  transition: all var(--transition);
+}
+.sku-cob-badge.com-dado {
+  background: var(--green-50); border-color: var(--green-100); color: var(--green-600);
+}
+.sku-cob-badge.sem-dado {
+  background: var(--slate-50); border-color: var(--slate-100); color: var(--slate-300);
+}
+.sku-cob-mes { font-size: 11px; font-weight: 700; font-family: var(--mono); }
+.sku-cob-fat { font-size: 10px; font-family: var(--mono); white-space: nowrap; }
+.sku-cob-badge.com-dado .sku-cob-fat { color: var(--green-600); }
+.sku-cob-badge.sem-dado .sku-cob-fat { color: var(--slate-300); }
+.sku-cob-del {
+  position: absolute; top: 3px; right: 3px; background: none; border: none;
+  cursor: pointer; color: var(--coral-300); font-size: 10px; padding: 2px;
+  border-radius: 3px; opacity: 0; transition: opacity var(--transition), color var(--transition);
+  line-height: 1;
+}
+.sku-cob-badge.com-dado:hover .sku-cob-del { opacity: 1; }
+.sku-cob-del:hover { color: var(--coral-600) !important; background: var(--coral-50); }
+
+
 .sku-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; }
 .sku-summary-card { background: var(--white); border: 1px solid var(--slate-100); border-radius: var(--radius); padding: 14px 16px; }
 .sku-summary-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--slate-400); margin-bottom: 5px; }
@@ -1351,11 +1378,18 @@ body.sidebar-collapsed .hamburger { display: none; }
       <!-- SUB-ABA: PERFORMANCE POR SKU -->
       <div class="perf-subpage" id="prod-sku-perf">
         <div class="perf-vg-controls" style="margin-bottom:20px;align-items:flex-end">
-          <div>
-            <div class="perf-section-label" style="margin-bottom:6px">Produto</div>
-            <select class="perf-select" id="sku-sel" onchange="skuSelected=this.value;renderSkuPerf()" style="min-width:220px">
-              <option value="">— Selecione um SKU —</option>
-            </select>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div class="perf-section-label">Produto</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <select class="perf-select" id="sku-sel" onchange="skuSelected=this.value;renderSkuPerf()" style="min-width:220px">
+                <option value="">— Selecione um SKU —</option>
+              </select>
+              <!-- Ações do SKU selecionado -->
+              <div id="sku-sel-actions" style="display:none;gap:6px;display:flex">
+                <button class="btn-hub-edit" onclick="abrirEditarSku()" title="Renomear SKU" style="padding:6px 10px;font-size:12px">✏ Editar SKU</button>
+                <button class="btn-hub-del" onclick="excluirSkuCompleto()" title="Excluir SKU e todo o histórico" style="padding:6px 10px;font-size:12px">🗑 Excluir SKU</button>
+              </div>
+            </div>
           </div>
           <div style="margin-left:auto;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
@@ -1373,9 +1407,18 @@ body.sidebar-collapsed .hamburger { display: none; }
                 Baixar modelo .xlsx
               </button>
             </div>
-
           </div>
         </div>
+
+        <!-- PAINEL DE COBERTURA DE MESES -->
+        <div id="sku-cobertura-wrap" style="display:none;margin-bottom:20px;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:16px 20px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="perf-section-label" style="margin-bottom:0">Cobertura de dados — 2026</div>
+            <span id="sku-cobertura-resumo" style="font-size:11px;color:var(--slate-400);font-family:var(--mono)"></span>
+          </div>
+          <div id="sku-cobertura-grid" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+
         <div id="sku-perf-cards" style="margin-bottom:20px"></div>
         <div id="sku-perf-table-wrap" style="display:none">
           <div class="perf-section-label">Histórico mensal 2026 — clique para editar</div>
@@ -1595,6 +1638,28 @@ body.sidebar-collapsed .hamburger { display: none; }
         <div class="modal-actions">
           <button class="btn btn-ghost" onclick="document.getElementById('prec-edit-modal').classList.remove('active')">Cancelar</button>
           <button class="btn btn-primary" onclick="savePrecEdit()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL RENOMEAR SKU -->
+    <div class="modal-bg" id="sku-rename-modal" onclick="if(event.target===this)this.classList.remove('active')" style="z-index:1001">
+      <div class="modal" style="max-width:400px;width:100%">
+        <div class="modal-title">Editar SKU</div>
+        <div style="font-size:12px;color:var(--slate-400);margin-bottom:16px">
+          Alterar o código do SKU atualiza a precificação e o histórico de performance.
+        </div>
+        <div class="m-field">
+          <label>Código SKU atual</label>
+          <input type="text" id="sku-rename-old" disabled style="background:var(--slate-50);color:var(--slate-400);font-family:var(--mono)">
+        </div>
+        <div class="m-field" style="margin-top:12px">
+          <label>Novo código SKU</label>
+          <input type="text" id="sku-rename-new" placeholder="NOVO-SKU-001" style="font-family:var(--mono);text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="document.getElementById('sku-rename-modal').classList.remove('active')">Cancelar</button>
+          <button class="btn btn-primary" onclick="confirmarRenameSku()">Salvar</button>
         </div>
       </div>
     </div>
@@ -3157,16 +3222,142 @@ function renderSkuSel() {
   sel.value = skuSelected;
 }
 
+// Renderiza badges de cobertura mensal do SKU selecionado
+function renderSkuCobertura(sku) {
+  const wrap = document.getElementById('sku-cobertura-wrap');
+  const grid = document.getElementById('sku-cobertura-grid');
+  const resumo = document.getElementById('sku-cobertura-resumo');
+  if (!sku) { wrap.style.display = 'none'; return; }
+
+  const labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  let comDado = 0;
+  const badges = perfMonths.map((m, mi) => {
+    const d = getSkuPerf(conta, sku, m);
+    const tem = d.fat > 0 || d.pedidos > 0;
+    if (tem) comDado++;
+    const fatTxt = tem ? fmtBRL(d.fat) : '—';
+    const delBtn = tem
+      ? `<button class="sku-cob-del" title="Excluir dados de ${perfMonthFull[mi]}" onclick="deleteSkuMes('${conta}','${sku}','${m}')">✕</button>`
+      : '';
+    return `<div class="sku-cob-badge ${tem ? 'com-dado' : 'sem-dado'}">
+      ${delBtn}
+      <div class="sku-cob-mes">${labels[mi]}</div>
+      <div class="sku-cob-fat">${fatTxt}</div>
+    </div>`;
+  }).join('');
+
+  grid.innerHTML = badges;
+  resumo.textContent = `${comDado} de 12 meses com dados`;
+  wrap.style.display = '';
+}
+
+// Abre modal para renomear o código do SKU
+function abrirEditarSku() {
+  if (!skuSelected) return;
+  document.getElementById('sku-rename-old').value = skuSelected;
+  document.getElementById('sku-rename-new').value = skuSelected;
+  document.getElementById('sku-rename-modal').classList.add('active');
+  setTimeout(() => {
+    const inp = document.getElementById('sku-rename-new');
+    inp.focus(); inp.select();
+  }, 100);
+}
+
+async function confirmarRenameSku() {
+  const oldSku = document.getElementById('sku-rename-old').value.trim();
+  const newSku = document.getElementById('sku-rename-new').value.trim().toUpperCase();
+  if (!newSku) { alert('O novo SKU não pode estar vazio.'); return; }
+  if (newSku === oldSku) { document.getElementById('sku-rename-modal').classList.remove('active'); return; }
+  // Verifica se o novo SKU já existe
+  if (D[conta].find(r => r.sku === newSku)) {
+    alert(`O SKU "${newSku}" já existe nesta conta. Escolha um código diferente.`); return;
+  }
+
+  showSync('Renomeando…');
+
+  // 1. Atualiza na precificação (D)
+  const precRow = D[conta].find(r => r.sku === oldSku);
+  if (precRow) {
+    precRow.sku = newSku;
+    // Apaga o registro antigo e salva o novo no Supabase
+    await sb.from('precificacao').delete().eq('conta', conta).eq('sku', oldSku);
+    await saveSku(conta, precRow);
+  }
+
+  // 2. Move o histórico de performance para o novo código
+  if (skuPerfData[conta]?.[oldSku]) {
+    skuPerfData[conta][newSku] = skuPerfData[conta][oldSku];
+    delete skuPerfData[conta][oldSku];
+    // Atualiza no Supabase: apaga entradas antigas, salva com novo SKU
+    await sb.from('sku_historico').delete().eq('conta', conta).eq('sku', oldSku);
+    for (const m of perfMonths) {
+      const d = skuPerfData[conta][newSku]?.[m];
+      if (d && (d.fat > 0 || d.pedidos > 0)) {
+        await saveSkuHistorico(conta, newSku, m);
+      }
+    }
+  }
+
+  document.getElementById('sku-rename-modal').classList.remove('active');
+  skuSelected = newSku;
+  showSync('Renomeado ✓', true);
+  renderSkuSel();
+  document.getElementById('sku-sel').value = newSku;
+  renderSkuPerf();
+  calcKpiFromSkus();
+}
+
+// Exclui o SKU selecionado inteiro (precificação + todo o histórico)
+async function excluirSkuCompleto() {
+  if (!skuSelected) return;
+  const mesesComDado = perfMonths.filter(m => {
+    const d = getSkuPerf(conta, skuSelected, m);
+    return d.fat > 0 || d.pedidos > 0;
+  });
+  const aviso = mesesComDado.length
+    ? `\n\n⚠ Este SKU tem dados em ${mesesComDado.length} mês(es). Todo o histórico será apagado.`
+    : '';
+  if (!confirm(`Excluir o SKU "${skuSelected}" permanentemente?${aviso}\n\nEssa ação não pode ser desfeita.`)) return;
+
+  showSync('Excluindo…');
+
+  // Remove histórico do Supabase
+  await sb.from('sku_historico').delete().eq('conta', conta).eq('sku', skuSelected);
+
+  // Remove da precificação local e Supabase
+  const idx = D[conta].findIndex(r => r.sku === skuSelected);
+  if (idx >= 0) {
+    D[conta].splice(idx, 1);
+    await sb.from('precificacao').delete().eq('conta', conta).eq('sku', skuSelected);
+  }
+
+  // Limpa do objeto local de performance
+  if (skuPerfData[conta]) delete skuPerfData[conta][skuSelected];
+
+  skuSelected = '';
+  showSync('Excluído ✓', true);
+  calcKpiFromSkus();
+  renderSkuSel();
+  renderSkuPerf();
+  renderHist(); renderVG(); renderHome();
+}
+
 function renderSkuPerf() {
   const sku = skuSelected;
   const empty = document.getElementById('sku-perf-empty');
   const wrap = document.getElementById('sku-perf-table-wrap');
   const cards = document.getElementById('sku-perf-cards');
+  const actions = document.getElementById('sku-sel-actions');
+  const cobWrap = document.getElementById('sku-cobertura-wrap');
 
   if (!sku) {
-    empty.style.display = ''; wrap.style.display = 'none'; cards.innerHTML = ''; return;
+    empty.style.display = ''; wrap.style.display = 'none'; cards.innerHTML = '';
+    if (actions) actions.style.display = 'none';
+    if (cobWrap) cobWrap.style.display = 'none';
+    return;
   }
   empty.style.display = 'none'; wrap.style.display = '';
+  if (actions) actions.style.display = 'flex';
 
   // Dados de todos os meses
   const allMonths = perfMonths.map(m => getSkuPerf(conta, sku, m));
@@ -3229,6 +3420,8 @@ function renderSkuPerf() {
       ${convDeltaHtml}
     </div>
   </div>`;
+
+  renderSkuCobertura(sku);
 
   // Tabela histórica com botão editar
   document.getElementById('sku-hist-tbody').innerHTML = perfMonths.map((m, mi) => {
