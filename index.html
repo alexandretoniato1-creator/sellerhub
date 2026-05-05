@@ -3208,17 +3208,17 @@ function renderSkuSel() {
 
 let skuHubMes = '2026-04';
 
-// Painel de importações SellerHub filtrado pelo SKU selecionado
+// Painel de importações SellerHub — sem SKU: mostra tudo da conta; com SKU: filtra
 function renderSkuHubCoverage() {
   const sku = skuSelected;
   const panel = document.getElementById('sku-hub-coverage-panel');
   const list  = document.getElementById('sku-hub-coverage-list');
-  if (!sku) { panel.style.display = 'none'; return; }
 
   const mes = skuHubMes;
   const mesIdx = perfMonths.indexOf(mes);
   const impsDoMes = (hubImportacoesList[conta] && hubImportacoesList[conta][mes]) || [];
 
+  // Sempre mostra o painel
   panel.style.display = '';
 
   if (!impsDoMes.length) {
@@ -3232,31 +3232,40 @@ function renderSkuHubCoverage() {
   const fPct = v => v > 0 ? v.toFixed(1)+'%' : '—';
 
   list.innerHTML = impsDoMes.map((imp, wi) => {
+    const col = covColors[wi % 5];
     const dtImp = imp.created_at
       ? new Date(imp.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
       : '';
-    const itemDoSku = imp.itens.find(it => it.sku === sku);
-    const skuNaImp = !!itemDoSku;
-    const col = covColors[wi % 5];
 
-    return `<div class="cov-list-item" style="${!skuNaImp ? 'opacity:0.45' : ''}">
+    const itemDoSku = sku ? imp.itens.find(it => it.sku === sku) : null;
+    const skuAusente = sku && !itemDoSku;
+
+    let detalhe = '';
+    if (sku && itemDoSku) {
+      detalhe = `· <span style="font-family:var(--mono);font-size:11px">Preço: ${fBRL(itemDoSku.preco)} · Invest: ${fBRL(itemDoSku.investimento)} · TACOS: ${fPct(itemDoSku.tacos)} · Rebait: ${fPct(itemDoSku.rebait)}</span>`;
+    } else if (!sku) {
+      const totalInvest = imp.itens.reduce((s,it) => s+(it.investimento||0), 0);
+      detalhe = `· <span style="font-family:var(--mono);font-size:11px">Invest. total: ${fBRL(totalInvest)}</span>`;
+    }
+
+    return `<div class="cov-list-item" style="${skuAusente ? 'opacity:0.4' : ''}">
       <div class="cov-list-dot" style="background:${col.dot}"></div>
       <div style="flex:1;min-width:0">
-        <div class="cov-list-label">${wi+1}ª importação${dtImp ? ` <span style="font-weight:400;color:var(--slate-400)">${dtImp}</span>` : ''}
-          ${!skuNaImp ? `<span style="font-size:10px;color:var(--slate-400);margin-left:6px">(SKU não está nesta importação)</span>` : ''}
+        <div class="cov-list-label">
+          ${wi+1}ª importação${dtImp ? ` <span style="font-weight:400;color:var(--slate-400)">${dtImp}</span>` : ''}
+          ${skuAusente ? `<span style="font-size:10px;color:var(--slate-400);margin-left:6px">(SKU não está nesta importação)</span>` : ''}
         </div>
         <div class="cov-list-period" style="margin-top:3px">
-          ${imp.count} SKUs no total
-          ${skuNaImp ? `· <span style="font-family:var(--mono);font-size:11px">Preço: ${fBRL(itemDoSku.preco)} · Invest: ${fBRL(itemDoSku.investimento)} · TACOS: ${fPct(itemDoSku.tacos)} · Rebait: ${fPct(itemDoSku.rebait)}</span>` : ''}
+          ${imp.count} SKUs no total ${detalhe}
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <button class="btn-hub-del" style="font-size:10px;padding:3px 8px;white-space:nowrap"
           onclick="desfazerHubImportacao(${imp.id},'${conta}','${mes}')"
           title="Desfazer importação inteira (todos os SKUs)">↩ Desfazer tudo</button>
-        ${skuNaImp ? `<button class="btn-hub-del" style="font-size:10px;padding:3px 8px;white-space:nowrap;background:var(--amber-50);border-color:var(--amber-100);color:var(--amber-600)"
+        ${sku && itemDoSku ? `<button class="btn-hub-del" style="font-size:10px;padding:3px 8px;white-space:nowrap;background:var(--amber-50);border-color:var(--amber-100);color:var(--amber-600)"
           onclick="desfazerHubSkuUnico(${imp.id},'${conta}','${mes}','${sku}')"
-          title="Desfazer só este SKU nesta importação">↩ Só este SKU</button>` : ''}
+          title="Desfazer só este SKU">↩ Só este SKU</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -3332,7 +3341,7 @@ function renderSkuPerf() {
   const actions = document.getElementById('sku-sel-actions');
 
   if (!sku) {
-    empty.style.display = ''; wrap.style.display = 'none'; cards.innerHTML = '';
+    empty.style.display = 'none'; wrap.style.display = 'none'; cards.innerHTML = '';
     if (actions) actions.style.display = 'none';
     renderSkuHubCoverage();
     return;
