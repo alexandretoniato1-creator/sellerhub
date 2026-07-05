@@ -1251,22 +1251,26 @@ body.sidebar-collapsed .hamburger { display: none; }
           <th>Anúncio</th>
           <th style="text-align:right">Custo</th>
           <th style="text-align:right">Preço API</th>
-          <th style="text-align:right">M.C.</th>
+          <th style="text-align:right">M.C. Planej.</th>
           <th style="text-align:right">Receita (ontem)</th>
           <th style="text-align:right">Unid.</th>
           <th style="text-align:right">Pedidos</th>
           <th style="text-align:right">Conv.</th>
+          <th style="text-align:right">Comissão ML</th>
           <th style="text-align:right">Gasto ADS</th>
+          <th style="text-align:right">Margem Líquida Real</th>
           <th style="text-align:right">TACOS</th>
           <th style="text-align:right">Meta</th>
-          <th style="text-align:right">ACOS</th>
-          <th style="text-align:right">Estoque</th>
+          <th style="text-align:right">Depósito</th>
+          <th style="text-align:right">Full</th>
           <th style="text-align:right">Mín.</th>
+          <th>Saúde</th>
           <th>Status</th>
           <th></th>
         </tr></thead>
         <tbody class="hub-tbody" id="prod-tbody"></tbody>
       </table></div>
+      <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Margem Líquida Real = Receita − Custo do produto − Comissão do ML − Gasto ADS, sobre a receita do dia. Depósito/Full só aparece pra contas com Estoque Multi-Origem habilitado no Mercado Livre.</div>
       <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Clique em "Detalhes" pra abrir a edição completa do SKU. M.C. = (Preço − Custo) / Preço.</div>
     </div>
 
@@ -2553,8 +2557,8 @@ async function renderPerformance(){
 
   // agregados por item (pro top e pras anomalias)
   const porItem = {};
-  vendasPeriodo.forEach(v=>{ const o=(porItem[v.item_id]=porItem[v.item_id]||{receita:0,unidades:0,gasto:0,pedidos:0}); o.receita+=Number(v.receita); o.unidades+=Number(v.unidades); o.pedidos+=Number(v.pedidos||0); });
-  adsPeriodo.forEach(a=>{ const o=(porItem[a.item_id]=porItem[a.item_id]||{receita:0,unidades:0,gasto:0,pedidos:0}); o.gasto+=Number(a.gasto); });
+  vendasPeriodo.forEach(v=>{ const o=(porItem[v.item_id]=porItem[v.item_id]||{receita:0,unidades:0,gasto:0,pedidos:0,comissao:0}); o.receita+=Number(v.receita); o.unidades+=Number(v.unidades); o.pedidos+=Number(v.pedidos||0); o.comissao+=Number(v.comissao||0); });
+  adsPeriodo.forEach(a=>{ const o=(porItem[a.item_id]=porItem[a.item_id]||{receita:0,unidades:0,gasto:0,pedidos:0,comissao:0}); o.gasto+=Number(a.gasto); });
 
   const anuncioPorItem = {};
   (anunciosRes.data||[]).forEach(a=>{ if(!anuncioPorItem[a.item_id]) anuncioPorItem[a.item_id]=a; });
@@ -2562,6 +2566,8 @@ async function renderPerformance(){
   const receitaTotal = Object.values(porItem).reduce((s,o)=>s+o.receita,0);
   const unidadesTotal = Object.values(porItem).reduce((s,o)=>s+o.unidades,0);
   const pedidosTotal = Object.values(porItem).reduce((s,o)=>s+o.pedidos,0);
+  const comissaoTotal = Object.values(porItem).reduce((s,o)=>s+o.comissao,0);
+  const faturamentoLiquido = receitaTotal - comissaoTotal;
   const visitasTotal = visitasPeriodo.reduce((s,v)=>s+Number(v.visitas),0);
   const conversaoMedia = visitasTotal>0 ? (pedidosTotal/visitasTotal*100) : null;
   const gastoTotal = Object.values(porItem).reduce((s,o)=>s+o.gasto,0);
@@ -2570,7 +2576,9 @@ async function renderPerformance(){
   const rep = (repRes.data && repRes.data[0]) || null;
 
   cardsEl.innerHTML = `<div class="vg-kpi-grid">
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Faturamento no período</div><div class="vg-kpi-value">${lbxFmtMoeda(receitaTotal)}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Faturamento bruto</div><div class="vg-kpi-value">${lbxFmtMoeda(receitaTotal)}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Comissão ML</div><div class="vg-kpi-value">${lbxFmtMoeda(comissaoTotal)}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Faturamento líquido</div><div class="vg-kpi-value">${lbxFmtMoeda(faturamentoLiquido)}</div></div>
     <div class="vg-kpi-card"><div class="vg-kpi-label">Pedidos</div><div class="vg-kpi-value">${pedidosTotal.toLocaleString('pt-BR')}</div></div>
     <div class="vg-kpi-card"><div class="vg-kpi-label">Unidades vendidas</div><div class="vg-kpi-value">${unidadesTotal.toLocaleString('pt-BR')}</div></div>
     <div class="vg-kpi-card"><div class="vg-kpi-label">Conversão média</div><div class="vg-kpi-value">${conversaoMedia!==null?conversaoMedia.toFixed(1)+'%':'—'}</div></div>
@@ -2586,12 +2594,16 @@ async function renderPerformance(){
     <div class="vg-kpi-card"><div class="vg-kpi-label">Vendas completas (hist.)</div><div class="vg-kpi-value">${Number(rep.vendas_completas).toLocaleString('pt-BR')}</div></div>
   </div>` : '<div style="color:var(--slate-400);font-size:13px">Sem dado de reputação ainda.</div>';
 
-  // anomalias no nível de conta: dias com TACOS do dia acima da meta
+  // anomalias no nível de conta: dias com TACOS do dia acima da meta + anúncios com saúde comprometida
   const anomalias = [];
   dias.forEach(d=>{
     const o = porDia[d];
     const t = o.receita>0 ? (o.gasto/o.receita*100) : null;
     if(t!==null && t>LBX_TACOS_ALVO_PADRAO) anomalias.push(`${lbxDataBR(d)}: TACOS de ${t.toFixed(1)}% (meta ${LBX_TACOS_ALVO_PADRAO}%)`);
+  });
+  Object.values(anuncioPorItem).forEach(a=>{
+    if(a.saude === 'unhealthy') anomalias.push(`${a.titulo}: perdendo exposição por reclamação/cancelamento`);
+    else if(a.saude === 'warning') anomalias.push(`${a.titulo}: risco de perder exposição — atenção`);
   });
   anomEl.innerHTML = anomalias.length
     ? `<div class="table-wrap"><table><tbody class="hub-tbody">${anomalias.map(a=>`<tr><td class="neg">${a}</td></tr>`).join('')}</tbody></table></div>`
@@ -2818,11 +2830,11 @@ let prodDadosCache = null;
 
 async function renderProdutos(){
   const tbody = document.getElementById('prod-tbody');
-  tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="19" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
 
   const {anunciosRes, adsRes, vendasRes, skusRes, visitasRes} = await lbxCarregarTudo();
   if(anunciosRes.error||adsRes.error||vendasRes.error||skusRes.error||visitasRes.error){
-    tbody.innerHTML = '<tr><td colspan="16" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="19" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
     return;
   }
 
@@ -2858,10 +2870,16 @@ async function renderProdutos(){
     const metaTacos = skuInfo?.tacos_alvo ?? LBX_TACOS_ALVO_PADRAO;
     const estoqueMin = skuInfo?.estoque_minimo ?? LBX_ESTOQUE_MIN_PADRAO;
     const estoque = anuncio ? anuncio.estoque : null;
+    const estoqueDeposito = anuncio?.estoque_deposito ?? null;
+    const estoqueFull = anuncio?.estoque_full ?? null;
+    const saude = anuncio?.saude || null;
     const custo = skuInfo?.custo || 0;
     const precoApi = anuncio?.preco || 0;
     const mc = precoApi>0 ? ((precoApi-custo)/precoApi*100) : null;
     const mpa = (mc!==null && tacosPct!==null) ? (mc-tacosPct) : null;
+    const comissaoOntem = vendaOntem ? Number(vendaOntem.comissao||0) : 0;
+    // Margem líquida real do dia: receita menos custo do produto, comissão do ML e gasto de ADS.
+    const margemLiquidaReal = receitaOntem>0 ? ((receitaOntem - (custo*unidadesOntem) - comissaoOntem - gastoOntem) / receitaOntem * 100) : null;
 
     let quedaVendas = false;
     if(vendasDias.length >= 3){
@@ -2874,9 +2892,11 @@ async function renderProdutos(){
     if(tacosPct !== null && tacosPct > metaTacos) alertas.push('TACOS alto');
     if(estoque !== null && estoque <= estoqueMin) alertas.push('Estoque baixo');
     if(quedaVendas) alertas.push('Queda de vendas');
+    if(saude && saude !== 'healthy') alertas.push(saude === 'unhealthy' ? 'Perdendo exposição' : 'Risco de exposição');
 
     linhas.push({itemId, sku, titulo: anuncio?.titulo || itemId, permalink: anuncio?.permalink || null, custo, precoApi, mc, mpa,
-      receitaOntem, unidadesOntem, pedidosOntem, visitasOntem, conversao, gastoOntem, tacosPct, metaTacos, acos, estoque, estoqueMin, alertas});
+      receitaOntem, unidadesOntem, pedidosOntem, visitasOntem, conversao, gastoOntem, tacosPct, metaTacos, acos,
+      estoque, estoqueDeposito, estoqueFull, estoqueMin, saude, comissaoOntem, margemLiquidaReal, alertas});
   });
 
   prodDadosCache = linhas;
@@ -2897,9 +2917,11 @@ function desenharProdutosTabela(){
   });
   linhas = linhas.sort((a,b)=> b.alertas.length - a.alertas.length || b.receitaOntem - a.receitaOntem);
 
+  const saudeBadge = s => s==='unhealthy' ? '<span class="neg" style="font-size:11px">⚠ Perdendo</span>' : s==='warning' ? '<span style="font-size:11px;color:var(--coral-500)">Atenção</span>' : s==='healthy' ? '<span style="font-size:11px;color:var(--green-600)">OK</span>' : '<span style="font-size:11px;color:var(--slate-400)">—</span>';
+
   tbody.innerHTML = linhas.map(l=>`
     <tr>
-      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none">${l.titulo} ↗</a>`:l.titulo}</td>
+      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none">${l.titulo} ↗</a>`:l.titulo}</td>
       <td style="text-align:right">${l.custo>0?lbxFmtMoeda(l.custo):'—'}</td>
       <td style="text-align:right">${l.precoApi>0?lbxFmtMoeda(l.precoApi):'—'}</td>
       <td style="text-align:right;${l.mc!==null&&l.mc<15?'color:var(--coral-500)':''}">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</td>
@@ -2907,16 +2929,19 @@ function desenharProdutosTabela(){
       <td style="text-align:right">${l.unidadesOntem}</td>
       <td style="text-align:right">${l.pedidosOntem}</td>
       <td style="text-align:right">${l.conversao!==null?l.conversao.toFixed(1)+'%':'—'}</td>
+      <td style="text-align:right">${lbxFmtMoeda(l.comissaoOntem)}</td>
       <td style="text-align:right">${lbxFmtMoeda(l.gastoOntem)}</td>
+      <td style="text-align:right;font-weight:600;${l.margemLiquidaReal!==null&&l.margemLiquidaReal<0?'color:var(--coral-500)':''}">${l.margemLiquidaReal!==null?l.margemLiquidaReal.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right" class="${l.tacosPct!==null && l.tacosPct>l.metaTacos?'neg':''}">${l.tacosPct!==null?l.tacosPct.toFixed(2)+'%':'—'}</td>
       <td style="text-align:right">${l.metaTacos}%</td>
-      <td style="text-align:right">${l.acos!==null?l.acos.toFixed(2)+'%':'—'}</td>
-      <td style="text-align:right" class="${l.estoque!==null && l.estoque<=l.estoqueMin?'neg':''}">${l.estoque??'—'}</td>
-      <td style="text-align:right">${l.estoqueMin}</td>
+      <td style="text-align:right">${l.estoqueDeposito??'—'}</td>
+      <td style="text-align:right">${l.estoqueFull??'—'}</td>
+      <td style="text-align:right" class="${l.estoque!==null && l.estoque<=l.estoqueMin?'neg':''}">${l.estoqueMin}</td>
+      <td>${saudeBadge(l.saude)}</td>
       <td>${l.alertas.length? `<span class="neg" style="font-size:11px">${l.alertas.join(', ')}</span>` : '<span style="font-size:11px;color:var(--slate-400)">OK</span>'}</td>
       <td><button class="btn-hub-edit" onclick="prodAbrirDrawer('${l.itemId}')">Detalhes</button></td>
     </tr>
-  `).join('') || '<tr><td colspan="16" style="text-align:center;color:var(--slate-400)">Nenhum item encontrado.</td></tr>';
+  `).join('') || '<tr><td colspan="19" style="text-align:center;color:var(--slate-400)">Nenhum item encontrado.</td></tr>';
 }
 
 function desenharTop5MC(){
