@@ -1151,44 +1151,82 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div class="page-title">Performance de Vendas — Logbox</div>
       <div class="page-subtitle">Direto da API do Mercado Livre — histórico salvo via sync diário</div>
 
-      <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
-        <select class="perf-select" id="perf-periodo-sel" onchange="perfPeriodo=Number(this.value);renderPerformance()">
-          <option value="7">Últimos 7 dias</option>
-          <option value="14">Últimos 14 dias</option>
-          <option value="30" selected>Últimos 30 dias</option>
-          <option value="90">Últimos 90 dias</option>
-        </select>
-        <div style="font-size:12px;color:var(--slate-400);display:flex;align-items:center;gap:10px">
-          <span>Última atualização: <b id="perf-updated-at" style="color:var(--slate-700)">—</b></span>
-          <button class="perf-select" style="cursor:pointer;padding:6px 12px" onclick="renderPerformance()">↻ Atualizar</button>
+      <div class="perf-subtabs" id="perf-subtabs">
+        <button class="perf-subtab active" onclick="perfGoTab2('visao-geral',this)">Visão Geral</button>
+        <button class="perf-subtab" onclick="perfGoTab2('historico-mensal',this)">Histórico Mensal</button>
+        <button class="perf-subtab" onclick="perfGoTab2('comparativo',this)">Comparativo</button>
+      </div>
+
+      <!-- VISÃO GERAL -->
+      <div class="perf-subpage active" id="perf2-visao-geral">
+        <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <select class="perf-select" id="perf-periodo-sel" onchange="perfPeriodo=Number(this.value);renderPerformance()">
+            <option value="7">Últimos 7 dias</option>
+            <option value="14">Últimos 14 dias</option>
+            <option value="30" selected>Últimos 30 dias</option>
+            <option value="90">Últimos 90 dias</option>
+          </select>
+          <div style="font-size:12px;color:var(--slate-400);display:flex;align-items:center;gap:10px">
+            <span>Última atualização: <b id="perf-updated-at" style="color:var(--slate-700)">—</b></span>
+            <button class="perf-select" style="cursor:pointer;padding:6px 12px" onclick="renderPerformance()">↻ Atualizar</button>
+          </div>
+        </div>
+
+        <div class="perf-section-label" style="margin-top:20px">Consolidado do período</div>
+        <div id="perf-kpi-cards"></div>
+
+        <div class="perf-section-label" style="margin-top:24px">Faturamento vs. Gasto em ADS por dia</div>
+        <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
+          <svg id="perf-chart" width="100%" height="260" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
+        </div>
+
+        <div class="perf-section-label" style="margin-top:24px">Reputação da conta</div>
+        <div id="perf-reputacao-cards"></div>
+
+        <div class="perf-section-label" style="margin-top:24px">Anomalias no período</div>
+        <div id="perf-anomalias"></div>
+
+        <div class="perf-section-label" style="margin-top:24px">Top anúncios por faturamento no período</div>
+        <div class="table-wrap"><table>
+          <thead class="hub-thead"><tr>
+            <th>Anúncio</th>
+            <th style="text-align:right">Receita</th>
+            <th style="text-align:right">Unidades</th>
+            <th style="text-align:right">Gasto ADS</th>
+            <th style="text-align:right">TACOS</th>
+          </tr></thead>
+          <tbody class="hub-tbody" id="perf-top-tbody"></tbody>
+        </table></div>
+      </div>
+
+      <!-- HISTÓRICO MENSAL -->
+      <div class="perf-subpage" id="perf2-historico-mensal">
+        <div class="perf-section-label">Consolidado mês a mês, desde que o sync começou a rodar</div>
+        <div class="table-wrap" style="overflow-x:auto">
+          <table>
+            <thead class="hub-thead"><tr>
+              <th>Mês</th>
+              <th style="text-align:right">Faturamento</th>
+              <th style="text-align:right">Unidades</th>
+              <th style="text-align:right">Ticket Médio</th>
+              <th style="text-align:right">Gasto ADS</th>
+              <th style="text-align:right">TACOS (%)</th>
+            </tr></thead>
+            <tbody class="hub-tbody" id="hm-tbody"></tbody>
+          </table>
+        </div>
+        <div class="perf-section-label" style="margin-top:28px">Gráfico — Faturamento vs TACOS por mês</div>
+        <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
+          <svg id="hm-chart" width="100%" height="260" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
         </div>
       </div>
 
-      <div class="perf-section-label" style="margin-top:20px">Consolidado do período</div>
-      <div id="perf-kpi-cards"></div>
-
-      <div class="perf-section-label" style="margin-top:24px">Faturamento vs. Gasto em ADS por dia</div>
-      <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
-        <svg id="perf-chart" width="100%" height="260" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
+      <!-- COMPARATIVO -->
+      <div class="perf-subpage" id="perf2-comparativo">
+        <div class="perf-section-label" style="margin-bottom:8px">Selecione os meses para comparar</div>
+        <div class="comp-month-picker" id="hm-comp-picker"></div>
+        <div id="hm-comp-cards" style="margin-top:16px"></div>
       </div>
-
-      <div class="perf-section-label" style="margin-top:24px">Reputação da conta</div>
-      <div id="perf-reputacao-cards"></div>
-
-      <div class="perf-section-label" style="margin-top:24px">Anomalias no período</div>
-      <div id="perf-anomalias"></div>
-
-      <div class="perf-section-label" style="margin-top:24px">Top anúncios por faturamento no período</div>
-      <div class="table-wrap"><table>
-        <thead class="hub-thead"><tr>
-          <th>Anúncio</th>
-          <th style="text-align:right">Receita</th>
-          <th style="text-align:right">Unidades</th>
-          <th style="text-align:right">Gasto ADS</th>
-          <th style="text-align:right">TACOS</th>
-        </tr></thead>
-        <tbody class="hub-tbody" id="perf-top-tbody"></tbody>
-      </table></div>
     </div>
 
     <!-- PRODUTOS -->
@@ -1219,10 +1257,24 @@ body.sidebar-collapsed .hamburger { display: none; }
           <th style="text-align:right">Estoque</th>
           <th style="text-align:right">Mín.</th>
           <th>Status</th>
+          <th></th>
         </tr></thead>
         <tbody class="hub-tbody" id="prod-tbody"></tbody>
       </table></div>
-      <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Clique em Custo, Meta TACOS ou Estoque Mínimo na linha pra editar. M.C. = (Preço − Custo) / Preço.</div>
+      <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Clique em "Detalhes" pra abrir a edição completa do SKU. M.C. = (Preço − Custo) / Preço.</div>
+    </div>
+
+    <!-- GAVETA DE EDIÇÃO DE PRODUTO -->
+    <div class="sku-drawer-overlay" id="prod-drawer-overlay" onclick="closeProdDrawer()"></div>
+    <div class="sku-drawer" id="prod-drawer">
+      <div class="sku-drawer-header">
+        <div>
+          <div class="sku-drawer-title" id="prod-drawer-title">Produto</div>
+          <div class="sku-drawer-sub" id="prod-drawer-sub"></div>
+        </div>
+        <button class="sku-drawer-close" onclick="closeProdDrawer()">✕</button>
+      </div>
+      <div class="sku-drawer-body" id="prod-drawer-body"></div>
     </div>
 
     <!-- ANOTAÇÕES -->
@@ -1866,7 +1918,7 @@ function go(id,btn){
   if(innerWidth<=768)toggleSidebar();
   if(id==='home') renderHome();
   if(id==='produtos'){ renderProdutos(); }
-  if(id==='performance'){ renderPerformance(); }
+  if(id==='performance'){ refreshActivePerfSubtab(); }
 }
 
 // ===== HOME DASHBOARD =====
@@ -2589,16 +2641,175 @@ function renderPerfChart(dias, porDia){
   svg.innerHTML = yLabels+bars+line+dots+xLabels+legend;
 }
 
+// ===== SUB-ABAS DE PERFORMANCE (Visão Geral / Histórico Mensal / Comparativo) =====
+function perfGoTab2(id, btn){
+  document.querySelectorAll('#page-performance .perf-subpage').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('#perf-subtabs .perf-subtab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('perf2-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='historico-mensal') renderHistoricoMensal();
+  else if(id==='comparativo') renderComparativo2();
+  else renderPerformance();
+}
+function refreshActivePerfSubtab(){
+  const ativo = document.querySelector('#page-performance .perf-subpage.active');
+  const id = ativo ? ativo.id.replace('perf2-','') : 'visao-geral';
+  if(id==='historico-mensal') renderHistoricoMensal();
+  else if(id==='comparativo') renderComparativo2();
+  else renderPerformance();
+}
+
+let hmMesesCache = null; // {meses:[...], porMes:{...}}
+let hmMesesSelecionados = [];
+
+async function hmAgregarPorMes(){
+  const {vendasRes, adsRes} = await lbxCarregarTudo();
+  const porMes = {};
+  (vendasRes.data||[]).forEach(v=>{
+    const mes = v.data.slice(0,7);
+    const o = (porMes[mes] = porMes[mes] || {receita:0, unidades:0, gasto:0});
+    o.receita += Number(v.receita); o.unidades += Number(v.unidades);
+  });
+  (adsRes.data||[]).forEach(a=>{
+    const mes = a.data.slice(0,7);
+    const o = (porMes[mes] = porMes[mes] || {receita:0, unidades:0, gasto:0});
+    o.gasto += Number(a.gasto);
+  });
+  const meses = Object.keys(porMes).sort();
+  hmMesesCache = {meses, porMes};
+  return hmMesesCache;
+}
+function hmMesLabel(mes){
+  const [y,m] = mes.split('-');
+  const nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return `${nomes[Number(m)-1]}/${y}`;
+}
+
+async function renderHistoricoMensal(){
+  const tbody = document.getElementById('hm-tbody');
+  tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
+  const {meses, porMes} = await hmAgregarPorMes();
+  if(!meses.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--slate-400)">Ainda não há um mês fechado de dados — o histórico cresce a cada dia de sync.</td></tr>';
+    document.getElementById('hm-chart').innerHTML = '';
+    return;
+  }
+  tbody.innerHTML = meses.map(mes=>{
+    const o = porMes[mes];
+    const ticket = o.unidades>0 ? o.receita/o.unidades : 0;
+    const tacos = o.receita>0 ? (o.gasto/o.receita*100) : 0;
+    return `<tr>
+      <td>${hmMesLabel(mes)}</td>
+      <td style="text-align:right">${lbxFmtMoeda(o.receita)}</td>
+      <td style="text-align:right">${o.unidades.toLocaleString('pt-BR')}</td>
+      <td style="text-align:right">${lbxFmtMoeda(ticket)}</td>
+      <td style="text-align:right">${lbxFmtMoeda(o.gasto)}</td>
+      <td style="text-align:right" class="${tacos>LBX_TACOS_ALVO_PADRAO?'neg':''}">${tacos.toFixed(2)}%</td>
+    </tr>`;
+  }).join('');
+  renderHmChart(meses, porMes);
+}
+
+function renderHmChart(meses, porMes){
+  const svg = document.getElementById('hm-chart');
+  const W=800, H=260, padL=60, padR=20, padT=20, padB=40;
+  const chartW = W-padL-padR, chartH = H-padT-padB;
+  const n = meses.length;
+  const colW = chartW/n;
+  const barW = Math.max(Math.min(colW-16, 46), 10);
+  const fats = meses.map(m=>porMes[m].receita);
+  const tacosArr = meses.map(m=> porMes[m].receita>0 ? (porMes[m].gasto/porMes[m].receita*100) : 0);
+  const maxFat = Math.max(...fats, 1);
+  const maxTacos = Math.max(...tacosArr, 1);
+  let bars='', line='', dots='', xLabels='', yLabels='';
+  [0,0.25,0.5,0.75,1].forEach(pct=>{
+    const y = padT + chartH*(1-pct);
+    const val = maxFat*pct;
+    yLabels += `<text x="${padL-6}" y="${y+4}" text-anchor="end" font-size="9" fill="#888780">${val>=1000?(val/1000).toFixed(0)+'k':val.toFixed(0)}</text>`;
+    yLabels += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#F1EFE8" stroke-width="1"/>`;
+  });
+  meses.forEach((m,i)=>{
+    const x = padL + i*colW + (colW-barW)/2;
+    const barH = (porMes[m].receita/maxFat)*chartH;
+    const barY = padT + chartH - barH;
+    bars += `<rect x="${x}" y="${barY}" width="${barW}" height="${barH}" rx="2" fill="var(--coral-400)"/>`;
+    const cx = padL + i*colW + colW/2;
+    const cy = padT + chartH - (tacosArr[i]/maxTacos)*chartH;
+    if(i>0){
+      const px = padL + (i-1)*colW + colW/2;
+      const py = padT + chartH - (tacosArr[i-1]/maxTacos)*chartH;
+      line += `<line x1="${px}" y1="${py}" x2="${cx}" y2="${cy}" stroke="var(--green-600)" stroke-width="2"/>`;
+    }
+    dots += `<circle cx="${cx}" cy="${cy}" r="3" fill="var(--green-600)"/>`;
+    xLabels += `<text x="${cx}" y="${H-padB+16}" text-anchor="middle" font-size="9" fill="#888780">${hmMesLabel(m)}</text>`;
+  });
+  const legend = `<rect x="${padL}" y="4" width="10" height="10" rx="2" fill="var(--coral-400)"/><text x="${padL+14}" y="13" font-size="10" fill="#5F5E5A">Faturamento</text><line x1="${padL+100}" y1="9" x2="${padL+114}" y2="9" stroke="var(--green-600)" stroke-width="2"/><circle cx="${padL+107}" cy="9" r="3" fill="var(--green-600)"/><text x="${padL+118}" y="13" font-size="10" fill="#5F5E5A">TACOS</text>`;
+  svg.innerHTML = yLabels+bars+line+dots+xLabels+legend;
+}
+
+async function renderComparativo2(){
+  const picker = document.getElementById('hm-comp-picker');
+  const cardsEl = document.getElementById('hm-comp-cards');
+  picker.innerHTML = '<span style="color:var(--slate-400);font-size:12px">Carregando meses...</span>';
+  const {meses} = await hmAgregarPorMes();
+  if(!hmMesesSelecionados.length) hmMesesSelecionados = meses.slice(-2); // últimos 2 meses por padrão
+  picker.innerHTML = meses.map(m=>
+    `<button class="comp-month-btn ${hmMesesSelecionados.includes(m)?'active':''}" onclick="hmToggleMes('${m}',this)">${hmMesLabel(m)}</button>`
+  ).join('') || '<span style="color:var(--slate-400);font-size:12px">Nenhum mês com dado ainda.</span>';
+  desenharComparativo2();
+}
+function hmToggleMes(m, btn){
+  if(hmMesesSelecionados.includes(m)) hmMesesSelecionados = hmMesesSelecionados.filter(x=>x!==m);
+  else hmMesesSelecionados.push(m);
+  btn.classList.toggle('active');
+  desenharComparativo2();
+}
+function desenharComparativo2(){
+  const cardsEl = document.getElementById('hm-comp-cards');
+  if(!hmMesesCache || !hmMesesSelecionados.length){ cardsEl.innerHTML=''; return; }
+  const { porMes } = hmMesesCache;
+  const selecionados = hmMesesSelecionados.slice().sort();
+  const linhas = selecionados.map(mes=>{
+    const o = porMes[mes] || {receita:0,unidades:0,gasto:0};
+    const ticket = o.unidades>0 ? o.receita/o.unidades : 0;
+    const tacos = o.receita>0 ? (o.gasto/o.receita*100) : 0;
+    return {mes, receita:o.receita, unidades:o.unidades, ticket, gasto:o.gasto, tacos};
+  });
+  const metricas = [
+    {key:'receita', label:'Faturamento', fmt:v=>lbxFmtMoeda(v), maiorMelhor:true},
+    {key:'unidades', label:'Unidades', fmt:v=>v.toLocaleString('pt-BR'), maiorMelhor:true},
+    {key:'ticket', label:'Ticket Médio', fmt:v=>lbxFmtMoeda(v), maiorMelhor:true},
+    {key:'gasto', label:'Gasto ADS', fmt:v=>lbxFmtMoeda(v), maiorMelhor:false},
+    {key:'tacos', label:'TACOS', fmt:v=>v.toFixed(2)+'%', maiorMelhor:false},
+  ];
+  cardsEl.innerHTML = `<div class="comp-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+    ${linhas.map(l=>{
+      return `<div class="vg-kpi-card" style="padding:16px">
+        <div style="font-weight:600;margin-bottom:10px">${hmMesLabel(l.mes)}</div>
+        ${metricas.map(m=>{
+          const valores = linhas.map(x=>x[m.key]);
+          const melhor = m.maiorMelhor ? Math.max(...valores) : Math.min(...valores.filter(v=>v>0)) || Math.min(...valores);
+          const isBest = linhas.length>1 && l[m.key]===melhor;
+          return `<div class="comp-kpi-row" style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--slate-50)">
+            <span style="color:var(--slate-400)">${m.label}</span>
+            <span style="font-weight:${isBest?'700':'400'};color:${isBest?'var(--green-600)':'var(--slate-900)'}">${m.fmt(l[m.key])}${isBest?' ★':''}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
 // ===== PRODUTOS (visão por SKU/anúncio — densa, uso operacional diário) =====
 let prodDadosCache = null;
 
 async function renderProdutos(){
   const tbody = document.getElementById('prod-tbody');
-  tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
 
   const {anunciosRes, adsRes, vendasRes, skusRes} = await lbxCarregarTudo();
   if(anunciosRes.error||adsRes.error||vendasRes.error||skusRes.error){
-    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
     return;
   }
 
@@ -2669,50 +2880,102 @@ function desenharProdutosTabela(){
   tbody.innerHTML = linhas.map(l=>`
     <tr>
       <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.titulo}</td>
-      <td style="text-align:right;cursor:pointer" title="Clique pra editar" onclick="prodEditarCusto('${l.sku||''}',${l.custo})">${l.custo>0?lbxFmtMoeda(l.custo):'—'}</td>
+      <td style="text-align:right">${l.custo>0?lbxFmtMoeda(l.custo):'—'}</td>
       <td style="text-align:right">${l.precoApi>0?lbxFmtMoeda(l.precoApi):'—'}</td>
       <td style="text-align:right;${l.mc!==null&&l.mc<15?'color:var(--coral-500)':''}">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right">${lbxFmtMoeda(l.receitaOntem)}</td>
       <td style="text-align:right">${l.unidadesOntem}</td>
       <td style="text-align:right">${lbxFmtMoeda(l.gastoOntem)}</td>
       <td style="text-align:right" class="${l.tacosPct!==null && l.tacosPct>l.metaTacos?'neg':''}">${l.tacosPct!==null?l.tacosPct.toFixed(2)+'%':'—'}</td>
-      <td style="text-align:right;cursor:pointer" title="Clique pra editar" onclick="prodEditarMetaTacos('${l.sku||''}',${l.metaTacos})">${l.metaTacos}%</td>
+      <td style="text-align:right">${l.metaTacos}%</td>
       <td style="text-align:right">${l.acos!==null?l.acos.toFixed(2)+'%':'—'}</td>
-      <td style="text-align:right;cursor:pointer" title="Clique pra editar" class="${l.estoque!==null && l.estoque<=l.estoqueMin?'neg':''}" onclick="prodEditarEstoqueMin('${l.sku||''}',${l.estoqueMin})">${l.estoque??'—'}</td>
+      <td style="text-align:right" class="${l.estoque!==null && l.estoque<=l.estoqueMin?'neg':''}">${l.estoque??'—'}</td>
       <td style="text-align:right">${l.estoqueMin}</td>
       <td>${l.alertas.length? `<span class="neg" style="font-size:11px">${l.alertas.join(', ')}</span>` : '<span style="font-size:11px;color:var(--slate-400)">OK</span>'}</td>
+      <td><button class="btn-hub-edit" onclick="prodAbrirDrawer('${l.itemId}')">Detalhes</button></td>
     </tr>
-  `).join('') || '<tr><td colspan="13" style="text-align:center;color:var(--slate-400)">Nenhum item encontrado.</td></tr>';
+  `).join('') || '<tr><td colspan="14" style="text-align:center;color:var(--slate-400)">Nenhum item encontrado.</td></tr>';
 }
 
-async function prodUpsertSku(sku, campo, valor){
-  if(!sku){ alert('Esse anúncio ainda não tem SKU vinculado (seller_custom_field) — associe um SKU no próprio anúncio do Mercado Livre antes de editar aqui.'); return; }
-  const payload = {conta:'Logbox', sku};
-  payload[campo] = valor;
+async function prodUpsertSku(sku, campos){
+  if(!sku){ alert('Esse anúncio ainda não tem SKU vinculado (seller_custom_field) — associe um SKU no próprio anúncio do Mercado Livre antes de editar aqui.'); return false; }
+  const payload = {conta:'Logbox', sku, ...campos};
   const {error} = await sb.from('skus').upsert(payload, {onConflict:'conta,sku'});
-  if(error){ alert('Erro ao salvar: '+error.message); return; }
-  renderProdutos();
+  if(error){ alert('Erro ao salvar: '+error.message); return false; }
+  return true;
 }
-function prodEditarCusto(sku, atual){
-  const v = prompt('Custo do produto (R$):', atual||'');
-  if(v===null) return;
-  const num = parseFloat(v.replace(',','.'));
-  if(isNaN(num)) return alert('Valor inválido.');
-  prodUpsertSku(sku, 'custo', num);
+
+// ===== GAVETA DE EDIÇÃO COMPLETA DO PRODUTO =====
+async function prodAbrirDrawer(itemId){
+  const l = (prodDadosCache||[]).find(x=>x.itemId===itemId);
+  if(!l) return;
+  document.getElementById('prod-drawer-title').textContent = l.titulo;
+  document.getElementById('prod-drawer-sub').textContent = l.sku ? `SKU: ${l.sku}` : `Sem SKU vinculado — ${itemId}`;
+  document.getElementById('prod-drawer-body').innerHTML = '<div style="color:var(--slate-400);font-size:13px">Carregando histórico...</div>';
+  document.getElementById('prod-drawer').classList.add('open');
+  document.getElementById('prod-drawer-overlay').classList.add('active');
+
+  const [vendasRes, adsRes] = await Promise.all([
+    sb.from('ml_vendas').select('*').eq('conta','Logbox').eq('item_id',itemId).order('data',{ascending:false}).limit(14),
+    sb.from('ml_ads_reports').select('*').eq('conta','Logbox').eq('item_id',itemId).order('data',{ascending:false}).limit(14),
+  ]);
+  const adsPorData = {};
+  (adsRes.data||[]).forEach(a=>{ adsPorData[a.data]=a; });
+  const dias = (vendasRes.data||[]).map(v=>{
+    const ads = adsPorData[v.data];
+    const receita = Number(v.receita);
+    const gasto = ads ? Number(ads.gasto) : 0;
+    return {data:v.data, receita, unidades:v.unidades, gasto, tacos: receita>0 ? (gasto/receita*100) : null};
+  });
+
+  document.getElementById('prod-drawer-body').innerHTML = `
+    <div class="perf-section-label">Dados da API (somente leitura)</div>
+    <div class="vg-kpi-grid" style="margin-bottom:20px">
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Preço no anúncio</div><div class="vg-kpi-value">${l.precoApi>0?lbxFmtMoeda(l.precoApi):'—'}</div></div>
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Estoque atual</div><div class="vg-kpi-value">${l.estoque??'—'}</div></div>
+      <div class="vg-kpi-card"><div class="vg-kpi-label">M.C. atual</div><div class="vg-kpi-value">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</div></div>
+    </div>
+
+    <div class="perf-section-label">Configuração editável</div>
+    <div class="m-field"><label>Custo do produto (R$)</label><input type="number" step="0.01" id="pd-custo" value="${l.custo||''}"></div>
+    <div class="m-field"><label>Meta de TACOS (%)</label><input type="number" step="0.1" id="pd-tacos-alvo" value="${l.metaTacos}"></div>
+    <div class="m-field"><label>Estoque mínimo (unidades)</label><input type="number" step="1" id="pd-estoque-min" value="${l.estoqueMin}"></div>
+    <button class="btn btn-primary" style="margin-top:8px" onclick="prodSalvarDrawer('${l.sku||''}')">Salvar</button>
+    <div id="pd-save-msg" style="font-size:12px;color:var(--green-600);margin-top:6px"></div>
+
+    <div class="perf-section-label" style="margin-top:24px">Últimos ${dias.length} dias</div>
+    <div class="table-wrap"><table>
+      <thead class="hub-thead"><tr>
+        <th>Data</th><th style="text-align:right">Receita</th><th style="text-align:right">Unid.</th>
+        <th style="text-align:right">Gasto ADS</th><th style="text-align:right">TACOS</th>
+      </tr></thead>
+      <tbody class="hub-tbody">
+        ${dias.map(d=>`<tr>
+          <td>${lbxDataBR(d.data)}</td>
+          <td style="text-align:right">${lbxFmtMoeda(d.receita)}</td>
+          <td style="text-align:right">${d.unidades}</td>
+          <td style="text-align:right">${lbxFmtMoeda(d.gasto)}</td>
+          <td style="text-align:right" class="${d.tacos!==null && d.tacos>l.metaTacos?'neg':''}">${d.tacos!==null?d.tacos.toFixed(2)+'%':'—'}</td>
+        </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--slate-400)">Sem histórico ainda.</td></tr>'}
+      </tbody>
+    </table></div>
+  `;
 }
-function prodEditarMetaTacos(sku, atual){
-  const v = prompt('Meta de TACOS pra esse SKU (%):', atual||LBX_TACOS_ALVO_PADRAO);
-  if(v===null) return;
-  const num = parseFloat(v.replace(',','.'));
-  if(isNaN(num)) return alert('Valor inválido.');
-  prodUpsertSku(sku, 'tacos_alvo', num);
+function closeProdDrawer(){
+  document.getElementById('prod-drawer').classList.remove('open');
+  document.getElementById('prod-drawer-overlay').classList.remove('active');
 }
-function prodEditarEstoqueMin(sku, atual){
-  const v = prompt('Estoque mínimo pra esse SKU (unidades):', atual||LBX_ESTOQUE_MIN_PADRAO);
-  if(v===null) return;
-  const num = parseInt(v);
-  if(isNaN(num)) return alert('Valor inválido.');
-  prodUpsertSku(sku, 'estoque_minimo', num);
+async function prodSalvarDrawer(sku){
+  const custo = parseFloat(document.getElementById('pd-custo').value.replace(',','.'));
+  const tacosAlvo = parseFloat(document.getElementById('pd-tacos-alvo').value.replace(',','.'));
+  const estoqueMin = parseInt(document.getElementById('pd-estoque-min').value);
+  if(isNaN(custo)||isNaN(tacosAlvo)||isNaN(estoqueMin)){ alert('Preencha todos os campos com números válidos.'); return; }
+  const ok = await prodUpsertSku(sku, {custo, tacos_alvo:tacosAlvo, estoque_minimo:estoqueMin});
+  if(ok){
+    document.getElementById('pd-save-msg').textContent = 'Salvo ✓';
+    renderProdutos();
+    setTimeout(()=>{ const m=document.getElementById('pd-save-msg'); if(m) m.textContent=''; }, 2000);
+  }
 }
 document.addEventListener('DOMContentLoaded', ()=>{
   const buscaEl = document.getElementById('prod-busca');
