@@ -1148,569 +1148,81 @@ body.sidebar-collapsed .hamburger { display: none; }
 
     <!-- PERFORMANCE -->
     <div class="page" id="page-performance">
-      <div class="page-title">Performance de Vendas</div>
-      <div class="page-subtitle">Análise completa por conta e período — 2026</div>
-      <div class="perf-subtabs" id="perf-subtabs">
-        <button class="perf-subtab active" onclick="perfGoTab('visao-geral',this)">Visão Geral</button>
-        <button class="perf-subtab" onclick="perfGoTab('historico',this)">Histórico 2026</button>
-        <button class="perf-subtab" onclick="perfGoTab('comparativo',this)">Comparativo</button>
-        <button class="perf-subtab" onclick="perfGoTab('logbox-live',this)">Logbox • Tempo Real</button>
-      </div>
-      <!-- VISÃO GERAL -->
-      <div class="perf-subpage active" id="perf-visao-geral">
-        <div class="perf-vg-controls">
-          <select class="perf-select" id="vg-month-sel" onchange="vgMonth=this.value;renderVG()">
-          <option value="2026-01">Janeiro 2026</option>
-          <option value="2026-02">Fevereiro 2026</option>
-          <option value="2026-03">Março 2026</option>
-          <option value="2026-04" selected>Abril 2026</option>
-          <option value="2026-05">Maio 2026</option>
-          <option value="2026-06">Junho 2026</option>
-          <option value="2026-07">Julho 2026</option>
-          <option value="2026-08">Agosto 2026</option>
-          <option value="2026-09">Setembro 2026</option>
-          <option value="2026-10">Outubro 2026</option>
-          <option value="2026-11">Novembro 2026</option>
-          <option value="2026-12">Dezembro 2026</option>
-          </select>
-        </div>
-        <div class="perf-section-label">Consolidado do mês</div>
-        <div id="vg-cards"></div>
-        <div class="perf-section-label" style="margin-top:24px">Detalhamento por conta</div>
-        <div class="table-wrap"><table>
-          <thead class="hub-thead"><tr>
-            <th>Conta</th>
-            <th style="text-align:right">Faturamento</th>
-            <th style="text-align:right">Pedidos</th>
-            <th style="text-align:right">Unidades</th>
-            <th style="text-align:right">Ticket Médio</th>
-            <th style="text-align:right">Conversão</th>
-            <th style="text-align:right">TACOS</th>
-            <th style="text-align:right">Rebait</th>
-            <th style="text-align:right">M.C.</th>
-            <th style="text-align:right">% Fat.</th>
-          </tr></thead>
-          <tbody class="hub-tbody" id="vg-tbody"></tbody>
-        </table></div>
-      </div>
+      <div class="page-title">Performance de Vendas — Logbox</div>
+      <div class="page-subtitle">Direto da API do Mercado Livre — histórico salvo via sync diário</div>
 
-      <!-- HISTÓRICO -->
-      <div class="perf-subpage" id="perf-historico">
-        <div class="perf-vg-controls">
-          <select class="perf-select" id="hist-conta-sel" onchange="histConta=this.value;renderHist()">
-            <option value="__all__">Consolidado (todas as contas)</option>
-            <option value="FW">FW</option>
-            <option value="BTMX">BTMX</option>
-            <option value="Falcom">Falcom</option>
-            <option value="Logbox">Logbox</option>
-          </select>
-        </div>
-        <div class="perf-section-label">Clique em uma linha para expandir detalhes</div>
-        <div class="table-wrap" style="overflow-x:auto">
-          <table>
-            <thead class="hub-thead"><tr>
-              <th>Mês</th>
-              <th style="text-align:right">Faturamento (R$)</th>
-              <th style="text-align:right">Pedidos</th>
-              <th style="text-align:right">Unidades</th>
-              <th style="text-align:right">Ticket Médio</th>
-              <th style="text-align:right">Conversão (%)</th>
-              <th style="text-align:right">TACOS (%)</th>
-              <th style="text-align:right">Rebait (%)</th>
-              <th style="text-align:right">M.C. (%)</th>
-              <th></th>
-            </tr></thead>
-            <tbody class="hub-tbody" id="hist-tbody"></tbody>
-          </table>
-        </div>
-        <div class="perf-section-label" style="margin-top:28px">Gráfico — Faturamento vs TACOS</div>
-        <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
-          <svg id="hist-chart" width="100%" height="260" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
+      <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <select class="perf-select" id="perf-periodo-sel" onchange="perfPeriodo=Number(this.value);renderPerformance()">
+          <option value="7">Últimos 7 dias</option>
+          <option value="14">Últimos 14 dias</option>
+          <option value="30" selected>Últimos 30 dias</option>
+          <option value="90">Últimos 90 dias</option>
+        </select>
+        <div style="font-size:12px;color:var(--slate-400);display:flex;align-items:center;gap:10px">
+          <span>Última atualização: <b id="perf-updated-at" style="color:var(--slate-700)">—</b></span>
+          <button class="perf-select" style="cursor:pointer;padding:6px 12px" onclick="renderPerformance()">↻ Atualizar</button>
         </div>
       </div>
 
-      <!-- COMPARATIVO -->
-      <div class="perf-subpage" id="perf-comparativo">
-        <div class="perf-vg-controls" style="align-items:flex-start;gap:16px;flex-wrap:wrap">
-          <div>
-            <div class="perf-section-label" style="margin-bottom:8px">Selecione os meses para comparar</div>
-            <div class="comp-month-picker" id="comp-month-picker"></div>
-          </div>
-          <div>
-            <div class="perf-section-label" style="margin-bottom:8px">Conta</div>
-            <select class="perf-select" id="comp-conta-sel" onchange="compConta=this.value;renderComp()">
-              <option value="__all__">Consolidado</option>
-              <option value="FW">FW</option>
-              <option value="BTMX">BTMX</option>
-              <option value="Falcom">Falcom</option>
-              <option value="Logbox">Logbox</option>
-            </select>
-          </div>
-        </div>
-        <div id="comp-insights" style="margin-bottom:20px"></div>
-        <div id="comp-cards"></div>
+      <div class="perf-section-label" style="margin-top:20px">Consolidado do período</div>
+      <div id="perf-kpi-cards"></div>
+
+      <div class="perf-section-label" style="margin-top:24px">Faturamento vs. Gasto em ADS por dia</div>
+      <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
+        <svg id="perf-chart" width="100%" height="260" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
       </div>
 
-      <!-- LOGBOX TEMPO REAL (dado vindo direto da API do ML) -->
-      <div class="perf-subpage" id="perf-logbox-live">
-        <div class="perf-vg-controls" style="justify-content:space-between">
-          <div class="perf-section-label" style="margin:0">Histórico salvo via sync diário — última atualização: <span id="lbx-updated-at">—</span></div>
-          <button class="perf-select" style="cursor:pointer" onclick="renderLogboxLive()">↻ Atualizar</button>
-        </div>
-        <div id="lbx-kpi-cards" style="margin-top:12px"></div>
+      <div class="perf-section-label" style="margin-top:24px">Reputação da conta</div>
+      <div id="perf-reputacao-cards"></div>
 
-        <div class="perf-section-label" style="margin-top:24px">Anomalias detectadas</div>
-        <div id="lbx-anomalias"></div>
+      <div class="perf-section-label" style="margin-top:24px">Anomalias no período</div>
+      <div id="perf-anomalias"></div>
 
-        <div class="perf-section-label" style="margin-top:24px">Por SKU / anúncio</div>
-        <div class="table-wrap"><table>
-          <thead class="hub-thead"><tr>
-            <th>Anúncio</th>
-            <th style="text-align:right">Receita (ontem)</th>
-            <th style="text-align:right">Gasto ADS</th>
-            <th style="text-align:right">TACOS</th>
-            <th style="text-align:right">Meta TACOS</th>
-            <th style="text-align:right">Estoque</th>
-            <th style="text-align:right">Mín.</th>
-            <th>Status</th>
-          </tr></thead>
-          <tbody class="hub-tbody" id="lbx-tbody"></tbody>
-        </table></div>
-      </div>
+      <div class="perf-section-label" style="margin-top:24px">Top anúncios por faturamento no período</div>
+      <div class="table-wrap"><table>
+        <thead class="hub-thead"><tr>
+          <th>Anúncio</th>
+          <th style="text-align:right">Receita</th>
+          <th style="text-align:right">Unidades</th>
+          <th style="text-align:right">Gasto ADS</th>
+          <th style="text-align:right">TACOS</th>
+        </tr></thead>
+        <tbody class="hub-tbody" id="perf-top-tbody"></tbody>
+      </table></div>
     </div>
 
     <!-- PRODUTOS -->
     <div class="page" id="page-produtos">
-      <div class="page-title">Produtos</div>
-      <div class="page-subtitle">Precificação e histórico de performance por SKU</div>
+      <div class="page-title">Produtos — Logbox</div>
+      <div class="page-subtitle">Precificação e performance real por SKU, direto da API</div>
 
-      <!-- TABS DE CONTA -->
-      <div class="tabs" id="prod-conta-tabs"></div>
-
-      <!-- SUB-ABAS -->
-      <div class="perf-subtabs" id="prod-subtabs" style="margin-top:4px">
-        <button class="perf-subtab active" onclick="prodGoTab('precificacao',this)">Precificação</button>
-        <button class="perf-subtab" onclick="prodGoTab('todos-produtos',this)">Todos os Produtos</button>
-        <button class="perf-subtab" onclick="prodGoTab('sku-perf',this)">Performance por SKU</button>
+      <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <input type="text" class="perf-select" id="prod-busca" placeholder="Buscar por título ou SKU..." style="min-width:240px" oninput="renderProdutos()">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--slate-600);cursor:pointer">
+          <input type="checkbox" id="prod-so-alertas" onchange="renderProdutos()"> Mostrar só com alerta
+        </label>
+        <div style="font-size:12px;color:var(--slate-400)">Referente a ontem (último sync) · <button class="perf-select" style="cursor:pointer;padding:6px 12px" onclick="renderProdutos()">↻ Atualizar</button></div>
       </div>
 
-      <!-- SUB-ABA: PRECIFICAÇÃO -->
-      <div class="perf-subpage active" id="prod-precificacao">
-        <div id="dashboard"></div>
-        <div class="table-wrap"><table><thead class="hub-thead"><tr>
-          <th>SKU</th><th>Descrição</th><th style="text-align:right">Custo</th><th style="text-align:right">Preço Venda</th><th style="text-align:right">Rebait</th><th style="text-align:right">M.C.</th><th style="text-align:right">TACOS</th><th style="text-align:right">MPA</th><th></th>
-        </tr></thead><tbody class="hub-tbody" id="tbody"></tbody></table></div>
-        <div class="table-actions" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
-          <button class="btn btn-primary" onclick="addRow()">+ Novo SKU</button>
-          <div style="display:flex;gap:8px;align-items:center">
-            <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:var(--slate-400)">Precificação</span>
-            <button class="btn btn-ghost" onclick="document.getElementById('prec-file-input').click()" style="gap:6px" title="Importar planilha de Precificação (.xlsx)">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Importar
-            </button>
-            <input type="file" id="prec-file-input" accept=".xlsx" style="display:none" onchange="handlePrecImport(this)">
-            <button class="btn btn-ghost" onclick="exportPrecXLSX()" style="gap:6px" title="Exportar Precificação atual como .xlsx">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Exportar
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- SUB-ABA: TODOS OS PRODUTOS -->
-      <div class="perf-subpage" id="prod-todos-produtos">
-        <div class="perf-vg-controls" style="margin-bottom:16px">
-          <select class="perf-select" id="todos-month-sel" onchange="todosMes=this.value;renderTodosProdutos()">
-            <option value="2026-01">Janeiro 2026</option>
-            <option value="2026-02">Fevereiro 2026</option>
-            <option value="2026-03">Março 2026</option>
-            <option value="2026-04" selected>Abril 2026</option>
-            <option value="2026-05">Maio 2026</option>
-            <option value="2026-06">Junho 2026</option>
-            <option value="2026-07">Julho 2026</option>
-            <option value="2026-08">Agosto 2026</option>
-            <option value="2026-09">Setembro 2026</option>
-            <option value="2026-10">Outubro 2026</option>
-            <option value="2026-11">Novembro 2026</option>
-            <option value="2026-12">Dezembro 2026</option>
-          </select>
-          <span style="font-size:12px;color:var(--slate-400);margin-left:4px">Clique em um SKU para ver o histórico completo</span>
-          <div style="margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <div class="perf-section-label" style="margin-bottom:4px">Importar Relatório ML</div>
-            <button class="btn btn-ghost" onclick="document.getElementById('ml-file-input-todos').click()" style="gap:6px">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Selecionar .xlsx
-            </button>
-            <input type="file" id="ml-file-input-todos" accept=".xlsx" style="display:none" onchange="handleMLImport(this)">
-          </div>
-        </div>
-        <div id="todos-summary-cards" style="margin-bottom:16px"></div>
-        <!-- COBERTURA DE IMPORTAÇÕES -->
-        <div id="todos-coverage-wrap" style="display:none;margin-bottom:20px">
-          <div class="perf-section-label" style="margin-bottom:10px">Cobertura de importações no mês</div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
-            <div id="todos-mini-cal" style="flex-shrink:0"></div>
-            <div id="todos-import-list" style="flex:1;min-width:200px"></div>
-          </div>
-        </div>
-        <div class="table-wrap" style="overflow-x:auto">
-          <table id="todos-table">
-            <thead class="hub-thead"><tr>
-              <th>#</th>
-              <th>SKU</th>
-              <th>Descrição</th>
-              <th style="text-align:right">Faturamento</th>
-              <th style="text-align:right">Δ%</th>
-              <th style="text-align:right">Pedidos</th>
-              <th style="text-align:right">Unidades</th>
-              <th style="text-align:right">Conversão</th>
-              <th style="text-align:right">TACOS</th>
-              <th style="text-align:right">M.C.</th>
-              <th style="text-align:right">% Part.</th>
-            </tr></thead>
-            <tbody class="hub-tbody" id="todos-tbody"></tbody>
-          </table>
-        </div>
-        <div id="todos-empty" style="display:none;text-align:center;padding:48px 20px;color:var(--slate-400);font-size:14px">
-          Nenhum dado encontrado para este mês. Importe um relatório ML ou cadastre dados manualmente.
-        </div>
-      </div>
-
-      <!-- SUB-ABA: PERFORMANCE POR SKU -->
-      <div class="perf-subpage" id="prod-sku-perf">
-        <div class="perf-vg-controls" style="margin-bottom:20px;align-items:flex-end">
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <div class="perf-section-label">Produto</div>
-            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-              <select class="perf-select" id="sku-sel" onchange="skuSelected=this.value;renderSkuPerf()" style="min-width:220px">
-                <option value="">— Selecione um SKU —</option>
-              </select>
-              <div id="sku-sel-actions" style="display:none;gap:6px">
-                <button class="btn-hub-edit" onclick="abrirRenameSku()" style="padding:6px 10px;font-size:11px">✏ Editar SKU</button>
-                <button class="btn-hub-del" onclick="excluirSkuCompleto()" style="padding:6px 10px;font-size:11px">🗑 Excluir SKU</button>
-              </div>
-            </div>
-          </div>
-          <div style="margin-left:auto;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-              <div class="perf-section-label" style="margin-bottom:6px">Importar Planilha SellerHub</div>
-              <button class="btn btn-primary" onclick="document.getElementById('hub-file-input').click()" style="gap:8px">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                Importar planilha
-              </button>
-              <input type="file" id="hub-file-input" accept=".xlsx" style="display:none" onchange="handleHubImport(this)">
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-              <div class="perf-section-label" style="margin-bottom:6px">Planilha Base</div>
-              <button class="btn btn-ghost" onclick="exportBaseXLSX()" style="gap:8px">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Baixar modelo .xlsx
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- PAINEL: importações SellerHub do SKU selecionado -->
-        <div id="sku-hub-coverage-panel" style="display:none;margin-bottom:20px;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:16px 20px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-            <div class="perf-section-label" style="margin-bottom:0">Importações SellerHub — Planilha</div>
-            <select class="perf-select" id="sku-hub-mes-sel" onchange="skuHubMes=this.value;renderSkuHubCoverage()" style="font-size:12px">
-              <option value="2026-01">Janeiro 2026</option>
-              <option value="2026-02">Fevereiro 2026</option>
-              <option value="2026-03">Março 2026</option>
-              <option value="2026-04" selected>Abril 2026</option>
-              <option value="2026-05">Maio 2026</option>
-              <option value="2026-06">Junho 2026</option>
-              <option value="2026-07">Julho 2026</option>
-              <option value="2026-08">Agosto 2026</option>
-              <option value="2026-09">Setembro 2026</option>
-              <option value="2026-10">Outubro 2026</option>
-              <option value="2026-11">Novembro 2026</option>
-              <option value="2026-12">Dezembro 2026</option>
-            </select>
-          </div>
-          <div id="sku-hub-coverage-list"></div>
-        </div>
-
-        <div id="sku-perf-cards" style="margin-bottom:20px"></div>
-        <div id="sku-perf-table-wrap" style="display:none">
-          <div class="perf-section-label">Histórico mensal 2026 — clique para editar</div>
-          <div class="table-wrap" style="overflow-x:auto;margin-bottom:24px">
-            <table>
-              <thead class="hub-thead"><tr>
-                <th>Mês</th>
-                <th style="text-align:right">Faturamento (R$)</th>
-                <th style="text-align:right">Δ% Fat.</th>
-                <th style="text-align:right">Pedidos</th>
-                <th style="text-align:right">Unidades</th>
-                <th style="text-align:right">Preço de Venda</th>
-                <th style="text-align:right">Invest. ADS</th>
-                <th style="text-align:right">TACOS (%)</th>
-                <th style="text-align:right">Rebait (%)</th>
-                <th style="text-align:right">M.C. (%)</th>
-                <th></th>
-              </tr></thead>
-              <tbody class="hub-tbody" id="sku-hist-tbody"></tbody>
-            </table>
-          </div>
-          <div class="perf-section-label">Evolução — Faturamento vs M.C.</div>
-          <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
-            <svg id="sku-chart" width="100%" height="220" viewBox="0 0 760 220" preserveAspectRatio="none"></svg>
-          </div>
-        </div>
-        <div id="sku-perf-empty" style="text-align:center;padding:60px 20px;color:var(--slate-400);font-size:14px">
-          Selecione um produto acima para ver o histórico
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL IMPORTAÇÃO ML -->
-    <div class="modal-bg" id="ml-modal-bg" onclick="if(event.target===this)closeMlModal()">
-      <div class="modal" style="max-width:760px;width:100%">
-        <div class="modal-title">Importar Relatório ML</div>
-        <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
-          <div class="m-field" style="flex:1;min-width:160px;margin-bottom:0">
-            <label>Conta</label>
-            <select id="ml-import-conta" class="perf-select" style="width:100%">
-              <option value="FW">FW</option>
-              <option value="BTMX">BTMX</option>
-              <option value="Falcom">Falcom</option>
-              <option value="Logbox">Logbox</option>
-            </select>
-          </div>
-          <div class="m-field" style="flex:1;min-width:160px;margin-bottom:0">
-            <label>Mês de referência</label>
-            <select id="ml-import-month" class="perf-select" style="width:100%">
-              <option value="2026-01">Janeiro 2026</option>
-              <option value="2026-02">Fevereiro 2026</option>
-              <option value="2026-03">Março 2026</option>
-              <option value="2026-04" selected>Abril 2026</option>
-              <option value="2026-05">Maio 2026</option>
-              <option value="2026-06">Junho 2026</option>
-              <option value="2026-07">Julho 2026</option>
-              <option value="2026-08">Agosto 2026</option>
-              <option value="2026-09">Setembro 2026</option>
-              <option value="2026-10">Outubro 2026</option>
-              <option value="2026-11">Novembro 2026</option>
-              <option value="2026-12">Dezembro 2026</option>
-            </select>
-          </div>
-        </div>
-        <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;align-items:flex-end">
-          <div class="m-field" style="flex:1;min-width:140px;margin-bottom:0">
-            <label>Período — De</label>
-            <input type="date" id="ml-period-from" class="perf-select" style="width:100%;padding:7px 10px">
-          </div>
-          <div class="m-field" style="flex:1;min-width:140px;margin-bottom:0">
-            <label>Até</label>
-            <input type="date" id="ml-period-to" class="perf-select" style="width:100%;padding:7px 10px">
-          </div>
-          <div style="font-size:11px;color:var(--slate-400);padding-bottom:8px;flex:2;min-width:180px">
-            Extraído do nome do arquivo — confirme ou ajuste antes de importar
-          </div>
-        </div>
-        <div class="perf-section-label" style="margin-bottom:8px">Prévia dos dados — edite antes de confirmar</div>
-        <div class="table-wrap" style="overflow-x:auto;max-height:360px;overflow-y:auto">
-          <table id="ml-preview-table">
-            <thead class="hub-thead"><tr>
-              <th>SKU</th>
-              <th>Anúncio</th>
-              <th style="text-align:right">Faturamento (R$)</th>
-              <th style="text-align:right">Pedidos</th>
-              <th style="text-align:right">Unidades</th>
-              <th style="text-align:right">Conversão (%)</th>
-              <th style="text-align:right">Visitas</th>
-              <th></th>
-            </tr></thead>
-            <tbody class="hub-tbody" id="ml-preview-tbody"></tbody>
-          </table>
-        </div>
-        <div id="ml-import-info" style="font-size:12px;color:var(--slate-400);margin-top:10px"></div>
-        <div id="ml-week-info" style="margin-top:10px;display:none">
-          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--blue-50);border:1px solid var(--blue-100);border-radius:var(--radius-sm)">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--blue-600)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <span id="ml-week-info-text" style="font-size:12px;color:var(--blue-600)"></span>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="closeMlModal()">Cancelar</button>
-          <button class="btn btn-primary" onclick="confirmMLImport()">Confirmar importação</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL EDIÇÃO LINHA ML -->
-    <div class="modal-bg" id="ml-row-edit-modal" onclick="if(event.target===this)this.classList.remove('active')" style="z-index:1001">
-      <div class="modal" style="max-width:380px;width:100%">
-        <div class="modal-title">Editar linha de importação</div>
-        <div class="edit-row-fields" style="grid-template-columns:1fr 1fr">
-          <div class="m-field full"><label>SKU</label><input type="text" id="ml-row-edit-sku" placeholder="SKU" style="font-family:var(--mono);text-transform:uppercase"></div>
-          <div class="m-field full"><label>Faturamento (R$)</label><input type="number" step="0.01" id="ml-row-edit-fat" placeholder="0.00"></div>
-          <div class="m-field"><label>Pedidos</label><input type="number" id="ml-row-edit-pedidos" placeholder="0"></div>
-          <div class="m-field"><label>Unidades</label><input type="number" id="ml-row-edit-unidades" placeholder="0"></div>
-          <div class="m-field"><label>Conversão (%)</label><input type="number" step="0.01" id="ml-row-edit-conv" placeholder="0.00"></div>
-          <div class="m-field"><label>Preço de Venda (R$)</label><input type="number" step="0.01" id="ml-row-edit-preco" placeholder="0.00"></div>
-          <div class="m-field"><label>TACOS (%)</label><input type="number" step="0.1" id="ml-row-edit-tacos" placeholder="0.0"></div>
-          <div class="m-field"><label>Rebait (%)</label><input type="number" step="0.1" id="ml-row-edit-rebait" placeholder="0.0"></div>
-          <div class="m-field full"><label>M.C. (%)</label><input type="number" step="0.1" id="ml-row-edit-mc" placeholder="0.0"></div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="document.getElementById('ml-row-edit-modal').classList.remove('active')">Cancelar</button>
-          <button class="btn btn-primary" onclick="saveMlRowEdit()">Salvar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL IMPORTAÇÃO PLANILHA SELLERHUB -->
-    <div class="modal-bg" id="hub-modal-bg" onclick="if(event.target===this)closeHubModal()">
-      <div class="modal" style="max-width:860px;width:100%">
-        <div class="modal-title" style="display:flex;align-items:center;gap:10px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--coral-500)" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-          Importar Planilha SellerHub
-        </div>
-
-        <!-- Sem abas — apenas Performance SKU -->
-
-        <!-- Aba Performance SKU -->
-        <div id="hub-imp-sku-panel">
-          <div class="table-wrap" style="overflow-x:auto;max-height:340px;overflow-y:auto">
-            <table>
-              <thead class="hub-thead"><tr>
-                <th>Conta</th><th>SKU</th><th>Mês</th>
-                <th style="text-align:right">Preço Venda</th>
-                <th style="text-align:right">Invest. ADS</th>
-                <th style="text-align:right">TACOS (%)</th>
-                <th style="text-align:right">Rebait (%)</th>
-                <th>Status</th>
-                <th style="text-align:center">Editar</th>
-                <th style="text-align:center">Excluir</th>
-              </tr></thead>
-              <tbody class="hub-tbody" id="hub-imp-sku-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-
-
-
-        <div id="hub-imp-summary" style="font-size:12px;color:var(--slate-400);margin-top:12px"></div>
-
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="closeHubModal()">Cancelar</button>
-          <button class="btn btn-primary" onclick="confirmHubImport()" id="hub-imp-confirm-btn">Confirmar importação</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL DETALHES IMPORTAÇÃO -->
-    <div class="modal-bg" id="imp-detail-modal" onclick="if(event.target===this)this.classList.remove('active')" style="z-index:1001">
-      <div class="modal" style="max-width:620px;width:100%">
-        <div class="modal-title" id="imp-detail-title">Itens da importação</div>
-        <div id="imp-detail-body" style="max-height:400px;overflow-y:auto;margin:16px 0"></div>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="document.getElementById('imp-detail-modal').classList.remove('active')">Fechar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL EDIÇÃO HISTÓRICO -->
-    <div class="modal-bg" id="hist-edit-modal" onclick="if(event.target===this)this.classList.remove('active')">
-      <div class="modal" style="max-width:480px;width:100%">
-        <div class="modal-title" id="hist-edit-title">Editar Mês</div>
-        <input type="hidden" id="hist-edit-conta">
-        <input type="hidden" id="hist-edit-month">
-        <div id="hist-edit-sku-breakdown"></div>
-        <div class="edit-row-fields">
-          <div class="m-field"><label>Faturamento (R$)</label><input type="number" id="hist-edit-fat" placeholder="0"></div>
-          <div class="m-field"><label>Pedidos</label><input type="number" id="hist-edit-pedidos" placeholder="0"></div>
-          <div class="m-field"><label>Unidades</label><input type="number" id="hist-edit-unidades" placeholder="0"></div>
-          <div class="m-field"><label>Conversão (%)</label><input type="number" step="0.1" id="hist-edit-conv" placeholder="0.0"></div>
-          <div class="m-field"><label>TACOS (%)</label><input type="number" step="0.1" id="hist-edit-tacos" placeholder="0.0"></div>
-          <div class="m-field"><label>Rebait (%)</label><input type="number" step="0.1" id="hist-edit-rebait" placeholder="0.0"></div>
-          <div class="m-field full"><label>M.C. (%)</label><input type="number" step="0.1" id="hist-edit-mc" placeholder="0.0"></div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="document.getElementById('hist-edit-modal').classList.remove('active')">Cancelar</button>
-          <button class="btn btn-primary" onclick="saveHistEdit()">Salvar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL EDIÇÃO PRECIFICAÇÃO -->
-    <div class="modal-bg" id="prec-edit-modal" onclick="if(event.target===this)this.classList.remove('active')">
-      <div class="modal" style="max-width:480px;width:100%">
-        <div class="modal-title">Editar SKU</div>
-        <input type="hidden" id="prec-edit-idx">
-        <div class="edit-row-fields">
-          <div class="m-field"><label>SKU</label><input type="text" id="prec-edit-sku" placeholder="SKU-001"></div>
-          <div class="m-field"><label>Descrição</label><input type="text" id="prec-edit-desc" placeholder="Nome do produto"></div>
-          <div class="m-field"><label>Custo (R$)</label><input type="number" step="0.01" id="prec-edit-custo" placeholder="0.00"></div>
-          <div class="m-field"><label>Preço de Venda (R$)</label><input type="number" step="0.01" id="prec-edit-preco" placeholder="0.00"></div>
-          <div class="m-field"><label>Rebait (%)</label><input type="number" step="0.1" id="prec-edit-rebait" placeholder="0.0"></div>
-          <div class="m-field"><label>M.C. (%)</label><input type="number" step="0.1" id="prec-edit-mc" placeholder="0.0"></div>
-          <div class="m-field full"><label>TACOS (%)</label><input type="number" step="0.1" id="prec-edit-tacos" placeholder="0.0"></div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="document.getElementById('prec-edit-modal').classList.remove('active')">Cancelar</button>
-          <button class="btn btn-primary" onclick="savePrecEdit()">Salvar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL RENOMEAR SKU -->
-    <div class="modal-bg" id="sku-rename-modal" onclick="if(event.target===this)this.classList.remove('active')" style="z-index:1001">
-      <div class="modal" style="max-width:400px;width:100%">
-        <div class="modal-title">Editar código do SKU</div>
-        <p style="font-size:12px;color:var(--slate-400);margin-bottom:16px">Renomear atualiza a precificação e todo o histórico de performance simultaneamente.</p>
-        <div class="m-field">
-          <label>SKU atual</label>
-          <input type="text" id="sku-rename-old" disabled style="background:var(--slate-50);color:var(--slate-400);font-family:var(--mono)">
-        </div>
-        <div class="m-field" style="margin-top:12px">
-          <label>Novo código</label>
-          <input type="text" id="sku-rename-new" placeholder="NOVO-SKU-001" style="font-family:var(--mono);text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="document.getElementById('sku-rename-modal').classList.remove('active')">Cancelar</button>
-          <button class="btn btn-primary" onclick="confirmarRenameSku()">Salvar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- MODAL EDIÇÃO SKU HIST -->
-    <div class="modal-bg" id="sku-hist-edit-modal" onclick="if(event.target===this)this.classList.remove('active')">
-      <div class="modal" style="max-width:480px;width:100%">
-        <div class="modal-title" id="sku-hist-edit-title">Editar Mês</div>
-        <input type="hidden" id="sku-hist-edit-sku">
-        <input type="hidden" id="sku-hist-edit-month">
-        <input type="hidden" id="sku-hist-edit-conta">
-        <div class="edit-row-fields">
-          <div class="m-field"><label>Faturamento (R$)</label><input type="number" id="sku-hist-edit-fat" placeholder="0"></div>
-          <div class="m-field"><label>Pedidos</label><input type="number" id="sku-hist-edit-pedidos" placeholder="0"></div>
-          <div class="m-field"><label>Unidades</label><input type="number" id="sku-hist-edit-unidades" placeholder="0"></div>
-          <div class="m-field"><label>Preço de Venda (R$)</label><input type="number" step="0.01" id="sku-hist-edit-preco" placeholder="0.00"></div>
-          <div class="m-field full"><label>Investimento ADS (R$)</label><input type="number" step="0.01" id="sku-hist-edit-investimento" placeholder="0.00" oninput="calcTacosAuto()"></div>
-          <div class="m-field"><label>TACOS (%) <span id="tacos-auto-hint" style="font-size:10px;color:var(--coral-500);font-weight:600"></span></label><input type="number" step="0.1" id="sku-hist-edit-tacos" placeholder="0.0"></div>
-          <div class="m-field"><label>Rebait (%)</label><input type="number" step="0.1" id="sku-hist-edit-rebait" placeholder="0.0"></div>
-          <div class="m-field full"><label>M.C. (%)</label><input type="number" step="0.1" id="sku-hist-edit-mc" placeholder="0.0"></div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="document.getElementById('sku-hist-edit-modal').classList.remove('active')">Cancelar</button>
-          <button class="btn btn-primary" onclick="saveSkuHistEdit()">Salvar</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- DRAWER SKU -->
-    <div class="sku-drawer-overlay" id="sku-drawer-overlay" onclick="closeSkuDrawer()"></div>
-    <div class="sku-drawer" id="sku-drawer">
-      <div class="sku-drawer-header">
-        <div>
-          <div class="sku-drawer-title" id="sku-drawer-title">SKU</div>
-          <div class="sku-drawer-sub" id="sku-drawer-sub"></div>
-        </div>
-        <button class="sku-drawer-close" onclick="closeSkuDrawer()">✕</button>
-      </div>
-      <div class="sku-drawer-body" id="sku-drawer-body"></div>
+      <div class="table-wrap" style="margin-top:16px"><table>
+        <thead class="hub-thead"><tr>
+          <th>Anúncio</th>
+          <th style="text-align:right">Custo</th>
+          <th style="text-align:right">Preço API</th>
+          <th style="text-align:right">M.C.</th>
+          <th style="text-align:right">Receita (ontem)</th>
+          <th style="text-align:right">Unid.</th>
+          <th style="text-align:right">Gasto ADS</th>
+          <th style="text-align:right">TACOS</th>
+          <th style="text-align:right">Meta</th>
+          <th style="text-align:right">ACOS</th>
+          <th style="text-align:right">Estoque</th>
+          <th style="text-align:right">Mín.</th>
+          <th>Status</th>
+        </tr></thead>
+        <tbody class="hub-tbody" id="prod-tbody"></tbody>
+      </table></div>
+      <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Clique em Custo, Meta TACOS ou Estoque Mínimo na linha pra editar. M.C. = (Preço − Custo) / Preço.</div>
     </div>
 
     <!-- ANOTAÇÕES -->
@@ -2353,8 +1865,8 @@ function go(id,btn){
   if(btn) btn.classList.add('active');
   if(innerWidth<=768)toggleSidebar();
   if(id==='home') renderHome();
-  if(id==='produtos'){ safeRenderProd(); }
-  if(id==='performance'){ renderVG(); }
+  if(id==='produtos'){ renderProdutos(); }
+  if(id==='performance'){ renderPerformance(); }
 }
 
 // ===== HOME DASHBOARD =====
@@ -2452,39 +1964,14 @@ function renderHome(){
 function goPerf(month){
   const btn = document.querySelectorAll('.nav-item')[1];
   go('performance', btn);
-  vgMonth = month;
-  document.getElementById('vg-month-sel').value = month;
-  document.querySelectorAll('.perf-subpage').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.perf-subtab').forEach(b=>b.classList.remove('active'));
-  document.getElementById('perf-visao-geral').classList.add('active');
-  document.querySelector('#perf-subtabs .perf-subtab').classList.add('active');
-  renderVG();
+  renderPerformance();
 }
 
 function goPerfConta(month, contaAlvo){
-  // Navega para Performance > Histórico já na conta e mês correto
+  // A Performance agora é só Logbox — mantido só pra não quebrar o link do Home.
   const btn = document.querySelectorAll('.nav-item')[1];
   go('performance', btn);
-  // Ativar sub-aba Histórico
-  document.querySelectorAll('.perf-subpage').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.perf-subtab').forEach(b=>b.classList.remove('active'));
-  document.getElementById('perf-historico').classList.add('active');
-  document.querySelectorAll('#perf-subtabs .perf-subtab')[1].classList.add('active');
-  // Selecionar conta e mês
-  histConta = contaAlvo;
-  document.getElementById('hist-conta-sel').value = contaAlvo;
-  renderHist();
-  // Scroll suave até a linha do mês correto após render
-  setTimeout(() => {
-    const mesIdx = perfMonths.indexOf(month);
-    const rows = document.querySelectorAll('#hist-tbody tr');
-    if (rows[mesIdx]) {
-      rows[mesIdx].scrollIntoView({behavior:'smooth', block:'center'});
-      rows[mesIdx].style.transition = 'background 0.3s';
-      rows[mesIdx].style.background = 'var(--coral-50)';
-      setTimeout(() => { rows[mesIdx].style.background = ''; }, 1800);
-    }
-  }, 100);
+  renderPerformance();
 }
 
 function goNoteFromHome(noteId){
@@ -2530,6 +2017,7 @@ function fmtPct(v){ return v.toFixed(1)+'%'; }
 // ---- VISÃO GERAL ----
 let vgMonth = '2026-04';
 function renderVG(){
+  if(!document.getElementById('vg-cards')) return; // tela antiga removida
   const month = vgMonth;
   const cons = getConsolidated(month);
   const ticket = cons.pedidos > 0 ? cons.fat/cons.pedidos : 0;
@@ -2599,6 +2087,7 @@ function histCellVal(conta, month, field){
 let histExpandedRow = null;
 
 function renderHist(){
+  if(!document.getElementById('hist-tbody')) return; // tela antiga removida
   const rows = perfMonths.map((m, mi) => {
     const d = getHistRow(histConta, m);
     const ticket = d.pedidos>0 ? d.fat/d.pedidos : 0;
@@ -2792,6 +2281,7 @@ let compMonths = ['2026-01','2026-02','2026-03','2026-04'];
 let compConta = '__all__';
 
 function initCompPicker(){
+  if(!document.getElementById('comp-month-picker')) return; // tela antiga removida
   document.getElementById('comp-month-picker').innerHTML = perfMonths.map((m,i)=>
     `<button class="comp-month-btn ${compMonths.includes(m)?'active':''}" onclick="toggleCompMonth('${m}',this)">${perfMonthFull[i]}</button>`
   ).join('');
@@ -2811,6 +2301,7 @@ function toggleCompMonth(m, btn){
 }
 
 function renderComp(){
+  if(!document.getElementById('comp-cards')) return; // tela antiga removida
   const selected = compMonths.slice().sort();
   if(!selected.length){ document.getElementById('comp-cards').innerHTML=''; document.getElementById('comp-insights').innerHTML=''; return; }
   const dataMap = {};
@@ -2949,21 +2440,14 @@ function initPerfTabs(){ /* legacy — não usado */ }
 function renderPerf(){ /* legacy — não usado */ }
 function addPerfRow(){ /* legacy — não usado */ }
 
-// ===== LOGBOX TEMPO REAL (dado vindo direto da API do ML, via ml_* tables) =====
+// ===== CONSTANTES E HELPERS COMPARTILHADOS (Performance + Produtos, Logbox via API) =====
 const LBX_TACOS_ALVO_PADRAO = 5;
 const LBX_ESTOQUE_MIN_PADRAO = 5;
 const LBX_QUEDA_VENDAS_LIMITE = 0.4; // alerta se cair mais de 40% vs média dos dias anteriores
-
 function lbxFmtMoeda(v){ return 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function lbxDataBR(d){ return d ? new Date(d+'T12:00:00').toLocaleDateString('pt-BR') : '—'; }
 
-async function renderLogboxLive(){
-  const tbody = document.getElementById('lbx-tbody');
-  const cardsEl = document.getElementById('lbx-kpi-cards');
-  const anomEl = document.getElementById('lbx-anomalias');
-  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
-  cardsEl.innerHTML = '';
-  anomEl.innerHTML = '';
-
+async function lbxCarregarTudo(){
   const [anunciosRes, adsRes, vendasRes, repRes, skusRes] = await Promise.all([
     sb.from('ml_anuncios').select('*').eq('conta','Logbox').order('data',{ascending:false}),
     sb.from('ml_ads_reports').select('*').eq('conta','Logbox').order('data',{ascending:false}),
@@ -2971,51 +2455,184 @@ async function renderLogboxLive(){
     sb.from('ml_reputacao').select('*').eq('conta','Logbox').order('data',{ascending:false}).limit(1),
     sb.from('skus').select('*').eq('conta','Logbox'),
   ]);
+  return {anunciosRes, adsRes, vendasRes, repRes, skusRes};
+}
 
+// ===== PERFORMANCE (visão de conta, por período — pensada pra apresentação) =====
+let perfPeriodo = 30;
+
+async function renderPerformance(){
+  const cardsEl = document.getElementById('perf-kpi-cards');
+  const repEl = document.getElementById('perf-reputacao-cards');
+  const anomEl = document.getElementById('perf-anomalias');
+  const topBody = document.getElementById('perf-top-tbody');
+  cardsEl.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Carregando...</div>';
+  repEl.innerHTML = ''; anomEl.innerHTML = ''; topBody.innerHTML = '';
+
+  const {anunciosRes, adsRes, vendasRes, repRes, skusRes} = await lbxCarregarTudo();
   if(anunciosRes.error||adsRes.error||vendasRes.error||repRes.error||skusRes.error){
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou pelo menos uma vez.</td></tr>';
+    cardsEl.innerHTML = '<div style="color:var(--coral-500);font-size:13px">Erro ao carregar dados. Confira se o sync já rodou pelo menos uma vez.</div>';
     return;
   }
 
-  // último snapshot de cada anúncio (a lista já vem ordenada por data desc)
+  const ultimaData = (vendasRes.data&&vendasRes.data[0]) ? vendasRes.data[0].data : ((adsRes.data&&adsRes.data[0])?adsRes.data[0].data:null);
+  document.getElementById('perf-updated-at').textContent = lbxDataBR(ultimaData);
+
+  // corta pro período selecionado (contando a partir do dia mais recente disponível)
+  const corte = new Date((ultimaData||new Date().toISOString().slice(0,10))+'T00:00:00');
+  corte.setDate(corte.getDate() - (perfPeriodo-1));
+  const corteStr = corte.toISOString().slice(0,10);
+  const vendasPeriodo = (vendasRes.data||[]).filter(v=>v.data>=corteStr);
+  const adsPeriodo = (adsRes.data||[]).filter(a=>a.data>=corteStr);
+
+  // agregados por dia (pro gráfico)
+  const porDia = {};
+  vendasPeriodo.forEach(v=>{ (porDia[v.data]=porDia[v.data]||{receita:0,gasto:0,unidades:0}).receita += Number(v.receita); porDia[v.data].unidades += Number(v.unidades); });
+  adsPeriodo.forEach(a=>{ (porDia[a.data]=porDia[a.data]||{receita:0,gasto:0,unidades:0}).gasto += Number(a.gasto); });
+  const dias = Object.keys(porDia).sort();
+
+  // agregados por item (pro top e pras anomalias)
+  const porItem = {};
+  vendasPeriodo.forEach(v=>{ const o=(porItem[v.item_id]=porItem[v.item_id]||{receita:0,unidades:0,gasto:0}); o.receita+=Number(v.receita); o.unidades+=Number(v.unidades); });
+  adsPeriodo.forEach(a=>{ const o=(porItem[a.item_id]=porItem[a.item_id]||{receita:0,unidades:0,gasto:0}); o.gasto+=Number(a.gasto); });
+
   const anuncioPorItem = {};
   (anunciosRes.data||[]).forEach(a=>{ if(!anuncioPorItem[a.item_id]) anuncioPorItem[a.item_id]=a; });
 
-  // último dia de ADS por item
+  const receitaTotal = Object.values(porItem).reduce((s,o)=>s+o.receita,0);
+  const unidadesTotal = Object.values(porItem).reduce((s,o)=>s+o.unidades,0);
+  const gastoTotal = Object.values(porItem).reduce((s,o)=>s+o.gasto,0);
+  const ticketMedio = unidadesTotal>0 ? receitaTotal/unidadesTotal : 0;
+  const tacosConsolidado = receitaTotal>0 ? (gastoTotal/receitaTotal*100) : 0;
+  const rep = (repRes.data && repRes.data[0]) || null;
+
+  cardsEl.innerHTML = `<div class="vg-kpi-grid">
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Faturamento no período</div><div class="vg-kpi-value">${lbxFmtMoeda(receitaTotal)}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Unidades vendidas</div><div class="vg-kpi-value">${unidadesTotal.toLocaleString('pt-BR')}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Ticket médio</div><div class="vg-kpi-value">${lbxFmtMoeda(ticketMedio)}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Gasto ADS</div><div class="vg-kpi-value">${lbxFmtMoeda(gastoTotal)}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">TACOS do período</div><div class="vg-kpi-value ${tacosConsolidado>LBX_TACOS_ALVO_PADRAO?'neg':'pos'}">${tacosConsolidado.toFixed(2)}%</div></div>
+  </div>`;
+
+  repEl.innerHTML = rep ? `<div class="vg-kpi-grid">
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Nível</div><div class="vg-kpi-value">${rep.nivel||'—'}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Reclamações</div><div class="vg-kpi-value">${(Number(rep.reclamacoes)*100).toFixed(2)}%</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Cancelamentos</div><div class="vg-kpi-value">${(Number(rep.cancelamentos)*100).toFixed(2)}%</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Vendas completas (hist.)</div><div class="vg-kpi-value">${Number(rep.vendas_completas).toLocaleString('pt-BR')}</div></div>
+  </div>` : '<div style="color:var(--slate-400);font-size:13px">Sem dado de reputação ainda.</div>';
+
+  // anomalias no nível de conta: dias com TACOS do dia acima da meta
+  const anomalias = [];
+  dias.forEach(d=>{
+    const o = porDia[d];
+    const t = o.receita>0 ? (o.gasto/o.receita*100) : null;
+    if(t!==null && t>LBX_TACOS_ALVO_PADRAO) anomalias.push(`${lbxDataBR(d)}: TACOS de ${t.toFixed(1)}% (meta ${LBX_TACOS_ALVO_PADRAO}%)`);
+  });
+  anomEl.innerHTML = anomalias.length
+    ? `<div class="table-wrap"><table><tbody class="hub-tbody">${anomalias.map(a=>`<tr><td class="neg">${a}</td></tr>`).join('')}</tbody></table></div>`
+    : '<div style="color:var(--slate-400);font-size:13px;padding:8px 0">Nenhuma anomalia no período.</div>';
+
+  // top anúncios por receita no período
+  const top = Object.entries(porItem).map(([itemId,o])=>({
+    itemId, titulo: anuncioPorItem[itemId]?.titulo || itemId,
+    receita:o.receita, unidades:o.unidades, gasto:o.gasto,
+    tacos: o.receita>0 ? (o.gasto/o.receita*100) : null,
+  })).sort((a,b)=>b.receita-a.receita).slice(0,10);
+
+  topBody.innerHTML = top.map(t=>`
+    <tr>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.titulo}">${t.titulo}</td>
+      <td style="text-align:right">${lbxFmtMoeda(t.receita)}</td>
+      <td style="text-align:right">${t.unidades}</td>
+      <td style="text-align:right">${lbxFmtMoeda(t.gasto)}</td>
+      <td style="text-align:right" class="${t.tacos!==null && t.tacos>LBX_TACOS_ALVO_PADRAO?'neg':''}">${t.tacos!==null?t.tacos.toFixed(2)+'%':'—'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--slate-400)">Sem dados no período.</td></tr>';
+
+  renderPerfChart(dias, porDia);
+}
+
+function renderPerfChart(dias, porDia){
+  const svg = document.getElementById('perf-chart');
+  if(!dias.length){ svg.innerHTML = '<text x="20" y="130" font-size="12" fill="#888780">Sem dados suficientes ainda.</text>'; return; }
+  const W=800, H=260, padL=60, padR=20, padT=20, padB=40;
+  const chartW = W-padL-padR, chartH = H-padT-padB;
+  const n = dias.length;
+  const colW = chartW/n;
+  const barW = Math.max(Math.min(colW-6, 26), 3);
+  const receitas = dias.map(d=>porDia[d].receita);
+  const gastos = dias.map(d=>porDia[d].gasto);
+  const maxVal = Math.max(...receitas, ...gastos, 1);
+  let bars='', line='', dots='', xLabels='', yLabels='';
+  [0,0.25,0.5,0.75,1].forEach(pct=>{
+    const y = padT + chartH*(1-pct);
+    const val = maxVal*pct;
+    yLabels += `<text x="${padL-6}" y="${y+4}" text-anchor="end" font-size="9" fill="#888780">${val>=1000?(val/1000).toFixed(0)+'k':val.toFixed(0)}</text>`;
+    yLabels += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#F1EFE8" stroke-width="1"/>`;
+  });
+  dias.forEach((d,i)=>{
+    const x = padL + i*colW + (colW-barW)/2;
+    const barH = (porDia[d].receita/maxVal)*chartH;
+    const barY = padT + chartH - barH;
+    bars += `<rect x="${x}" y="${barY}" width="${barW}" height="${barH}" rx="2" fill="var(--coral-400)"/>`;
+    const cx = padL + i*colW + colW/2;
+    const cy = padT + chartH - (porDia[d].gasto/maxVal)*chartH;
+    if(i>0){
+      const px = padL + (i-1)*colW + colW/2;
+      const py = padT + chartH - (porDia[dias[i-1]].gasto/maxVal)*chartH;
+      line += `<line x1="${px}" y1="${py}" x2="${cx}" y2="${cy}" stroke="var(--green-600)" stroke-width="2"/>`;
+    }
+    dots += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="var(--green-600)"/>`;
+    if(n<=15 || i%Math.ceil(n/15)===0) xLabels += `<text x="${cx}" y="${H-padB+16}" text-anchor="middle" font-size="9" fill="#888780">${d.slice(8,10)}/${d.slice(5,7)}</text>`;
+  });
+  const legend = `<rect x="${padL}" y="4" width="10" height="10" rx="2" fill="var(--coral-400)"/><text x="${padL+14}" y="13" font-size="10" fill="#5F5E5A">Faturamento</text><line x1="${padL+100}" y1="9" x2="${padL+114}" y2="9" stroke="var(--green-600)" stroke-width="2"/><circle cx="${padL+107}" cy="9" r="3" fill="var(--green-600)"/><text x="${padL+118}" y="13" font-size="10" fill="#5F5E5A">Gasto ADS</text>`;
+  svg.innerHTML = yLabels+bars+line+dots+xLabels+legend;
+}
+
+// ===== PRODUTOS (visão por SKU/anúncio — densa, uso operacional diário) =====
+let prodDadosCache = null;
+
+async function renderProdutos(){
+  const tbody = document.getElementById('prod-tbody');
+  tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
+
+  const {anunciosRes, adsRes, vendasRes, skusRes} = await lbxCarregarTudo();
+  if(anunciosRes.error||adsRes.error||vendasRes.error||skusRes.error){
+    tbody.innerHTML = '<tr><td colspan="13" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
+    return;
+  }
+
+  const anuncioPorItem = {};
+  (anunciosRes.data||[]).forEach(a=>{ if(!anuncioPorItem[a.item_id]) anuncioPorItem[a.item_id]=a; });
   const adsPorItem = {};
   (adsRes.data||[]).forEach(a=>{ if(!adsPorItem[a.item_id]) adsPorItem[a.item_id]=a; });
-
-  // vendas agrupadas por item (todos os dias disponíveis, mais recente primeiro)
   const vendasPorItem = {};
-  (vendasRes.data||[]).forEach(v=>{ (vendasPorItem[v.item_id] = vendasPorItem[v.item_id]||[]).push(v); });
-
+  (vendasRes.data||[]).forEach(v=>{ (vendasPorItem[v.item_id]=vendasPorItem[v.item_id]||[]).push(v); });
   const skuMap = {};
   (skusRes.data||[]).forEach(s=>{ skuMap[s.sku]=s; });
 
-  const ultimaData = (adsRes.data && adsRes.data[0]) ? adsRes.data[0].data : (vendasRes.data && vendasRes.data[0] ? vendasRes.data[0].data : null);
-  document.getElementById('lbx-updated-at').textContent = ultimaData ? new Date(ultimaData+'T12:00:00').toLocaleDateString('pt-BR') : '—';
-
   const itemIds = new Set([...Object.keys(anuncioPorItem), ...Object.keys(adsPorItem), ...Object.keys(vendasPorItem)]);
-
-  let receitaTotal = 0, gastoTotal = 0, alertasCount = 0;
   const linhas = [];
-  const anomalias = [];
-
   itemIds.forEach(itemId=>{
     const anuncio = anuncioPorItem[itemId];
     const ads = adsPorItem[itemId];
     const vendasDias = (vendasPorItem[itemId]||[]);
     const vendaOntem = vendasDias[0];
     const receitaOntem = vendaOntem ? Number(vendaOntem.receita) : 0;
+    const unidadesOntem = vendaOntem ? Number(vendaOntem.unidades) : 0;
     const gastoOntem = ads ? Number(ads.gasto) : 0;
     const tacosPct = receitaOntem>0 ? (gastoOntem/receitaOntem*100) : null;
+    const acos = ads ? Number(ads.acos) : null;
 
-    const skuInfo = anuncio?.sku ? skuMap[anuncio.sku] : null;
+    const sku = anuncio?.sku || null;
+    const skuInfo = sku ? skuMap[sku] : null;
     const metaTacos = skuInfo?.tacos_alvo ?? LBX_TACOS_ALVO_PADRAO;
     const estoqueMin = skuInfo?.estoque_minimo ?? LBX_ESTOQUE_MIN_PADRAO;
     const estoque = anuncio ? anuncio.estoque : null;
+    const custo = skuInfo?.custo || 0;
+    const precoApi = anuncio?.preco || 0;
+    const mc = precoApi>0 ? ((precoApi-custo)/precoApi*100) : null;
 
-    // queda de vendas: compara receita de ontem com a média dos dias anteriores disponíveis
     let quedaVendas = false;
     if(vendasDias.length >= 3){
       const anteriores = vendasDias.slice(1);
@@ -3024,51 +2641,89 @@ async function renderLogboxLive(){
     }
 
     const alertas = [];
-    if(tacosPct !== null && tacosPct > metaTacos) alertas.push(`TACOS ${tacosPct.toFixed(1)}% (meta ${metaTacos}%)`);
-    if(estoque !== null && estoque <= estoqueMin) alertas.push(`Estoque baixo (${estoque} un.)`);
-    if(quedaVendas) alertas.push('Queda de vendas vs. média recente');
+    if(tacosPct !== null && tacosPct > metaTacos) alertas.push('TACOS alto');
+    if(estoque !== null && estoque <= estoqueMin) alertas.push('Estoque baixo');
+    if(quedaVendas) alertas.push('Queda de vendas');
 
-    receitaTotal += receitaOntem;
-    gastoTotal += gastoOntem;
-    if(alertas.length) alertasCount++;
-
-    const titulo = anuncio?.titulo || itemId;
-    linhas.push({itemId, titulo, receitaOntem, gastoOntem, tacosPct, metaTacos, estoque, estoqueMin, alertas});
-    alertas.forEach(a=> anomalias.push({titulo, alerta:a}));
+    linhas.push({itemId, sku, titulo: anuncio?.titulo || itemId, custo, precoApi, mc,
+      receitaOntem, unidadesOntem, gastoOntem, tacosPct, metaTacos, acos, estoque, estoqueMin, alertas});
   });
 
-  linhas.sort((a,b)=> b.receitaOntem - a.receitaOntem);
+  prodDadosCache = linhas;
+  desenharProdutosTabela();
+}
 
-  const tacosConsolidado = receitaTotal>0 ? (gastoTotal/receitaTotal*100) : 0;
-  const rep = (repRes.data && repRes.data[0]) || null;
+function desenharProdutosTabela(){
+  const tbody = document.getElementById('prod-tbody');
+  if(!prodDadosCache){ return; }
+  const busca = (document.getElementById('prod-busca').value||'').toLowerCase();
+  const soAlertas = document.getElementById('prod-so-alertas').checked;
 
-  cardsEl.innerHTML = `<div class="vg-kpi-grid">
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Faturamento (dia)</div><div class="vg-kpi-value">${lbxFmtMoeda(receitaTotal)}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Gasto ADS (dia)</div><div class="vg-kpi-value">${lbxFmtMoeda(gastoTotal)}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">TACOS consolidado</div><div class="vg-kpi-value ${tacosConsolidado>LBX_TACOS_ALVO_PADRAO?'neg':'pos'}">${tacosConsolidado.toFixed(2)}%</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Reputação</div><div class="vg-kpi-value">${rep? rep.nivel : '—'}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Alertas ativos</div><div class="vg-kpi-value ${alertasCount>0?'neg':''}">${alertasCount}</div></div>
-  </div>`;
-
-  anomEl.innerHTML = anomalias.length
-    ? `<div class="table-wrap"><table><tbody class="hub-tbody">${anomalias.map(a=>`
-        <tr><td style="font-weight:500">${a.titulo}</td><td class="neg">${a.alerta}</td></tr>
-      `).join('')}</tbody></table></div>`
-    : `<div style="color:var(--slate-400);font-size:13px;padding:8px 0">Nenhuma anomalia detectada no último sync.</div>`;
+  let linhas = prodDadosCache.filter(l=>{
+    if(soAlertas && !l.alertas.length) return false;
+    if(busca && !l.titulo.toLowerCase().includes(busca) && !(l.sku||'').toLowerCase().includes(busca)) return false;
+    return true;
+  });
+  linhas = linhas.sort((a,b)=> b.alertas.length - a.alertas.length || b.receitaOntem - a.receitaOntem);
 
   tbody.innerHTML = linhas.map(l=>`
     <tr>
-      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.titulo}</td>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.titulo}</td>
+      <td style="text-align:right;cursor:pointer" title="Clique pra editar" onclick="prodEditarCusto('${l.sku||''}',${l.custo})">${l.custo>0?lbxFmtMoeda(l.custo):'—'}</td>
+      <td style="text-align:right">${l.precoApi>0?lbxFmtMoeda(l.precoApi):'—'}</td>
+      <td style="text-align:right;${l.mc!==null&&l.mc<15?'color:var(--coral-500)':''}">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right">${lbxFmtMoeda(l.receitaOntem)}</td>
+      <td style="text-align:right">${l.unidadesOntem}</td>
       <td style="text-align:right">${lbxFmtMoeda(l.gastoOntem)}</td>
       <td style="text-align:right" class="${l.tacosPct!==null && l.tacosPct>l.metaTacos?'neg':''}">${l.tacosPct!==null?l.tacosPct.toFixed(2)+'%':'—'}</td>
-      <td style="text-align:right">${l.metaTacos}%</td>
-      <td style="text-align:right" class="${l.estoque!==null && l.estoque<=l.estoqueMin?'neg':''}">${l.estoque??'—'}</td>
+      <td style="text-align:right;cursor:pointer" title="Clique pra editar" onclick="prodEditarMetaTacos('${l.sku||''}',${l.metaTacos})">${l.metaTacos}%</td>
+      <td style="text-align:right">${l.acos!==null?l.acos.toFixed(2)+'%':'—'}</td>
+      <td style="text-align:right;cursor:pointer" title="Clique pra editar" class="${l.estoque!==null && l.estoque<=l.estoqueMin?'neg':''}" onclick="prodEditarEstoqueMin('${l.sku||''}',${l.estoqueMin})">${l.estoque??'—'}</td>
       <td style="text-align:right">${l.estoqueMin}</td>
-      <td>${l.alertas.length? `<span class="neg" style="font-size:11px">${l.alertas.length} alerta(s)</span>` : '<span style="font-size:11px;color:var(--slate-400)">OK</span>'}</td>
+      <td>${l.alertas.length? `<span class="neg" style="font-size:11px">${l.alertas.join(', ')}</span>` : '<span style="font-size:11px;color:var(--slate-400)">OK</span>'}</td>
     </tr>
-  `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--slate-400)">Sem dados ainda — rode o sync primeiro.</td></tr>';
+  `).join('') || '<tr><td colspan="13" style="text-align:center;color:var(--slate-400)">Nenhum item encontrado.</td></tr>';
 }
+
+async function prodUpsertSku(sku, campo, valor){
+  if(!sku){ alert('Esse anúncio ainda não tem SKU vinculado (seller_custom_field) — associe um SKU no próprio anúncio do Mercado Livre antes de editar aqui.'); return; }
+  const payload = {conta:'Logbox', sku};
+  payload[campo] = valor;
+  const {error} = await sb.from('skus').upsert(payload, {onConflict:'conta,sku'});
+  if(error){ alert('Erro ao salvar: '+error.message); return; }
+  renderProdutos();
+}
+function prodEditarCusto(sku, atual){
+  const v = prompt('Custo do produto (R$):', atual||'');
+  if(v===null) return;
+  const num = parseFloat(v.replace(',','.'));
+  if(isNaN(num)) return alert('Valor inválido.');
+  prodUpsertSku(sku, 'custo', num);
+}
+function prodEditarMetaTacos(sku, atual){
+  const v = prompt('Meta de TACOS pra esse SKU (%):', atual||LBX_TACOS_ALVO_PADRAO);
+  if(v===null) return;
+  const num = parseFloat(v.replace(',','.'));
+  if(isNaN(num)) return alert('Valor inválido.');
+  prodUpsertSku(sku, 'tacos_alvo', num);
+}
+function prodEditarEstoqueMin(sku, atual){
+  const v = prompt('Estoque mínimo pra esse SKU (unidades):', atual||LBX_ESTOQUE_MIN_PADRAO);
+  if(v===null) return;
+  const num = parseInt(v);
+  if(isNaN(num)) return alert('Valor inválido.');
+  prodUpsertSku(sku, 'estoque_minimo', num);
+}
+document.addEventListener('DOMContentLoaded', ()=>{
+  const buscaEl = document.getElementById('prod-busca');
+  if(buscaEl){
+    buscaEl.oninput = ()=>{ if(prodDadosCache) desenharProdutosTabela(); else renderProdutos(); };
+  }
+  const soAlertasEl = document.getElementById('prod-so-alertas');
+  if(soAlertasEl){
+    soAlertasEl.onchange = ()=>{ if(prodDadosCache) desenharProdutosTabela(); else renderProdutos(); };
+  }
+});
 
 
 // ===== PRODUTOS (Precificação + Performance por SKU) =====
@@ -3138,6 +2793,7 @@ let kpiAjustes = {};
 
 // ---- TABS DE CONTA ----
 function initTabs() {
+  if(!document.getElementById('prod-conta-tabs')) return; // tela antiga removida
   document.getElementById('prod-conta-tabs').innerHTML = contas.map(c =>
     `<button class="tab ${c===conta?'active':''}" onclick="prodSetConta('${c}',this)">${c}</button>`
   ).join('');
@@ -3258,6 +2914,7 @@ function goToSkuPerf(sku) {
 function mpa(r) { return Math.round((r.mc - r.tacos) * 100) / 100; }
 
 function renderDash() {
+  if(!document.getElementById('dashboard')) return; // tela antiga removida
   const rows = D[conta];
   if (!rows.length) { document.getElementById('dashboard').innerHTML = ''; return; }
   const avgMC = rows.reduce((s,r) => s+r.mc, 0) / rows.length;
@@ -3283,6 +2940,7 @@ function renderDash() {
 
 // Guard: garante que D[conta] existe e renderiza a aba correta
 function safeRenderProd() {
+  if(!document.getElementById('tbody')) return; // tela antiga removida — use renderProdutos()
   if (!D[conta]) D[conta] = [];
   if (prodSubTab === 'precificacao') renderPrec();
   else if (prodSubTab === 'todos-produtos') renderTodosProdutos();
@@ -5405,7 +5063,6 @@ function fabAction(){
   if(p==='page-anotacoes'){newNote()}
   else if(p==='page-ideias')openIdea();
   else if(p==='page-agenda')openCalModal(null,localDateStr());
-  else if(p==='page-produtos' && prodSubTab==='precificacao')addRow();
 }
 
 // ── INIT APP (carrega dados do Supabase) ──
@@ -5423,8 +5080,7 @@ async function initApp(){
   // Carrega ajustes manuais por cima da soma dos SKUs
   await loadKpiHistorico();
   calcKpiFromSkus();
-  initTabs(); safeRenderProd(); renderTagF(); renderNotes(); renderCal();
-  renderVG(); initCompPicker(); renderHist(); renderHome();
+  initTabs(); renderTagF(); renderNotes(); renderCal(); renderHome();
   showSync('Dados carregados ✓', true);
 }
 
