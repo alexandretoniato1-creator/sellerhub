@@ -1154,6 +1154,7 @@ body.sidebar-collapsed .hamburger { display: none; }
         <button class="perf-subtab active" onclick="perfGoTab('visao-geral',this)">Visão Geral</button>
         <button class="perf-subtab" onclick="perfGoTab('historico',this)">Histórico 2026</button>
         <button class="perf-subtab" onclick="perfGoTab('comparativo',this)">Comparativo</button>
+        <button class="perf-subtab" onclick="perfGoTab('logbox-live',this)">Logbox • Tempo Real</button>
       </div>
       <!-- VISÃO GERAL -->
       <div class="perf-subpage active" id="perf-visao-geral">
@@ -1248,6 +1249,33 @@ body.sidebar-collapsed .hamburger { display: none; }
         </div>
         <div id="comp-insights" style="margin-bottom:20px"></div>
         <div id="comp-cards"></div>
+      </div>
+
+      <!-- LOGBOX TEMPO REAL (dado vindo direto da API do ML) -->
+      <div class="perf-subpage" id="perf-logbox-live">
+        <div class="perf-vg-controls" style="justify-content:space-between">
+          <div class="perf-section-label" style="margin:0">Histórico salvo via sync diário — última atualização: <span id="lbx-updated-at">—</span></div>
+          <button class="perf-select" style="cursor:pointer" onclick="renderLogboxLive()">↻ Atualizar</button>
+        </div>
+        <div id="lbx-kpi-cards" style="margin-top:12px"></div>
+
+        <div class="perf-section-label" style="margin-top:24px">Anomalias detectadas</div>
+        <div id="lbx-anomalias"></div>
+
+        <div class="perf-section-label" style="margin-top:24px">Por SKU / anúncio</div>
+        <div class="table-wrap"><table>
+          <thead class="hub-thead"><tr>
+            <th>Anúncio</th>
+            <th style="text-align:right">Receita (ontem)</th>
+            <th style="text-align:right">Gasto ADS</th>
+            <th style="text-align:right">TACOS</th>
+            <th style="text-align:right">Meta TACOS</th>
+            <th style="text-align:right">Estoque</th>
+            <th style="text-align:right">Mín.</th>
+            <th>Status</th>
+          </tr></thead>
+          <tbody class="hub-tbody" id="lbx-tbody"></tbody>
+        </table></div>
       </div>
     </div>
 
@@ -2913,12 +2941,134 @@ function perfGoTab(id, btn){
   btn.classList.add('active');
   if(id==='historico') renderHist();
   else if(id==='comparativo'){ initCompPicker(); renderComp(); }
+  else if(id==='logbox-live') renderLogboxLive();
   else renderVG();
 }
 
 function initPerfTabs(){ /* legacy — não usado */ }
 function renderPerf(){ /* legacy — não usado */ }
 function addPerfRow(){ /* legacy — não usado */ }
+
+// ===== LOGBOX TEMPO REAL (dado vindo direto da API do ML, via ml_* tables) =====
+const LBX_TACOS_ALVO_PADRAO = 5;
+const LBX_ESTOQUE_MIN_PADRAO = 5;
+const LBX_QUEDA_VENDAS_LIMITE = 0.4; // alerta se cair mais de 40% vs média dos dias anteriores
+
+function lbxFmtMoeda(v){ return 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+async function renderLogboxLive(){
+  const tbody = document.getElementById('lbx-tbody');
+  const cardsEl = document.getElementById('lbx-kpi-cards');
+  const anomEl = document.getElementById('lbx-anomalias');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
+  cardsEl.innerHTML = '';
+  anomEl.innerHTML = '';
+
+  const [anunciosRes, adsRes, vendasRes, repRes, skusRes] = await Promise.all([
+    sb.from('ml_anuncios').select('*').eq('conta','Logbox').order('data',{ascending:false}),
+    sb.from('ml_ads_reports').select('*').eq('conta','Logbox').order('data',{ascending:false}),
+    sb.from('ml_vendas').select('*').eq('conta','Logbox').order('data',{ascending:false}),
+    sb.from('ml_reputacao').select('*').eq('conta','Logbox').order('data',{ascending:false}).limit(1),
+    sb.from('skus').select('*').eq('conta','Logbox'),
+  ]);
+
+  if(anunciosRes.error||adsRes.error||vendasRes.error||repRes.error||skusRes.error){
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou pelo menos uma vez.</td></tr>';
+    return;
+  }
+
+  // último snapshot de cada anúncio (a lista já vem ordenada por data desc)
+  const anuncioPorItem = {};
+  (anunciosRes.data||[]).forEach(a=>{ if(!anuncioPorItem[a.item_id]) anuncioPorItem[a.item_id]=a; });
+
+  // último dia de ADS por item
+  const adsPorItem = {};
+  (adsRes.data||[]).forEach(a=>{ if(!adsPorItem[a.item_id]) adsPorItem[a.item_id]=a; });
+
+  // vendas agrupadas por item (todos os dias disponíveis, mais recente primeiro)
+  const vendasPorItem = {};
+  (vendasRes.data||[]).forEach(v=>{ (vendasPorItem[v.item_id] = vendasPorItem[v.item_id]||[]).push(v); });
+
+  const skuMap = {};
+  (skusRes.data||[]).forEach(s=>{ skuMap[s.sku]=s; });
+
+  const ultimaData = (adsRes.data && adsRes.data[0]) ? adsRes.data[0].data : (vendasRes.data && vendasRes.data[0] ? vendasRes.data[0].data : null);
+  document.getElementById('lbx-updated-at').textContent = ultimaData ? new Date(ultimaData+'T12:00:00').toLocaleDateString('pt-BR') : '—';
+
+  const itemIds = new Set([...Object.keys(anuncioPorItem), ...Object.keys(adsPorItem), ...Object.keys(vendasPorItem)]);
+
+  let receitaTotal = 0, gastoTotal = 0, alertasCount = 0;
+  const linhas = [];
+  const anomalias = [];
+
+  itemIds.forEach(itemId=>{
+    const anuncio = anuncioPorItem[itemId];
+    const ads = adsPorItem[itemId];
+    const vendasDias = (vendasPorItem[itemId]||[]);
+    const vendaOntem = vendasDias[0];
+    const receitaOntem = vendaOntem ? Number(vendaOntem.receita) : 0;
+    const gastoOntem = ads ? Number(ads.gasto) : 0;
+    const tacosPct = receitaOntem>0 ? (gastoOntem/receitaOntem*100) : null;
+
+    const skuInfo = anuncio?.sku ? skuMap[anuncio.sku] : null;
+    const metaTacos = skuInfo?.tacos_alvo ?? LBX_TACOS_ALVO_PADRAO;
+    const estoqueMin = skuInfo?.estoque_minimo ?? LBX_ESTOQUE_MIN_PADRAO;
+    const estoque = anuncio ? anuncio.estoque : null;
+
+    // queda de vendas: compara receita de ontem com a média dos dias anteriores disponíveis
+    let quedaVendas = false;
+    if(vendasDias.length >= 3){
+      const anteriores = vendasDias.slice(1);
+      const media = anteriores.reduce((s,v)=>s+Number(v.receita),0) / anteriores.length;
+      if(media > 0 && receitaOntem < media * (1 - LBX_QUEDA_VENDAS_LIMITE)) quedaVendas = true;
+    }
+
+    const alertas = [];
+    if(tacosPct !== null && tacosPct > metaTacos) alertas.push(`TACOS ${tacosPct.toFixed(1)}% (meta ${metaTacos}%)`);
+    if(estoque !== null && estoque <= estoqueMin) alertas.push(`Estoque baixo (${estoque} un.)`);
+    if(quedaVendas) alertas.push('Queda de vendas vs. média recente');
+
+    receitaTotal += receitaOntem;
+    gastoTotal += gastoOntem;
+    if(alertas.length) alertasCount++;
+
+    const titulo = anuncio?.titulo || itemId;
+    linhas.push({itemId, titulo, receitaOntem, gastoOntem, tacosPct, metaTacos, estoque, estoqueMin, alertas});
+    alertas.forEach(a=> anomalias.push({titulo, alerta:a}));
+  });
+
+  linhas.sort((a,b)=> b.receitaOntem - a.receitaOntem);
+
+  const tacosConsolidado = receitaTotal>0 ? (gastoTotal/receitaTotal*100) : 0;
+  const rep = (repRes.data && repRes.data[0]) || null;
+
+  cardsEl.innerHTML = `<div class="vg-kpi-grid">
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Faturamento (dia)</div><div class="vg-kpi-value">${lbxFmtMoeda(receitaTotal)}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Gasto ADS (dia)</div><div class="vg-kpi-value">${lbxFmtMoeda(gastoTotal)}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">TACOS consolidado</div><div class="vg-kpi-value ${tacosConsolidado>LBX_TACOS_ALVO_PADRAO?'neg':'pos'}">${tacosConsolidado.toFixed(2)}%</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Reputação</div><div class="vg-kpi-value">${rep? rep.nivel : '—'}</div></div>
+    <div class="vg-kpi-card"><div class="vg-kpi-label">Alertas ativos</div><div class="vg-kpi-value ${alertasCount>0?'neg':''}">${alertasCount}</div></div>
+  </div>`;
+
+  anomEl.innerHTML = anomalias.length
+    ? `<div class="table-wrap"><table><tbody class="hub-tbody">${anomalias.map(a=>`
+        <tr><td style="font-weight:500">${a.titulo}</td><td class="neg">${a.alerta}</td></tr>
+      `).join('')}</tbody></table></div>`
+    : `<div style="color:var(--slate-400);font-size:13px;padding:8px 0">Nenhuma anomalia detectada no último sync.</div>`;
+
+  tbody.innerHTML = linhas.map(l=>`
+    <tr>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.titulo}</td>
+      <td style="text-align:right">${lbxFmtMoeda(l.receitaOntem)}</td>
+      <td style="text-align:right">${lbxFmtMoeda(l.gastoOntem)}</td>
+      <td style="text-align:right" class="${l.tacosPct!==null && l.tacosPct>l.metaTacos?'neg':''}">${l.tacosPct!==null?l.tacosPct.toFixed(2)+'%':'—'}</td>
+      <td style="text-align:right">${l.metaTacos}%</td>
+      <td style="text-align:right" class="${l.estoque!==null && l.estoque<=l.estoqueMin?'neg':''}">${l.estoque??'—'}</td>
+      <td style="text-align:right">${l.estoqueMin}</td>
+      <td>${l.alertas.length? `<span class="neg" style="font-size:11px">${l.alertas.length} alerta(s)</span>` : '<span style="font-size:11px;color:var(--slate-400)">OK</span>'}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--slate-400)">Sem dados ainda — rode o sync primeiro.</td></tr>';
+}
 
 
 // ===== PRODUTOS (Precificação + Performance por SKU) =====
