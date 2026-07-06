@@ -1271,20 +1271,11 @@ body.sidebar-collapsed .hamburger { display: none; }
           <th style="text-align:right">Margem Líquida</th>
           <th style="text-align:right">Depósito</th>
           <th style="text-align:right">Full</th>
-          <th style="text-align:right">Unid.</th>
-          <th style="text-align:right">Custo</th>
-          <th style="text-align:right">Preço API</th>
-          <th style="text-align:right">M.C. Planej.</th>
-          <th style="text-align:right">Comissão ML</th>
-          <th style="text-align:right">Gasto ADS</th>
-          <th style="text-align:right">Mín.</th>
-          <th>Saúde</th>
-          <th>Status</th>
           <th></th>
         </tr></thead>
         <tbody class="hub-tbody" id="prod-tbody"></tbody>
       </table></div>
-      <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Margem Líquida = Receita − Custo do produto − Comissão do ML − Gasto ADS, sobre a receita do período. Depósito/Full são sempre o estoque mais recente (não somam por período). Só aparece pra contas com Estoque Multi-Origem habilitado no Mercado Livre.</div>
+      <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Margem Líquida = Receita − Custo do produto − Comissão do ML − Gasto ADS, sobre a receita do período. Custo, preço, comissão, saúde e status completos ficam em "Detalhes". Só anúncios com faturamento no período aparecem aqui.</div>
       <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Clique em "Detalhes" pra abrir a edição completa do SKU. M.C. = (Preço − Custo) / Preço.</div>
     </div>
 
@@ -2880,11 +2871,11 @@ function prodCalcularRange(ultimaData){
 
 async function renderProdutos(){
   const tbody = document.getElementById('prod-tbody');
-  tbody.innerHTML = '<tr><td colspan="19" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
 
   const {anunciosRes, adsRes, vendasRes, skusRes, visitasRes} = await lbxCarregarTudo();
   if(anunciosRes.error||adsRes.error||vendasRes.error||skusRes.error||visitasRes.error){
-    tbody.innerHTML = '<tr><td colspan="19" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
     return;
   }
 
@@ -2972,17 +2963,16 @@ function desenharProdutosTabela(){
   const soAlertas = document.getElementById('prod-so-alertas').checked;
 
   let linhas = prodDadosCache.filter(l=>{
+    if(l.receita <= 0) return false;
     if(soAlertas && !l.alertas.length) return false;
     if(busca && !l.titulo.toLowerCase().includes(busca) && !(l.sku||'').toLowerCase().includes(busca)) return false;
     return true;
   });
-  linhas = linhas.sort((a,b)=> b.alertas.length - a.alertas.length || b.receita - a.receita);
-
-  const saudeBadge = s => s==='unhealthy' ? '<span class="neg" style="font-size:11px">⚠ Perdendo</span>' : s==='warning' ? '<span style="font-size:11px;color:var(--coral-500)">Atenção</span>' : s==='healthy' ? '<span style="font-size:11px;color:var(--green-600)">OK</span>' : '<span style="font-size:11px;color:var(--slate-400)">—</span>';
+  linhas = linhas.sort((a,b)=> b.receita - a.receita);
 
   tbody.innerHTML = linhas.map(l=>`
     <tr>
-      <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none">${l.titulo} ↗</a>`:l.titulo}</td>
+      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none">${l.titulo} ↗</a>`:l.titulo}</td>
       <td style="text-align:right">${lbxFmtMoeda(l.receita)}</td>
       <td style="text-align:right">${l.pedidos}</td>
       <td style="text-align:right">${l.conversao!==null?l.conversao.toFixed(1)+'%':'—'}</td>
@@ -2991,18 +2981,9 @@ function desenharProdutosTabela(){
       <td style="text-align:right;font-weight:600;${l.margemLiquidaReal!==null&&l.margemLiquidaReal<0?'color:var(--coral-500)':''}">${l.margemLiquidaReal!==null?l.margemLiquidaReal.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right">${l.estoqueDeposito??'—'}</td>
       <td style="text-align:right">${l.estoqueFull??'—'}</td>
-      <td style="text-align:right">${l.unidades}</td>
-      <td style="text-align:right">${l.custo>0?lbxFmtMoeda(l.custo):'—'}</td>
-      <td style="text-align:right">${l.precoApi>0?lbxFmtMoeda(l.precoApi):'—'}</td>
-      <td style="text-align:right;${l.mc!==null&&l.mc<15?'color:var(--coral-500)':''}">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</td>
-      <td style="text-align:right">${lbxFmtMoeda(l.comissao)}</td>
-      <td style="text-align:right">${lbxFmtMoeda(l.gasto)}</td>
-      <td style="text-align:right" class="${l.estoque!==null && l.estoque<=l.estoqueMin?'neg':''}">${l.estoqueMin}</td>
-      <td>${saudeBadge(l.saude)}</td>
-      <td>${l.alertas.length? `<span class="neg" style="font-size:11px">${l.alertas.join(', ')}</span>` : '<span style="font-size:11px;color:var(--slate-400)">OK</span>'}</td>
       <td><button class="btn-hub-edit" onclick="prodAbrirDrawer('${l.itemId}')">Detalhes</button></td>
     </tr>
-  `).join('') || '<tr><td colspan="19" style="text-align:center;color:var(--slate-400)">Nenhum item encontrado.</td></tr>';
+  `).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--slate-400)">Nenhum anúncio com faturamento no período.</td></tr>';
 }
 
 function desenharTop5MC(){
@@ -3061,12 +3042,22 @@ async function prodAbrirDrawer(itemId){
     return {data:v.data, receita, unidades:v.unidades, gasto, tacos: receita>0 ? (gasto/receita*100) : null};
   });
 
+  const saudeLabel = s => s==='unhealthy' ? '⚠ Perdendo exposição' : s==='warning' ? 'Atenção — risco' : s==='healthy' ? 'Saudável' : '—';
+  const saudeCor = s => s==='unhealthy' ? 'var(--coral-500)' : s==='warning' ? 'var(--coral-500)' : s==='healthy' ? 'var(--green-600)' : 'var(--slate-400)';
+
   document.getElementById('prod-drawer-body').innerHTML = `
     <div class="perf-section-label">Dados da API (somente leitura)</div>
-    <div class="vg-kpi-grid" style="margin-bottom:20px">
+    <div class="vg-kpi-grid" style="margin-bottom:10px">
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Custo</div><div class="vg-kpi-value">${l.custo>0?lbxFmtMoeda(l.custo):'—'}</div></div>
       <div class="vg-kpi-card"><div class="vg-kpi-label">Preço no anúncio</div><div class="vg-kpi-value">${l.precoApi>0?lbxFmtMoeda(l.precoApi):'—'}</div></div>
-      <div class="vg-kpi-card"><div class="vg-kpi-label">Estoque atual</div><div class="vg-kpi-value">${l.estoque??'—'}</div></div>
-      <div class="vg-kpi-card"><div class="vg-kpi-label">M.C. atual</div><div class="vg-kpi-value">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</div></div>
+      <div class="vg-kpi-card"><div class="vg-kpi-label">M.C. Planejada</div><div class="vg-kpi-value">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</div></div>
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Estoque total</div><div class="vg-kpi-value">${l.estoque??'—'}</div></div>
+    </div>
+    <div class="vg-kpi-grid" style="margin-bottom:20px">
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Comissão ML (período)</div><div class="vg-kpi-value">${lbxFmtMoeda(l.comissao)}</div></div>
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Gasto ADS (período)</div><div class="vg-kpi-value">${lbxFmtMoeda(l.gasto)}</div></div>
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Saúde do anúncio</div><div class="vg-kpi-value" style="color:${saudeCor(l.saude)};font-size:15px">${saudeLabel(l.saude)}</div></div>
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Status</div><div class="vg-kpi-value" style="font-size:13px;color:${l.alertas.length?'var(--coral-500)':'var(--green-600)'}">${l.alertas.length?l.alertas.join(', '):'OK'}</div></div>
     </div>
 
     <div class="perf-section-label">Configuração editável</div>
