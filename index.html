@@ -2697,13 +2697,14 @@ async function hmAgregarPorMes(){
   const porMes = {};
   (vendasRes.data||[]).forEach(v=>{
     const mes = v.data.slice(0,7);
-    const o = (porMes[mes] = porMes[mes] || {receita:0, unidades:0, gasto:0});
+    const o = (porMes[mes] = porMes[mes] || {receita:0, unidades:0, gasto:0, temAds:false});
     o.receita += Number(v.receita); o.unidades += Number(v.unidades);
   });
   (adsRes.data||[]).forEach(a=>{
     const mes = a.data.slice(0,7);
-    const o = (porMes[mes] = porMes[mes] || {receita:0, unidades:0, gasto:0});
+    const o = (porMes[mes] = porMes[mes] || {receita:0, unidades:0, gasto:0, temAds:false});
     o.gasto += Number(a.gasto);
+    o.temAds = true; // existe pelo menos 1 linha de ADS sincronizada nesse mês
   });
   const meses = Object.keys(porMes).sort();
   hmMesesCache = {meses, porMes};
@@ -2733,8 +2734,8 @@ async function renderHistoricoMensal(){
       <td style="text-align:right">${lbxFmtMoeda(o.receita)}</td>
       <td style="text-align:right">${o.unidades.toLocaleString('pt-BR')}</td>
       <td style="text-align:right">${lbxFmtMoeda(ticket)}</td>
-      <td style="text-align:right">${lbxFmtMoeda(o.gasto)}</td>
-      <td style="text-align:right" class="${tacos>LBX_TACOS_ALVO_PADRAO?'neg':''}">${tacos.toFixed(2)}%</td>
+      <td style="text-align:right">${o.temAds?lbxFmtMoeda(o.gasto):'<span style="color:var(--slate-400)">sem dado</span>'}</td>
+      <td style="text-align:right" class="${o.temAds && tacos>LBX_TACOS_ALVO_PADRAO?'neg':''}">${o.temAds?tacos.toFixed(2)+'%':'<span style="color:var(--slate-400)">sem dado</span>'}</td>
     </tr>`;
   }).join('');
   renderHmChart(meses, porMes);
@@ -2800,26 +2801,33 @@ function desenharComparativo2(){
   const { porMes } = hmMesesCache;
   const selecionados = hmMesesSelecionados.slice().sort();
   const linhas = selecionados.map(mes=>{
-    const o = porMes[mes] || {receita:0,unidades:0,gasto:0};
+    const o = porMes[mes] || {receita:0,unidades:0,gasto:0,temAds:false};
     const ticket = o.unidades>0 ? o.receita/o.unidades : 0;
     const tacos = o.receita>0 ? (o.gasto/o.receita*100) : 0;
-    return {mes, receita:o.receita, unidades:o.unidades, ticket, gasto:o.gasto, tacos};
+    return {mes, receita:o.receita, unidades:o.unidades, ticket, gasto:o.gasto, tacos, temAds:o.temAds};
   });
   const metricas = [
     {key:'receita', label:'Faturamento', fmt:v=>lbxFmtMoeda(v), maiorMelhor:true},
     {key:'unidades', label:'Unidades', fmt:v=>v.toLocaleString('pt-BR'), maiorMelhor:true},
     {key:'ticket', label:'Ticket Médio', fmt:v=>lbxFmtMoeda(v), maiorMelhor:true},
-    {key:'gasto', label:'Gasto ADS', fmt:v=>lbxFmtMoeda(v), maiorMelhor:false},
-    {key:'tacos', label:'TACOS', fmt:v=>v.toFixed(2)+'%', maiorMelhor:false},
+    {key:'gasto', label:'Gasto ADS', fmt:v=>lbxFmtMoeda(v), maiorMelhor:false, dependeAds:true},
+    {key:'tacos', label:'TACOS', fmt:v=>v.toFixed(2)+'%', maiorMelhor:false, dependeAds:true},
   ];
   cardsEl.innerHTML = `<div class="comp-cards-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
     ${linhas.map(l=>{
       return `<div class="vg-kpi-card" style="padding:16px">
         <div style="font-weight:600;margin-bottom:10px">${hmMesLabel(l.mes)}</div>
         ${metricas.map(m=>{
-          const valores = linhas.map(x=>x[m.key]);
+          if(m.dependeAds && !l.temAds){
+            return `<div class="comp-kpi-row" style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--slate-50)">
+              <span style="color:var(--slate-400)">${m.label}</span>
+              <span style="color:var(--slate-400)">sem dado</span>
+            </div>`;
+          }
+          const comparaveis = linhas.filter(x=>!m.dependeAds || x.temAds);
+          const valores = comparaveis.map(x=>x[m.key]);
           const melhor = m.maiorMelhor ? Math.max(...valores) : Math.min(...valores.filter(v=>v>0)) || Math.min(...valores);
-          const isBest = linhas.length>1 && l[m.key]===melhor;
+          const isBest = comparaveis.length>1 && l[m.key]===melhor;
           return `<div class="comp-kpi-row" style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--slate-50)">
             <span style="color:var(--slate-400)">${m.label}</span>
             <span style="font-weight:${isBest?'700':'400'};color:${isBest?'var(--green-600)':'var(--slate-900)'}">${m.fmt(l[m.key])}${isBest?' ★':''}</span>
@@ -2902,53 +2910,89 @@ async function renderProdutos(){
   visitasPeriodo.forEach(v=>{ visitasPorItem[v.item_id]=(visitasPorItem[v.item_id]||0)+Number(v.visitas); });
 
   const itemIds = new Set([...Object.keys(anuncioPorItem), ...Object.keys(adsPorItem), ...Object.keys(vendasPorItem)]);
-  const linhas = [];
+
+  // ===== Passo 1: calcular métricas por ANÚNCIO individual (item_id) =====
+  const itensDetalhados = [];
   itemIds.forEach(itemId=>{
     const anuncio = anuncioPorItem[itemId];
     const vp = vendasPorItem[itemId] || {receita:0,unidades:0,pedidos:0,comissao:0};
     const ap = adsPorItem[itemId] || {gasto:0,acos_soma:0,n:0};
-    const receitaPeriodo = vp.receita;
-    const unidadesPeriodo = vp.unidades;
-    const pedidosPeriodo = vp.pedidos;
-    const gastoPeriodo = ap.gasto;
-    const tacosPct = receitaPeriodo>0 ? (gastoPeriodo/receitaPeriodo*100) : null;
     const acos = ap.n>0 ? (ap.acos_soma/ap.n) : null;
-    const visitasPeriodoItem = visitasPorItem[itemId] || 0;
-    const conversao = visitasPeriodoItem>0 ? (pedidosPeriodo/visitasPeriodoItem*100) : null;
+    itensDetalhados.push({
+      itemId, sku: anuncio?.sku || null, titulo: anuncio?.titulo || itemId, permalink: anuncio?.permalink || null,
+      receita: vp.receita, unidades: vp.unidades, pedidos: vp.pedidos, comissao: vp.comissao,
+      gasto: ap.gasto, acos, visitas: visitasPorItem[itemId] || 0,
+      estoque: anuncio?.estoque ?? null, estoqueDeposito: anuncio?.estoque_deposito ?? null, estoqueFull: anuncio?.estoque_full ?? null,
+      saude: anuncio?.saude || null,
+    });
+  });
 
-    const sku = anuncio?.sku || null;
+  // ===== Passo 2: agrupar por SKU (produtos sem SKU viram grupo próprio, 1 anúncio por grupo) =====
+  const grupos = {};
+  itensDetalhados.forEach(it=>{
+    const chave = it.sku || `__sem_sku__${it.itemId}`;
+    if(!grupos[chave]) grupos[chave] = { sku: it.sku, itens: [] };
+    grupos[chave].itens.push(it);
+  });
+
+  const linhas = [];
+  Object.values(grupos).forEach(g=>{
+    const itens = g.itens;
+    const receita = itens.reduce((s,i)=>s+i.receita,0);
+    const unidades = itens.reduce((s,i)=>s+i.unidades,0);
+    const pedidos = itens.reduce((s,i)=>s+i.pedidos,0);
+    const comissao = itens.reduce((s,i)=>s+i.comissao,0);
+    const gasto = itens.reduce((s,i)=>s+i.gasto,0);
+    const visitas = itens.reduce((s,i)=>s+i.visitas,0);
+    const tacosPct = receita>0 ? (gasto/receita*100) : null;
+    const conversao = visitas>0 ? (pedidos/visitas*100) : null;
+    const acosVals = itens.map(i=>i.acos).filter(v=>v!==null);
+    const acos = acosVals.length ? acosVals.reduce((s,v)=>s+v,0)/acosVals.length : null;
+    // Estoque: MAX (não soma) — anúncios do mesmo SKU costumam compartilhar o mesmo estoque físico no ML.
+    const estoque = Math.max(...itens.map(i=>i.estoque ?? -1));
+    const estoqueDeposito = Math.max(...itens.map(i=>i.estoqueDeposito ?? -1));
+    const estoqueFull = Math.max(...itens.map(i=>i.estoqueFull ?? -1));
+    // Saúde: pior caso entre os anúncios do grupo
+    const saudes = itens.map(i=>i.saude).filter(Boolean);
+    const saude = saudes.includes('unhealthy') ? 'unhealthy' : saudes.includes('warning') ? 'warning' : (saudes.length ? 'healthy' : null);
+    // Título/link: usa o anúncio de maior receita no grupo como representante
+    const principal = itens.slice().sort((a,b)=>b.receita-a.receita)[0];
+    const titulo = principal.titulo + (itens.length>1 ? ` (+${itens.length-1} anúncio${itens.length>2?'s':''})` : '');
+
+    const sku = g.sku;
     const skuInfo = sku ? skuMap[sku] : null;
     const metaTacos = skuInfo?.tacos_alvo ?? LBX_TACOS_ALVO_PADRAO;
     const estoqueMin = skuInfo?.estoque_minimo ?? LBX_ESTOQUE_MIN_PADRAO;
-    const estoque = anuncio ? anuncio.estoque : null;
-    const estoqueDeposito = anuncio?.estoque_deposito ?? null;
-    const estoqueFull = anuncio?.estoque_full ?? null;
-    const saude = anuncio?.saude || null;
     const custo = skuInfo?.custo || 0;
-    const precoApi = anuncio?.preco || 0;
+    const precoApi = principal.itemId && anuncioPorItem[principal.itemId] ? (anuncioPorItem[principal.itemId].preco||0) : 0;
     const mc = precoApi>0 ? ((precoApi-custo)/precoApi*100) : null;
-    const comissaoPeriodo = vp.comissao;
-    // Margem líquida: receita menos custo do produto, comissão do ML e gasto de ADS, no período.
-    const margemLiquidaReal = receitaPeriodo>0 ? ((receitaPeriodo - (custo*unidadesPeriodo) - comissaoPeriodo - gastoPeriodo) / receitaPeriodo * 100) : null;
+    const margemLiquidaReal = receita>0 ? ((receita - (custo*unidades) - comissao - gasto) / receita * 100) : null;
 
+    // queda de vendas: soma o histórico diário de TODOS os itens do grupo, dia a dia
+    const diasMap = {};
+    itens.forEach(i=>{ (vendasPorItemTudo[i.itemId]||[]).forEach(v=>{ diasMap[v.data]=(diasMap[v.data]||0)+Number(v.receita); }); });
+    const diasOrdenados = Object.keys(diasMap).sort((a,b)=>b.localeCompare(a));
     let quedaVendas = false;
-    const vendasDias = (vendasPorItemTudo[itemId]||[]).slice().sort((a,b)=>b.data.localeCompare(a.data));
-    if(vendasDias.length >= 3){
-      const receitaOntem = Number(vendasDias[0].receita);
-      const anteriores = vendasDias.slice(1);
-      const media = anteriores.reduce((s,v)=>s+Number(v.receita),0) / anteriores.length;
+    if(diasOrdenados.length >= 3){
+      const receitaOntem = diasMap[diasOrdenados[0]];
+      const anteriores = diasOrdenados.slice(1).map(d=>diasMap[d]);
+      const media = anteriores.reduce((s,v)=>s+v,0) / anteriores.length;
       if(media > 0 && receitaOntem < media * (1 - LBX_QUEDA_VENDAS_LIMITE)) quedaVendas = true;
     }
 
     const alertas = [];
     if(tacosPct !== null && tacosPct > metaTacos) alertas.push('TACOS alto');
-    if(estoque !== null && estoque <= estoqueMin) alertas.push('Estoque baixo');
+    if(estoque >= 0 && estoque <= estoqueMin) alertas.push('Estoque baixo');
     if(quedaVendas) alertas.push('Queda de vendas');
     if(saude && saude !== 'healthy') alertas.push(saude === 'unhealthy' ? 'Perdendo exposição' : 'Risco de exposição');
 
-    linhas.push({itemId, sku, titulo: anuncio?.titulo || itemId, permalink: anuncio?.permalink || null, custo, precoApi, mc,
-      receita: receitaPeriodo, unidades: unidadesPeriodo, pedidos: pedidosPeriodo, visitas: visitasPeriodoItem, conversao, gasto: gastoPeriodo, tacosPct, metaTacos, acos,
-      estoque, estoqueDeposito, estoqueFull, estoqueMin, saude, comissao: comissaoPeriodo, margemLiquidaReal, alertas});
+    linhas.push({
+      chave: sku || `__sem_sku__${principal.itemId}`, sku, itemId: principal.itemId, itemIds: itens.map(i=>i.itemId),
+      titulo, permalink: principal.permalink, custo, precoApi, mc,
+      receita, unidades, pedidos, visitas, conversao, gasto, tacosPct, metaTacos, acos,
+      estoque: estoque>=0?estoque:null, estoqueDeposito: estoqueDeposito>=0?estoqueDeposito:null, estoqueFull: estoqueFull>=0?estoqueFull:null,
+      estoqueMin, saude, comissao, margemLiquidaReal, alertas,
+    });
   });
 
   prodDadosCache = linhas;
@@ -2981,9 +3025,9 @@ function desenharProdutosTabela(){
       <td style="text-align:right;font-weight:600;${l.margemLiquidaReal!==null&&l.margemLiquidaReal<0?'color:var(--coral-500)':''}">${l.margemLiquidaReal!==null?l.margemLiquidaReal.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right">${l.estoqueDeposito??'—'}</td>
       <td style="text-align:right">${l.estoqueFull??'—'}</td>
-      <td><button class="btn-hub-edit" onclick="prodAbrirDrawer('${l.itemId}')">Detalhes</button></td>
+      <td><button class="btn-hub-edit" onclick="prodAbrirDrawer('${l.chave}')">Detalhes</button></td>
     </tr>
-  `).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--slate-400)">Nenhum anúncio com faturamento no período.</td></tr>';
+  `).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--slate-400)">Nenhum SKU com faturamento no período.</td></tr>';
 }
 
 function desenharTop5MC(){
@@ -3020,30 +3064,58 @@ async function prodUpsertSku(sku, campos){
 }
 
 // ===== GAVETA DE EDIÇÃO COMPLETA DO PRODUTO =====
-async function prodAbrirDrawer(itemId){
-  const l = (prodDadosCache||[]).find(x=>x.itemId===itemId);
+async function prodAbrirDrawer(chave){
+  const l = (prodDadosCache||[]).find(x=>x.chave===chave);
   if(!l) return;
   document.getElementById('prod-drawer-title').textContent = l.titulo;
-  document.getElementById('prod-drawer-sub').textContent = l.sku ? `SKU: ${l.sku}` : `Sem SKU vinculado — ${itemId}`;
+  document.getElementById('prod-drawer-sub').textContent = l.sku ? `SKU: ${l.sku} · ${l.itemIds.length} anúncio${l.itemIds.length>1?'s':''}` : `Sem SKU vinculado — ${l.itemId}`;
   document.getElementById('prod-drawer-body').innerHTML = '<div style="color:var(--slate-400);font-size:13px">Carregando histórico...</div>';
   document.getElementById('prod-drawer').classList.add('open');
   document.getElementById('prod-drawer-overlay').classList.add('active');
 
-  const [vendasRes, adsRes] = await Promise.all([
-    sb.from('ml_vendas').select('*').eq('conta','Logbox').eq('item_id',itemId).order('data',{ascending:false}).limit(14),
-    sb.from('ml_ads_reports').select('*').eq('conta','Logbox').eq('item_id',itemId).order('data',{ascending:false}).limit(14),
+  const idsFiltro = l.itemIds;
+  const [vendasRes, adsRes, anunciosRes] = await Promise.all([
+    sb.from('ml_vendas').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
+    sb.from('ml_ads_reports').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
+    sb.from('ml_anuncios').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
   ]);
-  const adsPorData = {};
-  (adsRes.data||[]).forEach(a=>{ adsPorData[a.data]=a; });
-  const dias = (vendasRes.data||[]).map(v=>{
-    const ads = adsPorData[v.data];
-    const receita = Number(v.receita);
-    const gasto = ads ? Number(ads.gasto) : 0;
-    return {data:v.data, receita, unidades:v.unidades, gasto, tacos: receita>0 ? (gasto/receita*100) : null};
+  // soma receita/unidades por dia (todos os anúncios do grupo juntos)
+  const vendasPorDia = {};
+  (vendasRes.data||[]).forEach(v=>{ const o=(vendasPorDia[v.data]=vendasPorDia[v.data]||{receita:0,unidades:0}); o.receita+=Number(v.receita); o.unidades+=Number(v.unidades); });
+  const gastoPorDia = {};
+  (adsRes.data||[]).forEach(a=>{ gastoPorDia[a.data]=(gastoPorDia[a.data]||0)+Number(a.gasto); });
+  const dias = Object.keys(vendasPorDia).sort((a,b)=>b.localeCompare(a)).slice(0,14).map(data=>{
+    const v = vendasPorDia[data];
+    const gasto = gastoPorDia[data] || 0;
+    return {data, receita:v.receita, unidades:v.unidades, gasto, tacos: v.receita>0 ? (gasto/v.receita*100) : null};
   });
+
+  // anúncios vinculados a esse SKU (info mais recente de cada um)
+  const anuncioMaisRecentePorItem = {};
+  (anunciosRes.data||[]).forEach(a=>{ if(!anuncioMaisRecentePorItem[a.item_id]) anuncioMaisRecentePorItem[a.item_id]=a; });
 
   const saudeLabel = s => s==='unhealthy' ? '⚠ Perdendo exposição' : s==='warning' ? 'Atenção — risco' : s==='healthy' ? 'Saudável' : '—';
   const saudeCor = s => s==='unhealthy' ? 'var(--coral-500)' : s==='warning' ? 'var(--coral-500)' : s==='healthy' ? 'var(--green-600)' : 'var(--slate-400)';
+
+  const anunciosHtml = l.itemIds.length<=1 ? '' : `
+    <div class="perf-section-label" style="margin-top:24px">Anúncios vinculados a esse SKU (${l.itemIds.length})</div>
+    <div class="table-wrap"><table>
+      <thead class="hub-thead"><tr><th>Anúncio</th><th style="text-align:right">Preço</th><th style="text-align:right">Estoque</th><th>Saúde</th></tr></thead>
+      <tbody class="hub-tbody">
+        ${l.itemIds.map(id=>{
+          const a = anuncioMaisRecentePorItem[id];
+          if(!a) return '';
+          return `<tr>
+            <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.titulo}">${a.permalink?`<a href="${a.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none">${a.titulo} ↗</a>`:a.titulo}</td>
+            <td style="text-align:right">${a.preco?lbxFmtMoeda(a.preco):'—'}</td>
+            <td style="text-align:right">${a.estoque??'—'}</td>
+            <td style="color:${saudeCor(a.saude)}">${saudeLabel(a.saude)}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table></div>
+    <div style="font-size:11px;color:var(--slate-400);margin-top:6px">Vários anúncios com o mesmo SKU — considere consolidar em um único anúncio no Mercado Livre pra simplificar a gestão.</div>
+  `;
 
   document.getElementById('prod-drawer-body').innerHTML = `
     <div class="perf-section-label">Dados da API (somente leitura)</div>
@@ -3059,8 +3131,9 @@ async function prodAbrirDrawer(itemId){
       <div class="vg-kpi-card"><div class="vg-kpi-label">Saúde do anúncio</div><div class="vg-kpi-value" style="color:${saudeCor(l.saude)};font-size:15px">${saudeLabel(l.saude)}</div></div>
       <div class="vg-kpi-card"><div class="vg-kpi-label">Status</div><div class="vg-kpi-value" style="font-size:13px;color:${l.alertas.length?'var(--coral-500)':'var(--green-600)'}">${l.alertas.length?l.alertas.join(', '):'OK'}</div></div>
     </div>
+    ${anunciosHtml}
 
-    <div class="perf-section-label">Configuração editável</div>
+    <div class="perf-section-label" style="margin-top:24px">Configuração editável</div>
     <div class="m-field"><label>Custo do produto (R$)</label><input type="number" step="0.01" id="pd-custo" value="${l.custo||''}"></div>
     <div class="m-field"><label>Meta de TACOS (%)</label><input type="number" step="0.1" id="pd-tacos-alvo" value="${l.metaTacos}"></div>
     <div class="m-field"><label>Estoque mínimo (unidades)</label><input type="number" step="1" id="pd-estoque-min" value="${l.estoqueMin}"></div>
