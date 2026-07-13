@@ -1273,6 +1273,7 @@ body.sidebar-collapsed .hamburger { display: none; }
           <th style="text-align:right">Conversão</th>
           <th style="text-align:right">TACOS</th>
           <th style="text-align:right">Meta</th>
+          <th style="text-align:right">M.C.</th>
           <th style="text-align:right">Margem Líquida</th>
           <th style="text-align:right">Depósito</th>
           <th style="text-align:right">Full</th>
@@ -2910,11 +2911,11 @@ function prodCalcularRange(ultimaData){
 
 async function renderProdutos(){
   const tbody = document.getElementById('prod-tbody');
-  tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
 
   const {anunciosRes, adsRes, vendasRes, skusRes, visitasRes} = await lbxCarregarTudo();
   if(anunciosRes.error||adsRes.error||vendasRes.error||skusRes.error||visitasRes.error){
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
     return;
   }
 
@@ -3001,7 +3002,7 @@ async function renderProdutos(){
     const custo = skuInfo?.custo || 0;
     const precoApi = principal.itemId && anuncioPorItem[principal.itemId] ? (anuncioPorItem[principal.itemId].preco||0) : 0;
     const mc = skuInfo?.mc_planejada != null ? Number(skuInfo.mc_planejada) : (precoApi>0 ? ((precoApi-custo)/precoApi*100) : null);
-    const margemLiquidaReal = receita>0 ? ((receita - (custo*unidades) - comissao - gasto) / receita * 100) : null;
+    const margemLiquidaReal = (mc !== null && tacosPct !== null) ? (mc - tacosPct) : null;
 
     // queda de vendas: soma o histórico diário de TODOS os itens do grupo, dia a dia
     const diasMap = {};
@@ -3057,12 +3058,13 @@ function desenharProdutosTabela(){
       <td style="text-align:right">${l.conversao!==null?l.conversao.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right" class="${l.tacosPct!==null && l.tacosPct>l.metaTacos?'neg':''}">${l.tacosPct!==null?l.tacosPct.toFixed(2)+'%':'—'}</td>
       <td style="text-align:right">${l.metaTacos}%</td>
+      <td style="text-align:right;${l.mc!==null&&l.mc<15?'color:var(--coral-500)':''}">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right;font-weight:600;${l.margemLiquidaReal!==null&&l.margemLiquidaReal<0?'color:var(--coral-500)':''}">${l.margemLiquidaReal!==null?l.margemLiquidaReal.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right">${l.estoqueDeposito??'—'}</td>
       <td style="text-align:right">${l.estoqueFull??'—'}</td>
       <td><button class="btn-hub-edit" onclick="prodAbrirDrawer('${l.chave}')">Detalhes</button></td>
     </tr>
-  `).join('') || '<tr><td colspan="10" style="text-align:center;color:var(--slate-400)">Nenhum SKU com faturamento no período.</td></tr>';
+  `).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--slate-400)">Nenhum SKU com faturamento no período.</td></tr>';
 }
 
 function desenharTop5MC(){
