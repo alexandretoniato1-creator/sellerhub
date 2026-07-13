@@ -3000,7 +3000,7 @@ async function renderProdutos(){
     const estoqueMin = skuInfo?.estoque_minimo ?? LBX_ESTOQUE_MIN_PADRAO;
     const custo = skuInfo?.custo || 0;
     const precoApi = principal.itemId && anuncioPorItem[principal.itemId] ? (anuncioPorItem[principal.itemId].preco||0) : 0;
-    const mc = precoApi>0 ? ((precoApi-custo)/precoApi*100) : null;
+    const mc = skuInfo?.mc_planejada != null ? Number(skuInfo.mc_planejada) : (precoApi>0 ? ((precoApi-custo)/precoApi*100) : null);
     const margemLiquidaReal = receita>0 ? ((receita - (custo*unidades) - comissao - gasto) / receita * 100) : null;
 
     // queda de vendas: soma o histórico diário de TODOS os itens do grupo, dia a dia
