@@ -1180,6 +1180,9 @@ body.sidebar-collapsed .hamburger { display: none; }
           <svg id="perf-chart" width="100%" height="260" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
         </div>
 
+        <div class="perf-section-label" style="margin-top:24px">Vendas via ADS vs. Orgânicas (itens em campanha)</div>
+        <div id="perf-ads-organico"></div>
+
         <div class="perf-section-label" style="margin-top:24px">Reputação da conta</div>
         <div id="perf-reputacao-cards"></div>
 
@@ -1261,6 +1264,7 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div class="charts-row" id="prod-top5-charts" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
 
       <div class="perf-section-label" style="margin-top:20px">Todos os SKUs</div>
+      <div id="prod-aviso-preliminar" style="margin-bottom:8px"></div>
       <div class="table-wrap"><table>
         <thead class="hub-thead"><tr>
           <th>SKU</th>
@@ -2545,7 +2549,7 @@ async function renderPerformance(){
   }
 
   const ultimaData = (vendasRes.data&&vendasRes.data[0]) ? vendasRes.data[0].data : ((adsRes.data&&adsRes.data[0])?adsRes.data[0].data:null);
-  document.getElementById('perf-updated-at').textContent = lbxDataBR(ultimaData);
+  // (perf-updated-at é preenchido mais abaixo, já com o indicador de preliminar quando aplicável)
 
   // corta pro período selecionado (contando a partir do dia mais recente disponível)
   const corte = new Date((ultimaData||new Date().toISOString().slice(0,10))+'T00:00:00');
@@ -2580,6 +2584,12 @@ async function renderPerformance(){
   const ticketMedio = unidadesTotal>0 ? receitaTotal/unidadesTotal : 0;
   const tacosConsolidado = receitaTotal>0 ? (gastoTotal/receitaTotal*100) : 0;
   const rep = (repRes.data && repRes.data[0]) || null;
+  const temPreliminar = vendasPeriodo.some(v=>v.preliminar) || adsPeriodo.some(a=>a.preliminar);
+  const unidadesAdsTotal = adsPeriodo.reduce((s,a)=>s+Number(a.unidades_ads||0),0);
+  const unidadesOrganicasTotal = adsPeriodo.reduce((s,a)=>s+Number(a.unidades_organicas||0),0);
+  const unidadesAdsOuOrganicas = unidadesAdsTotal + unidadesOrganicasTotal;
+
+  document.getElementById('perf-updated-at').innerHTML = lbxDataBR(ultimaData) + (temPreliminar ? ' <span style="color:var(--coral-500);font-weight:600">· dado de hoje é preliminar, atualiza a cada 5 min</span>' : '');
 
   cardsEl.innerHTML = `<div class="vg-kpi-grid">
     <div class="vg-kpi-card"><div class="vg-kpi-label">Faturamento bruto</div><div class="vg-kpi-value">${lbxFmtMoeda(receitaTotal)}</div></div>
@@ -2592,6 +2602,20 @@ async function renderPerformance(){
     <div class="vg-kpi-card"><div class="vg-kpi-label">Gasto ADS</div><div class="vg-kpi-value">${lbxFmtMoeda(gastoTotal)}</div></div>
     <div class="vg-kpi-card"><div class="vg-kpi-label">TACOS do período</div><div class="vg-kpi-value ${tacosConsolidado>LBX_TACOS_ALVO_PADRAO?'neg':'pos'}">${tacosConsolidado.toFixed(2)}%</div></div>
   </div>`;
+
+  const adsPct = unidadesAdsOuOrganicas>0 ? (unidadesAdsTotal/unidadesAdsOuOrganicas*100) : 0;
+  const orgPct = unidadesAdsOuOrganicas>0 ? (unidadesOrganicasTotal/unidadesAdsOuOrganicas*100) : 0;
+  document.getElementById('perf-ads-organico').innerHTML = unidadesAdsOuOrganicas>0 ? `
+    <div class="vg-kpi-grid">
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Unidades via ADS</div><div class="vg-kpi-value">${unidadesAdsTotal.toLocaleString('pt-BR')}</div><div style="font-size:11px;color:var(--slate-400)">${adsPct.toFixed(1)}% do total</div></div>
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Unidades orgânicas</div><div class="vg-kpi-value">${unidadesOrganicasTotal.toLocaleString('pt-BR')}</div><div style="font-size:11px;color:var(--slate-400)">${orgPct.toFixed(1)}% do total</div></div>
+    </div>
+    <div class="bar-track" style="height:10px;border-radius:6px;overflow:hidden;display:flex;margin-top:4px">
+      <div style="width:${adsPct}%;background:var(--coral-400)"></div>
+      <div style="width:${orgPct}%;background:var(--green-600)"></div>
+    </div>
+    <div style="font-size:11px;color:var(--slate-400);margin-top:6px">Refere-se só aos itens que estão em campanha de ADS (comparação entre venda paga e orgânica desses mesmos anúncios) — não é o total do catálogo.</div>
+  ` : '<div style="color:var(--slate-400);font-size:13px">Sem dado ainda no período.</div>';
 
   repEl.innerHTML = rep ? `<div class="vg-kpi-grid">
     <div class="vg-kpi-card"><div class="vg-kpi-label">Nível</div><div class="vg-kpi-value">${rep.nivel||'—'}</div></div>
@@ -2908,6 +2932,10 @@ async function renderProdutos(){
   const vendasPeriodo = (vendasRes.data||[]).filter(v=>v.data>=inicio && v.data<=fim);
   const adsPeriodo = (adsRes.data||[]).filter(a=>a.data>=inicio && a.data<=fim);
   const visitasPeriodo = (visitasRes.data||[]).filter(v=>v.data>=inicio && v.data<=fim);
+
+  const temPreliminar = vendasPeriodo.some(v=>v.preliminar) || adsPeriodo.some(a=>a.preliminar);
+  const avisoEl = document.getElementById('prod-aviso-preliminar');
+  if(avisoEl) avisoEl.innerHTML = temPreliminar ? '<span style="color:var(--coral-500);font-weight:600;font-size:12px">⚠ Este período inclui dado de hoje, que é preliminar — atualiza sozinho a cada 5 min.</span>' : '';
 
   const vendasPorItem = {};
   vendasPeriodo.forEach(v=>{ const o=(vendasPorItem[v.item_id]=vendasPorItem[v.item_id]||{receita:0,unidades:0,pedidos:0,comissao:0}); o.receita+=Number(v.receita); o.unidades+=Number(v.unidades); o.pedidos+=Number(v.pedidos||0); o.comissao+=Number(v.comissao||0); });
