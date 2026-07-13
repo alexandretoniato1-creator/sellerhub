@@ -1236,6 +1236,7 @@ body.sidebar-collapsed .hamburger { display: none; }
 
       <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
         <select class="perf-select" id="prod-periodo-sel" onchange="prodPeriodoMudou(this.value)">
+          <option value="hoje">Hoje</option>
           <option value="ontem">Ontem</option>
           <option value="7d" selected>Últimos 7 dias</option>
           <option value="15d">Últimos 15 dias</option>
@@ -1259,10 +1260,10 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div class="perf-section-label" style="margin-top:16px">Top 5 melhor / pior margem</div>
       <div class="charts-row" id="prod-top5-charts" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
 
-      <div class="perf-section-label" style="margin-top:20px">Todos os anúncios</div>
+      <div class="perf-section-label" style="margin-top:20px">Todos os SKUs</div>
       <div class="table-wrap"><table>
         <thead class="hub-thead"><tr>
-          <th>Anúncio</th>
+          <th>SKU</th>
           <th style="text-align:right">Receita</th>
           <th style="text-align:right">Pedidos</th>
           <th style="text-align:right">Conversão</th>
@@ -2852,7 +2853,13 @@ function prodCalcularRange(ultimaData){
   const base = ultimaData ? new Date(ultimaData+'T00:00:00') : new Date();
   const fimStr = ultimaData || base.toISOString().slice(0,10);
   let inicioStr;
-  if(prodPeriodo==='ontem'){
+  if(prodPeriodo==='hoje'){
+    // "Hoje" é a data real de hoje (fuso de São Paulo), não o último dia sincronizado —
+    // por enquanto o sync só traz "ontem fechado", então esse período pode aparecer vazio
+    // até implementarmos a busca ao vivo do dia corrente.
+    const hojeReal = new Date().toLocaleDateString('en-CA', {timeZone:'America/Sao_Paulo'});
+    return {inicio: hojeReal, fim: hojeReal};
+  } else if(prodPeriodo==='ontem'){
     inicioStr = fimStr;
   } else if(prodPeriodo==='7d' || prodPeriodo==='15d' || prodPeriodo==='30d'){
     const dias = {'7d':7,'15d':15,'30d':30}[prodPeriodo];
@@ -3016,7 +3023,7 @@ function desenharProdutosTabela(){
 
   tbody.innerHTML = linhas.map(l=>`
     <tr>
-      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none">${l.titulo} ↗</a>`:l.titulo}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none;font-weight:600">${l.sku||l.itemId} ↗</a>`:`<span style="font-weight:600">${l.sku||l.itemId}</span>`}</td>
       <td style="text-align:right">${lbxFmtMoeda(l.receita)}</td>
       <td style="text-align:right">${l.pedidos}</td>
       <td style="text-align:right">${l.conversao!==null?l.conversao.toFixed(1)+'%':'—'}</td>
