@@ -1263,6 +1263,21 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div class="perf-section-label" style="margin-top:16px">Top 5 melhor / pior margem</div>
       <div class="charts-row" id="prod-top5-charts" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
 
+      <div class="perf-section-label" style="margin-top:24px">Monitoramento de Catálogo (Buy Box)</div>
+      <div style="font-size:11px;color:var(--slate-400);margin-bottom:8px">Só anúncios de catálogo — é a estratégia de venda usada nessa conta. Estoque, saúde e experiência são sempre o mais recente.</div>
+      <div class="table-wrap"><table>
+        <thead class="hub-thead"><tr>
+          <th>Anúncio</th>
+          <th style="text-align:right">Meu Preço</th>
+          <th>Buy Box</th>
+          <th style="text-align:right">Preço Concorrente</th>
+          <th>Saúde</th>
+          <th>Experiência</th>
+          <th>Status</th>
+        </tr></thead>
+        <tbody class="hub-tbody" id="catalogo-tbody"></tbody>
+      </table></div>
+
       <div class="perf-section-label" style="margin-top:20px">Todos os SKUs</div>
       <div id="prod-aviso-preliminar" style="margin-bottom:8px"></div>
       <div class="table-wrap"><table>
@@ -3034,6 +3049,39 @@ async function renderProdutos(){
   prodDadosCache = linhas;
   desenharProdutosTabela();
   desenharTop5MC();
+  desenharMonitoramentoCatalogo(anuncioPorItem);
+}
+
+function desenharMonitoramentoCatalogo(anuncioPorItem){
+  const tbody = document.getElementById('catalogo-tbody');
+  if(!tbody) return;
+  const itens = Object.values(anuncioPorItem).filter(a=>a.catalog_listing===true);
+
+  const buyboxBadge = s => {
+    if(s==='winning') return '<span style="font-size:11px;color:var(--green-600)">Ganhando</span>';
+    if(s==='sharing_first_place') return '<span style="font-size:11px;color:var(--coral-500)">Dividindo 1º lugar</span>';
+    if(s==='not_listed') return '<span class="neg" style="font-size:11px">Fora do catálogo</span>';
+    if(s) return `<span class="neg" style="font-size:11px">${s}</span>`;
+    return '<span style="font-size:11px;color:var(--slate-400)">—</span>';
+  };
+  const saudeBadge = s => s==='unhealthy' ? '<span class="neg" style="font-size:11px">⚠ Perdendo</span>' : s==='warning' ? '<span style="font-size:11px;color:var(--coral-500)">Atenção</span>' : s==='healthy' ? '<span style="font-size:11px;color:var(--green-600)">OK</span>' : '<span style="font-size:11px;color:var(--slate-400)">—</span>';
+  const expBadge = a => a.experiencia_valor!=null ? `<span style="font-size:11px;color:${a.experiencia_valor>=75?'var(--green-600)':'var(--coral-500)'}">${a.experiencia_valor}% ${a.experiencia_texto||''}</span>` : '<span style="font-size:11px;color:var(--slate-400)">—</span>';
+
+  // pior situação primeiro: fora do catálogo / dividindo lugar, depois quem ganha
+  const ordem = {not_listed:0, sharing_first_place:1, losing:1, winning:2};
+  const itensOrdenados = itens.slice().sort((a,b)=> (ordem[a.buybox_status]??1.5) - (ordem[b.buybox_status]??1.5));
+
+  tbody.innerHTML = itensOrdenados.map(a=>`
+    <tr>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.titulo}">${a.permalink?`<a href="${a.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none">${a.titulo} ↗</a>`:a.titulo}</td>
+      <td style="text-align:right">${a.preco?lbxFmtMoeda(a.preco):'—'}</td>
+      <td>${buyboxBadge(a.buybox_status)}</td>
+      <td style="text-align:right">${a.preco_concorrente?lbxFmtMoeda(a.preco_concorrente):'—'}</td>
+      <td>${saudeBadge(a.saude)}</td>
+      <td>${expBadge(a)}</td>
+      <td>${a.status==='active'?'<span style="font-size:11px;color:var(--green-600)">Ativo</span>':`<span class="neg" style="font-size:11px">${a.status||'—'}</span>`}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--slate-400)">Nenhum anúncio de catálogo encontrado.</td></tr>';
 }
 
 function desenharProdutosTabela(){
