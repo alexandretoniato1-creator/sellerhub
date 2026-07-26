@@ -992,6 +992,56 @@ body.sidebar-collapsed .hamburger { display: none; }
   .admin-panel { left:0; right:auto; }
   .cal-list-view { padding-bottom: calc(24px + 56px + 16px); }
 }
+
+/* ═══════════════════════════════════════════════════════
+   HIERARQUIA — Performance e Produtos
+   3 níveis: números principais > faixa compacta > tabelas
+   ═══════════════════════════════════════════════════════ */
+
+/* Nível 1 — os números que importam */
+.hero-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.hero-stat { background: var(--white); border: 1px solid var(--slate-100); border-radius: var(--radius); padding: 20px 22px; position: relative; overflow: hidden; }
+.hero-stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--slate-100); }
+.hero-stat.is-primary::before { background: var(--coral-500); }
+.hero-stat.is-good::before { background: var(--green-600); }
+.hero-stat.is-bad::before { background: var(--coral-500); }
+.hero-stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: var(--slate-400); margin-bottom: 8px; }
+.hero-stat-value { font-family: var(--mono); font-size: 30px; font-weight: 500; line-height: 1.05; letter-spacing: -0.5px; color: var(--slate-900); }
+.hero-stat-foot { margin-top: 9px; display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.hero-stat-ref { font-size: 10.5px; color: var(--slate-400); }
+
+/* Nível 2 — métricas de apoio, densas, sem virar parede de cards */
+.metric-strip { display: flex; flex-wrap: wrap; background: var(--white); border: 1px solid var(--slate-100); border-radius: var(--radius); overflow: hidden; }
+.metric-cell { flex: 1 1 140px; padding: 11px 16px; border-right: 1px solid var(--slate-50); }
+.metric-cell:last-child { border-right: none; }
+.metric-cell-label { font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--slate-400); margin-bottom: 3px; }
+.metric-cell-value { font-family: var(--mono); font-size: 15px; font-weight: 500; color: var(--slate-900); }
+.metric-cell-value.neg { color: var(--coral-500); }
+.metric-cell-value.pos { color: var(--green-600); }
+
+/* Nível 1 do Produtos — o que precisa de ação hoje */
+.attention { border: 1px solid var(--coral-200); background: var(--coral-50); border-radius: var(--radius); padding: 14px 18px; }
+.attention.is-clear { border-color: var(--green-100); background: var(--green-50); }
+.attention-head { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--coral-600); margin-bottom: 9px; }
+.attention.is-clear .attention-head { color: var(--green-600); margin-bottom: 0; }
+.attention-row { display: flex; align-items: baseline; gap: 12px; padding: 6px 0; border-top: 1px solid rgba(216,90,48,0.13); font-size: 12.5px; }
+.attention-row:first-of-type { border-top: none; }
+.attention-sku { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--slate-900); min-width: 104px; }
+.attention-why { color: var(--slate-700); flex: 1; }
+.attention-num { font-family: var(--mono); font-size: 12px; color: var(--slate-600); white-space: nowrap; }
+.attention-link { color: var(--coral-600); text-decoration: none; font-size: 11px; white-space: nowrap; }
+.attention-link:hover { text-decoration: underline; }
+
+/* Cabeçalho de seção com respiro maior que o das tabelas internas */
+.sec-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--slate-700); margin: 28px 0 10px; }
+.sec-title:first-of-type { margin-top: 0; }
+.sec-hint { font-size: 11px; color: var(--slate-400); margin: -4px 0 10px; }
+
+@media (max-width: 900px) {
+  .hero-stats { grid-template-columns: 1fr; gap: 10px; }
+  .hero-stat { padding: 16px 18px; }
+  .hero-stat-value { font-size: 26px; }
+}
 </style>
 </head>
 <body>
@@ -1172,24 +1222,26 @@ body.sidebar-collapsed .hamburger { display: none; }
           </div>
         </div>
 
-        <div class="perf-section-label" style="margin-top:20px">Consolidado do período</div>
-        <div id="perf-kpi-cards"></div>
+        <!-- Nível 1: os 3 números que importam, com comparação vs período anterior -->
+        <div class="hero-stats" id="perf-hero" style="margin-top:18px"></div>
 
-        <div class="perf-section-label" style="margin-top:24px">Faturamento vs. Gasto em ADS por dia</div>
+        <!-- Nível 2: evolução -->
+        <div class="sec-title">Evolução no período</div>
         <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
-          <svg id="perf-chart" width="100%" height="260" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
+          <svg id="perf-chart" width="100%" height="240" viewBox="0 0 800 240" preserveAspectRatio="none"></svg>
         </div>
 
-        <div class="perf-section-label" style="margin-top:24px">Vendas via ADS vs. Orgânicas (itens em campanha)</div>
-        <div id="perf-ads-organico"></div>
+        <!-- Nível 3: apoio, em faixa compacta -->
+        <div class="sec-title">Detalhamento</div>
+        <div class="metric-strip" id="perf-strip"></div>
 
-        <div class="perf-section-label" style="margin-top:24px">Reputação da conta</div>
-        <div id="perf-reputacao-cards"></div>
+        <div class="sec-title">Saúde da conta</div>
+        <div class="metric-strip" id="perf-saude-strip"></div>
 
-        <div class="perf-section-label" style="margin-top:24px">Anomalias no período</div>
+        <div class="sec-title">Pontos de atenção</div>
         <div id="perf-anomalias"></div>
 
-        <div class="perf-section-label" style="margin-top:24px">Top anúncios por faturamento no período</div>
+        <div class="sec-title">Top 10 anúncios por faturamento</div>
         <div class="table-wrap"><table>
           <thead class="hub-thead"><tr>
             <th>Anúncio</th>
@@ -1260,44 +1312,33 @@ body.sidebar-collapsed .hamburger { display: none; }
         <div style="font-size:12px;color:var(--slate-400)">Estoque é sempre o mais recente · <button class="perf-select" style="cursor:pointer;padding:6px 12px" onclick="renderProdutos()">↻ Atualizar</button></div>
       </div>
 
-      <div class="perf-section-label" style="margin-top:16px">Top 5 melhor / pior margem</div>
-      <div class="charts-row" id="prod-top5-charts" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
+      <!-- Nível 1: o que precisa de ação agora -->
+      <div id="prod-atencao" style="margin-top:16px"></div>
+      <div id="prod-aviso-preliminar" style="margin:10px 0 0"></div>
 
-      <div class="perf-section-label" style="margin-top:24px">Monitoramento de Catálogo (Buy Box)</div>
-      <div style="font-size:11px;color:var(--slate-400);margin-bottom:8px">Só anúncios de catálogo — é a estratégia de venda usada nessa conta. Estoque, saúde e experiência são sempre o mais recente.</div>
-      <div class="table-wrap"><table>
-        <thead class="hub-thead"><tr>
-          <th>Anúncio</th>
-          <th style="text-align:right">Meu Preço</th>
-          <th>Buy Box</th>
-          <th style="text-align:right">Preço Concorrente</th>
-          <th>Saúde</th>
-          <th>Experiência</th>
-          <th>Status</th>
-        </tr></thead>
-        <tbody class="hub-tbody" id="catalogo-tbody"></tbody>
-      </table></div>
-
-      <div class="perf-section-label" style="margin-top:20px">Todos os SKUs</div>
-      <div id="prod-aviso-preliminar" style="margin-bottom:8px"></div>
+      <!-- Nível 2: tabela única por SKU, com Buy Box integrado -->
+      <div class="sec-title">SKUs com venda no período</div>
       <div class="table-wrap"><table>
         <thead class="hub-thead"><tr>
           <th>SKU</th>
           <th style="text-align:right">Receita</th>
           <th style="text-align:right">Pedidos</th>
-          <th style="text-align:right">Conversão</th>
+          <th style="text-align:right">Conv.</th>
           <th style="text-align:right">TACOS</th>
-          <th style="text-align:right">Meta</th>
           <th style="text-align:right">M.C.</th>
-          <th style="text-align:right">Margem Líquida</th>
-          <th style="text-align:right">Depósito</th>
-          <th style="text-align:right">Full</th>
+          <th style="text-align:right">Marg. Líq.</th>
+          <th>Buy Box</th>
+          <th style="text-align:right">Estoque</th>
+          <th style="text-align:right">Exp.</th>
           <th></th>
         </tr></thead>
         <tbody class="hub-tbody" id="prod-tbody"></tbody>
       </table></div>
-      <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Margem Líquida = Receita − Custo do produto − Comissão do ML − Gasto ADS, sobre a receita do período. Custo, preço, comissão, saúde e status completos ficam em "Detalhes". Só anúncios com faturamento no período aparecem aqui.</div>
-      <div style="font-size:11px;color:var(--slate-400);margin-top:8px">Clique em "Detalhes" pra abrir a edição completa do SKU. M.C. = (Preço − Custo) / Preço.</div>
+      <div class="sec-hint" style="margin-top:8px">Marg. Líq. = M.C. − TACOS. Estoque mostra depósito + Full. Exp. = experiência de compra do anúncio. Custo, comissão e edição ficam em "Detalhes".</div>
+
+      <!-- Nível 3: contexto de margem -->
+      <div class="sec-title">Margem por SKU — melhores e piores</div>
+      <div class="charts-row" id="prod-top5-charts" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
     </div>
 
     <!-- GAVETA DE EDIÇÃO DE PRODUTO -->
@@ -2550,38 +2591,70 @@ async function lbxCarregarTudo(){
 // ===== PERFORMANCE (visão de conta, por período — pensada pra apresentação) =====
 let perfPeriodo = 30;
 
+// Compara um valor com o do período anterior e devolve o selo colorido pronto.
+// menorEhMelhor: use pra métricas onde subir é ruim (TACOS, comissão).
+function lbxDelta(atual, anterior, menorEhMelhor){
+  if(anterior === null || anterior === undefined || anterior === 0) return '<span class="delta-neutral">sem base anterior</span>';
+  const pct = (atual - anterior) / Math.abs(anterior) * 100;
+  if(Math.abs(pct) < 0.1) return '<span class="delta-neutral">estável</span>';
+  const subiu = pct > 0;
+  const bom = menorEhMelhor ? !subiu : subiu;
+  return `<span class="${bom?'delta-up':'delta-down'}">${subiu?'↑':'↓'}${Math.abs(pct).toFixed(1)}%</span>`;
+}
+
+// Soma receita, comissão, pedidos, unidades e gasto de ADS de uma janela de datas.
+function lbxTotaisJanela(vendas, ads, de, ate){
+  const t = {receita:0, comissao:0, pedidos:0, unidades:0, gasto:0};
+  vendas.filter(v=>v.data>=de && v.data<=ate).forEach(v=>{
+    t.receita += Number(v.receita); t.comissao += Number(v.comissao||0);
+    t.pedidos += Number(v.pedidos||0); t.unidades += Number(v.unidades);
+  });
+  ads.filter(a=>a.data>=de && a.data<=ate).forEach(a=>{ t.gasto += Number(a.gasto); });
+  return t;
+}
+
 async function renderPerformance(){
-  const cardsEl = document.getElementById('perf-kpi-cards');
-  const repEl = document.getElementById('perf-reputacao-cards');
+  const heroEl = document.getElementById('perf-hero');
+  const stripEl = document.getElementById('perf-strip');
+  const saudeEl = document.getElementById('perf-saude-strip');
   const anomEl = document.getElementById('perf-anomalias');
   const topBody = document.getElementById('perf-top-tbody');
-  cardsEl.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Carregando...</div>';
-  repEl.innerHTML = ''; anomEl.innerHTML = ''; topBody.innerHTML = '';
+  heroEl.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Carregando...</div>';
+  stripEl.innerHTML = ''; saudeEl.innerHTML = ''; anomEl.innerHTML = ''; topBody.innerHTML = '';
 
   const {anunciosRes, adsRes, vendasRes, repRes, skusRes, visitasRes} = await lbxCarregarTudo();
   if(anunciosRes.error||adsRes.error||vendasRes.error||repRes.error||skusRes.error||visitasRes.error){
-    cardsEl.innerHTML = '<div style="color:var(--coral-500);font-size:13px">Erro ao carregar dados. Confira se o sync já rodou pelo menos uma vez.</div>';
+    heroEl.innerHTML = '<div style="color:var(--coral-500);font-size:13px">Não foi possível carregar os dados. Confira se o sync já rodou pelo menos uma vez.</div>';
     return;
   }
 
   const ultimaData = (vendasRes.data&&vendasRes.data[0]) ? vendasRes.data[0].data : ((adsRes.data&&adsRes.data[0])?adsRes.data[0].data:null);
-  // (perf-updated-at é preenchido mais abaixo, já com o indicador de preliminar quando aplicável)
+  const fimStr = ultimaData || new Date().toISOString().slice(0,10);
 
-  // corta pro período selecionado (contando a partir do dia mais recente disponível)
-  const corte = new Date((ultimaData||new Date().toISOString().slice(0,10))+'T00:00:00');
-  corte.setDate(corte.getDate() - (perfPeriodo-1));
-  const corteStr = corte.toISOString().slice(0,10);
-  const vendasPeriodo = (vendasRes.data||[]).filter(v=>v.data>=corteStr);
-  const adsPeriodo = (adsRes.data||[]).filter(a=>a.data>=corteStr);
-  const visitasPeriodo = (visitasRes.data||[]).filter(v=>v.data>=corteStr);
+  // janela atual
+  const ini = new Date(fimStr+'T00:00:00'); ini.setDate(ini.getDate() - (perfPeriodo-1));
+  const iniStr = ini.toISOString().slice(0,10);
+  // janela anterior, do mesmo tamanho, imediatamente antes
+  const antFim = new Date(iniStr+'T00:00:00'); antFim.setDate(antFim.getDate() - 1);
+  const antFimStr = antFim.toISOString().slice(0,10);
+  const antIni = new Date(antFimStr+'T00:00:00'); antIni.setDate(antIni.getDate() - (perfPeriodo-1));
+  const antIniStr = antIni.toISOString().slice(0,10);
 
-  // agregados por dia (pro gráfico)
+  const vendasPeriodo = (vendasRes.data||[]).filter(v=>v.data>=iniStr && v.data<=fimStr);
+  const adsPeriodo = (adsRes.data||[]).filter(a=>a.data>=iniStr && a.data<=fimStr);
+  const visitasPeriodo = (visitasRes.data||[]).filter(v=>v.data>=iniStr && v.data<=fimStr);
+
+  const atual = lbxTotaisJanela(vendasRes.data||[], adsRes.data||[], iniStr, fimStr);
+  const anterior = lbxTotaisJanela(vendasRes.data||[], adsRes.data||[], antIniStr, antFimStr);
+  const teveAnterior = anterior.receita > 0;
+
+  // agregados por dia (gráfico)
   const porDia = {};
   vendasPeriodo.forEach(v=>{ (porDia[v.data]=porDia[v.data]||{receita:0,gasto:0,unidades:0}).receita += Number(v.receita); porDia[v.data].unidades += Number(v.unidades); });
   adsPeriodo.forEach(a=>{ (porDia[a.data]=porDia[a.data]||{receita:0,gasto:0,unidades:0}).gasto += Number(a.gasto); });
   const dias = Object.keys(porDia).sort();
 
-  // agregados por item (pro top e pras anomalias)
+  // agregados por item (top 10 e anomalias)
   const porItem = {};
   vendasPeriodo.forEach(v=>{ const o=(porItem[v.item_id]=porItem[v.item_id]||{receita:0,unidades:0,gasto:0,pedidos:0,comissao:0}); o.receita+=Number(v.receita); o.unidades+=Number(v.unidades); o.pedidos+=Number(v.pedidos||0); o.comissao+=Number(v.comissao||0); });
   adsPeriodo.forEach(a=>{ const o=(porItem[a.item_id]=porItem[a.item_id]||{receita:0,unidades:0,gasto:0,pedidos:0,comissao:0}); o.gasto+=Number(a.gasto); });
@@ -2589,71 +2662,78 @@ async function renderPerformance(){
   const anuncioPorItem = {};
   (anunciosRes.data||[]).forEach(a=>{ if(!anuncioPorItem[a.item_id]) anuncioPorItem[a.item_id]=a; });
 
-  const receitaTotal = Object.values(porItem).reduce((s,o)=>s+o.receita,0);
-  const unidadesTotal = Object.values(porItem).reduce((s,o)=>s+o.unidades,0);
-  const pedidosTotal = Object.values(porItem).reduce((s,o)=>s+o.pedidos,0);
-  const comissaoTotal = Object.values(porItem).reduce((s,o)=>s+o.comissao,0);
-  const faturamentoLiquido = receitaTotal - comissaoTotal;
+  const liquidoAtual = atual.receita - atual.comissao;
+  const liquidoAnterior = anterior.receita - anterior.comissao;
+  const tacosAtual = atual.receita>0 ? (atual.gasto/atual.receita*100) : 0;
+  const tacosAnterior = anterior.receita>0 ? (anterior.gasto/anterior.receita*100) : null;
+  const ticketMedio = atual.unidades>0 ? atual.receita/atual.unidades : 0;
+  const ticketAnterior = anterior.unidades>0 ? anterior.receita/anterior.unidades : null;
   const visitasTotal = visitasPeriodo.reduce((s,v)=>s+Number(v.visitas),0);
-  const conversaoMedia = visitasTotal>0 ? (pedidosTotal/visitasTotal*100) : null;
-  const gastoTotal = Object.values(porItem).reduce((s,o)=>s+o.gasto,0);
-  const ticketMedio = unidadesTotal>0 ? receitaTotal/unidadesTotal : 0;
-  const tacosConsolidado = receitaTotal>0 ? (gastoTotal/receitaTotal*100) : 0;
+  const conversaoMedia = visitasTotal>0 ? (atual.pedidos/visitasTotal*100) : null;
   const rep = (repRes.data && repRes.data[0]) || null;
   const temPreliminar = vendasPeriodo.some(v=>v.preliminar) || adsPeriodo.some(a=>a.preliminar);
   const unidadesAdsTotal = adsPeriodo.reduce((s,a)=>s+Number(a.unidades_ads||0),0);
   const unidadesOrganicasTotal = adsPeriodo.reduce((s,a)=>s+Number(a.unidades_organicas||0),0);
-  const unidadesAdsOuOrganicas = unidadesAdsTotal + unidadesOrganicasTotal;
+  const totalAtribuido = unidadesAdsTotal + unidadesOrganicasTotal;
 
-  document.getElementById('perf-updated-at').innerHTML = lbxDataBR(ultimaData) + (temPreliminar ? ' <span style="color:var(--coral-500);font-weight:600">· dado de hoje é preliminar, atualiza a cada 5 min</span>' : '');
+  document.getElementById('perf-updated-at').innerHTML = lbxDataBR(ultimaData) + (temPreliminar ? ' <span style="color:var(--coral-500);font-weight:600">· hoje é preliminar, atualiza a cada 5 min</span>' : '');
 
-  cardsEl.innerHTML = `<div class="vg-kpi-grid">
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Faturamento bruto</div><div class="vg-kpi-value">${lbxFmtMoeda(receitaTotal)}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Comissão ML</div><div class="vg-kpi-value">${lbxFmtMoeda(comissaoTotal)}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Faturamento líquido</div><div class="vg-kpi-value">${lbxFmtMoeda(faturamentoLiquido)}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Pedidos</div><div class="vg-kpi-value">${pedidosTotal.toLocaleString('pt-BR')}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Unidades vendidas</div><div class="vg-kpi-value">${unidadesTotal.toLocaleString('pt-BR')}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Conversão média</div><div class="vg-kpi-value">${conversaoMedia!==null?conversaoMedia.toFixed(1)+'%':'—'}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Ticket médio</div><div class="vg-kpi-value">${lbxFmtMoeda(ticketMedio)}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Gasto ADS</div><div class="vg-kpi-value">${lbxFmtMoeda(gastoTotal)}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">TACOS do período</div><div class="vg-kpi-value ${tacosConsolidado>LBX_TACOS_ALVO_PADRAO?'neg':'pos'}">${tacosConsolidado.toFixed(2)}%</div></div>
-  </div>`;
+  const refAnterior = teveAnterior
+    ? `<span class="hero-stat-ref">vs. ${perfPeriodo} dias anteriores</span>`
+    : '<span class="hero-stat-ref">sem período anterior completo</span>';
 
-  const adsPct = unidadesAdsOuOrganicas>0 ? (unidadesAdsTotal/unidadesAdsOuOrganicas*100) : 0;
-  const orgPct = unidadesAdsOuOrganicas>0 ? (unidadesOrganicasTotal/unidadesAdsOuOrganicas*100) : 0;
-  document.getElementById('perf-ads-organico').innerHTML = unidadesAdsOuOrganicas>0 ? `
-    <div class="vg-kpi-grid">
-      <div class="vg-kpi-card"><div class="vg-kpi-label">Unidades via ADS</div><div class="vg-kpi-value">${unidadesAdsTotal.toLocaleString('pt-BR')}</div><div style="font-size:11px;color:var(--slate-400)">${adsPct.toFixed(1)}% do total</div></div>
-      <div class="vg-kpi-card"><div class="vg-kpi-label">Unidades orgânicas</div><div class="vg-kpi-value">${unidadesOrganicasTotal.toLocaleString('pt-BR')}</div><div style="font-size:11px;color:var(--slate-400)">${orgPct.toFixed(1)}% do total</div></div>
+  // Nível 1 — os três números que decidem a conversa
+  heroEl.innerHTML = `
+    <div class="hero-stat is-primary">
+      <div class="hero-stat-label">Faturamento bruto</div>
+      <div class="hero-stat-value">${lbxFmtMoeda(atual.receita)}</div>
+      <div class="hero-stat-foot">${lbxDelta(atual.receita, teveAnterior?anterior.receita:null, false)} ${refAnterior}</div>
     </div>
-    <div class="bar-track" style="height:10px;border-radius:6px;overflow:hidden;display:flex;margin-top:4px">
-      <div style="width:${adsPct}%;background:var(--coral-400)"></div>
-      <div style="width:${orgPct}%;background:var(--green-600)"></div>
+    <div class="hero-stat ${liquidoAtual>=liquidoAnterior?'is-good':'is-bad'}">
+      <div class="hero-stat-label">Faturamento líquido (após comissão ML)</div>
+      <div class="hero-stat-value">${lbxFmtMoeda(liquidoAtual)}</div>
+      <div class="hero-stat-foot">${lbxDelta(liquidoAtual, teveAnterior?liquidoAnterior:null, false)} <span class="hero-stat-ref">comissão de ${lbxFmtMoeda(atual.comissao)}</span></div>
     </div>
-    <div style="font-size:11px;color:var(--slate-400);margin-top:6px">Refere-se só aos itens que estão em campanha de ADS (comparação entre venda paga e orgânica desses mesmos anúncios) — não é o total do catálogo.</div>
-  ` : '<div style="color:var(--slate-400);font-size:13px">Sem dado ainda no período.</div>';
+    <div class="hero-stat ${tacosAtual>LBX_TACOS_ALVO_PADRAO?'is-bad':'is-good'}">
+      <div class="hero-stat-label">TACOS do período</div>
+      <div class="hero-stat-value">${tacosAtual.toFixed(2)}%</div>
+      <div class="hero-stat-foot">${lbxDelta(tacosAtual, tacosAnterior, true)} <span class="hero-stat-ref">meta ${LBX_TACOS_ALVO_PADRAO}%</span></div>
+    </div>`;
 
-  repEl.innerHTML = rep ? `<div class="vg-kpi-grid">
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Nível</div><div class="vg-kpi-value">${rep.nivel||'—'}</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Reclamações</div><div class="vg-kpi-value">${(Number(rep.reclamacoes)*100).toFixed(2)}%</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Cancelamentos</div><div class="vg-kpi-value">${(Number(rep.cancelamentos)*100).toFixed(2)}%</div></div>
-    <div class="vg-kpi-card"><div class="vg-kpi-label">Vendas completas (hist.)</div><div class="vg-kpi-value">${Number(rep.vendas_completas).toLocaleString('pt-BR')}</div></div>
-  </div>` : '<div style="color:var(--slate-400);font-size:13px">Sem dado de reputação ainda.</div>';
+  // Nível 3 — apoio, em faixa densa
+  const adsPct = totalAtribuido>0 ? (unidadesAdsTotal/totalAtribuido*100) : null;
+  stripEl.innerHTML = `
+    <div class="metric-cell"><div class="metric-cell-label">Pedidos</div><div class="metric-cell-value">${atual.pedidos.toLocaleString('pt-BR')}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">Unidades</div><div class="metric-cell-value">${atual.unidades.toLocaleString('pt-BR')}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">Ticket médio</div><div class="metric-cell-value">${lbxFmtMoeda(ticketMedio)}</div><div style="margin-top:3px">${lbxDelta(ticketMedio, ticketAnterior, false)}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">Conversão</div><div class="metric-cell-value">${conversaoMedia!==null?conversaoMedia.toFixed(1)+'%':'—'}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">Gasto ADS</div><div class="metric-cell-value">${lbxFmtMoeda(atual.gasto)}</div><div style="margin-top:3px">${lbxDelta(atual.gasto, teveAnterior?anterior.gasto:null, true)}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">Venda via ADS</div><div class="metric-cell-value">${adsPct!==null?adsPct.toFixed(0)+'%':'—'}</div><div style="font-size:10px;color:var(--slate-400);margin-top:3px">${adsPct!==null?(100-adsPct).toFixed(0)+'% orgânica':'itens em campanha'}</div></div>`;
 
-  // anomalias no nível de conta: dias com TACOS do dia acima da meta + anúncios com saúde comprometida
+  saudeEl.innerHTML = rep ? `
+    <div class="metric-cell"><div class="metric-cell-label">Nível do vendedor</div><div class="metric-cell-value">${rep.nivel||'—'}</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">Reclamações</div><div class="metric-cell-value">${(Number(rep.reclamacoes)*100).toFixed(2)}%</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">Cancelamentos</div><div class="metric-cell-value">${(Number(rep.cancelamentos)*100).toFixed(2)}%</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">Atraso de envio</div><div class="metric-cell-value">${(Number(rep.tempo_envio)*100).toFixed(2)}%</div></div>
+    <div class="metric-cell"><div class="metric-cell-label">Vendas completas</div><div class="metric-cell-value">${Number(rep.vendas_completas).toLocaleString('pt-BR')}</div></div>`
+    : '<div class="metric-cell"><div class="metric-cell-label">Reputação</div><div class="metric-cell-value">—</div></div>';
+
+  // Pontos de atenção — dias com TACOS fora da meta + anúncios perdendo exposição
   const anomalias = [];
   dias.forEach(d=>{
     const o = porDia[d];
     const t = o.receita>0 ? (o.gasto/o.receita*100) : null;
-    if(t!==null && t>LBX_TACOS_ALVO_PADRAO) anomalias.push(`${lbxDataBR(d)}: TACOS de ${t.toFixed(1)}% (meta ${LBX_TACOS_ALVO_PADRAO}%)`);
+    if(t!==null && t>LBX_TACOS_ALVO_PADRAO) anomalias.push({sku:lbxDataBR(d), why:`TACOS de ${t.toFixed(1)}% no dia`, num:`meta ${LBX_TACOS_ALVO_PADRAO}%`});
   });
   Object.values(anuncioPorItem).forEach(a=>{
-    if(a.saude === 'unhealthy') anomalias.push(`${a.titulo}: perdendo exposição por reclamação/cancelamento`);
-    else if(a.saude === 'warning') anomalias.push(`${a.titulo}: risco de perder exposição — atenção`);
+    if(a.saude === 'unhealthy') anomalias.push({sku:a.sku||a.item_id, why:'Perdendo exposição por reclamação ou cancelamento', num:''});
+    else if(a.saude === 'warning') anomalias.push({sku:a.sku||a.item_id, why:'Risco de perder exposição', num:''});
   });
   anomEl.innerHTML = anomalias.length
-    ? `<div class="table-wrap"><table><tbody class="hub-tbody">${anomalias.map(a=>`<tr><td class="neg">${a}</td></tr>`).join('')}</tbody></table></div>`
-    : '<div style="color:var(--slate-400);font-size:13px;padding:8px 0">Nenhuma anomalia no período.</div>';
+    ? `<div class="attention"><div class="attention-head">${anomalias.length} ponto${anomalias.length>1?'s':''} pra revisar</div>${anomalias.slice(0,12).map(a=>`
+        <div class="attention-row"><span class="attention-sku">${a.sku}</span><span class="attention-why">${a.why}</span><span class="attention-num">${a.num}</span></div>
+      `).join('')}${anomalias.length>12?`<div class="attention-row"><span class="attention-why">+${anomalias.length-12} outros</span></div>`:''}</div>`
+    : '<div class="attention is-clear"><div class="attention-head">Nada fora do previsto no período</div></div>';
 
   // top anúncios por receita no período
   const top = Object.entries(porItem).map(([itemId,o])=>({
@@ -2677,8 +2757,8 @@ async function renderPerformance(){
 
 function renderPerfChart(dias, porDia){
   const svg = document.getElementById('perf-chart');
-  if(!dias.length){ svg.innerHTML = '<text x="20" y="130" font-size="12" fill="#888780">Sem dados suficientes ainda.</text>'; return; }
-  const W=800, H=260, padL=60, padR=20, padT=20, padB=40;
+  if(!dias.length){ svg.innerHTML = '<text x="20" y="120" font-size="12" fill="#888780">Sem dados suficientes ainda.</text>'; return; }
+  const W=800, H=240, padL=60, padR=20, padT=20, padB=40;
   const chartW = W-padL-padR, chartH = H-padT-padB;
   const n = dias.length;
   const colW = chartW/n;
@@ -2975,6 +3055,11 @@ async function renderProdutos(){
       gasto: ap.gasto, acos, visitas: visitasPorItem[itemId] || 0,
       estoque: anuncio?.estoque ?? null, estoqueDeposito: anuncio?.estoque_deposito ?? null, estoqueFull: anuncio?.estoque_full ?? null,
       saude: anuncio?.saude || null,
+      catalogo: anuncio?.catalog_listing === true,
+      buyboxStatus: anuncio?.buybox_status || null,
+      precoConcorrente: anuncio?.preco_concorrente ?? null,
+      precoPromocional: anuncio?.preco_promocional ?? null,
+      experiencia: anuncio?.experiencia_valor ?? null,
     });
   });
 
@@ -3006,6 +3091,17 @@ async function renderProdutos(){
     // Saúde: pior caso entre os anúncios do grupo
     const saudes = itens.map(i=>i.saude).filter(Boolean);
     const saude = saudes.includes('unhealthy') ? 'unhealthy' : saudes.includes('warning') ? 'warning' : (saudes.length ? 'healthy' : null);
+    // Buy Box: pior caso entre os anúncios de catálogo do grupo
+    const itensCatalogo = itens.filter(i=>i.catalogo);
+    const bbStatuses = itensCatalogo.map(i=>i.buyboxStatus).filter(Boolean);
+    const buyboxStatus = bbStatuses.includes('not_listed') ? 'not_listed'
+      : bbStatuses.includes('sharing_first_place') ? 'sharing_first_place'
+      : bbStatuses.includes('losing') ? 'losing'
+      : (bbStatuses.includes('winning') ? 'winning' : null);
+    const temCatalogo = itensCatalogo.length > 0;
+    // Experiência de compra: pior nota do grupo (é o que limita a exposição)
+    const expVals = itens.map(i=>i.experiencia).filter(v=>v!==null && v!==undefined);
+    const experiencia = expVals.length ? Math.min(...expVals) : null;
     // Título/link: usa o anúncio de maior receita no grupo como representante
     const principal = itens.slice().sort((a,b)=>b.receita-a.receita)[0];
     const titulo = principal.titulo + (itens.length>1 ? ` (+${itens.length-1} anúncio${itens.length>2?'s':''})` : '');
@@ -3015,7 +3111,8 @@ async function renderProdutos(){
     const metaTacos = skuInfo?.tacos_alvo ?? LBX_TACOS_ALVO_PADRAO;
     const estoqueMin = skuInfo?.estoque_minimo ?? LBX_ESTOQUE_MIN_PADRAO;
     const custo = skuInfo?.custo || 0;
-    const precoApi = principal.itemId && anuncioPorItem[principal.itemId] ? (anuncioPorItem[principal.itemId].preco||0) : 0;
+    const precoApi = principal.precoPromocional ?? (principal.itemId && anuncioPorItem[principal.itemId] ? (anuncioPorItem[principal.itemId].preco||0) : 0);
+    const precoConcorrente = principal.precoConcorrente ?? null;
     const mc = skuInfo?.mc_planejada != null ? Number(skuInfo.mc_planejada) : (precoApi>0 ? ((precoApi-custo)/precoApi*100) : null);
     const margemLiquidaReal = (mc !== null && tacosPct !== null) ? (mc - tacosPct) : null;
 
@@ -3032,56 +3129,62 @@ async function renderProdutos(){
     }
 
     const alertas = [];
-    if(tacosPct !== null && tacosPct > metaTacos) alertas.push('TACOS alto');
-    if(estoque >= 0 && estoque <= estoqueMin) alertas.push('Estoque baixo');
-    if(quedaVendas) alertas.push('Queda de vendas');
-    if(saude && saude !== 'healthy') alertas.push(saude === 'unhealthy' ? 'Perdendo exposição' : 'Risco de exposição');
+    if(margemLiquidaReal !== null && margemLiquidaReal < 0) alertas.push({tipo:'margem', txt:'Margem líquida negativa', num:`${margemLiquidaReal.toFixed(1)}%`, peso:0});
+    if(temCatalogo && buyboxStatus === 'not_listed') alertas.push({tipo:'buybox', txt:'Fora do catálogo — não está competindo', num:'', peso:1});
+    if(temCatalogo && (buyboxStatus === 'losing' || buyboxStatus === 'sharing_first_place')) alertas.push({tipo:'buybox', txt: buyboxStatus==='losing'?'Perdendo o Buy Box':'Dividindo o 1º lugar', num: precoConcorrente?`concorrente ${lbxFmtMoeda(precoConcorrente)}`:'', peso:1});
+    if(tacosPct !== null && tacosPct > metaTacos) alertas.push({tipo:'tacos', txt:`TACOS acima da meta de ${metaTacos}%`, num:`${tacosPct.toFixed(1)}%`, peso:2});
+    if(estoque >= 0 && estoque <= estoqueMin) alertas.push({tipo:'estoque', txt:'Estoque no mínimo', num:`${estoque} un.`, peso:3});
+    if(quedaVendas) alertas.push({tipo:'queda', txt:'Queda de vendas vs. média recente', num:'', peso:4});
+    if(saude && saude !== 'healthy') alertas.push({tipo:'saude', txt: saude==='unhealthy'?'Perdendo exposição':'Risco de perder exposição', num:'', peso:5});
 
     linhas.push({
       chave: sku || `__sem_sku__${principal.itemId}`, sku, itemId: principal.itemId, itemIds: itens.map(i=>i.itemId),
-      titulo, permalink: principal.permalink, custo, precoApi, mc,
+      titulo, permalink: principal.permalink, custo, precoApi, precoConcorrente, mc,
       receita, unidades, pedidos, visitas, conversao, gasto, tacosPct, metaTacos, acos,
+      buyboxStatus, temCatalogo, experiencia,
       estoque: estoque>=0?estoque:null, estoqueDeposito: estoqueDeposito>=0?estoqueDeposito:null, estoqueFull: estoqueFull>=0?estoqueFull:null,
       estoqueMin, saude, comissao, margemLiquidaReal, alertas,
     });
   });
 
   prodDadosCache = linhas;
+  desenharAtencao();
   desenharProdutosTabela();
   desenharTop5MC();
-  desenharMonitoramentoCatalogo(anuncioPorItem);
 }
 
-function desenharMonitoramentoCatalogo(anuncioPorItem){
-  const tbody = document.getElementById('catalogo-tbody');
-  if(!tbody) return;
-  const itens = Object.values(anuncioPorItem).filter(a=>a.catalog_listing===true);
+// Bloco "precisa de atenção" — o que a operação tem que resolver hoje, em ordem de gravidade.
+// Margem negativa vem primeiro porque sangra dinheiro; Buy Box depois porque derruba receita.
+function desenharAtencao(){
+  const el = document.getElementById('prod-atencao');
+  if(!el || !prodDadosCache) return;
 
-  const buyboxBadge = s => {
-    if(s==='winning') return '<span style="font-size:11px;color:var(--green-600)">Ganhando</span>';
-    if(s==='sharing_first_place') return '<span style="font-size:11px;color:var(--coral-500)">Dividindo 1º lugar</span>';
-    if(s==='not_listed') return '<span class="neg" style="font-size:11px">Fora do catálogo</span>';
-    if(s) return `<span class="neg" style="font-size:11px">${s}</span>`;
-    return '<span style="font-size:11px;color:var(--slate-400)">—</span>';
-  };
-  const saudeBadge = s => s==='unhealthy' ? '<span class="neg" style="font-size:11px">⚠ Perdendo</span>' : s==='warning' ? '<span style="font-size:11px;color:var(--coral-500)">Atenção</span>' : s==='healthy' ? '<span style="font-size:11px;color:var(--green-600)">OK</span>' : '<span style="font-size:11px;color:var(--slate-400)">—</span>';
-  const expBadge = a => a.experiencia_valor!=null ? `<span style="font-size:11px;color:${a.experiencia_valor>=75?'var(--green-600)':'var(--coral-500)'}">${a.experiencia_valor}% ${a.experiencia_texto||''}</span>` : '<span style="font-size:11px;color:var(--slate-400)">—</span>';
+  const itens = [];
+  prodDadosCache.forEach(l=>{
+    l.alertas.forEach(a=>itens.push({
+      sku: l.sku || l.itemId, chave: l.chave, receita: l.receita,
+      txt: a.txt, num: a.num, peso: a.peso,
+    }));
+  });
+  // mais grave primeiro; empate resolve por quem fatura mais (dói mais no caixa)
+  itens.sort((a,b)=> a.peso - b.peso || b.receita - a.receita);
 
-  // pior situação primeiro: fora do catálogo / dividindo lugar, depois quem ganha
-  const ordem = {not_listed:0, sharing_first_place:1, losing:1, winning:2};
-  const itensOrdenados = itens.slice().sort((a,b)=> (ordem[a.buybox_status]??1.5) - (ordem[b.buybox_status]??1.5));
-
-  tbody.innerHTML = itensOrdenados.map(a=>`
-    <tr>
-      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${a.titulo}">${a.permalink?`<a href="${a.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none">${a.titulo} ↗</a>`:a.titulo}</td>
-      <td style="text-align:right">${a.preco?lbxFmtMoeda(a.preco):'—'}</td>
-      <td>${buyboxBadge(a.buybox_status)}</td>
-      <td style="text-align:right">${a.preco_concorrente?lbxFmtMoeda(a.preco_concorrente):'—'}</td>
-      <td>${saudeBadge(a.saude)}</td>
-      <td>${expBadge(a)}</td>
-      <td>${a.status==='active'?'<span style="font-size:11px;color:var(--green-600)">Ativo</span>':`<span class="neg" style="font-size:11px">${a.status||'—'}</span>`}</td>
-    </tr>
-  `).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--slate-400)">Nenhum anúncio de catálogo encontrado.</td></tr>';
+  if(!itens.length){
+    el.innerHTML = '<div class="attention is-clear"><div class="attention-head">Nenhum SKU precisa de atenção no período</div></div>';
+    return;
+  }
+  const mostrar = itens.slice(0, 8);
+  el.innerHTML = `<div class="attention">
+    <div class="attention-head">${itens.length} ponto${itens.length>1?'s':''} pra resolver</div>
+    ${mostrar.map(i=>`
+      <div class="attention-row">
+        <span class="attention-sku">${i.sku}</span>
+        <span class="attention-why">${i.txt}</span>
+        <span class="attention-num">${i.num||''}</span>
+        <a class="attention-link" href="#" onclick="event.preventDefault();prodAbrirDrawer('${i.chave}')">abrir</a>
+      </div>`).join('')}
+    ${itens.length>mostrar.length?`<div class="attention-row"><span class="attention-why">+${itens.length-mostrar.length} outros pontos — use o filtro "só com alerta" pra ver todos</span></div>`:''}
+  </div>`;
 }
 
 function desenharProdutosTabela(){
@@ -3098,29 +3201,44 @@ function desenharProdutosTabela(){
   });
   linhas = linhas.sort((a,b)=> b.receita - a.receita);
 
-  tbody.innerHTML = linhas.map(l=>`
+  const bbBadge = (l) => {
+    if(!l.temCatalogo) return '<span style="font-size:11px;color:var(--slate-400)">—</span>';
+    const s = l.buyboxStatus;
+    if(s==='winning') return '<span style="font-size:11px;color:var(--green-600)">Ganhando</span>';
+    if(s==='sharing_first_place') return `<span style="font-size:11px;color:var(--amber-600)">Dividindo${l.precoConcorrente?` · ${lbxFmtMoeda(l.precoConcorrente)}`:''}</span>`;
+    if(s==='not_listed') return '<span class="neg" style="font-size:11px">Fora</span>';
+    if(s==='losing') return `<span class="neg" style="font-size:11px">Perdendo${l.precoConcorrente?` · ${lbxFmtMoeda(l.precoConcorrente)}`:''}</span>`;
+    return '<span style="font-size:11px;color:var(--slate-400)">—</span>';
+  };
+  const expBadge = (l) => l.experiencia!=null
+    ? `<span style="font-size:11px;font-family:var(--mono);color:${l.experiencia>=75?'var(--green-600)':'var(--coral-500)'}">${l.experiencia}%</span>`
+    : '<span style="font-size:11px;color:var(--slate-400)">—</span>';
+
+  tbody.innerHTML = linhas.map(l=>{
+    const estoqueTotal = (l.estoqueDeposito??0) + (l.estoqueFull??0);
+    const estoqueBaixo = l.estoque!==null && l.estoque<=l.estoqueMin;
+    return `
     <tr>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none;font-weight:600">${l.sku||l.itemId} ↗</a>`:`<span style="font-weight:600">${l.sku||l.itemId}</span>`}</td>
+      <td style="max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none;font-weight:600">${l.sku||l.itemId} ↗</a>`:`<span style="font-weight:600">${l.sku||l.itemId}</span>`}</td>
       <td style="text-align:right">${lbxFmtMoeda(l.receita)}</td>
       <td style="text-align:right">${l.pedidos}</td>
       <td style="text-align:right">${l.conversao!==null?l.conversao.toFixed(1)+'%':'—'}</td>
-      <td style="text-align:right" class="${l.tacosPct!==null && l.tacosPct>l.metaTacos?'neg':''}">${l.tacosPct!==null?l.tacosPct.toFixed(2)+'%':'—'}</td>
-      <td style="text-align:right">${l.metaTacos}%</td>
+      <td style="text-align:right" class="${l.tacosPct!==null && l.tacosPct>l.metaTacos?'neg':''}" title="Meta: ${l.metaTacos}%">${l.tacosPct!==null?l.tacosPct.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right;${l.mc!==null&&l.mc<15?'color:var(--coral-500)':''}">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</td>
-      <td style="text-align:right;font-weight:600;${l.margemLiquidaReal!==null&&l.margemLiquidaReal<0?'color:var(--coral-500)':''}">${l.margemLiquidaReal!==null?l.margemLiquidaReal.toFixed(1)+'%':'—'}</td>
-      <td style="text-align:right">${l.estoqueDeposito??'—'}</td>
-      <td style="text-align:right">${l.estoqueFull??'—'}</td>
+      <td style="text-align:right;font-weight:600;${l.margemLiquidaReal!==null&&l.margemLiquidaReal<0?'color:var(--coral-500)':(l.margemLiquidaReal!==null&&l.margemLiquidaReal>=15?'color:var(--green-600)':'')}">${l.margemLiquidaReal!==null?l.margemLiquidaReal.toFixed(1)+'%':'—'}</td>
+      <td>${bbBadge(l)}</td>
+      <td style="text-align:right" class="${estoqueBaixo?'neg':''}" title="Depósito: ${l.estoqueDeposito??'—'} · Full: ${l.estoqueFull??'—'} · Mínimo: ${l.estoqueMin}">${estoqueTotal>0?estoqueTotal.toLocaleString('pt-BR'):(l.estoque??'—')}</td>
+      <td style="text-align:right">${expBadge(l)}</td>
       <td><button class="btn-hub-edit" onclick="prodAbrirDrawer('${l.chave}')">Detalhes</button></td>
-    </tr>
-  `).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--slate-400)">Nenhum SKU com faturamento no período.</td></tr>';
+    </tr>`;
+  }).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--slate-400)">Nenhum SKU com venda no período.</td></tr>';
 }
 
 function desenharTop5MC(){
   const el = document.getElementById('prod-top5-charts');
   if(!el || !prodDadosCache) return;
   const comMc = prodDadosCache.filter(l=>l.mc!==null);
-  const comMpa = prodDadosCache.filter(l=>l.mpa!==null);
-  if(!comMc.length){ el.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Sem custo cadastrado ainda pra calcular margem.</div>'; return; }
+  if(!comMc.length){ el.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Nenhum SKU com custo cadastrado no Hub de Precificação ainda — sem custo não dá pra calcular margem.</div>'; return; }
 
   const top5MC = [...comMc].sort((a,b)=>b.mc-a.mc).slice(0,5);
   const bottom5MC = [...comMc].sort((a,b)=>a.mc-b.mc).slice(0,5);
@@ -3214,7 +3332,7 @@ async function prodAbrirDrawer(chave){
       <div class="vg-kpi-card"><div class="vg-kpi-label">Comissão ML (período)</div><div class="vg-kpi-value">${lbxFmtMoeda(l.comissao)}</div></div>
       <div class="vg-kpi-card"><div class="vg-kpi-label">Gasto ADS (período)</div><div class="vg-kpi-value">${lbxFmtMoeda(l.gasto)}</div></div>
       <div class="vg-kpi-card"><div class="vg-kpi-label">Saúde do anúncio</div><div class="vg-kpi-value" style="color:${saudeCor(l.saude)};font-size:15px">${saudeLabel(l.saude)}</div></div>
-      <div class="vg-kpi-card"><div class="vg-kpi-label">Status</div><div class="vg-kpi-value" style="font-size:13px;color:${l.alertas.length?'var(--coral-500)':'var(--green-600)'}">${l.alertas.length?l.alertas.join(', '):'OK'}</div></div>
+      <div class="vg-kpi-card"><div class="vg-kpi-label">Status</div><div class="vg-kpi-value" style="font-size:13px;color:${l.alertas.length?'var(--coral-500)':'var(--green-600)'}">${l.alertas.length?l.alertas.map(a=>a.txt).join(' · '):'OK'}</div></div>
     </div>
     ${anunciosHtml}
 
