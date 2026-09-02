@@ -1727,6 +1727,7 @@ body.sidebar-collapsed .hamburger { display: none; }
         </div>
 
       </div>
+      </div><!-- /ag-section-agenda -->
 
       <div id="ag-section-anotacoes" style="display:none">
       <div class="notes-layout">
@@ -2543,6 +2544,12 @@ function goAgendaHub(){
   agGoTab(_hubTab.agenda||'agenda',document.getElementById('ag-tab-'+(_hubTab.agenda||'agenda')));
   // Re-renderiza o calendário toda vez que a aba abrir (garante visibilidade)
   if(typeof renderCal==='function') renderCal();
+  // Garante scroll ao topo APÓS renderização do calendário (evita shift de scroll anchoring)
+  requestAnimationFrame(function(){
+    window.scrollTo(0,0);
+    document.body.scrollTop=0;
+    document.documentElement.scrollTop=0;
+  });
 }
 function agGoTab(tab,btn){
   _hubTab.agenda=tab;
@@ -7692,6 +7699,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 .main {
   background: #F7F6F2;
   padding: 28px 36px;
+  overflow-anchor: none; /* evita CSS Scroll Anchoring ao trocar de página */
 }
 
 /* ── PAGE HEADERS ────────────────────────── */
