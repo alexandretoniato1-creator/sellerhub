@@ -1042,6 +1042,60 @@ body.sidebar-collapsed .hamburger { display: none; }
   .hero-stat { padding: 16px 18px; }
   .hero-stat-value { font-size: 26px; }
 }
+
+/* ── ESCRITÓRIO VIRTUAL ───────────────────────────────── */
+#page-escritorio { margin:-24px -32px; height:calc(100vh); display:flex; flex-direction:column; background:#07090E; }
+.esc-header { padding:18px 26px 14px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); flex-shrink:0; }
+.esc-header-left h2 { font-size:17px; font-weight:600; color:#D8D5CC; letter-spacing:-0.3px; }
+.esc-header-left p { font-size:12px; color:#4A5568; margin-top:2px; }
+.esc-meta { display:flex; align-items:center; gap:10px; }
+#esc-update-label { font-size:11px; color:#4A5568; font-family:var(--mono); }
+.esc-refresh-btn { background:rgba(255,255,255,0.05); color:#8A92A8; border:1px solid rgba(255,255,255,0.08); font-size:12px; padding:6px 13px; border-radius:6px; cursor:pointer; font-family:var(--font); transition:all .2s; }
+.esc-refresh-btn:hover { background:rgba(255,255,255,0.09); color:#C0C8D8; }
+.esc-canvas-wrap { flex:1; position:relative; overflow:hidden; background:#07090E; min-height:340px; }
+#escritorio-canvas { display:block; }
+.esc-legend { position:absolute; bottom:12px; left:18px; display:flex; flex-wrap:wrap; gap:12px; pointer-events:none; }
+.esc-legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:#3A4560; font-family:var(--mono); }
+.esc-legend-dot { width:7px; height:7px; border-radius:50%; }
+.esc-click-hint { position:absolute; bottom:12px; right:18px; font-size:10px; color:#2A3050; font-family:var(--font); }
+/* Panel */
+.esc-panel { position:fixed; top:0; right:-490px; width:468px; max-width:100vw; height:100vh; background:#0B0F1C; border-left:1px solid rgba(255,255,255,0.07); z-index:302; transition:right .32s cubic-bezier(.25,.8,.25,1); display:flex; flex-direction:column; overflow:hidden; box-shadow:-10px 0 50px rgba(0,0,0,.6); }
+.esc-panel.open { right:0; }
+.esc-panel-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:301; }
+.esc-panel-overlay.active { display:block; }
+.esc-panel-header { padding:20px 20px 16px; border-bottom:1px solid rgba(255,255,255,0.07); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.esc-panel-title-wrap { display:flex; align-items:center; gap:10px; }
+.esc-panel-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; box-shadow:0 0 8px currentColor; }
+#esc-panel-title { font-size:16px; font-weight:600; color:#E0DDD5; }
+.esc-panel-close { background:none; border:none; color:#4A5568; font-size:20px; cursor:pointer; padding:4px 6px; transition:color .2s; line-height:1; }
+.esc-panel-close:hover { color:#8A92A8; }
+#esc-panel-body { flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:11px; }
+#esc-panel-body::-webkit-scrollbar { width:3px; }
+#esc-panel-body::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:2px; }
+/* Sugestão card */
+.esc-sugestao { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:13px 15px; transition:opacity .2s; }
+.esc-sugestao.done { opacity:.38; }
+.esc-sug-tipo { font-size:10px; font-weight:700; margin-bottom:7px; display:inline-block; text-transform:uppercase; letter-spacing:.05em; }
+.esc-sug-tipo.urgente { color:#FF6B6B; }
+.esc-sug-tipo.atencao { color:#F0A500; }
+.esc-sug-tipo.info { color:#6B7CFF; }
+.esc-sug-tipo.oportunidade { color:#00D87A; }
+.esc-sug-titulo { font-size:13px; font-weight:600; color:#C8C5BC; margin-bottom:6px; line-height:1.35; }
+.esc-sug-desc { font-size:12px; color:#636B82; line-height:1.55; white-space:pre-line; }
+.esc-sug-impacto { font-size:11px; color:#4A6A8A; margin-top:9px; padding:7px 10px; background:rgba(107,124,255,.07); border-radius:6px; border-left:2px solid rgba(107,124,255,.25); line-height:1.45; }
+.esc-sug-btn { margin-top:11px; width:100%; padding:8px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:7px; color:#6A7280; font-size:12px; font-weight:500; font-family:var(--font); cursor:pointer; transition:all .2s; }
+.esc-sug-btn:hover { background:rgba(255,255,255,0.08); color:#A0A8B8; }
+.esc-sug-btn.done { background:rgba(0,216,122,0.07); border-color:rgba(0,216,122,0.18); color:#00D87A; }
+/* Empty */
+.esc-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:60px 20px; color:#4A5568; text-align:center; flex:1; }
+.esc-empty-icon { font-size:38px; line-height:1; }
+.esc-empty-sub { font-size:12px; color:#2E3550; }
+/* Responsive */
+@media(max-width:768px){
+  .esc-legend { display:none; }
+  .esc-panel { width:100vw; max-width:100vw; }
+  #page-escritorio { margin:-24px -0px; }
+}
 </style>
 </head>
 <body>
@@ -1104,6 +1158,10 @@ body.sidebar-collapsed .hamburger { display: none; }
       <button class="nav-item" data-nav-key="mentoria" data-nav-label="Mentoria" onclick="go('mentoria',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         Mentoria
+      </button>
+      <button class="nav-item" data-nav-key="escritorio" data-nav-label="Escritório" onclick="go('escritorio',this);initEscritorioOnce()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+        Escritório
       </button>
       <button class="nav-item" id="nav-usuarios" data-nav-key="usuarios" data-nav-label="Usuários" onclick="go('usuarios',this);loadUsers()" style="display:none">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="23" y2="17"/><line x1="20" y1="14" x2="26" y2="14"/></svg>
@@ -1709,6 +1767,45 @@ body.sidebar-collapsed .hamburger { display: none; }
   </div>
 </div>
 
+    <!-- ESCRITÓRIO VIRTUAL -->
+    <div class="page" id="page-escritorio" style="display:none">
+      <div class="esc-header">
+        <div class="esc-header-left">
+          <h2>🏢 Escritório Virtual</h2>
+          <p>Clique em uma mesa para ver as sugestões do agente</p>
+        </div>
+        <div class="esc-meta">
+          <span id="esc-update-label">—</span>
+          <button class="esc-refresh-btn" onclick="escritorioRefresh()">↻ Atualizar</button>
+        </div>
+      </div>
+      <div class="esc-canvas-wrap" id="esc-canvas-wrap">
+        <canvas id="escritorio-canvas"></canvas>
+        <div class="esc-legend">
+          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#00D87A"></div>Gestor</div>
+          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#6B7CFF"></div>Analista</div>
+          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#F0A500"></div>Anúncios</div>
+          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#FF5F7E"></div>ADS</div>
+          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#22D3EE"></div>SAC</div>
+          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#A855F7"></div>Criativo</div>
+        </div>
+        <div class="esc-click-hint">Clique numa mesa ↑</div>
+      </div>
+      <!-- Side Panel -->
+      <div class="esc-panel" id="esc-panel">
+        <div class="esc-panel-header">
+          <div class="esc-panel-title-wrap">
+            <div class="esc-panel-dot" id="esc-panel-dot"></div>
+            <div id="esc-panel-title">Agente</div>
+          </div>
+          <button class="esc-panel-close" onclick="fecharEscritorioPanel()">✕</button>
+        </div>
+        <div id="esc-panel-body"></div>
+      </div>
+      <div class="esc-panel-overlay" id="esc-panel-overlay" onclick="fecharEscritorioPanel()"></div>
+    </div>
+
+
 <button class="fab" id="fab" onclick="fabAction()">+</button>
 
 <div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
@@ -1988,7 +2085,7 @@ function localDateStr(d){
 // NAV
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebar-overlay').classList.toggle('active')}
 function go(id,btn){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');if(p.id==='page-escritorio')p.style.display='none';});
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   if(btn) btn.classList.add('active');
@@ -1996,6 +2093,7 @@ function go(id,btn){
   if(id==='home') renderHome();
   if(id==='produtos'){ renderProdutos(); }
   if(id==='performance'){ refreshActivePerfSubtab(); }
+  if(id==='escritorio'){ var ep=document.getElementById('page-escritorio'); if(ep){ep.style.display='flex';} }
 }
 
 // ===== HOME DASHBOARD =====
@@ -8215,6 +8313,630 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }
   }
 })();
+
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ESCRITÓRIO VIRTUAL
+// ══════════════════════════════════════════════════════════════════════════════
+(function VirtualOffice() {
+  'use strict';
+
+  // ── Agentes e layout ───────────────────────────────────────────────────────
+  var AGENTS = [
+    { id:'gestor',   nome:'Gestor',   emoji:'🧭', cor:'#00D87A', gx:1.2,  gy:0.8 },
+    { id:'analista', nome:'Analista', emoji:'📊', cor:'#6B7CFF', gx:3.9,  gy:0.4 },
+    { id:'anuncios', nome:'Anúncios', emoji:'📢', cor:'#F0A500', gx:6.4,  gy:0.8 },
+    { id:'ads',      nome:'ADS',      emoji:'⚡', cor:'#FF5F7E', gx:1.2,  gy:3.5 },
+    { id:'sac',      nome:'SAC',      emoji:'💬', cor:'#22D3EE', gx:3.9,  gy:3.1 },
+    { id:'criativo', nome:'Criativo', emoji:'✨', cor:'#A855F7', gx:6.4,  gy:3.5 },
+  ];
+  var DESK_W=1.5, DESK_D=1.1, DESK_H=0.42;
+  var MON_W=0.56, MON_D=0.10, MON_H=0.74;
+  var TACOS_META=0.05;
+
+  // ── Estado ─────────────────────────────────────────────────────────────────
+  var canvas, ctx;
+  var TW=50, TH=25, TZ=48, OX=362, OY=55; // tile+origin, recalculated on resize
+  var dados={anuncios:[],ads:[],vendas:[],reviews:[],reputacao:null,skus:[]};
+  var sugestoes={}, alertCounts={}, doneMap={};
+  var animT=0, hitAreas=[], initialized=false, activeAgentId=null;
+
+  // ── ISO Math ───────────────────────────────────────────────────────────────
+  function iso(gx,gy,gz){ return {x:OX+(gx-gy)*TW, y:OY+(gx+gy)*TH-gz*TZ}; }
+
+  function hex2rgb(h){
+    h=h.replace('#','');
+    if(h.length===3) h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+    return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];
+  }
+  function mul(h,f){ var c=hex2rgb(h); return 'rgb('+[c[0]*f|0,c[1]*f|0,c[2]*f|0].map(function(v){return Math.min(255,v)}).join(',')+')'; }
+  function rgba(h,a){ var c=hex2rgb(h); return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'; }
+
+  // ── Draw helpers ───────────────────────────────────────────────────────────
+  function fillPoly(pts,color){
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    for(var i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
+    ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+  }
+  function strokePoly(pts,color,lw){
+    ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y);
+    for(var i=1;i<pts.length;i++) ctx.lineTo(pts[i].x,pts[i].y);
+    ctx.closePath(); ctx.strokeStyle=color||'rgba(0,0,0,0.28)'; ctx.lineWidth=lw||0.6; ctx.stroke();
+  }
+  function edge2(a,b,color){
+    ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+    ctx.strokeStyle=color||'rgba(0,0,0,0.28)'; ctx.lineWidth=0.6; ctx.stroke();
+  }
+
+  // ── Isometric box ──────────────────────────────────────────────────────────
+  function drawBox(gx,gy,gz,w,d,h,ct,cr,cf){
+    var tA=iso(gx,gy,gz+h),  tB=iso(gx+w,gy,gz+h);
+    var tC=iso(gx+w,gy+d,gz+h), tD=iso(gx,gy+d,gz+h);
+    var bB=iso(gx+w,gy,gz),  bC=iso(gx+w,gy+d,gz), bD=iso(gx,gy+d,gz);
+    // Top
+    fillPoly([tA,tB,tC,tD],ct); strokePoly([tA,tB,tC,tD]);
+    // Right (SE face)
+    fillPoly([tB,tC,bC,bB],cr); strokePoly([tB,tC,bC,bB]);
+    // Front (SW face)
+    fillPoly([tD,tC,bC,bD],cf); strokePoly([tD,tC,bC,bD]);
+    edge2(tC,bC); edge2(tD,bD);
+  }
+
+  // ── Floor tiles ────────────────────────────────────────────────────────────
+  function drawFloor(){
+    var GW=9, GD=7;
+    for(var gy=0;gy<GD;gy++){
+      for(var gx=0;gx<GW;gx++){
+        var A=iso(gx,gy,0),B=iso(gx+1,gy,0),C=iso(gx+1,gy+1,0),D=iso(gx,gy+1,0);
+        fillPoly([A,B,C,D],(gx+gy)%2===0?'#111520':'#0E1219');
+        strokePoly([A,B,C,D],'rgba(255,255,255,0.02)',0.4);
+      }
+    }
+  }
+
+  // ── Draw single desk ───────────────────────────────────────────────────────
+  function drawDesk(agent){
+    var gx=agent.gx, gy=agent.gy, cor=agent.cor;
+    var alertN=alertCounts[agent.id]||0;
+    var t=animT;
+
+    // Desk body
+    var dk='#192533';
+    drawBox(gx,gy,0,DESK_W,DESK_D,DESK_H,
+      mul(dk,1.4), mul(dk,0.88), mul(dk,0.68));
+
+    // Monitor stand
+    var sx=gx+DESK_W*0.5-0.04, sy=gy+DESK_D*0.2;
+    drawBox(sx,sy,DESK_H,0.07,0.05,0.18,'#243040','#1A2535','#131D28');
+
+    // Monitor back frame
+    var mx=gx+DESK_W*0.25, my=gy+DESK_D*0.12;
+    var pulse=alertN>0 ? 0.55+0.2*Math.sin(t*2.8) : 0.38;
+    drawBox(mx,my,DESK_H+0.18,MON_W,MON_D,MON_H,
+      mul(cor,pulse*1.3),
+      mul(cor,pulse*0.7),
+      mul(cor,pulse*0.55));
+
+    // Alert glow
+    if(alertN>0){
+      var gpt=iso(mx+MON_W*0.5, my+MON_D*0.5, DESK_H+0.18+MON_H*0.55);
+      var gr=TW*(1.0+0.2*Math.sin(t*2.8));
+      var grad=ctx.createRadialGradient(gpt.x,gpt.y,0,gpt.x,gpt.y,gr);
+      var rgb=hex2rgb(cor);
+      grad.addColorStop(0,'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',0.20)');
+      grad.addColorStop(1,'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',0)');
+      ctx.save(); ctx.fillStyle=grad;
+      ctx.beginPath();
+      ctx.ellipse(gpt.x,gpt.y,gr*1.5,gr*0.65,-0.25,0,Math.PI*2);
+      ctx.fill(); ctx.restore();
+    }
+
+    // Tiny screen graph bars (decorative)
+    var barBase=iso(mx+0.04, my+MON_D*0.5, DESK_H+0.18+0.04);
+    var barH=[0.15,0.25,0.12,0.32,0.20,0.28,0.18];
+    var barMaxPx=MON_H*TZ*0.55;
+    for(var bi=0;bi<barH.length;bi++){
+      var bx2=mx+0.05+bi*(MON_W-0.1)/barH.length;
+      var bw2=(MON_W-0.1)/barH.length-0.01;
+      var bh=barH[bi]*(0.9+0.1*Math.sin(t*0.6+bi*0.9));
+      var bBot=iso(bx2, my+MON_D*0.5, DESK_H+0.2);
+      var bTop=iso(bx2, my+MON_D*0.5, DESK_H+0.2+bh*0.65);
+      // draw as a vertical line in screen space
+      ctx.save();
+      ctx.globalAlpha=0.55+0.15*Math.sin(t*0.8+bi);
+      ctx.strokeStyle=rgba(cor,0.9);
+      ctx.lineWidth=Math.max(1.5, TW*0.04);
+      ctx.beginPath();
+      ctx.moveTo(bBot.x+bi*TW*0.06, bBot.y);
+      ctx.lineTo(bTop.x+bi*TW*0.06, bTop.y);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // Agent name label
+    var lpt=iso(gx+DESK_W*0.5, gy+DESK_D*0.5, DESK_H+MON_H+0.62);
+    ctx.save();
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.font='600 '+Math.max(10,Math.round(11.5*TW/50))+'px "DM Sans",sans-serif';
+    ctx.fillStyle=alertN>0?'#FFFFFF':rgba(cor,0.9);
+    ctx.fillText(agent.nome,lpt.x,lpt.y);
+    ctx.restore();
+
+    // Alert badge
+    if(alertN>0){
+      var bpulse=0.82+0.18*Math.sin(t*3.2);
+      var bscale=TW/50;
+      ctx.save(); ctx.globalAlpha=bpulse;
+      ctx.fillStyle='#E53535';
+      ctx.beginPath();
+      ctx.arc(lpt.x+30*bscale, lpt.y-11*bscale, 8*bscale,0,Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle='#FFFFFF';
+      ctx.font='bold '+Math.max(8,Math.round(9*bscale))+'px "DM Sans",sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(String(alertN), lpt.x+30*bscale, lpt.y-11*bscale);
+      ctx.restore();
+    }
+
+    // Hit area = desk top polygon
+    return {
+      agent:agent,
+      hitPts:[
+        iso(gx,gy,0), iso(gx+DESK_W,gy,0),
+        iso(gx+DESK_W,gy+DESK_D,0), iso(gx,gy+DESK_D,0)
+      ]
+    };
+  }
+
+  // ── Render loop ────────────────────────────────────────────────────────────
+  function drawFrame(ts){
+    animT=ts/1000;
+    if(!canvas||!ctx){ requestAnimationFrame(drawFrame); return; }
+    var w=canvas.width, h=canvas.height;
+    ctx.clearRect(0,0,w,h);
+
+    // Background
+    var bg=ctx.createLinearGradient(0,0,0,h);
+    bg.addColorStop(0,'#07090E'); bg.addColorStop(1,'#0B0F1A');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,w,h);
+
+    // Subtle ambient dots
+    for(var di=0;di<6;di++){
+      var dx=w*(0.15+di*0.14), dy=h*0.8+10*Math.sin(animT*0.3+di);
+      var ag=ctx.createRadialGradient(dx,dy,0,dx,dy,80);
+      ag.addColorStop(0,'rgba(107,124,255,0.03)');
+      ag.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=ag; ctx.fillRect(0,0,w,h);
+    }
+
+    drawFloor();
+
+    // Paint desks back-to-front (painter's algorithm)
+    hitAreas=[];
+    var sorted=AGENTS.slice().sort(function(a,b){return (a.gx+a.gy)-(b.gx+b.gy);});
+    for(var i=0;i<sorted.length;i++){
+      hitAreas.push(drawDesk(sorted[i]));
+    }
+
+    requestAnimationFrame(drawFrame);
+  }
+
+  // ── Point-in-polygon ───────────────────────────────────────────────────────
+  function ptInPoly(px,py,poly){
+    var inside=false, j=poly.length-1;
+    for(var i=0;i<poly.length;j=i++){
+      var xi=poly[i].x,yi=poly[i].y,xj=poly[j].x,yj=poly[j].y;
+      if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+
+  function getCanvasXY(e){
+    var rect=canvas.getBoundingClientRect();
+    var sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+    return {x:(e.clientX-rect.left)*sx, y:(e.clientY-rect.top)*sy};
+  }
+
+  function handleClick(e){
+    var pt=getCanvasXY(e);
+    for(var i=hitAreas.length-1;i>=0;i--){
+      if(ptInPoly(pt.x,pt.y,hitAreas[i].hitPts)){
+        openPanel(hitAreas[i].agent); return;
+      }
+    }
+  }
+  function handleMove(e){
+    var pt=getCanvasXY(e), over=false;
+    for(var i=0;i<hitAreas.length;i++){
+      if(ptInPoly(pt.x,pt.y,hitAreas[i].hitPts)){over=true;break;}
+    }
+    canvas.style.cursor=over?'pointer':'default';
+  }
+
+  // ── Side panel ─────────────────────────────────────────────────────────────
+  function tipoLabel(tipo){
+    return {urgente:'🔴 Urgente',atencao:'🟡 Atenção',info:'🔵 Info',oportunidade:'🟢 Oportunidade'}[tipo]||tipo;
+  }
+
+  function openPanel(agent){
+    activeAgentId=agent.id;
+    var panel=document.getElementById('esc-panel');
+    var body=document.getElementById('esc-panel-body');
+    document.getElementById('esc-panel-title').textContent=agent.emoji+' '+agent.nome;
+    var dot=document.getElementById('esc-panel-dot');
+    dot.style.background=agent.cor;
+    dot.style.boxShadow='0 0 8px '+agent.cor;
+
+    var sug=sugestoes[agent.id]||[];
+    if(sug.length===0){
+      body.innerHTML='<div class="esc-empty"><div class="esc-empty-icon">✓</div><div style="color:#A0A8B8;font-size:14px">Nenhum ponto de atenção</div><div class="esc-empty-sub">Tudo analisado e dentro do esperado.</div></div>';
+    } else {
+      body.innerHTML=sug.map(function(s,i){
+        var id=agent.id+'_'+i;
+        var done=!!doneMap[id];
+        return '<div class="esc-sugestao'+(done?' done':'')+'" data-sid="'+id+'">'+
+          '<div class="esc-sug-tipo '+s.tipo+'">'+tipoLabel(s.tipo)+'</div>'+
+          '<div class="esc-sug-titulo">'+escHtml(s.titulo)+'</div>'+
+          '<div class="esc-sug-desc">'+escHtml(s.descricao)+'</div>'+
+          (s.impacto?'<div class="esc-sug-impacto">💡 '+escHtml(s.impacto)+'</div>':'')+
+          '<button class="esc-sug-btn'+(done?' done':'')+'" onclick="escMarcarFeito(\''+id+'\',this)">'+(done?'✓ Feito':'Marcar como feito')+'</button>'+
+          '</div>';
+      }).join('');
+    }
+    panel.classList.add('open');
+    document.getElementById('esc-panel-overlay').classList.add('active');
+  }
+
+  function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  window.escMarcarFeito=function(id,btn){
+    doneMap[id]=!doneMap[id];
+    var card=document.querySelector('[data-sid="'+id+'"]');
+    if(card) card.classList.toggle('done',doneMap[id]);
+    btn.textContent=doneMap[id]?'✓ Feito':'Marcar como feito';
+    btn.classList.toggle('done',doneMap[id]);
+    // recalculate alert count for this agent
+    if(activeAgentId){
+      var sug=sugestoes[activeAgentId]||[];
+      var nDone=sug.filter(function(_,i){return !!doneMap[activeAgentId+'_'+i];}).length;
+      alertCounts[activeAgentId]=Math.max(0,(sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length)-nDone);
+    }
+  };
+
+  window.fecharEscritorioPanel=function(){
+    document.getElementById('esc-panel').classList.remove('open');
+    document.getElementById('esc-panel-overlay').classList.remove('active');
+  };
+
+  // ── Data fetch ─────────────────────────────────────────────────────────────
+  async function fetchDados(){
+    try {
+      // Latest snapshot date
+      var snapRes=await sb.from('ml_anuncios').select('data').order('data',{ascending:false}).limit(1).single();
+      var snapDate=snapRes.data&&snapRes.data.data;
+
+      // All catalog anúncios from latest snapshot
+      var anRes=await sb.from('ml_anuncios')
+        .select('item_id,sku,titulo,preco,preco_concorrente,buybox_status,saude,experiencia_valor,experiencia_texto,estoque,estoque_full,catalog_listing,status,visit_share')
+        .eq('data',snapDate||'2099-01-01');
+
+      // ADS last 7 days (no preliminar)
+      var d7=new Date(); d7.setDate(d7.getDate()-7);
+      var d7s=d7.toISOString().slice(0,10);
+      var adsRes=await sb.from('ml_ads_reports')
+        .select('item_id,gasto,vendas_atribuidas,impressoes,cliques,ctr,unidades_ads')
+        .gte('data',d7s).neq('preliminar',true);
+
+      // Vendas last 7 days
+      var venRes=await sb.from('ml_vendas')
+        .select('item_id,receita,pedidos').gte('data',d7s);
+
+      // Bad reviews
+      var revRes=await sb.from('ml_reviews')
+        .select('item_id,nota,comentario,data').lte('nota',3)
+        .order('data',{ascending:false}).limit(15);
+
+      // Reputação
+      var repRes=await sb.from('ml_reputacao')
+        .select('nivel,reclamacoes,cancelamentos,tempo_envio').order('data',{ascending:false}).limit(1).single();
+
+      // SKUs config
+      var skuRes=await sb.from('skus').select('sku,tacos_alvo,estoque_minimo');
+
+      dados={
+        anuncios:anRes.data||[], ads:adsRes.data||[],
+        vendas:venRes.data||[], reviews:revRes.data||[],
+        reputacao:repRes.data||null, skus:skuRes.data||[],
+        snapDate:snapDate
+      };
+    } catch(e){ console.error('[Escritório] fetch error',e); }
+  }
+
+  // ── Suggestion engine ─────────────────────────────────────────────────────
+  function pct(v){ return (((v||0)*100).toFixed(1))+'%'; }
+  function fmtR(v){ return 'R$'+((v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})); }
+
+  function buildSugestoes(){
+    var an=dados.anuncios, ads=dados.ads, ven=dados.vendas, rev=dados.reviews;
+    var rep=dados.reputacao, skus=dados.skus;
+
+    // Build maps
+    var adsMap={};
+    ads.forEach(function(r){
+      if(!adsMap[r.item_id]) adsMap[r.item_id]={gasto:0,vendas:0,imp:0,cliques:0};
+      adsMap[r.item_id].gasto+=r.gasto||0;
+      adsMap[r.item_id].vendas+=r.vendas_atribuidas||0;
+      adsMap[r.item_id].imp+=r.impressoes||0;
+      adsMap[r.item_id].cliques+=r.cliques||0;
+    });
+    var venMap={};
+    ven.forEach(function(r){
+      if(!venMap[r.item_id]) venMap[r.item_id]={receita:0,pedidos:0};
+      venMap[r.item_id].receita+=r.receita||0;
+      venMap[r.item_id].pedidos+=r.pedidos||0;
+    });
+    var skuMap={};
+    skus.forEach(function(s){ skuMap[s.sku]=s; });
+
+    var totalRec=Object.values(venMap).reduce(function(a,v){return a+v.receita;},0);
+    var totalGas=Object.values(adsMap).reduce(function(a,v){return a+v.gasto;},0);
+    var globalTacos=totalRec>0?totalGas/totalRec:0;
+
+    // — ANALISTA —
+    (function(){
+      var sug=[];
+      var catalog=an.filter(function(a){return a.catalog_listing;});
+      var bbLosing=catalog.filter(function(a){
+        return a.buybox_status==='losing'||a.buybox_status===false||
+          (a.preco_concorrente>0&&a.preco>a.preco_concorrente*1.01);
+      });
+      bbLosing.slice(0,5).forEach(function(a){
+        var diff=(a.preco||0)-(a.preco_concorrente||0);
+        sug.push({tipo:'urgente',
+          titulo:'Buy Box perdido: '+(a.sku||a.item_id),
+          descricao:'Seu preço '+fmtR(a.preco)+' vs concorrente '+fmtR(a.preco_concorrente||0)+'\nDiferença: '+fmtR(diff),
+          impacto:'Recuperar o Buy Box pode aumentar a conversão em até 40%.'});
+      });
+      catalog.filter(function(a){
+        return !bbLosing.includes(a)&&(a.preco_concorrente>0)&&a.preco>a.preco_concorrente*1.05;
+      }).slice(0,3).forEach(function(a){
+        sug.push({tipo:'atencao',
+          titulo:'Preço 5%+ acima: '+(a.sku||a.item_id),
+          descricao:fmtR(a.preco)+' vs '+fmtR(a.preco_concorrente||0)+' do catálogo.',
+          impacto:'Alinhar preço pode melhorar ranking e visibilidade no catálogo.'});
+      });
+      if(sug.length===0) sug.push({tipo:'oportunidade',titulo:'Buy Box ok',
+        descricao:'Todos os anúncios de catálogo estão competitivos no momento.',impacto:null});
+      sugestoes.analista=sug;
+      alertCounts.analista=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
+    })();
+
+    // — ADS —
+    (function(){
+      var sug=[];
+      if(globalTacos>TACOS_META*1.3){
+        sug.push({tipo:'urgente',
+          titulo:'TACOS global: '+pct(globalTacos)+' (meta '+pct(TACOS_META)+')',
+          descricao:'Últimos 7 dias: gasto '+fmtR(totalGas)+', receita '+fmtR(totalRec)+'.',
+          impacto:'Revise os lances dos anúncios com ACOS mais alto.'});
+      }
+      Object.entries(adsMap)
+        .filter(function(e){return e[1].vendas>0&&e[1].gasto/e[1].vendas>TACOS_META*1.5;})
+        .map(function(e){return {item_id:e[0],acos:e[1].gasto/e[1].vendas,gasto:e[1].gasto,vendas:e[1].vendas};})
+        .sort(function(a,b){return b.acos-a.acos;})
+        .slice(0,4).forEach(function(r){
+          var a=an.find(function(x){return x.item_id===r.item_id;});
+          sug.push({tipo:'atencao',
+            titulo:'ACOS alto: '+(a&&a.sku||r.item_id),
+            descricao:'ACOS '+pct(r.acos)+' — gasto '+fmtR(r.gasto)+' / vendas ADS '+fmtR(r.vendas)+'.',
+            impacto:'Reduza o lance em 15-20% ou pause por 3 dias e reavalie.'});
+        });
+      an.filter(function(a){return a.status==='active'&&!(adsMap[a.item_id]&&adsMap[a.item_id].imp>0);})
+        .slice(0,3).forEach(function(a){
+          sug.push({tipo:'atencao',
+            titulo:'Sem impressões (7d): '+(a.sku||a.item_id),
+            descricao:'Anúncio ativo mas sem tráfego ADS nos últimos 7 dias.',
+            impacto:'Lance pode estar abaixo do mínimo sugerido. Aumente ou revise.'});
+        });
+      Object.entries(adsMap)
+        .filter(function(e){return e[1].imp>500&&e[1].cliques/e[1].imp<0.003;})
+        .map(function(e){return {item_id:e[0],ctr:e[1].cliques/e[1].imp,imp:e[1].imp};})
+        .sort(function(a,b){return a.ctr-b.ctr;})
+        .slice(0,2).forEach(function(r){
+          var a=an.find(function(x){return x.item_id===r.item_id;});
+          sug.push({tipo:'info',
+            titulo:'CTR baixo: '+(a&&a.sku||r.item_id),
+            descricao:'CTR '+pct(r.ctr)+' com '+r.imp.toLocaleString('pt-BR')+' impressões.',
+            impacto:'Troque a foto principal ou ajuste o título para melhorar CTR.'});
+        });
+      if(sug.length===0) sug.push({tipo:'oportunidade',titulo:'ADS saudável',
+        descricao:'TACOS global '+pct(globalTacos)+'. Dentro da meta de '+pct(TACOS_META)+'.',impacto:null});
+      sugestoes.ads=sug;
+      alertCounts.ads=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
+    })();
+
+    // — ANÚNCIOS —
+    (function(){
+      var sug=[];
+      an.filter(function(a){return a.saude!=null&&a.saude<75;}).slice(0,4).forEach(function(a){
+        sug.push({tipo:a.saude<50?'urgente':'atencao',
+          titulo:'Saúde baixa: '+(a.sku||a.item_id),
+          descricao:'Saúde: '+a.saude+'%'+(a.catalog_listing?' (catálogo)':'')+'.',
+          impacto:'Melhore fotos, descrição e atributos para aumentar a saúde.'});
+      });
+      an.filter(function(a){return a.experiencia_valor!=null&&a.experiencia_valor<=60;}).slice(0,4).forEach(function(a){
+        sug.push({tipo:'urgente',
+          titulo:'Experiência '+pct((a.experiencia_valor||0)/100)+': '+(a.sku||a.item_id),
+          descricao:a.experiencia_texto||'Experiência de compra comprometida.',
+          impacto:'Nível baixo reduz visibilidade no catálogo. Verifique reclamações.'});
+      });
+      an.filter(function(a){
+        var min=(skuMap[a.sku]&&skuMap[a.sku].estoque_minimo)||3;
+        return (a.estoque||0)>0&&(a.estoque||0)<=min;
+      }).slice(0,4).forEach(function(a){
+        var min=(skuMap[a.sku]&&skuMap[a.sku].estoque_minimo)||3;
+        sug.push({tipo:'atencao',
+          titulo:'Estoque crítico: '+(a.sku||a.item_id),
+          descricao:'Estoque: '+a.estoque+' un (mín '+min+'). Full: '+(a.estoque_full||0)+' un.',
+          impacto:'Reabastecer para evitar ruptura e queda no ranking.'});
+      });
+      var pausados=an.filter(function(a){return a.status==='paused';});
+      if(pausados.length>0){
+        sug.push({tipo:'info',
+          titulo:pausados.length+' anúncio(s) pausado(s)',
+          descricao:'SKUs: '+pausados.slice(0,5).map(function(a){return a.sku||a.item_id;}).join(', ')+'.',
+          impacto:'Confirme se a pausa é intencional.'});
+      }
+      if(sug.length===0) sug.push({tipo:'oportunidade',titulo:'Listings ok',
+        descricao:'Saúde, experiência e estoques dentro do esperado.',impacto:null});
+      sugestoes.anuncios=sug;
+      alertCounts.anuncios=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
+    })();
+
+    // — SAC —
+    (function(){
+      var sug=[];
+      if(!rev||rev.length===0){
+        sug.push({tipo:'oportunidade',titulo:'Sem avaliações negativas recentes',
+          descricao:'Nenhuma avaliação de 1-3★ nos registros recentes.',impacto:null});
+      }
+      (rev||[]).slice(0,6).forEach(function(r){
+        var a=an.find(function(x){return x.item_id===r.item_id;});
+        sug.push({tipo:r.nota<=2?'urgente':'atencao',
+          titulo:r.nota+'★ — '+(a&&a.sku||r.item_id),
+          descricao:r.comentario
+            ?'"'+r.comentario.slice(0,130)+(r.comentario.length>130?'…':'')+'"'
+            :'Avaliação sem comentário.',
+          impacto:r.nota<=2
+            ?'Nota muito baixa. Considere entrar em contato com o comprador.'
+            :'Responda à avaliação para demonstrar cuidado com o cliente.'});
+      });
+      if(rep){
+        if((rep.reclamacoes||0)>3) sug.push({tipo:'urgente',
+          titulo:'Reclamações elevadas: '+(rep.reclamacoes||0)+'%',
+          descricao:'Nível: '+(rep.nivel||'—')+'. Cancelamentos: '+(rep.cancelamentos||0)+'%.',
+          impacto:'Alto índice de reclamações pode derrubar a reputação no ML.'});
+        if((rep.tempo_envio||0)>5) sug.push({tipo:'atencao',
+          titulo:'Atraso de envio: '+(rep.tempo_envio||0)+'%',
+          descricao:'Percentual de pedidos entregues fora do prazo comprometido.',
+          impacto:'Atrasos acumulados afetam o termômetro da conta.'});
+      }
+      sugestoes.sac=sug;
+      alertCounts.sac=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
+    })();
+
+    // — CRIATIVO —
+    (function(){
+      var sug=[];
+      an.filter(function(a){return a.titulo&&a.titulo.length<45;}).slice(0,4).forEach(function(a){
+        sug.push({tipo:'atencao',
+          titulo:'Título curto ('+a.titulo.length+' chars): '+(a.sku||a.item_id),
+          descricao:'"'+a.titulo+'"',
+          impacto:'Títulos com 60+ chars e palavras-chave melhoram indexação e CTR.'});
+      });
+      an.filter(function(a){return a.visit_share!=null&&a.visit_share<5&&a.status==='active';}).slice(0,3).forEach(function(a){
+        sug.push({tipo:'info',
+          titulo:'Visit share baixo: '+(a.sku||a.item_id),
+          descricao:'Share de visitas: '+((a.visit_share||0).toFixed(1))+'% do tráfego do catálogo.',
+          impacto:'Revise foto principal, preço e título para aumentar participação.'});
+      });
+      sug.push({tipo:'info',
+        titulo:'Oportunidade: Teste A/B de foto',
+        descricao:'Troque a foto principal de um produto de baixo CTR e monitore por 7 dias.',
+        impacto:'Fotos em fundo branco com produto centralizado aumentam CTR em 15-30%.'});
+      if(sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length===0&&sug.length<=1){
+        sug.unshift({tipo:'oportunidade',titulo:'Listings dentro do padrão',
+          descricao:'Títulos e indicadores criativos ok.',impacto:null});
+      }
+      sugestoes.criativo=sug;
+      alertCounts.criativo=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
+    })();
+
+    // — GESTOR (consolidado) —
+    (function(){
+      var sug=[];
+      var totalPed=Object.values(venMap).reduce(function(a,v){return a+v.pedidos;},0);
+      sug.push({tipo:'info',
+        titulo:'Resumo — últimos 7 dias',
+        descricao:'Faturamento: '+fmtR(totalRec)+'\nPedidos: '+totalPed+'\nGasto ADS: '+fmtR(totalGas)+'\nTACOS: '+pct(globalTacos),
+        impacto:null});
+
+      var urgentes=[];
+      Object.entries(sugestoes).forEach(function(e){
+        var agId=e[0], sList=e[1];
+        sList.forEach(function(s){
+          if(s.tipo==='urgente') urgentes.push(Object.assign({},s,{agente:agId.toUpperCase()}));
+        });
+      });
+      if(urgentes.length>0){
+        sug.push({tipo:'urgente',
+          titulo:urgentes.length+' ponto(s) urgente(s) para hoje',
+          descricao:urgentes.slice(0,4).map(function(u){return '• ['+u.agente+'] '+u.titulo;}).join('\n'),
+          impacto:'Acesse cada agente para ver os detalhes e marcar como resolvido.'});
+      } else {
+        sug.push({tipo:'oportunidade',titulo:'Nenhum alerta urgente',
+          descricao:'Todos os agentes sem pontos críticos no momento.',impacto:null});
+      }
+      if(rep){
+        sug.push({tipo:(rep.nivel||'').toLowerCase().includes('plat')||(rep.nivel||'').toLowerCase().includes('gold')?'oportunidade':'info',
+          titulo:'Reputação: '+(rep.nivel||'—'),
+          descricao:'Reclamações: '+(rep.reclamacoes||0)+'% | Cancelamentos: '+(rep.cancelamentos||0)+'% | Envio no prazo: '+(100-(rep.tempo_envio||0))+'%',
+          impacto:null});
+      }
+      sugestoes.gestor=sug;
+      alertCounts.gestor=urgentes.length;
+    })();
+  }
+
+  // ── Canvas setup ───────────────────────────────────────────────────────────
+  function resizeCanvas(){
+    var wrap=document.getElementById('esc-canvas-wrap');
+    if(!wrap||!canvas) return;
+    var w=wrap.clientWidth;
+    var h=Math.max(340,Math.min(520,Math.round(w*0.52)));
+    canvas.width=w; canvas.height=h;
+    var s=w/880;
+    TW=50*s; TH=25*s; TZ=48*s; OX=362*s; OY=55*s;
+  }
+
+  function initCanvas(){
+    canvas=document.getElementById('escritorio-canvas');
+    if(!canvas) return;
+    ctx=canvas.getContext('2d');
+    resizeCanvas();
+    if(window.ResizeObserver){
+      new ResizeObserver(resizeCanvas).observe(document.getElementById('esc-canvas-wrap'));
+    } else { window.addEventListener('resize',resizeCanvas); }
+    canvas.addEventListener('click',handleClick);
+    canvas.addEventListener('mousemove',handleMove);
+    canvas.addEventListener('touchend',function(e){
+      e.preventDefault();
+      var t=e.changedTouches[0];
+      handleClick({clientX:t.clientX,clientY:t.clientY});
+    },{passive:false});
+  }
+
+  // ── Public API ─────────────────────────────────────────────────────────────
+  window.initEscritorioOnce=function(){
+    if(initialized) return;
+    initialized=true;
+    initCanvas();
+    requestAnimationFrame(drawFrame);
+    window.escritorioRefresh();
+    setInterval(window.escritorioRefresh,10*60*1000);
+  };
+
+  window.escritorioRefresh=async function(){
+    var el=document.getElementById('esc-update-label');
+    if(el) el.textContent='Atualizando…';
+    await fetchDados();
+    buildSugestoes();
+    if(el) el.textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  };
+
+})(); // end VirtualOffice
+
 </script>
 
 </body>
