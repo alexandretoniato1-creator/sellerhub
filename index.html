@@ -1836,6 +1836,30 @@ body.sidebar-collapsed .hamburger { display: none; }
 
 
 
+    <div class="page" id="page-mentoria">
+      <div style="display:flex;height:calc(100vh - 60px);overflow:hidden">
+        <!-- Sidebar de mentorados -->
+        <div id="ment-sidebar" style="width:240px;background:#1A1A18;display:flex;flex-direction:column;flex-shrink:0">
+          <div style="padding:20px 16px 12px">
+            <div style="font-family:var(--mono);font-size:10px;color:#57534E;letter-spacing:.1em;margin-bottom:14px">MENTORIA</div>
+            <div style="display:flex;gap:8px;margin-bottom:16px">
+              <div style="flex:1;background:#242220;border-radius:8px;padding:10px;text-align:center">
+                <div id="ment-stat-ativos" style="font-family:Georgia,serif;font-size:20px;color:#86EFAC;line-height:1">0</div>
+                <div style="font-size:9px;color:#57534E;font-family:var(--mono);margin-top:3px">ATIVOS</div>
+              </div>
+              <div style="flex:1;background:#242220;border-radius:8px;padding:10px;text-align:center">
+                <div id="ment-stat-agend" style="font-family:Georgia,serif;font-size:20px;color:#FCD34D;line-height:1">0</div>
+                <div style="font-size:9px;color:#57534E;font-family:var(--mono);margin-top:3px">AGEND.</div>
+              </div>
+              <div style="flex:1;background:#242220;border-radius:8px;padding:10px;text-align:center">
+                <div id="ment-stat-aulas" style="font-family:Georgia,serif;font-size:20px;color:#F5F2EC;line-height:1">0</div>
+                <div style="font-size:9px;color:#57534E;font-family:var(--mono);margin-top:3px">MÊS</div>
+              </div>
+            </div>
+            <button onclick="mentOpenNovoAluno()" style="width:100%;padding:8px;border-radius:7px;border:1px solid #3C3835;background:transparent;color:#A8A29E;font-family:var(--font);font-size:12px;cursor:pointer;text-align:left">+ Novo mentorado</button>
+          </div>
+          <div id="ment-alunos-list" style="flex:1;overflow-y:auto;padding:0 10px 10px"></div>
+        </div>
         <!-- conteúdo principal -->
         <div id="ment-main" style="flex:1;overflow-y:auto;background:#F5F2EC">
 
