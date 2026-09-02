@@ -1656,9 +1656,78 @@ body.sidebar-collapsed .hamburger { display: none; }
       </div>
       <div class="sku-drawer-body" id="prod-drawer-body"></div>
     </div>
+    <!-- AGENDA HUB -->
+    <div class="page" id="page-agenda">
+      <div class="hub-secondary-nav" id="agenda-tabs">
+        <button class="hub-secondary-btn active" id="ag-tab-agenda" onclick="agGoTab('agenda',this)">📅 Agenda</button>
+        <button class="hub-secondary-btn" id="ag-tab-anotacoes" onclick="agGoTab('anotacoes',this)">📝 Anotações
+          <span class="nav-badge" id="badge-ag" style="display:none;margin-left:4px">0</span>
+        </button>
+        <button class="hub-secondary-btn" id="ag-tab-ideias" onclick="agGoTab('ideias',this)">💡 Ideias</button>
+      </div>
+      <!-- Secao Agenda Calendario -->
+      <div id="ag-section-agenda">
+      <!-- Header -->
+      <div class="cal-header">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="calPrev()">&#8592;</button>
+          <div class="cal-month" id="cal-month-label"></div>
+          <button class="cal-nav-btn" onclick="calNext()">&#8594;</button>
+          <button class="cal-today-btn" onclick="calGoToday()">Hoje</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div class="cal-legend">
+            <div class="cal-legend-item"><div class="cal-legend-dot dot-contrato"></div>Contrato</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot dot-lancamento"></div>Lançamento</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot dot-mentoria"></div>Mentoria</div>
+            <div class="cal-legend-item"><div class="cal-legend-dot dot-anotacao"></div>Anotação</div>
+          </div>
+          <div class="cal-view-toggle">
+            <button class="cal-view-btn active" id="btn-view-month" onclick="setCalView('month')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Mês
+            </button>
+            <button class="cal-view-btn" id="btn-view-list" onclick="setCalView('list')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>Lista
+            </button>
+          </div>
+        </div>
+      </div>
 
-      </div><!-- /ag-section-agenda -->
-      <!-- Secao Anotacoes embutida -->
+      <!-- Wrapper que contém mês ou lista -->
+      <div class="agenda-wrap">
+
+        <!-- Vista Mês -->
+        <div class="agenda-layout" id="cal-month-view">
+          <div class="cal-main">
+            <div class="cal-weekdays" id="cal-weekdays-row">
+              <div class="cal-weekday">Dom</div><div class="cal-weekday">Seg</div><div class="cal-weekday">Ter</div>
+              <div class="cal-weekday">Qua</div><div class="cal-weekday">Qui</div><div class="cal-weekday">Sex</div>
+              <div class="cal-weekday">Sáb</div>
+            </div>
+            <div class="cal-days" id="cal-days"></div>
+          </div>
+          <div class="cal-sidebar">
+            <div class="cal-sidebar-date">
+              <div class="cal-sidebar-date-label" id="cal-sidebar-date-label">Hoje</div>
+              <div class="cal-sidebar-date-sub" id="cal-sidebar-date-sub"></div>
+            </div>
+            <div class="cal-sidebar-events" id="cal-sidebar-events"></div>
+            <div class="cal-sidebar-add">
+              <button class="cal-sidebar-add-btn" id="cal-add-btn" onclick="openCalModal(null, calSelectedDate)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Novo evento
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vista Lista -->
+        <div id="cal-list-view" style="display:none;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);overflow:hidden;flex:1;min-height:0">
+          <div class="cal-list-view" id="cal-list-content"></div>
+        </div>
+
+      </div>
+
       <div id="ag-section-anotacoes" style="display:none">
       <div class="notes-layout">
         <!-- SIDEBAR: filtros + lista -->
@@ -1743,10 +1812,9 @@ body.sidebar-collapsed .hamburger { display: none; }
           </div>
         </div>
       </div>
-    </div>
 
       </div><!-- /ag-section-anotacoes -->
-      <!-- Secao Ideias embutida -->
+
       <div id="ag-section-ideias" style="display:none">
       <div class="page-title">Ideias de Produtos</div>
       <div class="page-subtitle">Pipeline de novas oportunidades</div>
@@ -1764,80 +1832,6 @@ body.sidebar-collapsed .hamburger { display: none; }
       </div>
       <div class="kanban-board" id="board"></div>
     </div>
-    <!-- AGENDA HUB -->
-    <div class="page" id="page-agenda">
-      <div class="hub-secondary-nav" id="agenda-tabs">
-        <button class="hub-secondary-btn active" id="ag-tab-agenda" onclick="agGoTab('agenda',this)">📅 Agenda</button>
-        <button class="hub-secondary-btn" id="ag-tab-anotacoes" onclick="agGoTab('anotacoes',this)">📝 Anotações
-          <span class="nav-badge" id="badge-ag" style="display:none;margin-left:4px">0</span>
-        </button>
-        <button class="hub-secondary-btn" id="ag-tab-ideias" onclick="agGoTab('ideias',this)">💡 Ideias</button>
-      </div>
-      <!-- Secao Agenda Calendario -->
-      <div id="ag-section-agenda">
-      <!-- Header -->
-      <div class="cal-header">
-        <div class="cal-nav">
-          <button class="cal-nav-btn" onclick="calPrev()">&#8592;</button>
-          <div class="cal-month" id="cal-month-label"></div>
-          <button class="cal-nav-btn" onclick="calNext()">&#8594;</button>
-          <button class="cal-today-btn" onclick="calGoToday()">Hoje</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          <div class="cal-legend">
-            <div class="cal-legend-item"><div class="cal-legend-dot dot-contrato"></div>Contrato</div>
-            <div class="cal-legend-item"><div class="cal-legend-dot dot-lancamento"></div>Lançamento</div>
-            <div class="cal-legend-item"><div class="cal-legend-dot dot-mentoria"></div>Mentoria</div>
-            <div class="cal-legend-item"><div class="cal-legend-dot dot-anotacao"></div>Anotação</div>
-          </div>
-          <div class="cal-view-toggle">
-            <button class="cal-view-btn active" id="btn-view-month" onclick="setCalView('month')">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></svg>Mês
-            </button>
-            <button class="cal-view-btn" id="btn-view-list" onclick="setCalView('list')">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>Lista
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Wrapper que contém mês ou lista -->
-      <div class="agenda-wrap">
-
-        <!-- Vista Mês -->
-        <div class="agenda-layout" id="cal-month-view">
-          <div class="cal-main">
-            <div class="cal-weekdays" id="cal-weekdays-row">
-              <div class="cal-weekday">Dom</div><div class="cal-weekday">Seg</div><div class="cal-weekday">Ter</div>
-              <div class="cal-weekday">Qua</div><div class="cal-weekday">Qui</div><div class="cal-weekday">Sex</div>
-              <div class="cal-weekday">Sáb</div>
-            </div>
-            <div class="cal-days" id="cal-days"></div>
-          </div>
-          <div class="cal-sidebar">
-            <div class="cal-sidebar-date">
-              <div class="cal-sidebar-date-label" id="cal-sidebar-date-label">Hoje</div>
-              <div class="cal-sidebar-date-sub" id="cal-sidebar-date-sub"></div>
-            </div>
-            <div class="cal-sidebar-events" id="cal-sidebar-events"></div>
-            <div class="cal-sidebar-add">
-              <button class="cal-sidebar-add-btn" id="cal-add-btn" onclick="openCalModal(null, calSelectedDate)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Novo evento
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Vista Lista -->
-        <div id="cal-list-view" style="display:none;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);overflow:hidden;flex:1;min-height:0">
-          <div class="cal-list-view" id="cal-list-content"></div>
-        </div>
-
-      </div>
-    </div>
-
-      </div><!-- /ag-section-ideias -->
     </div><!-- /page-agenda hub -->
 
 
