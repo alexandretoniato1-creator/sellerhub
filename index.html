@@ -1097,6 +1097,154 @@ body.sidebar-collapsed .hamburger { display: none; }
   .esc-panel { width:100vw; max-width:100vw; }
   #page-escritorio { left:0; }
 }
+
+/* ── FINANCEIRO ───────────────────────────────────────────────────────────── */
+.fin-container { max-width:1080px; margin:0 auto; padding-bottom:80px; }
+
+/* Header */
+.fin-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+.fin-saude-badge { display:flex; align-items:center; gap:7px; margin-bottom:5px; }
+.fin-saude-dot { width:8px; height:8px; border-radius:50%; background:#9A9A90; flex-shrink:0; }
+.fin-saude-dot.verde { background:#3B6D11; }
+.fin-saude-dot.amarelo { background:#E8A000; }
+.fin-saude-dot.critico { background:#D85A30; }
+.fin-saude-label { font-size:11px; font-weight:700; color:#9A9A90; letter-spacing:.08em; font-family:var(--mono); text-transform:uppercase; }
+.fin-saude-label.verde { color:#3B6D11; }
+.fin-saude-label.amarelo { color:#B07A00; }
+.fin-saude-label.critico { color:#D85A30; }
+.fin-title { font-size:26px; font-weight:700; color:var(--text); letter-spacing:-.5px; margin:0 0 4px; }
+.fin-subtitle { font-size:13px; color:#9A9A90; margin:0; }
+.fin-select { border:1.5px solid var(--coral-500); background:transparent; color:var(--coral-500); font-family:var(--font); font-size:13px; font-weight:600; padding:7px 30px 7px 12px; border-radius:8px; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23D85A30'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; min-width:160px; }
+
+/* Hero card */
+.fin-hero-card { background:linear-gradient(135deg,#f0faf4 0%,#e6f7ed 100%); border:1.5px solid rgba(59,109,17,.2); border-radius:14px; padding:22px 28px; margin-bottom:16px; position:relative; overflow:hidden; }
+.fin-hero-card::after { content:''; position:absolute; top:-30px; right:-30px; width:140px; height:140px; border-radius:50%; background:rgba(59,109,17,.05); pointer-events:none; }
+.fin-hero-card.amarelo { background:linear-gradient(135deg,#fffcf0,#fff8e0); border-color:rgba(232,160,0,.25); }
+.fin-hero-card.critico { background:linear-gradient(135deg,#fff5f2,#feeee8); border-color:rgba(216,90,48,.22); }
+.fin-hero-label { font-size:11px; font-weight:700; color:#3B6D11; letter-spacing:.1em; text-transform:uppercase; font-family:var(--mono); margin-bottom:8px; }
+.fin-hero-card.amarelo .fin-hero-label { color:#B07A00; }
+.fin-hero-card.critico .fin-hero-label { color:#C0390F; }
+.fin-hero-value { font-size:40px; font-weight:700; color:#3B6D11; font-family:var(--mono); letter-spacing:-1px; line-height:1.05; margin-bottom:10px; }
+.fin-hero-card.amarelo .fin-hero-value { color:#B07A00; }
+.fin-hero-card.critico .fin-hero-value { color:#C0390F; }
+.fin-hero-foot { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.fin-hero-badge { display:inline-flex; align-items:center; gap:4px; background:rgba(59,109,17,.1); color:#3B6D11; font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px; border:1px solid rgba(59,109,17,.2); }
+.fin-hero-card.amarelo .fin-hero-badge { background:rgba(232,160,0,.1); color:#B07A00; border-color:rgba(232,160,0,.2); }
+.fin-hero-card.critico .fin-hero-badge { background:rgba(216,90,48,.1); color:#C0390F; border-color:rgba(216,90,48,.2); }
+.fin-hero-vs { font-size:13px; color:#3B6D11; font-family:var(--mono); font-weight:600; }
+.fin-hero-card.critico .fin-hero-vs { color:#C0390F; }
+
+/* KPI row */
+.fin-kpi-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+.fin-kpi { background:#fff; border:1px solid rgba(0,0,0,.07); border-radius:10px; padding:14px 18px; }
+.fin-kpi-label { font-size:10px; font-weight:700; color:#9A9A90; letter-spacing:.07em; text-transform:uppercase; font-family:var(--mono); margin-bottom:5px; display:flex; align-items:center; gap:5px; }
+.fin-kpi-tip { display:inline-flex; align-items:center; justify-content:center; width:13px; height:13px; border-radius:50%; background:#EEEBE6; color:#999; font-size:9px; cursor:default; font-style:normal; }
+.fin-kpi-value { font-size:21px; font-weight:700; color:var(--text); font-family:var(--mono); letter-spacing:-.4px; }
+
+/* Body layout */
+.fin-body { display:grid; grid-template-columns:156px 1fr; gap:24px; align-items:start; }
+.fin-subnav { display:flex; flex-direction:column; gap:2px; }
+.fin-subnav-section { font-size:10px; font-weight:700; color:#C8C5BC; letter-spacing:.07em; text-transform:uppercase; font-family:var(--mono); padding:0 8px 8px; }
+.fin-subnav-btn { background:none; border:none; text-align:left; padding:8px 10px; border-radius:7px; font-family:var(--font); font-size:13px; color:#6A6A60; cursor:pointer; transition:all .15s; position:relative; font-weight:500; width:100%; }
+.fin-subnav-btn:hover { background:#F0EDE8; color:var(--text); }
+.fin-subnav-btn.active { background:#F0EDE8; color:var(--text); font-weight:600; }
+.fin-subnav-btn.active::before { content:''; position:absolute; left:0; top:5px; bottom:5px; width:3px; background:var(--coral-500); border-radius:0 3px 3px 0; }
+
+/* Cascata */
+.fin-view-title { font-size:15px; font-weight:700; color:var(--text); margin:0 0 4px; }
+.fin-view-hint { font-size:12px; color:#B8B5AD; font-style:italic; }
+.fin-view-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
+.fin-cline { display:grid; grid-template-columns:18px 1fr auto 140px; align-items:center; gap:0; padding:6px 0; border-bottom:1px solid #F2F0EC; }
+.fin-cline:last-of-type { border-bottom:none; }
+.fin-cline.result { grid-template-columns:18px 1fr auto 140px; padding:10px 0; border-top:2px solid #E8E6E0; border-bottom:none; margin-top:6px; }
+.fin-c-sinal { font-size:13px; color:#B8B5AD; font-weight:600; font-family:var(--mono); }
+.fin-c-label { font-size:13px; color:#555550; font-weight:500; padding-right:12px; }
+.fin-cline.result .fin-c-label { font-weight:700; color:var(--text); font-size:14px; }
+.fin-c-bar { height:8px; background:#F4F2EE; border-radius:4px; overflow:hidden; width:200px; min-width:80px; flex-shrink:0; }
+.fin-c-bar-fill { height:100%; border-radius:4px; transition:width .5s cubic-bezier(.25,.8,.25,1); }
+.fin-c-bar-fill.pos { background:var(--coral-500); }
+.fin-c-bar-fill.neg { background:#F4A393; }
+.fin-c-bar-fill.ads { background:#F0A500; }
+.fin-c-bar-fill.res { background:#9333EA; }
+.fin-c-bar-fill.neg-res { background:#E88080; }
+.fin-c-valor { font-size:13px; font-family:var(--mono); color:#555550; font-weight:500; text-align:right; padding-left:12px; }
+.fin-cline.result .fin-c-valor { font-weight:700; color:var(--text); font-size:14px; }
+.fin-c-est { font-size:9px; color:#B8B5AD; background:#F4F2EE; padding:1px 5px; border-radius:3px; margin-left:5px; font-family:var(--mono); font-style:normal; vertical-align:middle; }
+.fin-note { margin-top:14px; padding:11px 14px; background:#F8F6F2; border-radius:8px; font-size:11px; color:#9A9A90; line-height:1.6; border-left:3px solid #E0DDD5; }
+.fin-note strong { color:#6A6A60; }
+
+/* Indicadores */
+.fin-ind-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.fin-ind-card { background:#fff; border:1px solid rgba(0,0,0,.07); border-radius:9px; padding:13px 15px; }
+.fin-ind-label { font-size:10px; font-weight:700; color:#9A9A90; letter-spacing:.06em; text-transform:uppercase; font-family:var(--mono); margin-bottom:4px; }
+.fin-ind-value { font-size:19px; font-weight:700; color:var(--text); font-family:var(--mono); letter-spacing:-.3px; }
+.fin-ind-sub { font-size:11px; color:#C8C5BC; margin-top:3px; }
+.fin-ind-card.destaque { border-color:rgba(216,90,48,.2); background:rgba(216,90,48,.03); }
+
+/* Custos fixos */
+.fin-cf-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.fin-cf-top h3 { font-size:15px; font-weight:700; color:var(--text); margin:0; }
+.fin-btn-add { background:var(--coral-500); color:#fff; border:none; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font); transition:background .18s; }
+.fin-btn-add:hover { background:#C04820; }
+.fin-cf-list { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
+.fin-cf-item { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid rgba(0,0,0,.07); border-radius:8px; padding:10px 14px; }
+.fin-cf-nome { flex:1; font-size:13px; color:var(--text); font-weight:500; }
+.fin-cf-val { font-size:13px; font-family:var(--mono); font-weight:600; color:var(--text); min-width:100px; text-align:right; }
+.fin-cf-del { background:none; border:none; color:#C8C5BC; font-size:17px; cursor:pointer; padding:2px 5px; line-height:1; border-radius:4px; transition:color .15s; }
+.fin-cf-del:hover { color:#D85A30; }
+.fin-cf-total-row { display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:#F4F2EE; border-radius:8px; font-weight:700; }
+.fin-cf-total-label { font-size:13px; color:var(--text); }
+.fin-cf-total-val { font-size:15px; font-family:var(--mono); color:var(--text); }
+.fin-cf-divider { border:none; border-top:1px solid #E8E6E0; margin:18px 0; }
+.fin-cf-rates { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.fin-cf-rate { background:#fff; border:1px solid rgba(0,0,0,.07); border-radius:8px; padding:12px 14px; }
+.fin-cf-rate label { display:block; font-size:11px; font-weight:700; color:#9A9A90; letter-spacing:.06em; text-transform:uppercase; font-family:var(--mono); margin-bottom:7px; }
+.fin-cf-rate-row { display:flex; align-items:center; gap:7px; }
+.fin-cf-rate-input { width:70px; border:1.5px solid #E8E6E0; border-radius:6px; padding:6px 10px; font-size:13px; font-family:var(--mono); font-weight:600; color:var(--text); background:#FAFAF8; outline:none; }
+.fin-cf-rate-input:focus { border-color:var(--coral-500); }
+.fin-cf-rate-unit { font-size:13px; color:#9A9A90; }
+.fin-cf-empty { text-align:center; color:#C8C5BC; font-size:13px; padding:24px 0; }
+
+/* Repasses */
+.fin-rep-table { width:100%; border-collapse:collapse; }
+.fin-rep-table th { text-align:left; font-size:10px; font-weight:700; color:#9A9A90; letter-spacing:.07em; text-transform:uppercase; font-family:var(--mono); padding:8px 12px; border-bottom:2px solid #E8E6E0; }
+.fin-rep-table td { padding:11px 12px; border-bottom:1px solid #F2F0EC; font-size:13px; color:var(--text); }
+.fin-rep-table tr:last-child td { border-bottom:none; }
+.fin-rep-table .r-val { font-family:var(--mono); font-weight:600; text-align:right; }
+.fin-rep-table .r-pct { font-family:var(--mono); color:#9A9A90; font-size:12px; text-align:right; }
+.fin-rep-total td { background:#F4F2EE; font-weight:700 !important; border-top:2px solid #E0DDD5; }
+.fin-rep-note { font-size:11px; color:#B8B5AD; margin-top:12px; }
+
+/* Modal */
+.fin-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.38); z-index:600; align-items:center; justify-content:center; }
+.fin-modal-bg.open { display:flex; }
+.fin-modal-box { background:#fff; border-radius:14px; padding:24px; width:360px; max-width:92vw; box-shadow:0 20px 60px rgba(0,0,0,.18); }
+.fin-modal-box h4 { font-size:15px; font-weight:700; margin:0 0 16px; color:var(--text); }
+.fin-modal-box label { display:block; font-size:11px; font-weight:600; color:#6A6A60; margin-bottom:5px; margin-top:12px; letter-spacing:.04em; text-transform:uppercase; font-family:var(--mono); }
+.fin-modal-box label:first-of-type { margin-top:0; }
+.fin-modal-input { width:100%; box-sizing:border-box; border:1.5px solid #E8E6E0; border-radius:8px; padding:9px 12px; font-size:14px; font-family:var(--font); color:var(--text); background:#FAFAF8; outline:none; transition:border-color .15s; }
+.fin-modal-input:focus { border-color:var(--coral-500); }
+.fin-modal-btns { display:flex; gap:8px; margin-top:18px; }
+.fin-modal-cancel { flex:1; background:#F0EDE8; color:var(--text); border:none; padding:9px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font); }
+.fin-modal-save { flex:1; background:var(--coral-500); color:#fff; border:none; padding:9px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font); }
+.fin-modal-save:hover { background:#C04820; }
+
+/* Loading */
+.fin-loading { display:flex; align-items:center; justify-content:center; gap:8px; padding:50px; color:#C8C5BC; font-size:13px; }
+.fin-spinner { width:16px; height:16px; border:2px solid #E8E6E0; border-top-color:var(--coral-500); border-radius:50%; animation:spin .7s linear infinite; }
+
+/* Responsive */
+@media(max-width:768px){
+  .fin-kpi-row { grid-template-columns:1fr 1fr; }
+  .fin-body { grid-template-columns:1fr; }
+  .fin-subnav { flex-direction:row; flex-wrap:wrap; }
+  .fin-subnav-section { display:none; }
+  .fin-subnav-btn { padding:6px 10px; }
+  .fin-subnav-btn.active::before { display:none; }
+  .fin-ind-grid { grid-template-columns:1fr 1fr; }
+  .fin-cf-rates { grid-template-columns:1fr; }
+  .fin-c-bar { width:80px; min-width:40px; }
+}
 </style>
 </head>
 <body>
@@ -1134,6 +1282,10 @@ body.sidebar-collapsed .hamburger { display: none; }
       <button class="nav-item active" id="nav-home" data-nav-key="home" data-nav-label="Home" onclick="go('home',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
         Home
+      </button>
+      <button class="nav-item" data-nav-key="financeiro" data-nav-label="Financeiro" onclick="go('financeiro',this);initFinanceiroOnce()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Financeiro
       </button>
       <button class="nav-item" data-nav-key="produtos" data-nav-label="Produtos" onclick="go('produtos',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
@@ -1806,6 +1958,120 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div class="esc-panel-overlay" id="esc-panel-overlay" onclick="fecharEscritorioPanel()"></div>
     </div>
 
+
+<div class="page" id="page-financeiro">
+  <div class="fin-container">
+
+    <!-- Header -->
+    <div class="fin-header">
+      <div>
+        <div class="fin-saude-badge">
+          <span class="fin-saude-dot" id="fin-saude-dot"></span>
+          <span class="fin-saude-label" id="fin-saude-label">SAÚDE DA LOJA</span>
+        </div>
+        <h1 class="fin-title">Financeiro</h1>
+        <p class="fin-subtitle">Receita, custos, saúde e indicadores do mês. Edita e vê o impacto em tempo real.</p>
+      </div>
+      <div>
+        <select class="fin-select" id="fin-mes-select" onchange="finChangeMes(this.value)"></select>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="fin-hero-card" id="fin-hero-card">
+      <div class="fin-hero-label" id="fin-hero-label">LUCRO ESTIMADO</div>
+      <div class="fin-hero-value" id="fin-hero-value">R$ —</div>
+      <div class="fin-hero-foot">
+        <span class="fin-hero-badge" id="fin-hero-badge">—</span>
+        <span class="fin-hero-vs" id="fin-hero-vs"></span>
+      </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="fin-kpi-row">
+      <div class="fin-kpi">
+        <div class="fin-kpi-label">RECEITA DO MÊS <i class="fin-kpi-tip" title="Receita total bruta dos pedidos pagos no ML">ⓘ</i></div>
+        <div class="fin-kpi-value" id="fin-kpi-receita">—</div>
+      </div>
+      <div class="fin-kpi">
+        <div class="fin-kpi-label">MARGEM DE CONTRIBUIÇÃO <i class="fin-kpi-tip" title="Receita menos todos os custos variáveis">ⓘ</i></div>
+        <div class="fin-kpi-value" id="fin-kpi-margem">—</div>
+      </div>
+      <div class="fin-kpi">
+        <div class="fin-kpi-label">PONTO DE EQUILÍBRIO <i class="fin-kpi-tip" title="Faturamento necessário para cobrir custos fixos">ⓘ</i></div>
+        <div class="fin-kpi-value" id="fin-kpi-pe">—</div>
+      </div>
+    </div>
+
+    <!-- Body: subnav + content -->
+    <div class="fin-body">
+      <nav class="fin-subnav">
+        <span class="fin-subnav-section">Visão Geral</span>
+        <button class="fin-subnav-btn active" onclick="finShowView('cascata',this)">Cascata</button>
+        <button class="fin-subnav-btn" onclick="finShowView('indicadores',this)">Indicadores</button>
+        <button class="fin-subnav-btn" onclick="finShowView('custos-fixos',this)">Custos fixos</button>
+        <button class="fin-subnav-btn" onclick="finShowView('repasses',this)">Repasses ML</button>
+      </nav>
+
+      <div class="fin-content">
+
+        <!-- Cascata -->
+        <div class="fin-view" id="fin-view-cascata">
+          <div class="fin-view-header">
+            <h3 class="fin-view-title">Composição da receita</h3>
+            <span class="fin-view-hint">passo a passo até o lucro</span>
+          </div>
+          <div id="fin-cascata-body">
+            <div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>
+          </div>
+        </div>
+
+        <!-- Indicadores -->
+        <div class="fin-view" id="fin-view-indicadores" style="display:none">
+          <div class="fin-view-header">
+            <h3 class="fin-view-title">Indicadores do período</h3>
+          </div>
+          <div id="fin-indicadores-body">
+            <div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>
+          </div>
+        </div>
+
+        <!-- Custos fixos -->
+        <div class="fin-view" id="fin-view-custos-fixos" style="display:none">
+          <div id="fin-custos-body">
+            <div class="fin-loading"><div class="fin-spinner"></div></div>
+          </div>
+        </div>
+
+        <!-- Repasses ML -->
+        <div class="fin-view" id="fin-view-repasses" style="display:none">
+          <div class="fin-view-header">
+            <h3 class="fin-view-title">Repasses ao Mercado Livre</h3>
+          </div>
+          <div id="fin-repasses-body">
+            <div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- /fin-container -->
+
+  <!-- Modal: novo custo fixo -->
+  <div class="fin-modal-bg" id="fin-modal-bg" onclick="if(event.target===this)finCloseModal()">
+    <div class="fin-modal-box">
+      <h4>Adicionar custo fixo</h4>
+      <label>Nome do custo</label>
+      <input type="text" class="fin-modal-input" id="fin-modal-nome" placeholder="Ex: Aluguel, Salários, Contador…">
+      <label>Valor mensal (R$)</label>
+      <input type="number" class="fin-modal-input" id="fin-modal-valor" placeholder="0,00" min="0" step="0.01">
+      <div class="fin-modal-btns">
+        <button class="fin-modal-cancel" onclick="finCloseModal()">Cancelar</button>
+        <button class="fin-modal-save" onclick="finSaveCusto()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <button class="fab" id="fab" onclick="fabAction()">+</button>
 
@@ -8939,6 +9205,363 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 })(); // end VirtualOffice
 
 </script>
+// ── FINANCEIRO MODULE ──────────────────────────────────────────────────────
+(function FinanceiroModule(){
+'use strict';
+
+var _st = {
+  mes: null, dados: null, loading: false, initDone: false,
+  custosFixos: [], taxaImposto: 9.25, taxaFrete: 13.0, view: 'cascata'
+};
+
+/* ── helpers ─────────────────────────────────────────────────────────────── */
+function fmtR(v){ return 'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtP(v){ return ((v||0)*100).toFixed(1).replace('.',',')+' %'; }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function lastDay(y,m){ return new Date(y,m,0).getDate(); }
+
+function mesLabel(mesStr){
+  var p=mesStr.split('-'); var d=new Date(parseInt(p[0]),parseInt(p[1])-1,1);
+  var s=d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+
+function buildMeses(){
+  var opts=[]; var now=new Date();
+  for(var i=0;i<12;i++){
+    var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    var v=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    opts.push({v:v, label:mesLabel(v)});
+  }
+  return opts;
+}
+
+function loadLocal(){
+  try{
+    _st.custosFixos=JSON.parse(localStorage.getItem('fin_custos')||'[]');
+    var ti=parseFloat(localStorage.getItem('fin_imposto')); if(!isNaN(ti)) _st.taxaImposto=ti;
+    var tf=parseFloat(localStorage.getItem('fin_frete'));   if(!isNaN(tf)) _st.taxaFrete=tf;
+  }catch(e){}
+}
+function saveLocal(){
+  try{
+    localStorage.setItem('fin_custos',JSON.stringify(_st.custosFixos));
+    localStorage.setItem('fin_imposto',String(_st.taxaImposto));
+    localStorage.setItem('fin_frete',String(_st.taxaFrete));
+  }catch(e){}
+}
+
+/* ── init ────────────────────────────────────────────────────────────────── */
+window.initFinanceiroOnce=function(){
+  if(_st.initDone) return; _st.initDone=true;
+  loadLocal();
+  var meses=buildMeses();
+  var sel=document.getElementById('fin-mes-select');
+  if(sel){
+    sel.innerHTML=meses.map(function(o){return '<option value="'+o.v+'">'+o.label+'</option>';}).join('');
+    _st.mes=meses[0].v;
+  }
+  loadFin();
+};
+
+window.finChangeMes=function(v){ _st.mes=v; _st.dados=null; loadFin(); };
+
+/* ── fetch ───────────────────────────────────────────────────────────────── */
+async function loadFin(){
+  if(_st.loading) return; _st.loading=true;
+  var p=_st.mes.split('-'), y=parseInt(p[0]), m=parseInt(p[1]);
+  var ini=_st.mes+'-01', fim=_st.mes+'-'+String(lastDay(y,m)).padStart(2,'0');
+  var yA=(m===1?y-1:y), mA=(m===1?12:m-1);
+  var mesA=yA+'-'+String(mA).padStart(2,'0');
+  var iniA=mesA+'-01', fimA=mesA+'-'+String(lastDay(yA,mA)).padStart(2,'0');
+
+  try{
+    var [vR,aR,sR,anR,vAR,aAR]=await Promise.all([
+      sb.from('ml_vendas').select('item_id,unidades,receita,comissao,pedidos').gte('data',ini).lte('data',fim),
+      sb.from('ml_ads_reports').select('item_id,gasto,vendas_atribuidas,impressoes,cliques,unidades_ads').gte('data',ini).lte('data',fim).neq('preliminar',true),
+      sb.from('skus').select('sku,custo'),
+      sb.from('ml_anuncios').select('item_id,sku').order('data',{ascending:false}).limit(1000),
+      sb.from('ml_vendas').select('receita,comissao').gte('data',iniA).lte('data',fimA),
+      sb.from('ml_ads_reports').select('gasto').gte('data',iniA).lte('data',fimA).neq('preliminar',true)
+    ]);
+
+    var v=vR.data||[], a=aR.data||[], skus=sR.data||[], an=anR.data||[];
+    var vA=vAR.data||[], aA=aAR.data||[];
+
+    /* maps */
+    var i2s={}, seen={};
+    an.forEach(function(x){ if(x.sku&&!seen[x.item_id]){i2s[x.item_id]=x.sku;seen[x.item_id]=1;} });
+    var s2c={};
+    skus.forEach(function(x){ s2c[x.sku]=parseFloat(x.custo)||0; });
+
+    /* aggregate */
+    var rec=0,com=0,ped=0,uni=0,cogs=0,recCob=0;
+    v.forEach(function(x){
+      var r=parseFloat(x.receita)||0, c=parseFloat(x.comissao)||0, u=parseInt(x.unidades)||0;
+      rec+=r; com+=c; ped+=parseInt(x.pedidos)||0; uni+=u;
+      var sku=i2s[x.item_id];
+      if(sku&&s2c[sku]){ cogs+=u*s2c[sku]; recCob+=r; }
+    });
+
+    var gasAds=0,imp=0,cli=0,uAds=0,vAds=0;
+    a.forEach(function(x){
+      gasAds+=parseFloat(x.gasto)||0; imp+=parseInt(x.impressoes)||0;
+      cli+=parseInt(x.cliques)||0; uAds+=parseInt(x.unidades_ads)||0;
+      vAds+=parseFloat(x.vendas_atribuidas)||0;
+    });
+
+    var ti=_st.taxaImposto/100, tf=_st.taxaFrete/100;
+    var impEst=rec*ti, freteEst=rec*tf;
+    var mc=rec-com-cogs-impEst-freteEst-gasAds;
+    var mcPct=rec>0?mc/rec:0;
+
+    var cfTotal=_st.custosFixos.reduce(function(s,c){return s+(parseFloat(c.valor)||0);},0);
+    var lucro=mc-cfTotal;
+    var pe=mcPct>0?cfTotal/mcPct:0;
+
+    /* anterior */
+    var recA=vA.reduce(function(s,x){return s+(parseFloat(x.receita)||0);},0);
+    var comA=vA.reduce(function(s,x){return s+(parseFloat(x.comissao)||0);},0);
+    var gasA=aA.reduce(function(s,x){return s+(parseFloat(x.gasto)||0);},0);
+    var mcA=recA-comA-(recA*ti)-(recA*tf)-gasA;
+    var lucroA=mcA-cfTotal;
+
+    _st.dados={rec,com,ped,uni,cogs,recCob,gasAds,impEst,freteEst,mc,mcPct,cfTotal,lucro,pe,
+               imp,cli,uAds,vAds,recA,lucroA,cobSku:rec>0?recCob/rec:0};
+    render();
+  }catch(err){ console.error('[Financeiro]',err); }
+  _st.loading=false;
+}
+
+/* ── render ──────────────────────────────────────────────────────────────── */
+function render(){
+  var d=_st.dados; if(!d) return;
+
+  /* saúde */
+  var saude=d.mcPct>=0.12?'verde':(d.mcPct>=0.05?'amarelo':'critico');
+  var saudeTexto={verde:'✓ saudável',amarelo:'⚠ atenção',critico:'✕ crítico'}[saude];
+  function clsEl(id,cls){ var el=document.getElementById(id); if(el){ el.className=el.className.replace(/ (verde|amarelo|critico)/g,'').trimEnd()+' '+cls; } }
+  clsEl('fin-saude-dot',saude); clsEl('fin-saude-label',saude);
+  var hero=document.getElementById('fin-hero-card');
+  if(hero) hero.className='fin-hero-card'+(saude!=='verde'?' '+saude:'');
+  var badge=document.getElementById('fin-hero-badge');
+  if(badge){ badge.className='fin-hero-badge'+(saude!=='verde'?' '+saude:''); badge.textContent=saudeTexto; }
+
+  /* hero */
+  var hl=document.getElementById('fin-hero-label');
+  if(hl) hl.textContent='LUCRO ESTIMADO — '+mesLabel(_st.mes).toUpperCase();
+  var hv=document.getElementById('fin-hero-value');
+  if(hv) hv.textContent=fmtR(d.lucro);
+  var hvs=document.getElementById('fin-hero-vs');
+  if(hvs&&d.recA>0){
+    var diff=d.lucro-d.lucroA;
+    var diffPct=d.lucroA!==0?diff/Math.abs(d.lucroA)*100:0;
+    var seta=diffPct>=0?'↑':'↓';
+    hvs.textContent=seta+' '+Math.abs(diffPct).toFixed(1).replace('.',',')+' % vs mês anterior';
+    hvs.style.color=diffPct>=0?'':(saude==='critico'?'#C0390F':'#B07A00');
+  }
+
+  /* KPIs */
+  function setText(id,txt){ var el=document.getElementById(id); if(el) el.textContent=txt; }
+  setText('fin-kpi-receita',fmtR(d.rec));
+  setText('fin-kpi-margem',fmtP(d.mcPct)+' · '+fmtR(d.mc));
+  setText('fin-kpi-pe',d.pe>0?fmtR(d.pe):'— (sem custos fixos)');
+
+  renderView(_st.view);
+}
+
+/* ── cascata ─────────────────────────────────────────────────────────────── */
+function renderCascata(){
+  var el=document.getElementById('fin-cascata-body'); if(!el) return;
+  var d=_st.dados; if(!d){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>'; return; }
+
+  var rows=[
+    {sinal:'',  label:'Receita considerada',   val:d.rec,     tipo:'pos', est:false},
+    {sinal:'−', label:'Comissão ML',            val:d.com,     tipo:'neg', est:false},
+    {sinal:'−', label:'Custo do produto',       val:d.cogs,    tipo:'neg', est:d.cobSku<0.95},
+    {sinal:'−', label:'Imposto (ICMS + PIS/COFINS)', val:d.impEst, tipo:'neg', est:true},
+    {sinal:'−', label:'Frete líquido',          val:d.freteEst,tipo:'neg', est:true},
+    {sinal:'−', label:'Gasto ADS',              val:d.gasAds,  tipo:'ads', est:false},
+    {sinal:'=', label:'Margem de contribuição', val:d.mc,      tipo:d.mc>=0?'res':'neg-res', result:true},
+  ];
+  if(d.cfTotal>0){
+    rows.push({sinal:'−',label:'Custos fixos',val:d.cfTotal,tipo:'neg',est:false});
+    rows.push({sinal:'=',label:'Lucro estimado',val:d.lucro,tipo:d.lucro>=0?'res':'neg-res',result:true});
+  }
+
+  var maxVal=Math.max.apply(null,rows.map(function(r){return Math.abs(r.val||0);}));
+  if(maxVal===0) maxVal=1;
+
+  var html=rows.map(function(r){
+    var pct=Math.min(100,Math.abs(r.val||0)/maxVal*100).toFixed(1);
+    var valStr=r.val<0?'−'+fmtR(Math.abs(r.val)):fmtR(r.val);
+    if(r.result) valStr+=' <span style="font-size:11px;color:#9A9A90;font-weight:400">'+fmtP(d.rec>0?r.val/d.rec:0)+'</span>';
+    var estBadge=r.est?'<em class="fin-c-est">est.</em>':'';
+    return '<div class="fin-cline'+(r.result?' result':'')+'">'
+      +'<span class="fin-c-sinal">'+esc(r.sinal)+'</span>'
+      +'<span class="fin-c-label">'+esc(r.label)+estBadge+'</span>'
+      +'<div class="fin-c-bar"><div class="fin-c-bar-fill '+r.tipo+'" style="width:'+pct+'%"></div></div>'
+      +'<span class="fin-c-valor">'+valStr+'</span>'
+      +'</div>';
+  }).join('');
+
+  var cob=Math.round((d.cobSku||0)*100);
+  html+='<p class="fin-note"><strong>Cobertura de custos:</strong> '+cob+'% da receita tem SKU com custo cadastrado. '
+    +'Itens sem custo entram na cascata como R$ 0,00. Configure alíquotas em <em>Custos fixos</em>.</p>';
+
+  el.innerHTML=html;
+}
+
+/* ── indicadores ─────────────────────────────────────────────────────────── */
+function renderIndicadores(){
+  var el=document.getElementById('fin-indicadores-body'); if(!el) return;
+  var d=_st.dados; if(!d){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>'; return; }
+
+  var ticket=d.ped>0?d.rec/d.ped:0;
+  var tacos=d.rec>0?d.gasAds/d.rec:0;
+  var pctAds=d.uni>0?d.uAds/d.uni:0;
+  var ctr=d.imp>0?d.cli/d.imp:0;
+  var roas=d.gasAds>0?d.vAds/d.gasAds:0;
+  var lucPed=d.ped>0?d.lucro/d.ped:0;
+
+  var cards=[
+    {label:'Pedidos',         val:d.ped.toLocaleString('pt-BR'),    sub:'no período'},
+    {label:'Unidades',        val:d.uni.toLocaleString('pt-BR'),    sub:'vendidas'},
+    {label:'Ticket Médio',    val:fmtR(ticket),                     sub:'receita ÷ pedidos'},
+    {label:'TACOS',           val:fmtP(tacos),                      sub:'gasto ADS ÷ receita', dest:tacos>0.07},
+    {label:'Margem %',        val:fmtP(d.mcPct),                    sub:'margem de contribuição', dest:d.mcPct<0.08},
+    {label:'% Vendas via ADS',val:fmtP(pctAds),                     sub:'unidades via patrocinados'},
+    {label:'CTR',             val:fmtP(ctr),                        sub:'cliques ÷ impressões', dest:ctr<0.003},
+    {label:'ROAS',            val:roas.toFixed(2).replace('.',',')+'x', sub:'retorno sobre ADS'},
+    {label:'Lucro por Pedido',val:fmtR(lucPed),                     sub:'estimado', dest:lucPed<0},
+  ];
+
+  el.innerHTML='<div class="fin-ind-grid">'+cards.map(function(c){
+    return '<div class="fin-ind-card'+(c.dest?' destaque':'')+'">'
+      +'<div class="fin-ind-label">'+esc(c.label)+'</div>'
+      +'<div class="fin-ind-value">'+c.val+'</div>'
+      +'<div class="fin-ind-sub">'+esc(c.sub)+'</div>'
+      +'</div>';
+  }).join('')+'</div>';
+}
+
+/* ── custos fixos ─────────────────────────────────────────────────────────── */
+function renderCustosFixos(){
+  var el=document.getElementById('fin-custos-body'); if(!el) return;
+  var total=_st.custosFixos.reduce(function(s,c){return s+(parseFloat(c.valor)||0);},0);
+  var lista=_st.custosFixos.length===0
+    ? '<div class="fin-cf-empty">Nenhum custo fixo. Adicione para calcular lucro e ponto de equilíbrio.</div>'
+    : '<div class="fin-cf-list">'+_st.custosFixos.map(function(c,i){
+        return '<div class="fin-cf-item">'
+          +'<span class="fin-cf-nome">'+esc(c.nome)+'</span>'
+          +'<span class="fin-cf-val">'+fmtR(parseFloat(c.valor)||0)+'</span>'
+          +'<button class="fin-cf-del" onclick="finDelCusto('+i+')" title="Remover">×</button>'
+          +'</div>';
+      }).join('')+'</div>';
+
+  el.innerHTML='<div class="fin-cf-top"><h3>Custos fixos mensais</h3><button class="fin-btn-add" onclick="finOpenModal()">+ Adicionar</button></div>'
+    +lista
+    +'<div class="fin-cf-total-row"><span class="fin-cf-total-label">Total custos fixos</span><span class="fin-cf-total-val">'+fmtR(total)+'</span></div>'
+    +'<hr class="fin-cf-divider">'
+    +'<h4 style="font-size:13px;font-weight:700;color:var(--text);margin:0 0 11px">Alíquotas estimadas</h4>'
+    +'<div class="fin-cf-rates">'
+    +'<div class="fin-cf-rate"><label>Imposto (ICMS + PIS/COFINS)</label><div class="fin-cf-rate-row"><input type="number" class="fin-cf-rate-input" value="'+_st.taxaImposto+'" step="0.25" min="0" max="50" onchange="finRate(\'i\',this.value)"><span class="fin-cf-rate-unit">%</span></div></div>'
+    +'<div class="fin-cf-rate"><label>Frete líquido (% da receita)</label><div class="fin-cf-rate-row"><input type="number" class="fin-cf-rate-input" value="'+_st.taxaFrete+'" step="0.5" min="0" max="50" onchange="finRate(\'f\',this.value)"><span class="fin-cf-rate-unit">%</span></div></div>'
+    +'</div>';
+}
+
+/* ── repasses ─────────────────────────────────────────────────────────────── */
+function renderRepasses(){
+  var el=document.getElementById('fin-repasses-body'); if(!el) return;
+  var d=_st.dados; if(!d){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>'; return; }
+
+  var saida=d.com+d.gasAds+d.freteEst+d.impEst;
+  var rows=[
+    ['Comissão ML (sale fee)', d.com,     d.rec>0?d.com/d.rec:0, false],
+    ['Gasto ADS patrocinados', d.gasAds,  d.rec>0?d.gasAds/d.rec:0, false],
+    ['Imposto estimado',       d.impEst,  _st.taxaImposto/100, true],
+    ['Frete líquido estimado', d.freteEst,_st.taxaFrete/100, true],
+  ];
+
+  el.innerHTML='<table class="fin-rep-table"><thead><tr>'
+    +'<th>Componente</th><th style="text-align:right">Valor</th><th style="text-align:right">% receita</th>'
+    +'</tr></thead><tbody>'
+    +rows.map(function(r){
+      return '<tr><td>'+esc(r[0])+(r[3]?' <em style="font-size:10px;color:#B8B5AD">(est.)</em>':'')+'</td>'
+        +'<td class="r-val">'+fmtR(r[1])+'</td>'
+        +'<td class="r-pct">'+fmtP(r[2])+'</td></tr>';
+    }).join('')
+    +'<tr class="fin-rep-total"><td>Total saídas</td><td class="r-val">'+fmtR(saida)+'</td><td class="r-pct">'+fmtP(d.rec>0?saida/d.rec:0)+'</td></tr>'
+    +'</tbody></table>'
+    +'<p class="fin-rep-note">Comissão e ADS são dados reais da API do ML. Imposto e frete são estimativas baseadas nas alíquotas configuradas em <em>Custos fixos</em>.</p>';
+}
+
+/* ── view switch ─────────────────────────────────────────────────────────── */
+window.finShowView=function(v,btn){
+  _st.view=v;
+  document.querySelectorAll('.fin-subnav-btn').forEach(function(b){b.classList.remove('active');});
+  if(btn) btn.classList.add('active');
+  document.querySelectorAll('.fin-view').forEach(function(el){el.style.display='none';});
+  var tg=document.getElementById('fin-view-'+v); if(tg) tg.style.display='block';
+  renderView(v);
+};
+
+function renderView(v){
+  if(!_st.dados) return;
+  if(v==='cascata')      renderCascata();
+  else if(v==='indicadores')  renderIndicadores();
+  else if(v==='custos-fixos') renderCustosFixos();
+  else if(v==='repasses')     renderRepasses();
+}
+
+/* ── custos CRUD ─────────────────────────────────────────────────────────── */
+window.finOpenModal=function(){
+  var bg=document.getElementById('fin-modal-bg'); if(bg) bg.classList.add('open');
+  setTimeout(function(){var el=document.getElementById('fin-modal-nome');if(el)el.focus();},60);
+};
+window.finCloseModal=function(){
+  var bg=document.getElementById('fin-modal-bg'); if(bg) bg.classList.remove('open');
+  var n=document.getElementById('fin-modal-nome'), v=document.getElementById('fin-modal-valor');
+  if(n) n.value=''; if(v) v.value='';
+};
+window.finSaveCusto=function(){
+  var nome=(document.getElementById('fin-modal-nome')||{}).value||'';
+  var val=parseFloat((document.getElementById('fin-modal-valor')||{}).value||'0');
+  if(!nome.trim()||isNaN(val)||val<=0) return;
+  _st.custosFixos.push({nome:nome.trim(),valor:val});
+  saveLocal(); finCloseModal(); recalcFixos(); renderCustosFixos();
+};
+window.finDelCusto=function(idx){
+  _st.custosFixos.splice(idx,1);
+  saveLocal(); recalcFixos(); renderCustosFixos();
+};
+window.finRate=function(tipo,val){
+  var n=parseFloat(val); if(isNaN(n)) return;
+  if(tipo==='i') _st.taxaImposto=n;
+  else if(tipo==='f') _st.taxaFrete=n;
+  saveLocal();
+  if(_st.dados){
+    var d=_st.dados;
+    d.impEst=d.rec*(_st.taxaImposto/100);
+    d.freteEst=d.rec*(_st.taxaFrete/100);
+    d.mc=d.rec-d.com-d.cogs-d.impEst-d.freteEst-d.gasAds;
+    d.mcPct=d.rec>0?d.mc/d.rec:0;
+    recalcFixos();
+  }
+};
+
+function recalcFixos(){
+  if(!_st.dados) return;
+  var d=_st.dados;
+  d.cfTotal=_st.custosFixos.reduce(function(s,c){return s+(parseFloat(c.valor)||0);},0);
+  d.lucro=d.mc-d.cfTotal;
+  d.pe=d.mcPct>0?d.cfTotal/d.mcPct:0;
+  render();
+}
+
+})(); // FinanceiroModule
+
 
 </body>
 </html>
