@@ -1099,6 +1099,59 @@ body.sidebar-collapsed .hamburger { display: none; }
   #page-escritorio { left:0; }
 }
 
+/* ── PAINEL TABS (Sugestões / Chat / Reuniões) ────────────────── */
+.esc-panel-tabs { display:flex; border-bottom:1px solid rgba(255,255,255,0.07); flex-shrink:0; }
+.esc-panel-tab  { flex:1; background:none; border:none; border-bottom:2px solid transparent; padding:10px 4px; font-size:11px; font-family:var(--mono); letter-spacing:.05em; text-transform:uppercase; color:#3A4560; cursor:pointer; transition:all .18s; margin-bottom:-1px; }
+.esc-panel-tab:hover { color:#7A84A0; }
+.esc-panel-tab.active { color:#C8C5BC; border-bottom-color:#6B7CFF; }
+
+/* Sugestões scroll */
+#esc-panel-sugestoes { flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:11px; }
+#esc-panel-sugestoes::-webkit-scrollbar { width:3px; }
+#esc-panel-sugestoes::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:2px; }
+
+/* Chat */
+#esc-panel-chat { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+.esc-chat-msgs { flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:10px; }
+.esc-chat-msgs::-webkit-scrollbar { width:3px; }
+.esc-chat-msgs::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:2px; }
+.esc-chat-msg  { max-width:88%; display:flex; flex-direction:column; gap:3px; }
+.esc-chat-msg.user { align-self:flex-end; }
+.esc-chat-msg.agent { align-self:flex-start; }
+.esc-chat-bubble { padding:10px 13px; border-radius:12px; font-size:13px; line-height:1.55; white-space:pre-line; }
+.esc-chat-msg.user  .esc-chat-bubble { background:#2A3580; color:#D0D8F8; border-bottom-right-radius:3px; }
+.esc-chat-msg.agent .esc-chat-bubble { background:rgba(255,255,255,0.06); color:#B8C0D0; border:1px solid rgba(255,255,255,0.07); border-bottom-left-radius:3px; }
+.esc-chat-time { font-size:10px; color:#2A3550; font-family:var(--mono); padding:0 4px; }
+.esc-chat-typing { display:flex; align-items:center; gap:5px; padding:12px 14px; background:rgba(255,255,255,0.04); border-radius:10px; border:1px solid rgba(255,255,255,0.06); }
+.esc-chat-typing span { width:6px; height:6px; border-radius:50%; background:#6B7CFF; animation:chatdot .9s ease-in-out infinite; }
+.esc-chat-typing span:nth-child(2){ animation-delay:.18s; }
+.esc-chat-typing span:nth-child(3){ animation-delay:.36s; }
+@keyframes chatdot{ 0%,80%,100%{transform:scale(.6);opacity:.4} 40%{transform:scale(1);opacity:1} }
+.esc-chat-bar { padding:12px 14px; border-top:1px solid rgba(255,255,255,0.07); display:flex; gap:8px; flex-shrink:0; background:#080C18; }
+.esc-chat-input { flex:1; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:8px; color:#C8C5BC; font-family:var(--font); font-size:13px; padding:9px 12px; outline:none; resize:none; height:38px; min-height:38px; max-height:90px; transition:border-color .2s; line-height:1.4; overflow:hidden; }
+.esc-chat-input:focus { border-color:rgba(107,124,255,.35); }
+.esc-chat-input::placeholder { color:#2E3550; }
+.esc-chat-send { background:#2A3580; border:none; border-radius:8px; color:#A0AFF0; width:38px; flex-shrink:0; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.esc-chat-send:hover { background:#364299; color:#C0CFFF; }
+.esc-chat-send:disabled { opacity:.4; cursor:default; }
+.esc-chat-hint { text-align:center; padding:30px 16px; color:#2A3550; font-size:12px; line-height:1.7; }
+
+/* Reuniões */
+#esc-panel-reunioes { flex:1; overflow-y:auto; padding:14px 18px; display:flex; flex-direction:column; gap:12px; }
+#esc-panel-reunioes::-webkit-scrollbar { width:3px; }
+#esc-panel-reunioes::-webkit-scrollbar-thumb { background:rgba(255,255,255,0.08); border-radius:2px; }
+.esc-reuniao-btn { width:100%; padding:11px 16px; background:rgba(107,124,255,0.12); border:1px solid rgba(107,124,255,0.22); border-radius:10px; color:#8090E0; font-size:13px; font-weight:500; font-family:var(--font); cursor:pointer; transition:all .2s; text-align:left; display:flex; align-items:center; gap:10px; }
+.esc-reuniao-btn:hover { background:rgba(107,124,255,0.2); color:#A0B0F0; }
+.esc-reuniao-btn:disabled { opacity:.5; cursor:default; }
+.esc-reuniao-spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(107,124,255,.3); border-top-color:#6B7CFF; border-radius:50%; animation:spin .7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.esc-reuniao-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:12px; overflow:hidden; }
+.esc-reuniao-card-header { padding:12px 15px 10px; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; }
+.esc-reuniao-card-title { font-size:13px; font-weight:600; color:#B0B8D0; }
+.esc-reuniao-card-date { font-size:10px; color:#2E3550; font-family:var(--mono); }
+.esc-reuniao-card-body { padding:13px 15px; font-size:12.5px; color:#7A8499; line-height:1.7; white-space:pre-line; }
+.esc-reuniao-empty { text-align:center; padding:40px 16px; color:#2A3550; font-size:12px; }
+
 /* ── FINANCEIRO ───────────────────────────────────────────────────────────── */
 #page-financeiro.active {
   position: fixed;
@@ -1305,6 +1358,12 @@ body.sidebar-collapsed .hamburger { display: none; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
         Central
       </button>
+      <!-- Escritorio (2a posição — hub de inteligência) -->
+      <button class="nav-item" data-nav-key="escritorio" data-nav-label="Escritorio" onclick="go('escritorio',this);initEscritorioOnce()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+        Escritório
+        <span class="nav-badge" id="badge-escritorio" style="display:none">0</span>
+      </button>
       <!-- Financeiro -->
       <button class="nav-item" data-nav-key="financeiro" data-nav-label="Financeiro" onclick="go('financeiro',this);initFinanceiroOnce()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
@@ -1314,11 +1373,6 @@ body.sidebar-collapsed .hamburger { display: none; }
       <button class="nav-item" data-nav-key="performance" data-nav-label="Operacao" onclick="goOperacao()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Operação
-      </button>
-      <!-- Escritorio -->
-      <button class="nav-item" data-nav-key="escritorio" data-nav-label="Escritorio" onclick="go('escritorio',this);initEscritorioOnce()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
-        Escritório
       </button>
       <!-- Agenda hub -->
       <button class="nav-item" data-nav-key="agenda" data-nav-label="Agenda" onclick="goAgendaHub()">
@@ -1358,6 +1412,18 @@ body.sidebar-collapsed .hamburger { display: none; }
     <div class="page active" id="page-home">
       <div class="page-title">Bom dia 👋</div>
       <div class="page-subtitle" id="home-subtitle">Aqui está o resumo do seu negócio</div>
+
+      <!-- ALERTAS DO ESCRITÓRIO -->
+      <div id="home-escritorio-alerts" style="display:none;margin-bottom:20px">
+        <div class="home-section-header" style="margin-bottom:10px">
+          <div class="home-section-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
+            Escritório Virtual — Alertas
+          </div>
+          <button class="home-section-link" onclick="go('escritorio',document.querySelector('[data-nav-key=escritorio]'));initEscritorioOnce()">Ver Escritório →</button>
+        </div>
+        <div id="home-escritorio-alerts-body"></div>
+      </div>
 
       <!-- FATURAMENTO MÊS ANTERIOR -->
       <div class="home-section">
@@ -1954,11 +2020,13 @@ body.sidebar-collapsed .hamburger { display: none; }
           <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#FF5F7E"></div>ADS</div>
           <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#22D3EE"></div>SAC</div>
           <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#A855F7"></div>Criativo</div>
+          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#FFA0C9"></div>Assistente</div>
         </div>
         <div class="esc-click-hint">Clique numa mesa ↑</div>
       </div>
       <!-- Side Panel -->
       <div class="esc-panel" id="esc-panel">
+        <!-- Header -->
         <div class="esc-panel-header">
           <div class="esc-panel-title-wrap">
             <div class="esc-panel-dot" id="esc-panel-dot"></div>
@@ -1966,7 +2034,34 @@ body.sidebar-collapsed .hamburger { display: none; }
           </div>
           <button class="esc-panel-close" onclick="fecharEscritorioPanel()">✕</button>
         </div>
-        <div id="esc-panel-body"></div>
+        <!-- Tabs -->
+        <div class="esc-panel-tabs">
+          <button class="esc-panel-tab active" id="esc-tab-sug" onclick="escGoTab('sug')">📋 Análise</button>
+          <button class="esc-panel-tab" id="esc-tab-chat" onclick="escGoTab('chat')">💬 Chat</button>
+          <button class="esc-panel-tab" id="esc-tab-reu" onclick="escGoTab('reu')">📅 Reunião</button>
+        </div>
+        <!-- Sugestões (análise) -->
+        <div id="esc-panel-sugestoes"></div>
+        <!-- Chat -->
+        <div id="esc-panel-chat" style="display:none">
+          <div class="esc-chat-msgs" id="esc-chat-msgs">
+            <div class="esc-chat-hint" id="esc-chat-hint">Faça uma pergunta ao agente sobre a sua operação.<br>Ele tem acesso aos dados reais da sua conta.</div>
+          </div>
+          <div class="esc-chat-bar">
+            <textarea class="esc-chat-input" id="esc-chat-input" placeholder="Pergunte ao agente…" rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();escChatEnviar()}"
+              oninput="this.style.height='38px';this.style.height=Math.min(90,this.scrollHeight)+'px'"></textarea>
+            <button class="esc-chat-send" id="esc-chat-send-btn" onclick="escChatEnviar()" title="Enviar">➤</button>
+          </div>
+        </div>
+        <!-- Reuniões -->
+        <div id="esc-panel-reunioes" style="display:none">
+          <button class="esc-reuniao-btn" id="esc-reuniao-btn" onclick="escIniciarReuniao()">
+            <span id="esc-reuniao-btn-icon">🤝</span>
+            <span id="esc-reuniao-btn-label">Iniciar Reunião com o Agente</span>
+          </button>
+          <div id="esc-reunioes-lista"></div>
+        </div>
       </div>
       <div class="esc-panel-overlay" id="esc-panel-overlay" onclick="fecharEscritorioPanel()"></div>
     </div>
@@ -8671,7 +8766,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     { id:'anuncios', nome:'Anúncios', emoji:'📢', cor:'#F0A500', gx:6.4,  gy:0.8 },
     { id:'ads',      nome:'ADS',      emoji:'⚡', cor:'#FF5F7E', gx:1.2,  gy:3.5 },
     { id:'sac',      nome:'SAC',      emoji:'💬', cor:'#22D3EE', gx:3.9,  gy:3.1 },
-    { id:'criativo', nome:'Criativo', emoji:'✨', cor:'#A855F7', gx:6.4,  gy:3.5 },
+    { id:'criativo',   nome:'Criativo',   emoji:'✨', cor:'#A855F7', gx:6.4,  gy:3.5 },
+    { id:'assistente', nome:'Assistente', emoji:'🗓', cor:'#FFA0C9', gx:4.2,  gy:1.9 },
   ];
   var DESK_W=1.5, DESK_D=1.1, DESK_H=0.42;
   var MON_W=0.56, MON_D=0.10, MON_H=0.74;
@@ -8905,8 +9001,12 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   function openPanel(agent){
     activeAgentId=agent.id;
     var panel=document.getElementById('esc-panel');
-    var body=document.getElementById('esc-panel-body');
+    var body=document.getElementById('esc-panel-sugestoes');
     document.getElementById('esc-panel-title').textContent=agent.emoji+' '+agent.nome;
+    // Reset para aba Análise ao abrir
+    escGoTab('sug');
+    // Reset histórico de chat ao trocar de agente
+    if(window._escChatHistory) window._escChatHistory={};
     var dot=document.getElementById('esc-panel-dot');
     dot.style.background=agent.cor;
     dot.style.boxShadow='0 0 8px '+agent.cor;
@@ -8927,8 +9027,38 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           '</div>';
       }).join('');
     }
+    // For Gestor: prepend P&L mini cascata if available
+    if(agent.id==='gestor'){
+      var fd=typeof window._finGetDados==='function'?window._finGetDados():null;
+      if(fd){
+        var mcCls=fd.mcPct>=0.12?'verde':(fd.mcPct>=0.05?'amarelo':'critico');
+        var mcColors={verde:'#00D87A',amarelo:'#F0A500',critico:'#E53535'};
+        var plBlock='<div style="background:rgba(0,0,0,0.25);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+          +'<div style="font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#A0A8B8;margin-bottom:10px;font-family:'JetBrains Mono',monospace">📊 P&L do Mês</div>'
+          +plRow('Receita',''+fmtRP(fd.rec),'#E0E0D8',false)
+          +plRow('Comissão ML','−'+fmtRP(fd.com),'#FF7A7A',true)
+          +plRow('COGS','−'+fmtRP(fd.cogs),'#FF7A7A',true)
+          +plRow('Imposto est.','−'+fmtRP(fd.impEst),'#FF7A7A',true)
+          +plRow('Frete est.','−'+fmtRP(fd.freteEst),'#FF7A7A',true)
+          +plRow('Gasto ADS','−'+fmtRP(fd.gasAds),'#FFB347',true)
+          +'<div style="border-top:1px solid rgba(255,255,255,0.1);margin:8px 0"></div>'
+          +plRow('MC',''+fmtRP(fd.mc)+' ('+((fd.mcPct*100).toFixed(1).replace('.',','))+'%)',mcColors[mcCls],false,true)
+          +(fd.cfTotal>0?plRow('Lucro',''+fmtRP(fd.lucro),fd.lucro>=0?'#00D87A':'#E53535',false,true):'')
+          +'</div>';
+        body.innerHTML=plBlock+body.innerHTML;
+      }
+    }
+
     panel.classList.add('open');
     document.getElementById('esc-panel-overlay').classList.add('active');
+  }
+
+  function fmtRP(v){ return 'R$'+((v||0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:0})); }
+  function plRow(label,val,color,indent,bold){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0'+(indent?';padding-left:8px':'')+'">'
+      +'<span style="font-size:12px;color:#9AA4B8">'+(bold?'<strong>':'')+label+(bold?'</strong>':'')+'</span>'
+      +'<span style="font-size:13px;font-weight:'+(bold?700:400)+';color:'+color+';font-family:'JetBrains Mono',monospace">'+val+'</span>'
+      +'</div>';
   }
 
   function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -9196,18 +9326,34 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       alertCounts.criativo=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
     })();
 
-    // — GESTOR (consolidado) —
+    // — GESTOR (consolidado + P&L) —
     (function(){
       var sug=[];
       var totalPed=Object.values(venMap).reduce(function(a,v){return a+v.pedidos;},0);
       sug.push({tipo:'info',
-        titulo:'Resumo — últimos 7 dias',
-        descricao:'Faturamento: '+fmtR(totalRec)+'\nPedidos: '+totalPed+'\nGasto ADS: '+fmtR(totalGas)+'\nTACOS: '+pct(globalTacos),
+        titulo:'Resumo operacional — últimos 7 dias',
+        descricao:'Faturamento: '+fmtR(totalRec)+'\nPedidos: '+totalPed+'\nGasto ADS: '+fmtR(totalGas)+'\nTACOS global: '+pct(globalTacos),
         impacto:null});
+
+      // P&L do mês atual (FinanceiroModule)
+      var fd=typeof window._finGetDados==='function'?window._finGetDados():null;
+      if(fd){
+        var mcCor=fd.mcPct>=0.12?'🟢':(fd.mcPct>=0.05?'🟡':'🔴');
+        sug.push({tipo:fd.mcPct>=0.05?'info':'urgente',
+          titulo:mcCor+' P&L do mês — Financeiro',
+          descricao:'Receita: '+fmtR(fd.rec)+'\nComissão ML: '+fmtR(fd.com)+'\nCOGS: '+fmtR(fd.cogs)+'\nImposto est.: '+fmtR(fd.impEst)+'\nFrete est.: '+fmtR(fd.freteEst)+'\nADS: '+fmtR(fd.gasAds)+'\n──────────────\nMC: '+fmtR(fd.mc)+' ('+((fd.mcPct*100).toFixed(1).replace('.',','))+'%)'+(fd.cfTotal>0?'\nLucro: '+fmtR(fd.lucro):''),
+          impacto:fd.mcPct<0.05?'Margem crítica! Revise precificação e custos urgente.':fd.mcPct<0.12?'MC abaixo de 12%. Avalie cortes ou reajuste de preços.':'Margem saudável. Continue monitorando ADS e custos.'});
+      } else {
+        sug.push({tipo:'info',
+          titulo:'P&L — acesse Financeiro para carregar',
+          descricao:'Clique em "Financeiro" no menu para carregar o P&L do mês e ver aqui.',
+          impacto:null});
+      }
 
       var urgentes=[];
       Object.entries(sugestoes).forEach(function(e){
         var agId=e[0], sList=e[1];
+        if(agId==='gestor') return;
         sList.forEach(function(s){
           if(s.tipo==='urgente') urgentes.push(Object.assign({},s,{agente:agId.toUpperCase()}));
         });
@@ -9229,6 +9375,76 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       }
       sugestoes.gestor=sug;
       alertCounts.gestor=urgentes.length;
+    })();
+
+    // — ASSISTENTE PESSOAL (agenda + lembretes) —
+    (function(){
+      var sug=[];
+      var now=new Date();
+      var dias=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+      var diaAtual=dias[now.getDay()];
+
+      // Cross-agent digest de urgentes
+      var totalUrgentes=0, totalAtencao=0;
+      Object.entries(sugestoes).forEach(function(e){
+        var agId=e[0], sList=e[1];
+        if(agId==='gestor'||agId==='assistente') return;
+        sList.forEach(function(s){
+          if(s.tipo==='urgente') totalUrgentes++;
+          if(s.tipo==='atencao') totalAtencao++;
+        });
+      });
+
+      if(totalUrgentes>0){
+        sug.push({tipo:'urgente',
+          titulo:diaAtual+' — '+totalUrgentes+' ação(ões) urgente(s) hoje',
+          descricao:'Seus agentes identificaram '+totalUrgentes+' item(ns) urgente(s) e '+totalAtencao+' de atenção.\nPrioridade: Gestor → ADS → Analista → Anúncios.',
+          impacto:'Abra cada agente no Escritório para ver detalhes e marcar como resolvido.'});
+      } else if(totalAtencao>0){
+        sug.push({tipo:'atencao',
+          titulo:diaAtual+' — '+totalAtencao+' item(ns) de atenção',
+          descricao:'Nenhuma urgência, mas há '+totalAtencao+' ponto(s) de atenção nos agentes.',
+          impacto:'Bom momento para revisar e resolver preventivamente.'});
+      } else {
+        sug.push({tipo:'oportunidade',
+          titulo:diaAtual+' — Tudo sob controle',
+          descricao:'Sem alertas urgentes nos agentes hoje. Aproveite para planejar a semana.',
+          impacto:null});
+      }
+
+      // Lembretes por dia da semana
+      var lembretes={
+        1:['Revisão de campanhas ADS da semana','Verificar pedidos pendentes do final de semana'],
+        2:['Atualizar planilha de custos','Checar estoque crítico — reabastecer se necessário'],
+        3:['Análise de Buy Box — verificar perdas','Conferir reputação e NPS da semana'],
+        4:['Revisar títulos de anúncios com baixo CTR','Checar TACOS semanal por produto'],
+        5:['Fechar relatório semanal de faturamento','Planejar próximos lançamentos'],
+        6:['Balanço de resultados da semana','Planejar ações para a próxima semana'],
+        0:['Planejamento estratégico','Rever metas do mês']
+      };
+      var lemDia=lembretes[now.getDay()]||[];
+      if(lemDia.length>0){
+        sug.push({tipo:'info',
+          titulo:'📋 Checklist de '+diaAtual,
+          descricao:lemDia.map(function(l){return '• '+l;}).join('\n'),
+          impacto:'Rotina consistente = operação mais saudável.'});
+      }
+
+      // Dicas sazonais baseadas em hora
+      var hora=now.getHours();
+      if(hora>=7&&hora<10){
+        sug.push({tipo:'info',titulo:'🌅 Abertura do dia',
+          descricao:'Bom momento para checar a caixa de mensagens do ML e responder perguntas dos clientes antes do pico de tráfego.',impacto:null});
+      } else if(hora>=14&&hora<17){
+        sug.push({tipo:'info',titulo:'☀️ Pico de tarde',
+          descricao:'Horário de maior tráfego no ML. Verifique se há anúncios com Buy Box perdido que precisam de ajuste de preço.',impacto:null});
+      } else if(hora>=17&&hora<21){
+        sug.push({tipo:'info',titulo:'🌆 Encerramento do dia',
+          descricao:'Hora de revisar as métricas do dia: pedidos, ADS e reputação. Registre qualquer ocorrência nas Anotações.',impacto:null});
+      }
+
+      sugestoes.assistente=sug;
+      alertCounts.assistente=totalUrgentes>0?totalUrgentes:0;
     })();
   }
 
@@ -9260,10 +9476,229 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     },{passive:false});
   }
 
+  // ── Panel tab navigation ──────────────────────────────────────────────────
+  window.escGoTab=function(tab){
+    var tabs={sug:'esc-panel-sugestoes',chat:'esc-panel-chat',reu:'esc-panel-reunioes'};
+    Object.keys(tabs).forEach(function(k){
+      var el=document.getElementById(tabs[k]);
+      if(el) el.style.display=k===tab?'flex':'none';
+      var btn=document.getElementById('esc-tab-'+k);
+      if(btn) btn.classList.toggle('active',k===tab);
+    });
+    // força flex correto
+    if(tab==='sug'){
+      var el=document.getElementById('esc-panel-sugestoes');
+      if(el){ el.style.display='flex'; el.style.flexDirection='column'; }
+    }
+    if(tab==='reu') renderReunioes();
+  };
+
+  // ── Chat com o agente (IA) ─────────────────────────────────────────────────
+  var _chatHistory={}; // {agentId: [{role,content},...]}
+  var _chatLoading=false;
+  var _aiAnonKey=''; // configurado em initEscritorioOnce
+  var _aiUrl=null; // configurado em initEscritorioOnce
+
+  window.escChatEnviar=async function(){
+    if(_chatLoading||!activeAgentId) return;
+    var inp=document.getElementById('esc-chat-input');
+    var txt=(inp?inp.value||'':'').trim();
+    if(!txt) return;
+    inp.value=''; inp.style.height='38px';
+    document.getElementById('esc-chat-hint')&&(document.getElementById('esc-chat-hint').style.display='none');
+
+    var agId=activeAgentId;
+    if(!_chatHistory[agId]) _chatHistory[agId]=[];
+
+    // Adiciona mensagem do usuário
+    _chatHistory[agId].push({role:'user',content:txt});
+    escChatRenderMsgs(agId);
+    _chatLoading=true;
+    document.getElementById('esc-chat-send-btn').disabled=true;
+
+    // Indicador de digitação
+    escChatAppendTyping();
+
+    try {
+      var ctxData=buildContextForAgent(agId);
+      var res=await fetch(_aiUrl+'/functions/v1/ai-agent',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':_aiAnonKey},
+        body:JSON.stringify({
+          agentId:agId,
+          mode:'chat',
+          question:txt,
+          context:ctxData,
+          history:_chatHistory[agId].slice(-10)
+        })
+      });
+      escChatRemoveTyping();
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      var data=await res.json();
+      var respTxt=data.response||'Não foi possível obter resposta.';
+      _chatHistory[agId].push({role:'assistant',content:respTxt});
+      escChatRenderMsgs(agId);
+    } catch(err){
+      escChatRemoveTyping();
+      _chatHistory[agId].push({role:'assistant',content:'⚠️ Erro ao conectar com a IA. Verifique a Edge Function e a chave API.'});
+      escChatRenderMsgs(agId);
+      console.error('[Chat]',err);
+    }
+    _chatLoading=false;
+    document.getElementById('esc-chat-send-btn').disabled=false;
+  };
+
+  function escChatRenderMsgs(agId){
+    var container=document.getElementById('esc-chat-msgs');
+    if(!container) return;
+    var hist=_chatHistory[agId]||[];
+    var html=hist.map(function(m){
+      var isUser=m.role==='user';
+      var time=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      return '<div class="esc-chat-msg '+(isUser?'user':'agent')+'">'
+        +'<div class="esc-chat-bubble">'+escHtml(m.content)+'</div>'
+        +(isUser?'':'<span class="esc-chat-time">'+time+'</span>')
+        +'</div>';
+    }).join('');
+    container.innerHTML=html||'<div class="esc-chat-hint" id="esc-chat-hint">Faça uma pergunta ao agente sobre a sua operação.<br>Ele tem acesso aos dados reais da sua conta.</div>';
+    container.scrollTop=container.scrollHeight;
+  }
+
+  function escChatAppendTyping(){
+    var container=document.getElementById('esc-chat-msgs');
+    if(!container) return;
+    var el=document.createElement('div');
+    el.className='esc-chat-msg agent'; el.id='esc-typing';
+    el.innerHTML='<div class="esc-chat-typing"><span></span><span></span><span></span></div>';
+    container.appendChild(el);
+    container.scrollTop=container.scrollHeight;
+  }
+  function escChatRemoveTyping(){
+    var el=document.getElementById('esc-typing');
+    if(el) el.remove();
+  }
+
+  // ── Reuniões ───────────────────────────────────────────────────────────────
+  var _reunioes={}; // {agentId: [{timestamp, texto},...]}
+  var _reuniaoLoading=false;
+
+  window.escIniciarReuniao=async function(){
+    if(_reuniaoLoading||!activeAgentId) return;
+    var agId=activeAgentId;
+    var btn=document.getElementById('esc-reuniao-btn');
+    var icon=document.getElementById('esc-reuniao-btn-icon');
+    var lbl=document.getElementById('esc-reuniao-btn-label');
+    _reuniaoLoading=true;
+    if(btn) btn.disabled=true;
+    if(icon) icon.innerHTML='<span class="esc-reuniao-spinner"></span>';
+    if(lbl) lbl.textContent='Preparando reunião…';
+
+    try {
+      var ctxData=buildContextForAgent(agId);
+      var res=await fetch(_aiUrl+'/functions/v1/ai-agent',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','apikey':_aiAnonKey},
+        body:JSON.stringify({agentId:agId,mode:'meeting',context:ctxData})
+      });
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      var data=await res.json();
+      if(!_reunioes[agId]) _reunioes[agId]=[];
+      _reunioes[agId].unshift({
+        timestamp:new Date().toISOString(),
+        texto:data.response||'Sem resposta.'
+      });
+      renderReunioes();
+    } catch(err){
+      console.error('[Reunião]',err);
+      alert('Erro ao gerar reunião. Verifique a configuração da Edge Function.');
+    }
+    _reuniaoLoading=false;
+    if(btn) btn.disabled=false;
+    if(icon) icon.textContent='🤝';
+    if(lbl) lbl.textContent='Nova Reunião';
+  };
+
+  function renderReunioes(){
+    var lista=document.getElementById('esc-reunioes-lista');
+    if(!lista||!activeAgentId) return;
+    var reu=_reunioes[activeAgentId]||[];
+    if(reu.length===0){
+      lista.innerHTML='<div class="esc-reuniao-empty">Nenhuma reunião registrada.<br>Clique em "Iniciar Reunião" acima.</div>';
+      return;
+    }
+    lista.innerHTML=reu.map(function(r,i){
+      var dt=new Date(r.timestamp);
+      var dateStr=dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'})
+        +' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      return '<div class="esc-reuniao-card">'
+        +'<div class="esc-reuniao-card-header">'
+        +'<span class="esc-reuniao-card-title">📅 Reunião #'+(reu.length-i)+'</span>'
+        +'<span class="esc-reuniao-card-date">'+dateStr+'</span>'
+        +'</div>'
+        +'<div class="esc-reuniao-card-body">'+escHtml(r.texto)+'</div>'
+        +'</div>';
+    }).join('');
+  }
+
+  // ── Contexto por agente (o que passar pra IA) ──────────────────────────────
+  function buildContextForAgent(agId){
+    var an=dados.anuncios, ads=dados.ads, ven=dados.vendas,
+        rev=dados.reviews, rep=dados.reputacao, skus=dados.skus;
+
+    // Métricas gerais
+    var adsMap={};
+    ads.forEach(function(r){ if(!adsMap[r.item_id]) adsMap[r.item_id]={gasto:0,vendas:0,imp:0,cliques:0}; adsMap[r.item_id].gasto+=r.gasto||0; adsMap[r.item_id].vendas+=r.vendas_atribuidas||0; adsMap[r.item_id].imp+=r.impressoes||0; adsMap[r.item_id].cliques+=r.cliques||0; });
+    var venMap={};
+    ven.forEach(function(r){ if(!venMap[r.item_id]) venMap[r.item_id]={receita:0,pedidos:0}; venMap[r.item_id].receita+=r.receita||0; venMap[r.item_id].pedidos+=r.pedidos||0; });
+    var totalRec=Object.values(venMap).reduce(function(a,v){return a+v.receita;},0);
+    var totalGas=Object.values(adsMap).reduce(function(a,v){return a+v.gasto;},0);
+    var tacos=totalRec>0?totalGas/totalRec:0;
+
+    var ctx={periodo:'Últimos 7 dias', dataConsulta:new Date().toLocaleDateString('pt-BR')};
+
+    if(agId==='gestor'){
+      var fd=typeof window._finGetDados==='function'?window._finGetDados():null;
+      ctx.vendas7d={receita_total:Math.round(totalRec*100)/100, pedidos_total:Object.values(venMap).reduce(function(a,v){return a+v.pedidos;},0), gasto_ads:Math.round(totalGas*100)/100, tacos_global:Math.round(tacos*10000)/100+'%'};
+      if(fd) ctx.pl_mes={receita:fd.rec,comissao:fd.com,cogs:fd.cogs,imposto_est:fd.impEst,frete_est:fd.freteEst,ads:fd.gasAds,mc:fd.mc,mc_pct:(fd.mcPct*100).toFixed(1)+'%',lucro:fd.lucro,pedidos:fd.ped};
+      ctx.reputacao=rep;
+      ctx.sugestoes_urgentes=(sugestoes.gestor||[]).filter(function(s){return s.tipo==='urgente';}).map(function(s){return s.titulo;});
+    } else if(agId==='analista'){
+      ctx.anuncios_catalogo=an.filter(function(a){return a.catalog_listing;}).slice(0,20).map(function(a){return {sku:a.sku,preco:a.preco,preco_concorrente:a.preco_concorrente,buybox_status:a.buybox_status,visit_share:a.visit_share};});
+      ctx.buybox_perdendo=an.filter(function(a){return a.buybox_status==='losing'||a.preco>( a.preco_concorrente||0)*1.01;}).length;
+    } else if(agId==='ads'){
+      ctx.resumo_ads={receita_total:Math.round(totalRec*100)/100,gasto_total:Math.round(totalGas*100)/100,tacos_global:(tacos*100).toFixed(2)+'%'};
+      var top_acos=Object.entries(adsMap).filter(function(e){return e[1].vendas>0;}).map(function(e){var a=an.find(function(x){return x.item_id===e[0];}); return {sku:(a&&a.sku)||e[0],acos:(e[1].gasto/e[1].vendas*100).toFixed(1)+'%',gasto:Math.round(e[1].gasto*100)/100,vendas_ads:Math.round(e[1].vendas*100)/100};}).sort(function(a,b){return parseFloat(b.acos)-parseFloat(a.acos);}).slice(0,10);
+      ctx.top10_acos=top_acos;
+      ctx.sem_impressoes=an.filter(function(a){return a.status==='active'&&!(adsMap[a.item_id]&&adsMap[a.item_id].imp>0);}).length;
+    } else if(agId==='anuncios'){
+      ctx.listings_criticos=an.filter(function(a){return (a.saude||100)<75||(a.experiencia_valor||100)<=60||a.status==='paused';}).slice(0,15).map(function(a){return {sku:a.sku,saude:a.saude,experiencia:a.experiencia_valor,status:a.status,estoque:a.estoque};});
+      ctx.total_ativos=an.filter(function(a){return a.status==='active';}).length;
+      ctx.total_pausados=an.filter(function(a){return a.status==='paused';}).length;
+    } else if(agId==='sac'){
+      ctx.reviews_negativos=(rev||[]).slice(0,10).map(function(r){var a=an.find(function(x){return x.item_id===r.item_id;}); return {sku:(a&&a.sku)||r.item_id,nota:r.nota,comentario:(r.comentario||'').slice(0,200),data:r.data};});
+      ctx.reputacao=rep;
+    } else if(agId==='criativo'){
+      ctx.listings_ctr_baixo=Object.entries(adsMap).filter(function(e){return e[1].imp>200&&e[1].cliques/e[1].imp<0.003;}).map(function(e){var a=an.find(function(x){return x.item_id===e[0];}); return {sku:(a&&a.sku)||e[0],titulo:a&&a.titulo,ctr:(e[1].cliques/e[1].imp*100).toFixed(2)+'%',impressoes:e[1].imp};}).slice(0,8);
+      ctx.titulos_curtos=an.filter(function(a){return a.titulo&&a.titulo.length<45;}).slice(0,8).map(function(a){return {sku:a.sku,titulo:a.titulo,chars:a.titulo.length};});
+    } else if(agId==='assistente'){
+      ctx.resumo_geral={receita_7d:Math.round(totalRec*100)/100,pedidos_7d:Object.values(venMap).reduce(function(a,v){return a+v.pedidos;},0),urgentes_total:Object.values(alertCounts).reduce(function(a,v){return a+v;},0)};
+      ctx.alertas_por_agente={};
+      Object.entries(alertCounts).forEach(function(e){ if(e[1]>0) ctx.alertas_por_agente[e[0]]=e[1]; });
+    }
+    return ctx;
+  }
+
   // ── Public API ─────────────────────────────────────────────────────────────
   window.initEscritorioOnce=function(){
     if(initialized) return;
     initialized=true;
+    // Captura URL e anonkey do Supabase para chamadas à Edge Function
+    try{
+      var sbUrl=sb.supabaseUrl||sb._supabaseUrl||(sb.rest&&sb.rest.url)||'';
+      sbUrl=sbUrl.replace('/rest/v1','').replace(/\/+$/,'');
+      _aiUrl=sbUrl;
+      _aiAnonKey=sb.supabaseKey||sb._supabaseKey||(sb.rest&&sb.rest.headers&&sb.rest.headers.apikey)||'';
+    }catch(e){ console.warn('[AI] Não conseguiu capturar URL do Supabase',e); }
     initCanvas();
     requestAnimationFrame(drawFrame);
     window.escritorioRefresh();
@@ -9276,7 +9711,68 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     await fetchDados();
     buildSugestoes();
     if(el) el.textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    populateCentralAlerts();
+    updateEscritorioBadge();
   };
+
+  function updateEscritorioBadge(){
+    var total=0;
+    Object.values(alertCounts).forEach(function(n){ total+=n; });
+    var badge=document.getElementById('badge-escritorio');
+    if(badge){
+      badge.style.display=total>0?'':'none';
+      badge.textContent=total>0?String(total):'';
+    }
+  }
+
+  function populateCentralAlerts(){
+    var strip=document.getElementById('home-escritorio-alerts');
+    var body=document.getElementById('home-escritorio-alerts-body');
+    if(!strip||!body) return;
+
+    var allAlerts=[];
+    var ORDER=['gestor','analista','ads','anuncios','sac','criativo','assistente'];
+    ORDER.forEach(function(agId){
+      var ag=AGENTS.find(function(a){return a.id===agId;});
+      var sList=sugestoes[agId]||[];
+      sList.forEach(function(s){
+        if(s.tipo==='urgente'||s.tipo==='atencao'){
+          allAlerts.push({agente:ag,sug:s});
+        }
+      });
+    });
+
+    if(allAlerts.length===0){
+      strip.style.display='none';
+      return;
+    }
+    strip.style.display='';
+
+    var colors={'urgente':'#E53535','atencao':'#D4850F'};
+    var icons={'urgente':'🔴','atencao':'🟡'};
+    var html=allAlerts.slice(0,8).map(function(item){
+      var ag=item.agente, s=item.sug;
+      var cor=ag?ag.cor:'#888';
+      var badge=icons[s.tipo]||'🔵';
+      return '<div class="home-esc-alert-row" onclick="go(\'escritorio\',document.querySelector(\'[data-nav-key=escritorio]\'));initEscritorioOnce()" style="cursor:pointer;display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(255,255,255,0.5);border:1px solid rgba(44,44,42,0.08);border-radius:8px;margin-bottom:6px">'
+        +'<span style="font-size:18px;flex-shrink:0">'+(ag?ag.emoji:'📌')+'</span>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-size:12px;font-weight:600;color:'+cor+';margin-bottom:1px">'+(ag?ag.nome:'Escritório')+' '+badge+'</div>'
+        +'<div style="font-size:13px;color:#2C2C2A;font-weight:500">'+escHtml2(s.titulo)+'</div>'
+        +(s.descricao?'<div style="font-size:12px;color:#5F5E5A;margin-top:2px;white-space:pre-line">'+escHtml2(s.descricao.split("\n").slice(0,2).join("\n"))+'</div>':'')
+        +'</div>'
+        +'</div>';
+    }).join('');
+
+    if(allAlerts.length>8){
+      html+='<div style="font-size:12px;color:#888780;text-align:center;padding:6px">+' +(allAlerts.length-8)+' mais no Escritório…</div>';
+    }
+    body.innerHTML=html;
+  }
+
+  function escHtml2(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  window.populateCentralAlerts=populateCentralAlerts;
 
 })(); // end VirtualOffice
 
@@ -9406,6 +9902,9 @@ async function loadFin(){
 
     _st.dados={rec,com,ped,uni,cogs,recCob,gasAds,impEst,freteEst,mc,mcPct,cfTotal,lucro,pe,
                imp,cli,uAds,vAds,recA,lucroA,cobSku:rec>0?recCob/rec:0};
+    window._finGetDados=function(){ return _st.dados; };
+    // Atualiza painel Gestor se Escritório já inicializou
+    if(typeof window.populateCentralAlerts==='function') window.populateCentralAlerts();
     render();
   }catch(err){ console.error('[Financeiro]',err); }
   _st.loading=false;
