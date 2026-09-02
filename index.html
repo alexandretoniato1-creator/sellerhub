@@ -2471,6 +2471,8 @@ function go(id,btn){
   var navEl=document.querySelector('[data-nav-key="'+navKey+'"]');
   if(navEl) navEl.classList.add('active');
   if(innerWidth<=768) toggleSidebar();
+  // Reseta scroll ao topo ao trocar de página
+  window.scrollTo(0,0);
   if(id==='home') renderHome();
   if(id==='performance') refreshActivePerfSubtab();
   if(id==='escritorio'){var ep=document.getElementById('page-escritorio');if(ep)ep.style.display='flex';}
