@@ -904,6 +904,7 @@ td[contenteditable]:focus::after { display: none; }
 body.sidebar-collapsed .sidebar { width: 0 !important; transform: translateX(-240px) !important; overflow: hidden; }
 body.sidebar-collapsed .main { margin-left: 0 !important; }
 body.sidebar-collapsed #page-escritorio { left: 0 !important; }
+body.sidebar-collapsed #page-financeiro { left: 0 !important; }
 body.sidebar-collapsed .hamburger { display: none; }
 
 /* Nav item hidden in presentation mode */
@@ -1099,7 +1100,20 @@ body.sidebar-collapsed .hamburger { display: none; }
 }
 
 /* ── FINANCEIRO ───────────────────────────────────────────────────────────── */
-.fin-container { max-width:1080px; margin:0 auto; padding-bottom:80px; }
+#page-financeiro.active {
+  position: fixed;
+  left: 240px;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  overflow-y: auto;
+  z-index: 10;
+  background: #07090E;
+  display: block !important;
+}
+@media(max-width:768px){ #page-financeiro.active { left:0; } }
+
+.fin-container { max-width:1080px; margin:0 auto; padding:28px 32px 80px; }
 
 /* Header */
 .fin-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
@@ -8561,7 +8575,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
   // Sidebar margin — always 64px on desktop
   const style = document.createElement('style');
-  style.textContent = `@media (min-width: 769px) { .main { margin-left: 64px !important; } #page-escritorio { left: 64px !important; } }`;
+  style.textContent = `@media (min-width: 769px) { .main { margin-left: 64px !important; } #page-escritorio { left: 64px !important; } #page-financeiro.active { left: 64px !important; } }`;
   document.head.appendChild(style);
 })();
 
