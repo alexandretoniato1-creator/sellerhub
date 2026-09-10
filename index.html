@@ -119,6 +119,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--slate-900);
 .pw-loading { color: var(--slate-400); font-size: 13px; min-height: 20px; text-align: center; }
 
 /* LAYOUT */
+html, body { overflow-anchor: none; } /* evita CSS Scroll Anchoring no container raiz */
 #app { display: none; }
 #app.active { display: flex; min-height: 100vh; }
 
@@ -2544,11 +2545,13 @@ function goAgendaHub(){
   agGoTab(_hubTab.agenda||'agenda',document.getElementById('ag-tab-'+(_hubTab.agenda||'agenda')));
   // Re-renderiza o calendário toda vez que a aba abrir (garante visibilidade)
   if(typeof renderCal==='function') renderCal();
-  // Garante scroll ao topo APÓS renderização do calendário (evita shift de scroll anchoring)
+  // Double rAF: garante scroll ao topo após TODAS as mutações de DOM (inclui renderCal)
   requestAnimationFrame(function(){
-    window.scrollTo(0,0);
-    document.body.scrollTop=0;
-    document.documentElement.scrollTop=0;
+    requestAnimationFrame(function(){
+      window.scrollTo(0,0);
+      document.body.scrollTop=0;
+      document.documentElement.scrollTop=0;
+    });
   });
 }
 function agGoTab(tab,btn){
@@ -6295,6 +6298,8 @@ function fabAction(){
 
 // ── INIT APP (carrega dados do Supabase) ──
 async function initApp(){
+  // Desabilita restauração de scroll automática do browser ao navegar entre abas
+  if('scrollRestoration' in history) history.scrollRestoration='manual';
   showSync('Carregando dados…');
   await Promise.all([
     loadSkus(),
