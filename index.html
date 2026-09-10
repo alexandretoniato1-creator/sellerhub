@@ -1629,7 +1629,7 @@ body.sidebar-collapsed .hamburger { display: none; }
         </tr></thead>
         <tbody class="hub-tbody" id="prod-tbody"></tbody>
       </table></div>
-      <div class="sec-hint" style="margin-top:8px">Marg. Líq. = M.C. − TACOS. Estoque mostra depósito + Full. Exp. = experiência de compra do anúncio. Custo, comissão e edição ficam em "Detalhes".</div>
+      <div class="sec-hint" style="margin-top:8px">M.C.<sup style="font-size:9px">hub</sup> = margem do Hub de Precificação (inclui frete, tarifa, rebate e ADS alvo). Marg. Líq. = M.C. ajustada pelo TACOS real. Estoque mostra depósito + Full. Exp. = experiência de compra. Detalhes ficam no botão "Detalhes".</div>
 
       <!-- Nível 3: contexto de margem -->
       <div class="sec-title">Margem por SKU — melhores e piores</div>
@@ -2212,6 +2212,51 @@ body.sidebar-collapsed .hamburger { display: none; }
 const SUPA_URL = 'https://dtvnoqmavqoftqyurtyv.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dm5vcW1hdnFvZnRxeXVydHl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzkxNzMsImV4cCI6MjA5MTk1NTE3M30.-u_di6GZcn9B2jCMzN59fVEvGFmlQ5lU5AVvck3xRc4';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── HUB DE PRECIFICAÇÃO (Supabase externo — leitura via anon key público) ──
+// MC é calculada lá com fórmula completa: Preço − Custo − Frete − Tarifa − Rebate − ADS alvo.
+// A chave anon é pública (está no HTML do hub em logbox-fin.github.io/hubprecificacao/).
+const HUB_SUPA_URL = 'https://xvecqetlptysnsjadvzb.supabase.co';
+const HUB_SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh2ZWNxZXRscHR5c25zamFkdnpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjMxNTIsImV4cCI6MjA5MTkzOTE1Mn0.KQ1c30VsZc_JupmEov5a7v8T2M9dEMYaEY80o-eHZWY';
+
+// Cache de MC do hub: { [sku]: { [marketplace]: { mc, ads, mc_atualizada_em } } }
+let _hubMcCache = null;
+let _hubMcPromise = null;
+
+// Carrega marketplace_dados do hub de precificação.
+// Retorna mapa { sku → { marketplace → { mc, ads, mc_atualizada_em } } }
+async function hubMcCarregar() {
+  if (_hubMcCache !== null) return _hubMcCache;
+  if (_hubMcPromise) return _hubMcPromise;
+  _hubMcPromise = (async () => {
+    try {
+      const res = await fetch(
+        `${HUB_SUPA_URL}/rest/v1/marketplace_dados?select=sku,marketplace,mc,ads,mc_atualizada_em&mc=not.is.null`,
+        { headers: { 'apikey': HUB_SUPA_KEY, 'Authorization': 'Bearer ' + HUB_SUPA_KEY } }
+      );
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+      const map = {};
+      rows.forEach(r => {
+        if (!map[r.sku]) map[r.sku] = {};
+        map[r.sku][r.marketplace] = { mc: r.mc, ads: parseFloat(r.ads) || 0, mc_atualizada_em: r.mc_atualizada_em };
+      });
+      _hubMcCache = map;
+      return map;
+    } catch (e) {
+      console.warn('[SellerHub] Hub MC: falha ao carregar do hub de precificação', e);
+      _hubMcCache = {};
+      return {};
+    }
+  })();
+  return _hubMcPromise;
+}
+
+// Retorna a entrada de MC do hub para um SKU + marketplace, ou null se não existir.
+function hubMcGet(hubMcMap, sku, marketplace) {
+  if (!sku || !hubMcMap) return null;
+  return hubMcMap[sku]?.[marketplace] ?? null;
+}
 
 function showSync(msg='Salvando…', ok=false){
   const el = document.getElementById('sync-indicator');
@@ -3576,7 +3621,10 @@ async function renderProdutos(){
   const tbody = document.getElementById('prod-tbody');
   tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
 
-  const {anunciosRes, adsRes, vendasRes, skusRes, visitasRes} = await lbxCarregarTudo();
+  const [{anunciosRes, adsRes, vendasRes, skusRes, visitasRes}, hubMcMap] = await Promise.all([
+    lbxCarregarTudo(),
+    hubMcCarregar(),
+  ]);
   if(anunciosRes.error||adsRes.error||vendasRes.error||skusRes.error||visitasRes.error){
     tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
     return;
@@ -3681,8 +3729,22 @@ async function renderProdutos(){
     const custo = skuInfo?.custo || 0;
     const precoApi = principal.precoPromocional ?? (principal.itemId && anuncioPorItem[principal.itemId] ? (anuncioPorItem[principal.itemId].preco||0) : 0);
     const precoConcorrente = principal.precoConcorrente ?? null;
-    const mc = skuInfo?.mc_planejada != null ? Number(skuInfo.mc_planejada) : (precoApi>0 ? ((precoApi-custo)/precoApi*100) : null);
-    const margemLiquidaReal = (mc !== null && tacosPct !== null) ? (mc - tacosPct) : null;
+    // MC: prioridade → Hub de Precificação (meli) > mc_planejada da tabela skus > fórmula simples
+    const hubEntry = hubMcGet(hubMcMap, sku, 'meli');
+    const mc = hubEntry !== null
+      ? hubEntry.mc                                                             // MC real do hub (já inclui frete, tarifa, rebate, ADS alvo)
+      : (skuInfo?.mc_planejada != null
+          ? Number(skuInfo.mc_planejada)                                       // fallback: mc planejada cadastrada
+          : (precoApi>0 ? ((precoApi-custo)/precoApi*100) : null));           // fallback: fórmula simples
+    // Marg. Líquida: ajusta MC pelo ADS real vs ADS alvo usado no hub.
+    // Se vier do hub: hub_mc + hub_ads_alvo - tacos_real (remove o ADS alvo que o hub já descontou, coloca o real).
+    // Se vier de outra fonte: mc - tacos_real (lógica anterior).
+    const margemLiquidaReal = mc !== null && tacosPct !== null
+      ? (hubEntry !== null
+          ? (mc + (hubEntry.ads || 0) - tacosPct)   // ajuste ADS real vs alvo
+          : (mc - tacosPct))
+      : null;
+    const mcOrigemHub = hubEntry !== null;
 
     // queda de vendas: soma o histórico diário de TODOS os itens do grupo, dia a dia
     const diasMap = {};
@@ -3711,7 +3773,8 @@ async function renderProdutos(){
       receita, unidades, pedidos, visitas, conversao, gasto, tacosPct, metaTacos, acos,
       buyboxStatus, temCatalogo, experiencia,
       estoque: estoque>=0?estoque:null, estoqueDeposito: estoqueDeposito>=0?estoqueDeposito:null, estoqueFull: estoqueFull>=0?estoqueFull:null,
-      estoqueMin, saude, comissao, margemLiquidaReal, alertas,
+      estoqueMin, saude, comissao, margemLiquidaReal, alertas, mcOrigemHub,
+      mcAtualizadaEm: hubEntry?.mc_atualizada_em ?? null,
     });
   });
 
@@ -3792,7 +3855,7 @@ function desenharProdutosTabela(){
       <td style="text-align:right">${l.pedidos}</td>
       <td style="text-align:right">${l.conversao!==null?l.conversao.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right" class="${l.tacosPct!==null && l.tacosPct>l.metaTacos?'neg':''}" title="Meta: ${l.metaTacos}%">${l.tacosPct!==null?l.tacosPct.toFixed(1)+'%':'—'}</td>
-      <td style="text-align:right;${l.mc!==null&&l.mc<15?'color:var(--coral-500)':''}">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</td>
+      <td style="text-align:right;${l.mc!==null&&l.mc<15?'color:var(--coral-500)':''}" title="${l.mcOrigemHub?'MC do Hub de Precificação'+(l.mcAtualizadaEm?' — atualizada '+new Date(l.mcAtualizadaEm).toLocaleDateString('pt-BR'):''):'MC calculada localmente'}">${l.mc!==null?l.mc.toFixed(1)+'%'+(l.mcOrigemHub?'<span style="font-size:9px;vertical-align:super;margin-left:2px;color:var(--slate-400)">hub</span>':''):'—'}</td>
       <td style="text-align:right;font-weight:600;${l.margemLiquidaReal!==null&&l.margemLiquidaReal<0?'color:var(--coral-500)':(l.margemLiquidaReal!==null&&l.margemLiquidaReal>=15?'color:var(--green-600)':'')}">${l.margemLiquidaReal!==null?l.margemLiquidaReal.toFixed(1)+'%':'—'}</td>
       <td>${bbBadge(l)}</td>
       <td style="text-align:right" class="${estoqueBaixo?'neg':''}" title="Depósito: ${l.estoqueDeposito??'—'} · Full: ${l.estoqueFull??'—'} · Mínimo: ${l.estoqueMin}">${estoqueTotal>0?estoqueTotal.toLocaleString('pt-BR'):(l.estoque??'—')}</td>
@@ -3806,7 +3869,9 @@ function desenharTop5MC(){
   const el = document.getElementById('prod-top5-charts');
   if(!el || !prodDadosCache) return;
   const comMc = prodDadosCache.filter(l=>l.mc!==null);
-  if(!comMc.length){ el.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Nenhum SKU com custo cadastrado no Hub de Precificação ainda — sem custo não dá pra calcular margem.</div>'; return; }
+  const hubCount = comMc.filter(l=>l.mcOrigemHub).length;
+  if(!comMc.length){ el.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Nenhum SKU com MC disponível no Hub de Precificação ainda.</div>'; return; }
+  const hubBadge = hubCount>0 ? `<span style="font-size:11px;color:var(--slate-400);margin-left:6px">${hubCount} do hub</span>` : '';
 
   const top5MC = [...comMc].sort((a,b)=>b.mc-a.mc).slice(0,5);
   const bottom5MC = [...comMc].sort((a,b)=>a.mc-b.mc).slice(0,5);
@@ -3816,12 +3881,12 @@ function desenharTop5MC(){
 
   el.innerHTML = `
     <div class="chart-box">
-      <div class="chart-title">Top 5 — Melhor M.C. (%)</div>
-      ${top5MC.map(l=>`<div class="bar-row"><div class="bar-label" title="${l.titulo}">${nomeCurto(l.titulo)}</div><div class="bar-track"><div class="bar-fill green" style="width:${Math.max(l.mc/maxMC*100,2).toFixed(0)}%"></div></div><div class="bar-val">${l.mc.toFixed(1)}%</div></div>`).join('')}
+      <div class="chart-title">Top 5 — Melhor M.C. (%)${hubBadge}</div>
+      ${top5MC.map(l=>`<div class="bar-row"><div class="bar-label" title="${l.titulo}">${nomeCurto(l.titulo)}</div><div class="bar-track"><div class="bar-fill green" style="width:${Math.max(l.mc/maxMC*100,2).toFixed(0)}%"></div></div><div class="bar-val">${l.mc.toFixed(1)}%${l.mcOrigemHub?'<sup style="font-size:8px">hub</sup>':''}</div></div>`).join('')}
     </div>
     <div class="chart-box">
       <div class="chart-title">Top 5 — Pior M.C. (%) — atenção aqui</div>
-      ${bottom5MC.map(l=>`<div class="bar-row"><div class="bar-label" title="${l.titulo}">${nomeCurto(l.titulo)}</div><div class="bar-track"><div class="bar-fill coral" style="width:${Math.max(l.mc/maxMC*100,2).toFixed(0)}%"></div></div><div class="bar-val">${l.mc.toFixed(1)}%</div></div>`).join('')}
+      ${bottom5MC.map(l=>`<div class="bar-row"><div class="bar-label" title="${l.titulo}">${nomeCurto(l.titulo)}</div><div class="bar-track"><div class="bar-fill coral" style="width:${Math.max(l.mc/maxMC*100,2).toFixed(0)}%"></div></div><div class="bar-val">${l.mc.toFixed(1)}%${l.mcOrigemHub?'<sup style="font-size:8px">hub</sup>':''}</div></div>`).join('')}
     </div>
   `;
 }
@@ -3893,7 +3958,7 @@ async function prodAbrirDrawer(chave){
     <div class="vg-kpi-grid" style="margin-bottom:10px">
       <div class="vg-kpi-card"><div class="vg-kpi-label">Custo</div><div class="vg-kpi-value">${l.custo>0?lbxFmtMoeda(l.custo):'—'}</div></div>
       <div class="vg-kpi-card"><div class="vg-kpi-label">Preço no anúncio</div><div class="vg-kpi-value">${l.precoApi>0?lbxFmtMoeda(l.precoApi):'—'}</div></div>
-      <div class="vg-kpi-card"><div class="vg-kpi-label">M.C. Planejada</div><div class="vg-kpi-value">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</div></div>
+      <div class="vg-kpi-card" title="${l.mcOrigemHub?'Do Hub de Precificação'+(l.mcAtualizadaEm?' — '+new Date(l.mcAtualizadaEm).toLocaleDateString('pt-BR'):''):'Calculada localmente'}"><div class="vg-kpi-label">${l.mcOrigemHub?'M.C. (Hub Precif.)':'M.C. Planejada'}</div><div class="vg-kpi-value ${l.mc!==null&&l.mc<15?'neg':l.mc!==null&&l.mc>=20?'pos':''}">${l.mc!==null?l.mc.toFixed(1)+'%':'—'}</div></div>
       <div class="vg-kpi-card"><div class="vg-kpi-label">Estoque total</div><div class="vg-kpi-value">${l.estoque??'—'}</div></div>
     </div>
     <div class="vg-kpi-grid" style="margin-bottom:20px">
