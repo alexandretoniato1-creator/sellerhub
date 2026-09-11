@@ -1114,6 +1114,17 @@ body.sidebar-collapsed .hamburger { display: none; }
 .sala-crachá.sala-todos.on { background:rgba(107,124,255,.18); color:#9DAAFF; border-color:rgba(107,124,255,.45); }
 .sala-sistema { align-self:center; font-size:11px; font-family:var(--mono); color:#6E7788;
   background:rgba(255,255,255,.04); border-radius:10px; padding:4px 12px; }
+/* Barra de turno: quem está falando, quem está na fila, quem já falou */
+.sala-turno { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:-6px 0 12px;
+  font-size:11px; font-family:var(--mono); color:#6E7788; min-height:22px; }
+.sala-turno .t-passo { display:inline-flex; align-items:center; gap:5px; border-radius:11px;
+  padding:2px 9px; background:rgba(255,255,255,.04); border:1px solid transparent; }
+.sala-turno .t-passo.agora { border-color:rgba(107,124,255,.5); color:#9DAAFF;
+  background:rgba(107,124,255,.12); animation:tPulso 1.3s ease-in-out infinite; }
+.sala-turno .t-passo.feito { color:#4ADE9A; }
+.sala-turno .t-passo.fila { opacity:.55; }
+.sala-turno .t-livre { color:#5E6675; }
+@keyframes tPulso { 0%,100%{opacity:1} 50%{opacity:.55} }
 
 /* Faixa de pulso e diário do escritório */
 .esc-pulso { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 4px 0;
@@ -2300,6 +2311,7 @@ body.sidebar-collapsed .hamburger { display: none; }
           <div id="sala-ativa" style="display:none">
             <div class="sala-pauta-fixa" id="sala-pauta-fixa"></div>
             <div class="sala-participantes" id="sala-participantes"></div>
+            <div class="sala-turno" id="sala-turno"></div>
             <div class="sala-fio" id="sala-fio"></div>
             <div class="sala-entrada">
               <textarea id="sala-input" placeholder="Fale com a mesa… (Enter envia)" rows="1"></textarea>
@@ -11097,6 +11109,29 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var tituloEv=params[0]||'Evento';
       var dataEv=params[1]||new Date().toISOString().slice(0,10);
       var horaEv=params[2]||null;
+
+      /* Trava de data. O prompt manda pegar a data do `calendario` e não
+         inventar — mas prompt não é garantia: o Assistente já agendou seis
+         compromissos em janeiro de 2025, vinte meses no passado, e o app
+         gravou calado. Regra de agenda é regra de código.
+         Nada antes de hoje, nada além de um ano, e formato exato. */
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(dataEv)){
+        throw new Error('data "'+dataEv+'" não está no formato AAAA-MM-DD. Use uma data do calendario.');
+      }
+      var _hojeS=hojeISO();
+      var _limite=new Date(); _limite.setFullYear(_limite.getFullYear()+1);
+      var _limiteS=_limite.toISOString().slice(0,10);
+      if(dataEv < _hojeS){
+        throw new Error('data '+dataEv+' está no passado (hoje é '+_hojeS+'). '
+          +'Reemita a ação com uma data de hoje em diante, tirada do calendario.');
+      }
+      if(dataEv > _limiteS){
+        throw new Error('data '+dataEv+' está a mais de um ano daqui (hoje é '+_hojeS+'). '
+          +'Confirme o ano antes de reemitir.');
+      }
+      if(horaEv && !/^\d{2}:\d{2}(:\d{2})?$/.test(horaEv)){
+        throw new Error('horário "'+horaEv+'" não está no formato HH:MM.');
+      }
       // Sem lembrete o push só avisa na hora exata — inútil pra se preparar.
       var lembrete = params[4]!==undefined && params[4]!=='' ? parseInt(params[4],10) : 15;
       if(isNaN(lembrete) || lembrete<0) lembrete=15;
@@ -12052,7 +12087,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
      Toda reunião termina em ata; a ata pode virar slide.
      ═══════════════════════════════════════════════════════════════════════ */
 
-  var _sala = { id:null, participantes:[], pauta:'', falas:[], ocupada:false, forcarTodos:false };
+  var _sala = { id:null, participantes:[], pauta:'', falas:[], ocupada:false, forcarTodos:false,
+                turno:null };   // turno = {fila, atual, feitos} — quem fala nesta rodada
 
   /* A reunião vive no Supabase, não na memória da aba. Fechar o app, atualizar
      a página ou trocar de aparelho não encerra nada — mas até aqui a tela não
@@ -12071,7 +12107,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       _sala.pauta=reu.pauta||'';
       _sala.participantes=Array.isArray(reu.participantes)?reu.participantes.slice():[];
       _sala.falas=(m.data||[]).map(function(f){ return {autor:f.autor, conteudo:f.conteudo}; });
-      _sala.ocupada=false; _sala.forcarTodos=false;
+      _sala.ocupada=false; _sala.forcarTodos=false; _sala.turno=null;
       if(typeof window.escMapaConvocar==='function') window.escMapaConvocar(_sala.participantes);
       return true;
     }catch(e){ console.warn('[Escritório] não consegui retomar a reunião',e); return false; }
@@ -12144,6 +12180,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       +' · continua salva mesmo se você fechar o app';
     document.getElementById('sala-pauta-fixa').innerHTML='<strong>Pauta:</strong> '+escHtml(_sala.pauta);
     escPintarControles();
+    escPintarTurno();
     escPintarFio();
     var ta=document.getElementById('sala-input');
     if(ta && !ta._ligado){
@@ -12187,6 +12224,27 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     escPintarControles(); escPintarFio();
     if(typeof window.escMapaConvocar==='function') window.escMapaConvocar(_sala.participantes);
   };
+
+  /* A barra de turno existe porque "X está pensando…" some no scroll do fio.
+     Aqui fica fixo em cima: quem já falou, quem está falando agora e quem
+     ainda vai falar nesta rodada. Sem isso a reunião parece travada. */
+  function escPintarTurno(){
+    var el=document.getElementById('sala-turno'); if(!el) return;
+    var t=_sala.turno;
+    if(!t || !t.fila || !t.fila.length){
+      el.innerHTML='<span class="t-livre">Mesa livre — escreva e a rodada começa.</span>';
+      return;
+    }
+    var passos=t.fila.map(function(id){
+      var a=agentePorId(id); if(!a) return '';
+      var estado = t.feitos.indexOf(id)>=0 ? 'feito' : (id===t.atual ? 'agora' : 'fila');
+      var marca  = estado==='feito' ? '✓' : estado==='agora' ? '💬' : '⏳';
+      var sufixo = estado==='agora' ? ' está falando' : '';
+      return '<span class="t-passo '+estado+'">'+marca+' '+a.nome+sufixo+'</span>';
+    }).join('');
+    var pos=t.feitos.length+(t.atual?1:0);
+    el.innerHTML=passos+'<span class="t-livre">· '+pos+' de '+t.fila.length+'</span>';
+  }
 
   function escPintarFio(){
     var fio=document.getElementById('sala-fio'); if(!fio) return;
@@ -12274,11 +12332,14 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
     var fila = Array.isArray(quem) ? quem.slice() : (quem ? [quem] : _sala.participantes.slice());
     var jaFalou={}, repasses=0;
+    _sala.turno={fila:fila, atual:null, feitos:[]};
+    escPintarTurno();
     for(var i=0;i<fila.length;i++){
       var agId=fila[i];
       if(jaFalou[agId]) continue;
       jaFalou[agId]=true;
       var a=agentePorId(agId); if(!a) continue;
+      _sala.turno.atual=agId; escPintarTurno();
       escAtividade(agId,'falando','Na reunião: '+(_sala.pauta||'').slice(0,60));
       if(fio){
         var p=document.createElement('div');
@@ -12342,6 +12403,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           if(_sala.participantes.indexOf(alvo)<0) _sala.participantes.push(alvo);
           repasses++;
           fila.push(alvo);
+          escPintarTurno();
           await escSalvarFala('sistema', a.nome+' passou pro '+agenteNome(alvo)
             +(motivo?' — '+motivo:'')+'.');
           escPintarFio(); escPintarControles();
@@ -12354,8 +12416,13 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         escPintarFio();
       }
       escAtividade(agId,'ocioso',null);
+      _sala.turno.feitos.push(agId);
+      _sala.turno.atual=null;
+      escPintarTurno();
     }
     _sala.ocupada=false;
+    _sala.turno=null;
+    escPintarTurno();
     if(btn) btn.disabled=false;
   }
 
@@ -12436,7 +12503,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }catch(e){}
     alert('Reunião encerrada. A ata foi salva nas suas Anotações.');
     if(typeof window.escMapaDispensar==='function') window.escMapaDispensar();
-    _sala={id:null,participantes:[],pauta:'',falas:[],ocupada:false,forcarTodos:false};
+    _sala={id:null,participantes:[],pauta:'',falas:[],ocupada:false,forcarTodos:false,turno:null};
     escFecharSala();
   };
 
@@ -12637,8 +12704,13 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       amanha:_maisDias(1), amanha_e:_diasSem[(_h.getDay()+1)%7],
       proxima_segunda:_proximo(1), proxima_terca:_proximo(2), proxima_quarta:_proximo(3),
       proxima_quinta:_proximo(4), proxima_sexta:_proximo(5), proximo_sabado:_proximo(6),
+      ano_corrente:_h.getFullYear(),
+      proxima_semana:{de:_proximo(1), ate:_maisDias(((5-_h.getDay()+7)%7)+7)},
       _obs:'Datas para usar em criar_evento. Nunca escreva uma data que não esteja aqui. '
-          +'"Segunda" significa proxima_segunda; confira o dia da semana antes de marcar.'
+          +'"Segunda" significa proxima_segunda; confira o dia da semana antes de marcar. '
+          +'O ano é '+_h.getFullYear()+' — conferir o ano ANTES de escrever a data. '
+          +'O SellerHub recusa qualquer evento anterior a '+_h.toISOString().slice(0,10)
+          +' ou posterior a um ano daqui, e a recusa aparece para o Ale como falha sua.'
     };
 
     // Qualquer agente pode ser chamado para agendar algo, então todos precisam
