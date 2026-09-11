@@ -231,7 +231,7 @@ table { width:100%; border-collapse:collapse; font-size:12px; }
 
 /* Drawer lateral SKU */
 .sku-drawer {
-  position:fixed; top:0; right:-480px; width:460px; max-width:95vw;
+  position:fixed; top:0; right:-620px; width:600px; max-width:96vw;
   height:100vh; background:var(--white); box-shadow:-4px 0 24px rgba(44,44,42,0.12);
   z-index:200; transition:right 0.3s ease; display:flex; flex-direction:column;
   overflow:hidden;
@@ -1174,151 +1174,64 @@ body.sidebar-collapsed .hamburger { display: none; }
 .hub-secondary-btn:hover{color:var(--text)}
 .hub-secondary-btn.active{color:var(--text);border-bottom-color:#22c55e}
 
-.fin-container { max-width:1080px; margin:0 auto; padding:28px 32px 80px; }
+/* ===== FINANCEIRO — usa a mesma linguagem visual das outras abas ===== */
+.fin-select {
+  background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius-sm);
+  padding:7px 12px; font-family:var(--mono); font-size:12px; color:var(--slate-900); cursor:pointer;
+}
+.fin-select:focus { outline:none; border-color:var(--coral-500); }
 
-/* Header */
-.fin-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
-.fin-saude-badge { display:flex; align-items:center; gap:7px; margin-bottom:5px; }
-.fin-saude-dot { width:8px; height:8px; border-radius:50%; background:#9A9A90; flex-shrink:0; }
-.fin-saude-dot.verde { background:#3B6D11; }
-.fin-saude-dot.amarelo { background:#E8A000; }
-.fin-saude-dot.critico { background:#D85A30; }
-.fin-saude-label { font-size:11px; font-weight:700; color:#9A9A90; letter-spacing:.08em; font-family:var(--mono); text-transform:uppercase; }
-.fin-saude-label.verde { color:#3B6D11; }
-.fin-saude-label.amarelo { color:#B07A00; }
-.fin-saude-label.critico { color:#D85A30; }
-.fin-title { font-size:26px; font-weight:700; color:var(--text); letter-spacing:-.5px; margin:0 0 4px; }
-.fin-subtitle { font-size:13px; color:#9A9A90; margin:0; }
-.fin-select { border:1.5px solid var(--coral-500); background:transparent; color:var(--coral-500); font-family:var(--font); font-size:13px; font-weight:600; padding:7px 30px 7px 12px; border-radius:8px; cursor:pointer; outline:none; appearance:none; -webkit-appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23D85A30'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; min-width:160px; }
+/* Cascata — da receita linkada até a MPA */
+.fin-cascata { background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius); padding:16px 18px; }
+.fin-cline { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--slate-50); }
+.fin-cline:first-child { border-top:none; }
+.fin-cline.result { border-top:1.5px solid var(--slate-100); margin-top:2px; }
+.fin-c-sinal { font-family:var(--mono); font-size:13px; color:var(--slate-400); width:12px; flex-shrink:0; }
+.fin-c-label { font-size:12.5px; color:var(--slate-700); flex:1; min-width:0; }
+.fin-cline.result .fin-c-label { font-weight:700; color:var(--slate-900); }
+.fin-c-bar { width:160px; min-width:60px; height:6px; background:var(--slate-50); border-radius:3px; overflow:hidden; flex-shrink:0; }
+.fin-c-bar-fill { height:100%; border-radius:3px; }
+.fin-c-bar-fill.pos { background:var(--slate-200); }
+.fin-c-bar-fill.neg { background:var(--coral-400); }
+.fin-c-bar-fill.ads { background:var(--amber-100); }
+.fin-c-bar-fill.res { background:var(--green-600); }
+.fin-c-bar-fill.neg-res { background:var(--coral-500); }
+.fin-c-valor { font-family:var(--mono); font-size:12.5px; color:var(--slate-900); text-align:right; min-width:130px; flex-shrink:0; }
+.fin-cline.result .fin-c-valor { font-weight:700; font-size:13.5px; }
+.fin-c-est { font-family:var(--mono); font-size:9px; font-style:normal; background:var(--blue-100); color:var(--blue-600);
+  border-radius:10px; padding:1px 6px; margin-left:5px; vertical-align:middle; }
+.fin-note { font-size:11.5px; color:var(--slate-400); line-height:1.6; margin:12px 0 0; }
+.fin-note strong { color:var(--slate-700); }
 
-/* Hero card */
-.fin-hero-card { background:linear-gradient(135deg,#f0faf4 0%,#e6f7ed 100%); border:1.5px solid rgba(59,109,17,.2); border-radius:14px; padding:22px 28px; margin-bottom:16px; position:relative; overflow:hidden; }
-.fin-hero-card::after { content:''; position:absolute; top:-30px; right:-30px; width:140px; height:140px; border-radius:50%; background:rgba(59,109,17,.05); pointer-events:none; }
-.fin-hero-card.amarelo { background:linear-gradient(135deg,#fffcf0,#fff8e0); border-color:rgba(232,160,0,.25); }
-.fin-hero-card.critico { background:linear-gradient(135deg,#fff5f2,#feeee8); border-color:rgba(216,90,48,.22); }
-.fin-hero-label { font-size:11px; font-weight:700; color:#3B6D11; letter-spacing:.1em; text-transform:uppercase; font-family:var(--mono); margin-bottom:8px; }
-.fin-hero-card.amarelo .fin-hero-label { color:#B07A00; }
-.fin-hero-card.critico .fin-hero-label { color:#C0390F; }
-.fin-hero-value { font-size:40px; font-weight:700; color:#3B6D11; font-family:var(--mono); letter-spacing:-1px; line-height:1.05; margin-bottom:10px; }
-.fin-hero-card.amarelo .fin-hero-value { color:#B07A00; }
-.fin-hero-card.critico .fin-hero-value { color:#C0390F; }
-.fin-hero-foot { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-.fin-hero-badge { display:inline-flex; align-items:center; gap:4px; background:rgba(59,109,17,.1); color:#3B6D11; font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px; border:1px solid rgba(59,109,17,.2); }
-.fin-hero-card.amarelo .fin-hero-badge { background:rgba(232,160,0,.1); color:#B07A00; border-color:rgba(232,160,0,.2); }
-.fin-hero-card.critico .fin-hero-badge { background:rgba(216,90,48,.1); color:#C0390F; border-color:rgba(216,90,48,.2); }
-.fin-hero-vs { font-size:13px; color:#3B6D11; font-family:var(--mono); font-weight:600; }
-.fin-hero-card.critico .fin-hero-vs { color:#C0390F; }
+/* Rankings lado a lado */
+.fin-duo { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:900px){ .fin-duo { grid-template-columns:1fr; } }
+.fin-rank-num { font-family:var(--mono); font-size:11px; color:var(--slate-400); width:16px; display:inline-block; }
+.fin-rank-share { font-family:var(--mono); font-size:10.5px; color:var(--slate-400); }
 
-/* KPI row */
-.fin-kpi-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
-.fin-kpi { background:#fff; border:1px solid rgba(0,0,0,.07); border-radius:10px; padding:14px 18px; }
-.fin-kpi-label { font-size:10px; font-weight:700; color:#9A9A90; letter-spacing:.07em; text-transform:uppercase; font-family:var(--mono); margin-bottom:5px; display:flex; align-items:center; gap:5px; }
-.fin-kpi-tip { display:inline-flex; align-items:center; justify-content:center; width:13px; height:13px; border-radius:50%; background:#EEEBE6; color:#999; font-size:9px; cursor:default; font-style:normal; }
-.fin-kpi-value { font-size:21px; font-weight:700; color:var(--text); font-family:var(--mono); letter-spacing:-.4px; }
-
-/* Body layout */
-.fin-body { display:grid; grid-template-columns:156px 1fr; gap:24px; align-items:start; }
-.fin-subnav { display:flex; flex-direction:column; gap:2px; }
-.fin-subnav-section { font-size:10px; font-weight:700; color:#C8C5BC; letter-spacing:.07em; text-transform:uppercase; font-family:var(--mono); padding:0 8px 8px; }
-.fin-subnav-btn { background:none; border:none; text-align:left; padding:8px 10px; border-radius:7px; font-family:var(--font); font-size:13px; color:#6A6A60; cursor:pointer; transition:all .15s; position:relative; font-weight:500; width:100%; }
-.fin-subnav-btn:hover { background:#F0EDE8; color:var(--text); }
-.fin-subnav-btn.active { background:#F0EDE8; color:var(--text); font-weight:600; }
-.fin-subnav-btn.active::before { content:''; position:absolute; left:0; top:5px; bottom:5px; width:3px; background:var(--coral-500); border-radius:0 3px 3px 0; }
-
-/* Cascata */
-.fin-view-title { font-size:15px; font-weight:700; color:var(--text); margin:0 0 4px; }
-.fin-view-hint { font-size:12px; color:#B8B5AD; font-style:italic; }
-.fin-view-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-.fin-cline { display:grid; grid-template-columns:18px 1fr auto 140px; align-items:center; gap:0; padding:6px 0; border-bottom:1px solid #F2F0EC; }
-.fin-cline:last-of-type { border-bottom:none; }
-.fin-cline.result { grid-template-columns:18px 1fr auto 140px; padding:10px 0; border-top:2px solid #E8E6E0; border-bottom:none; margin-top:6px; }
-.fin-c-sinal { font-size:13px; color:#B8B5AD; font-weight:600; font-family:var(--mono); }
-.fin-c-label { font-size:13px; color:#555550; font-weight:500; padding-right:12px; }
-.fin-cline.result .fin-c-label { font-weight:700; color:var(--text); font-size:14px; }
-.fin-c-bar { height:8px; background:#F4F2EE; border-radius:4px; overflow:hidden; width:200px; min-width:80px; flex-shrink:0; }
-.fin-c-bar-fill { height:100%; border-radius:4px; transition:width .5s cubic-bezier(.25,.8,.25,1); }
-.fin-c-bar-fill.pos { background:var(--coral-500); }
-.fin-c-bar-fill.neg { background:#F4A393; }
-.fin-c-bar-fill.ads { background:#F0A500; }
-.fin-c-bar-fill.res { background:#9333EA; }
-.fin-c-bar-fill.neg-res { background:#E88080; }
-.fin-c-valor { font-size:13px; font-family:var(--mono); color:#555550; font-weight:500; text-align:right; padding-left:12px; }
-.fin-cline.result .fin-c-valor { font-weight:700; color:var(--text); font-size:14px; }
-.fin-c-est { font-size:9px; color:#B8B5AD; background:#F4F2EE; padding:1px 5px; border-radius:3px; margin-left:5px; font-family:var(--mono); font-style:normal; vertical-align:middle; }
-.fin-note { margin-top:14px; padding:11px 14px; background:#F8F6F2; border-radius:8px; font-size:11px; color:#9A9A90; line-height:1.6; border-left:3px solid #E0DDD5; }
-.fin-note strong { color:#6A6A60; }
-
-/* Indicadores */
-.fin-ind-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
-.fin-ind-card { background:#fff; border:1px solid rgba(0,0,0,.07); border-radius:9px; padding:13px 15px; }
-.fin-ind-label { font-size:10px; font-weight:700; color:#9A9A90; letter-spacing:.06em; text-transform:uppercase; font-family:var(--mono); margin-bottom:4px; }
-.fin-ind-value { font-size:19px; font-weight:700; color:var(--text); font-family:var(--mono); letter-spacing:-.3px; }
-.fin-ind-sub { font-size:11px; color:#C8C5BC; margin-top:3px; }
-.fin-ind-card.destaque { border-color:rgba(216,90,48,.2); background:rgba(216,90,48,.03); }
-
-/* Custos fixos */
-.fin-cf-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-.fin-cf-top h3 { font-size:15px; font-weight:700; color:var(--text); margin:0; }
-.fin-btn-add { background:var(--coral-500); color:#fff; border:none; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font); transition:background .18s; }
-.fin-btn-add:hover { background:#C04820; }
-.fin-cf-list { display:flex; flex-direction:column; gap:7px; margin-bottom:14px; }
-.fin-cf-item { display:flex; align-items:center; gap:10px; background:#fff; border:1px solid rgba(0,0,0,.07); border-radius:8px; padding:10px 14px; }
-.fin-cf-nome { flex:1; font-size:13px; color:var(--text); font-weight:500; }
-.fin-cf-val { font-size:13px; font-family:var(--mono); font-weight:600; color:var(--text); min-width:100px; text-align:right; }
-.fin-cf-del { background:none; border:none; color:#C8C5BC; font-size:17px; cursor:pointer; padding:2px 5px; line-height:1; border-radius:4px; transition:color .15s; }
-.fin-cf-del:hover { color:#D85A30; }
-.fin-cf-total-row { display:flex; justify-content:space-between; align-items:center; padding:11px 14px; background:#F4F2EE; border-radius:8px; font-weight:700; }
-.fin-cf-total-label { font-size:13px; color:var(--text); }
-.fin-cf-total-val { font-size:15px; font-family:var(--mono); color:var(--text); }
-.fin-cf-divider { border:none; border-top:1px solid #E8E6E0; margin:18px 0; }
-.fin-cf-rates { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.fin-cf-rate { background:#fff; border:1px solid rgba(0,0,0,.07); border-radius:8px; padding:12px 14px; }
-.fin-cf-rate label { display:block; font-size:11px; font-weight:700; color:#9A9A90; letter-spacing:.06em; text-transform:uppercase; font-family:var(--mono); margin-bottom:7px; }
-.fin-cf-rate-row { display:flex; align-items:center; gap:7px; }
-.fin-cf-rate-input { width:70px; border:1.5px solid #E8E6E0; border-radius:6px; padding:6px 10px; font-size:13px; font-family:var(--mono); font-weight:600; color:var(--text); background:#FAFAF8; outline:none; }
-.fin-cf-rate-input:focus { border-color:var(--coral-500); }
-.fin-cf-rate-unit { font-size:13px; color:#9A9A90; }
-.fin-cf-empty { text-align:center; color:#C8C5BC; font-size:13px; padding:24px 0; }
-
-/* Repasses */
-.fin-rep-table { width:100%; border-collapse:collapse; }
-.fin-rep-table th { text-align:left; font-size:10px; font-weight:700; color:#9A9A90; letter-spacing:.07em; text-transform:uppercase; font-family:var(--mono); padding:8px 12px; border-bottom:2px solid #E8E6E0; }
-.fin-rep-table td { padding:11px 12px; border-bottom:1px solid #F2F0EC; font-size:13px; color:var(--text); }
-.fin-rep-table tr:last-child td { border-bottom:none; }
-.fin-rep-table .r-val { font-family:var(--mono); font-weight:600; text-align:right; }
-.fin-rep-table .r-pct { font-family:var(--mono); color:#9A9A90; font-size:12px; text-align:right; }
-.fin-rep-total td { background:#F4F2EE; font-weight:700 !important; border-top:2px solid #E0DDD5; }
-.fin-rep-note { font-size:11px; color:#B8B5AD; margin-top:12px; }
-
-/* Modal */
-.fin-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,.38); z-index:600; align-items:center; justify-content:center; }
-.fin-modal-bg.open { display:flex; }
-.fin-modal-box { background:#fff; border-radius:14px; padding:24px; width:360px; max-width:92vw; box-shadow:0 20px 60px rgba(0,0,0,.18); }
-.fin-modal-box h4 { font-size:15px; font-weight:700; margin:0 0 16px; color:var(--text); }
-.fin-modal-box label { display:block; font-size:11px; font-weight:600; color:#6A6A60; margin-bottom:5px; margin-top:12px; letter-spacing:.04em; text-transform:uppercase; font-family:var(--mono); }
-.fin-modal-box label:first-of-type { margin-top:0; }
-.fin-modal-input { width:100%; box-sizing:border-box; border:1.5px solid #E8E6E0; border-radius:8px; padding:9px 12px; font-size:14px; font-family:var(--font); color:var(--text); background:#FAFAF8; outline:none; transition:border-color .15s; }
-.fin-modal-input:focus { border-color:var(--coral-500); }
-.fin-modal-btns { display:flex; gap:8px; margin-top:18px; }
-.fin-modal-cancel { flex:1; background:#F0EDE8; color:var(--text); border:none; padding:9px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font); }
-.fin-modal-save { flex:1; background:var(--coral-500); color:#fff; border:none; padding:9px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:var(--font); }
-.fin-modal-save:hover { background:#C04820; }
+/* Concentração de margem */
+.fin-conc { background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius); padding:18px 20px; }
+.fin-conc-frase { font-size:14px; color:var(--slate-700); line-height:1.6; margin-bottom:14px; }
+.fin-conc-frase strong { color:var(--slate-900); font-weight:700; }
+.fin-conc-barra { display:flex; height:26px; border-radius:var(--radius-sm); overflow:hidden; border:1px solid var(--slate-100); }
+.fin-conc-seg { display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:10px;
+  color:var(--white); white-space:nowrap; overflow:hidden; }
+.fin-conc-seg.top { background:var(--green-600); }
+.fin-conc-seg.meio { background:var(--green-100); color:var(--slate-700); }
+.fin-conc-seg.cauda { background:var(--slate-50); color:var(--slate-400); }
+.fin-conc-legenda { display:flex; gap:18px; flex-wrap:wrap; margin-top:10px; font-size:11px; color:var(--slate-400); }
+.fin-conc-legenda span::before { content:''; display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:5px; }
+.fin-conc-legenda .l-top::before { background:var(--green-600); }
+.fin-conc-legenda .l-meio::before { background:var(--green-100); }
+.fin-conc-legenda .l-cauda::before { background:var(--slate-100); }
 
 /* Loading */
-.fin-loading { display:flex; align-items:center; justify-content:center; gap:8px; padding:50px; color:#C8C5BC; font-size:13px; }
-.fin-spinner { width:16px; height:16px; border:2px solid #E8E6E0; border-top-color:var(--coral-500); border-radius:50%; animation:spin .7s linear infinite; }
+.fin-loading { display:flex; align-items:center; justify-content:center; gap:8px; padding:40px; color:var(--slate-400); font-size:13px; }
+.fin-spinner { width:16px; height:16px; border:2px solid var(--slate-50); border-top-color:var(--coral-500); border-radius:50%; animation:spin .7s linear infinite; }
 
-/* Responsive */
 @media(max-width:768px){
-  .fin-kpi-row { grid-template-columns:1fr 1fr; }
-  .fin-body { grid-template-columns:1fr; }
-  .fin-subnav { flex-direction:row; flex-wrap:wrap; }
-  .fin-subnav-section { display:none; }
-  .fin-subnav-btn { padding:6px 10px; }
-  .fin-subnav-btn.active::before { display:none; }
-  .fin-ind-grid { grid-template-columns:1fr 1fr; }
-  .fin-cf-rates { grid-template-columns:1fr; }
-  .fin-c-bar { width:80px; min-width:40px; }
+  .fin-c-bar { width:70px; min-width:40px; }
+  .fin-c-valor { min-width:96px; font-size:11.5px; }
 }
 
 /* ===== Painel por SKU (drawer de produto) ===== */
@@ -1359,6 +1272,40 @@ body.sidebar-collapsed .hamburger { display: none; }
 .skup-link-form { display:flex; gap:8px; align-items:center; }
 .skup-link-form input { flex:1; border:1px solid #D6D3C8; border-radius:8px; padding:8px 10px; font-size:13px; font-family:var(--mono); background:#fff; }
 .skup-link-form input:focus { outline:none; border-color:var(--coral-500,#D85A30); }
+
+/* Tabela compacta dentro do drawer — precisa caber sem corte lateral */
+.skup-tab { width:100%; table-layout:fixed; }
+.skup-tab .hub-thead th { padding:8px 6px; font-size:9px; letter-spacing:.4px; }
+.skup-tab .hub-thead th:first-child { padding-left:12px; }
+.skup-tab .hub-tbody td { padding:7px 6px; font-size:11px; }
+.skup-tab .hub-tbody td:first-child { padding-left:12px; }
+
+/* Distribuição de estrelas */
+.skup-rev-bars { display:flex; flex-direction:column; gap:2px; margin:6px 0 2px; }
+.skup-rev-bar { display:flex; align-items:center; gap:5px; }
+.skup-rev-n { font-size:9px; color:var(--slate-400); font-family:var(--mono); width:20px; }
+.skup-rev-track { flex:1; height:4px; background:var(--slate-50); border-radius:2px; overflow:hidden; }
+.skup-rev-fill { display:block; height:100%; background:var(--green-600); border-radius:2px; }
+.skup-rev-fill.ruim { background:var(--coral-500); }
+
+/* Diagnóstico do ML */
+.skup-diag { display:flex; flex-direction:column; gap:10px; }
+.skup-diag-bloco { background:var(--bg); border:1px solid var(--slate-100); border-left:3px solid var(--slate-200); border-radius:var(--radius-sm); padding:11px 13px; }
+.skup-diag-cab { font-size:11px; font-weight:700; color:var(--slate-700); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; font-family:var(--mono); }
+.skup-diag-cab.alerta { color:var(--coral-600); }
+.skup-diag-cab.ok { color:var(--green-600); }
+.skup-diag-cab.acao { color:var(--blue-600); }
+.skup-diag-txt { font-size:12.5px; line-height:1.55; color:var(--slate-700); margin:0; }
+.skup-diag-lista { margin:0; padding-left:18px; }
+.skup-diag-lista li { font-size:12.5px; line-height:1.6; color:var(--slate-700); }
+
+/* Avaliações ruins */
+.skup-revs { display:flex; flex-direction:column; gap:8px; }
+.skup-rev-item { background:var(--coral-50); border:1px solid var(--coral-200); border-radius:var(--radius-sm); padding:10px 12px; }
+.skup-rev-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.skup-rev-nota { font-size:12px; color:var(--coral-600); letter-spacing:1px; }
+.skup-rev-data { font-size:10px; color:var(--slate-400); font-family:var(--mono); }
+.skup-rev-txt { font-size:12.5px; line-height:1.5; color:var(--slate-700); margin:0; }
 </style>
 </head>
 <body>
@@ -2126,94 +2073,42 @@ body.sidebar-collapsed .hamburger { display: none; }
 
 
 <div class="page" id="page-financeiro">
-  <div class="fin-container">
+  <div class="page-title">Financeiro — Logbox</div>
+  <div class="page-subtitle">M.C., TACOS e MPA do mês. A margem vem sempre do Hub de Precificação; o ADS vem da API do Mercado Livre.</div>
 
-    <!-- Header -->
-    <div class="fin-header">
-      <div>
-        <div class="fin-saude-badge">
-          <span class="fin-saude-dot" id="fin-saude-dot"></span>
-          <span class="fin-saude-label" id="fin-saude-label">SAÚDE DA LOJA</span>
-        </div>
-        <h1 class="fin-title">Financeiro</h1>
-        <p class="fin-subtitle">M.C., TACOS e MPA do mês — margem sempre do Hub de Precificação, ADS real da API do ML.</p>
-      </div>
-      <div>
-        <select class="fin-select" id="fin-mes-select" onchange="finChangeMes(this.value)"></select>
-      </div>
+  <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
+    <select class="fin-select" id="fin-mes-select" onchange="finChangeMes(this.value)"></select>
+    <div style="font-size:12px;color:var(--slate-400);display:flex;align-items:center;gap:10px">
+      <span id="fin-cobertura-hint"></span>
+      <button class="perf-select" style="cursor:pointer;padding:6px 12px" onclick="finRecarregar()">↻ Atualizar</button>
     </div>
+  </div>
 
-    <!-- Hero -->
-    <div class="fin-hero-card" id="fin-hero-card">
-      <div class="fin-hero-label" id="fin-hero-label">MPA — MARGEM PÓS-ADS</div>
-      <div class="fin-hero-value" id="fin-hero-value">R$ —</div>
-      <div class="fin-hero-foot">
-        <span class="fin-hero-badge" id="fin-hero-badge">—</span>
-        <span class="fin-hero-vs" id="fin-hero-vs"></span>
-      </div>
-    </div>
+  <!-- Nível 1: os três números do mês -->
+  <div class="hero-stats" id="fin-hero" style="margin-top:18px"></div>
 
-    <!-- KPI Row -->
-    <div class="fin-kpi-row">
-      <div class="fin-kpi">
-        <div class="fin-kpi-label">RECEITA DO MÊS <i class="fin-kpi-tip" title="Receita total bruta dos pedidos pagos no ML">ⓘ</i></div>
-        <div class="fin-kpi-value" id="fin-kpi-receita">—</div>
-      </div>
-      <div class="fin-kpi">
-        <div class="fin-kpi-label">M.C. MÉDIA (HUB) <i class="fin-kpi-tip" title="Média ponderada da MC do Hub de Precificação sobre a receita linkada">ⓘ</i></div>
-        <div class="fin-kpi-value" id="fin-kpi-margem">—</div>
-      </div>
-      <div class="fin-kpi">
-        <div class="fin-kpi-label">TACOS DO MÊS <i class="fin-kpi-tip" title="Gasto total de ADS dividido pela receita total do mês">ⓘ</i></div>
-        <div class="fin-kpi-value" id="fin-kpi-pe">—</div>
-      </div>
-    </div>
+  <!-- Nível 2: onde a margem se forma -->
+  <div class="sec-title">Da receita linkada até a MPA</div>
+  <div id="fin-cascata-body"><div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div></div>
 
-    <!-- Body: subnav + content -->
-    <div class="fin-body">
-      <nav class="fin-subnav">
-        <span class="fin-subnav-section">Visão Geral</span>
-        <button class="fin-subnav-btn active" onclick="finShowView('cascata',this)">Cascata</button>
-        <button class="fin-subnav-btn" onclick="finShowView('indicadores',this)">Indicadores</button>
-        <button class="fin-subnav-btn" onclick="finShowView('repasses',this)">Repasses ML</button>
-      </nav>
+  <!-- Nível 3: quem faz o resultado -->
+  <div class="sec-title">Quem faz o resultado</div>
+  <div class="fin-duo" id="fin-rankings"></div>
 
-      <div class="fin-content">
+  <!-- Sangria de ADS -->
+  <div class="sec-title">Sangria de ADS — gasto real acima do alvo do hub</div>
+  <div id="fin-sangria"></div>
 
-        <!-- Cascata -->
-        <div class="fin-view" id="fin-view-cascata">
-          <div class="fin-view-header">
-            <h3 class="fin-view-title">Composição da receita</h3>
-            <span class="fin-view-hint">da receita linkada até a MPA</span>
-          </div>
-          <div id="fin-cascata-body">
-            <div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>
-          </div>
-        </div>
+  <!-- Concentração -->
+  <div class="sec-title">Concentração de margem</div>
+  <div id="fin-concentracao"></div>
 
-        <!-- Indicadores -->
-        <div class="fin-view" id="fin-view-indicadores" style="display:none">
-          <div class="fin-view-header">
-            <h3 class="fin-view-title">Indicadores do período</h3>
-          </div>
-          <div id="fin-indicadores-body">
-            <div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>
-          </div>
-        </div>
+  <!-- Indicadores -->
+  <div class="sec-title">Indicadores do mês</div>
+  <div class="metric-strip" id="fin-indicadores"></div>
 
-        <!-- Repasses ML -->
-        <div class="fin-view" id="fin-view-repasses" style="display:none">
-          <div class="fin-view-header">
-            <h3 class="fin-view-title">Repasses ao Mercado Livre</h3>
-          </div>
-          <div id="fin-repasses-body">
-            <div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </div><!-- /fin-container -->
+  <!-- Fora do cálculo -->
+  <div id="fin-naolinkados"></div>
 </div><!-- /page-financeiro -->
 </div><!-- /app -->
 
@@ -3263,7 +3158,30 @@ const LBX_TACOS_ALVO_PADRAO = 5;
 const LBX_ESTOQUE_MIN_PADRAO = 5;
 const LBX_QUEDA_VENDAS_LIMITE = 0.4; // alerta se cair mais de 40% vs média dos dias anteriores
 function lbxFmtMoeda(v){ return 'R$ ' + (v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+// Versão curta pra tabelas estreitas: sem "R$" e sem centavos acima de 100.
+function lbxFmtCurto(v){
+  const n = Number(v)||0;
+  if(Math.abs(n) >= 100) return n.toLocaleString('pt-BR',{maximumFractionDigits:0});
+  return n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
 function lbxDataBR(d){ return d ? new Date(d+'T12:00:00').toLocaleDateString('pt-BR') : '—'; }
+// Motivos do ML vêm como parágrafo. Na linha do alerta cabe só a primeira frase;
+// o texto inteiro fica no tooltip e no painel do SKU.
+function lbxPrimeiraFrase(txt, max){
+  if(!txt) return '';
+  const lim = max || 110;
+  const t = String(txt).trim();
+  const m = t.match(/^[^.!?]+[.!?]/);
+  let out = m ? m[0].trim() : t;
+  if(out.length > lim) out = out.slice(0, lim-1).trim() + '…';
+  return out;
+}
+function lbxEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+// Pendências de qualidade vêm separadas por " | "
+function lbxPendencias(txt){
+  if(!txt) return [];
+  return String(txt).split('|').map(s=>s.trim()).filter(Boolean);
+}
 
 async function lbxCarregarTudo(){
   const [anunciosRes, adsRes, vendasRes, repRes, skusRes, visitasRes] = await Promise.all([
@@ -3370,8 +3288,6 @@ async function renderPerformance(){
   const perfMpaPct = perfRecHub>0 ? perfMpa/perfRecHub*100 : null;
   const perfCobHub = atual.receita>0 ? perfRecHub/atual.receita*100 : 0;
 
-  const liquidoAtual = atual.receita - atual.comissao;
-  const liquidoAnterior = anterior.receita - anterior.comissao;
   const tacosAtual = atual.receita>0 ? (atual.gasto/atual.receita*100) : 0;
   const tacosAnterior = anterior.receita>0 ? (anterior.gasto/anterior.receita*100) : null;
   const ticketMedio = atual.unidades>0 ? atual.receita/atual.unidades : 0;
@@ -3396,11 +3312,6 @@ async function renderPerformance(){
       <div class="hero-stat-label">Faturamento bruto</div>
       <div class="hero-stat-value">${lbxFmtMoeda(atual.receita)}</div>
       <div class="hero-stat-foot">${lbxDelta(atual.receita, teveAnterior?anterior.receita:null, false)} ${refAnterior}</div>
-    </div>
-    <div class="hero-stat ${liquidoAtual>=liquidoAnterior?'is-good':'is-bad'}">
-      <div class="hero-stat-label">Faturamento líquido (após comissão ML)</div>
-      <div class="hero-stat-value">${lbxFmtMoeda(liquidoAtual)}</div>
-      <div class="hero-stat-foot">${lbxDelta(liquidoAtual, teveAnterior?liquidoAnterior:null, false)} <span class="hero-stat-ref">comissão de ${lbxFmtMoeda(atual.comissao)}</span></div>
     </div>
     <div class="hero-stat ${tacosAtual>LBX_TACOS_ALVO_PADRAO?'is-bad':'is-good'}">
       <div class="hero-stat-label">TACOS do período</div>
@@ -3433,18 +3344,35 @@ async function renderPerformance(){
 
   // Pontos de atenção — dias com TACOS fora da meta + anúncios perdendo exposição
   const anomalias = [];
-  dias.forEach(d=>{
+  // TACOS diário: um alerta por dia vira ruído. Consolida em uma linha só,
+  // com quantos dias estouraram e qual foi o pior.
+  const diasTacos = dias.map(d=>{
     const o = porDia[d];
-    const t = o.receita>0 ? (o.gasto/o.receita*100) : null;
-    if(t!==null && t>LBX_TACOS_ALVO_PADRAO) anomalias.push({sku:lbxDataBR(d), why:`TACOS de ${t.toFixed(1)}% no dia`, num:`meta ${LBX_TACOS_ALVO_PADRAO}%`});
-  });
+    return {d, t: o.receita>0 ? (o.gasto/o.receita*100) : null};
+  }).filter(x=>x.t!==null);
+  const diasEstourados = diasTacos.filter(x=>x.t>LBX_TACOS_ALVO_PADRAO);
+  if(diasEstourados.length){
+    const pior = diasEstourados.slice().sort((a,b)=>b.t-a.t)[0];
+    anomalias.push({
+      sku: 'TACOS',
+      why: `Acima da meta de ${LBX_TACOS_ALVO_PADRAO}% em ${diasEstourados.length} de ${diasTacos.length} dias — pior foi ${lbxDataBR(pior.d)} com ${pior.t.toFixed(1)}%`,
+      num: `${lbxFmtMoeda(atual.gasto)} no período`,
+    });
+  }
   Object.values(anuncioPorItem).forEach(a=>{
-    if(a.saude === 'unhealthy') anomalias.push({sku:a.sku||a.item_id, why:'Perdendo exposição por reclamação ou cancelamento', num:''});
-    else if(a.saude === 'warning') anomalias.push({sku:a.sku||a.item_id, why:'Risco de perder exposição', num:''});
+    if(a.saude !== 'unhealthy' && a.saude !== 'warning') return;
+    // Mostra o motivo que o próprio ML informou; genérico só quando ele não mandou nada.
+    const motivo = a.experiencia_motivo || null;
+    anomalias.push({
+      sku: a.sku||a.item_id,
+      why: motivo ? lbxPrimeiraFrase(motivo) : (a.saude==='unhealthy'?'Perdendo exposição — o ML ainda não informou o motivo':'Risco de perder exposição — o ML ainda não informou o motivo'),
+      num: a.saude==='unhealthy'?'perdendo exposição':'risco de exposição',
+      detalhe: motivo,
+    });
   });
   anomEl.innerHTML = anomalias.length
     ? `<div class="attention"><div class="attention-head">${anomalias.length} ponto${anomalias.length>1?'s':''} pra revisar</div>${anomalias.slice(0,12).map(a=>`
-        <div class="attention-row"><span class="attention-sku">${a.sku}</span><span class="attention-why">${a.why}</span><span class="attention-num">${a.num}</span></div>
+        <div class="attention-row"><span class="attention-sku">${lbxEsc(a.sku)}</span><span class="attention-why"${a.detalhe?` title="${lbxEsc(a.detalhe)}"`:''}>${lbxEsc(a.why)}</span><span class="attention-num">${lbxEsc(a.num)}</span></div>
       `).join('')}${anomalias.length>12?`<div class="attention-row"><span class="attention-why">+${anomalias.length-12} outros</span></div>`:''}</div>`
     : '<div class="attention is-clear"><div class="attention-head">Nada fora do previsto no período</div></div>';
 
@@ -3777,6 +3705,11 @@ async function renderProdutos(){
       precoConcorrente: anuncio?.preco_concorrente ?? null,
       precoPromocional: anuncio?.preco_promocional ?? null,
       experiencia: anuncio?.experiencia_valor ?? null,
+      expTexto: anuncio?.experiencia_texto || null,
+      expMotivo: anuncio?.experiencia_motivo || null,
+      expRecomendacao: anuncio?.experiencia_recomendacao || null,
+      qualidadeScore: anuncio?.qualidade_score ?? null,
+      qualidadePendencias: anuncio?.qualidade_pendencias || null,
     });
   });
 
@@ -3849,12 +3782,23 @@ async function renderProdutos(){
     const diasMap = {};
     itens.forEach(i=>{ (vendasPorItemTudo[i.itemId]||[]).forEach(v=>{ diasMap[v.data]=(diasMap[v.data]||0)+Number(v.receita); }); });
     const diasOrdenados = Object.keys(diasMap).sort((a,b)=>b.localeCompare(a));
-    let quedaVendas = false;
+    let quedaVendas = false, quedaInfo = null;
     if(diasOrdenados.length >= 3){
-      const receitaOntem = diasMap[diasOrdenados[0]];
-      const anteriores = diasOrdenados.slice(1).map(d=>diasMap[d]);
+      const receitaUlt = diasMap[diasOrdenados[0]];
+      // Compara com as 2 semanas recentes: média de 3 meses esconde mudança de patamar.
+      const anteriores = diasOrdenados.slice(1, 15).map(d=>diasMap[d]);
       const media = anteriores.reduce((s,v)=>s+v,0) / anteriores.length;
-      if(media > 0 && receitaOntem < media * (1 - LBX_QUEDA_VENDAS_LIMITE)) quedaVendas = true;
+      if(media > 0 && receitaUlt < media * (1 - LBX_QUEDA_VENDAS_LIMITE)){
+        quedaVendas = true;
+        // guarda os números pra o alerta dizer quanto caiu e contra o quê
+        quedaInfo = {
+          pct: (1 - receitaUlt/media) * 100,
+          ultimo: receitaUlt,
+          media,
+          dia: diasOrdenados[0],
+          nDias: anteriores.length,
+        };
+      }
     }
 
     const alertas = [];
@@ -3864,8 +3808,26 @@ async function renderProdutos(){
     if(temCatalogo && (buyboxStatus === 'losing' || buyboxStatus === 'sharing_first_place')) alertas.push({tipo:'buybox', txt: buyboxStatus==='losing'?'Perdendo o Buy Box':'Dividindo o 1º lugar', num: precoConcorrente?`concorrente ${lbxFmtMoeda(precoConcorrente)}`:'', peso:1});
     if(tacosPct !== null && tacosPct > metaTacos) alertas.push({tipo:'tacos', txt:`TACOS acima da meta de ${metaTacos}%`, num:`${tacosPct.toFixed(1)}%`, peso:2});
     if(estoque >= 0 && estoque <= estoqueMin) alertas.push({tipo:'estoque', txt:'Estoque no mínimo', num:`${estoque} un.`, peso:3});
-    if(quedaVendas) alertas.push({tipo:'queda', txt:'Queda de vendas vs. média recente', num:'', peso:4});
-    if(saude && saude !== 'healthy') alertas.push({tipo:'saude', txt: saude==='unhealthy'?'Perdendo exposição':'Risco de perder exposição', num:'', peso:5});
+    if(quedaVendas) alertas.push({
+      tipo:'queda',
+      txt:`Vendas caíram ${quedaInfo.pct.toFixed(0)}% em ${lbxDataBR(quedaInfo.dia)} vs. média dos ${quedaInfo.nDias} dias anteriores`,
+      num:`${lbxFmtMoeda(quedaInfo.ultimo)} vs ${lbxFmtMoeda(quedaInfo.media)}`,
+      peso:4,
+    });
+    // Exposição: usa o motivo que o próprio ML manda, em vez de frase genérica.
+    if(saude && saude !== 'healthy'){
+      const piorItem = itens.filter(i=>i.saude===saude && i.expMotivo).sort((a,b)=>b.receita-a.receita)[0]
+                    || itens.filter(i=>i.expMotivo).sort((a,b)=>b.receita-a.receita)[0];
+      const motivo = piorItem?.expMotivo || null;
+      alertas.push({
+        tipo:'saude',
+        txt: motivo ? lbxPrimeiraFrase(motivo) : (saude==='unhealthy'?'Perdendo exposição — o ML ainda não informou o motivo':'Risco de perder exposição — o ML ainda não informou o motivo'),
+        num: saude==='unhealthy'?'perdendo exposição':'risco de exposição',
+        detalhe: motivo,
+        recomendacao: piorItem?.expRecomendacao || null,
+        peso:5,
+      });
+    }
 
     linhas.push({
       chave: sku || `__sem_sku__${principal.itemId}`, sku, itemId: principal.itemId, itemIds: itens.map(i=>i.itemId),
@@ -3873,7 +3835,10 @@ async function renderProdutos(){
       receita, unidades, pedidos, visitas, conversao, gasto, tacosPct, metaTacos, acos,
       buyboxStatus, temCatalogo, experiencia,
       estoque: estoque>=0?estoque:null, estoqueDeposito: estoqueDeposito>=0?estoqueDeposito:null, estoqueFull: estoqueFull>=0?estoqueFull:null,
-      estoqueMin, saude, comissao, mpa, alertas,
+      estoqueMin, saude, comissao, mpa, alertas, quedaInfo,
+      expTexto: principal.expTexto, expMotivo: principal.expMotivo,
+      expRecomendacao: principal.expRecomendacao,
+      qualidadeScore: principal.qualidadeScore, qualidadePendencias: principal.qualidadePendencias,
       hubLinked, hubViaLink, hubSkuUsado, chaveLocal, hubAdsAlvo: hubEntry?.ads ?? null,
       mcAtualizadaEm: hubEntry?.mc_atualizada_em ?? null,
     });
@@ -3895,7 +3860,7 @@ function desenharAtencao(){
   prodDadosCache.forEach(l=>{
     l.alertas.forEach(a=>itens.push({
       sku: l.sku || l.itemId, chave: l.chave, receita: l.receita,
-      txt: a.txt, num: a.num, peso: a.peso,
+      txt: a.txt, num: a.num, peso: a.peso, detalhe: a.detalhe || null,
     }));
   });
   // mais grave primeiro; empate resolve por quem fatura mais (dói mais no caixa)
@@ -3911,8 +3876,8 @@ function desenharAtencao(){
     ${mostrar.map(i=>`
       <div class="attention-row">
         <span class="attention-sku">${i.sku}</span>
-        <span class="attention-why">${i.txt}</span>
-        <span class="attention-num">${i.num||''}</span>
+        <span class="attention-why"${i.detalhe?` title="${lbxEsc(i.detalhe)}"`:''}>${lbxEsc(i.txt)}</span>
+        <span class="attention-num">${lbxEsc(i.num||'')}</span>
         <a class="attention-link" href="#" onclick="event.preventDefault();prodAbrirDrawer('${i.chave}')">abrir</a>
       </div>`).join('')}
     ${itens.length>mostrar.length?`<div class="attention-row"><span class="attention-why">+${itens.length-mostrar.length} outros pontos — use o filtro "só com alerta" pra ver todos</span></div>`:''}
@@ -4011,12 +3976,23 @@ async function prodAbrirDrawer(chave){
   document.getElementById('prod-drawer-overlay').classList.add('active');
 
   const idsFiltro = l.itemIds;
-  const [vendasRes, adsRes, anunciosRes, visitasRes] = await Promise.all([
+  const [vendasRes, adsRes, anunciosRes, visitasRes, reviewsRes] = await Promise.all([
     sb.from('ml_vendas').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
     sb.from('ml_ads_reports').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
     sb.from('ml_anuncios').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
     sb.from('ml_visitas').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
+    sb.from('ml_reviews').select('nota,comentario,data').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
   ]);
+
+  /* avaliações do SKU — nota média, distribuição e as notas baixas com o texto */
+  const reviews = reviewsRes?.data || [];
+  const revN = reviews.length;
+  const revMedia = revN ? reviews.reduce((s,r)=>s+Number(r.nota||0),0)/revN : null;
+  const revDist = [0,0,0,0,0]; // índice 0 = 1 estrela
+  reviews.forEach(r=>{ const n=Number(r.nota); if(n>=1&&n<=5) revDist[n-1]++; });
+  const revRuins = reviews.filter(r=>Number(r.nota)<=2);
+  const revRuinsPct = revN ? revRuins.length/revN*100 : 0;
+  const revComentarios = revRuins.filter(r=>r.comentario && r.comentario.trim()).slice(0,5);
 
   /* séries por dia (grupo somado) */
   const vendasPorDia = {};
@@ -4136,6 +4112,51 @@ async function prodAbrirDrawer(chave){
       </tbody>
     </table></div>`;
 
+  /* diagnóstico do ML — motivo real da exposição, recomendação e pendências de qualidade.
+     Usa o anúncio de pior saúde do grupo; é ele que limita a exposição do SKU. */
+  const ordemSaude = {unhealthy:0, warning:1, healthy:2};
+  const anunciosDoGrupo = l.itemIds.map(id=>anuncioMaisRecentePorItem[id]).filter(Boolean);
+  const anDiag = anunciosDoGrupo.slice().sort((a,b)=>
+    (ordemSaude[a.saude]??9)-(ordemSaude[b.saude]??9)
+  )[0] || null;
+  const pendencias = lbxPendencias(anDiag?.qualidade_pendencias);
+  const temDiag = anDiag && (anDiag.experiencia_motivo || anDiag.experiencia_recomendacao || pendencias.length);
+  const diagnosticoHtml = !temDiag ? '' : `
+    <div class="perf-section-label" style="margin-top:22px">O que o Mercado Livre diz</div>
+    <div class="skup-diag">
+      ${anDiag.experiencia_motivo ? `
+        <div class="skup-diag-bloco">
+          <div class="skup-diag-cab ${anDiag.saude==='healthy'?'ok':'alerta'}">
+            Experiência de compra${anDiag.experiencia_texto?`: ${lbxEsc(anDiag.experiencia_texto)}`:''}${anDiag.experiencia_valor!=null?` · ${anDiag.experiencia_valor}%`:''}
+          </div>
+          <p class="skup-diag-txt">${lbxEsc(anDiag.experiencia_motivo)}</p>
+        </div>` : ''}
+      ${anDiag.experiencia_recomendacao ? `
+        <div class="skup-diag-bloco">
+          <div class="skup-diag-cab acao">O que o ML recomenda fazer</div>
+          <p class="skup-diag-txt">${lbxEsc(anDiag.experiencia_recomendacao)}</p>
+        </div>` : ''}
+      ${pendencias.length ? `
+        <div class="skup-diag-bloco">
+          <div class="skup-diag-cab ${(anDiag.qualidade_score??100)<60?'alerta':''}">
+            Qualidade do anúncio${anDiag.qualidade_score!=null?` — ${anDiag.qualidade_score}/100`:''} · ${pendencias.length} pendência${pendencias.length>1?'s':''}
+          </div>
+          <ul class="skup-diag-lista">${pendencias.map(p=>`<li>${lbxEsc(p)}</li>`).join('')}</ul>
+        </div>` : ''}
+    </div>`;
+
+  /* comentários das notas baixas — é onde aparece o motivo real da reclamação */
+  const comentariosHtml = !revComentarios.length ? '' : `
+    <div class="perf-section-label" style="margin-top:22px">Avaliações 1-2 estrelas (${revRuins.length})</div>
+    <div class="skup-revs">
+      ${revComentarios.map(r=>`
+        <div class="skup-rev-item">
+          <div class="skup-rev-head"><span class="skup-rev-nota">${'★'.repeat(Number(r.nota)||1)}</span><span class="skup-rev-data">${lbxDataBR(r.data)}</span></div>
+          <p class="skup-rev-txt">${lbxEsc(r.comentario)}</p>
+        </div>`).join('')}
+      ${revRuins.length>revComentarios.length?`<div style="font-size:11px;color:var(--slate-400)">+${revRuins.length-revComentarios.length} nota${revRuins.length-revComentarios.length>1?'s':''} baixa${revRuins.length-revComentarios.length>1?'s':''} sem comentário escrito</div>`:''}
+    </div>`;
+
   /* últimos 14 dias */
   const dias14 = Object.keys(vendasPorDia).sort((a,b)=>b.localeCompare(a)).slice(0,14).map(data=>{
     const v=vendasPorDia[data]; const g=(adsPorDia[data]||{}).gasto||0;
@@ -4184,9 +4205,43 @@ async function prodAbrirDrawer(chave){
         <div class="skup-kpi-big">${j30.uAds.toLocaleString('pt-BR')}</div>
         <div class="skup-kpi-sub">${cvClique!==null?'cv '+cvClique.toFixed(0)+'%':''}${pctUnAds!==null?' · '+pctUnAds.toFixed(0)+'% ADS':''}${tacos30!==null?' · TACOS '+tacos30.toFixed(1)+'%':''}</div>
       </div>
+      ${revN ? `
+      <div class="skup-kpi">
+        <div class="skup-kpi-label">AVALIAÇÕES</div>
+        <div class="skup-kpi-big ${revMedia>=4.5?'bom':revMedia<4?'ruim':''}">${revMedia.toFixed(2).replace('.',',')} <span class="skup-kpi-unit">★</span></div>
+        <div class="skup-rev-bars">${revDist.map((qt,i)=>{
+          const pct = revN ? qt/revN*100 : 0;
+          return `<div class="skup-rev-bar" title="${i+1} estrela${i?'s':''}: ${qt} (${pct.toFixed(0)}%)">
+            <span class="skup-rev-n">${i+1}★</span>
+            <span class="skup-rev-track"><span class="skup-rev-fill ${i<=1?'ruim':''}" style="width:${pct.toFixed(0)}%"></span></span>
+          </div>`;
+        }).reverse().join('')}</div>
+        <div class="skup-kpi-sub">${revN.toLocaleString('pt-BR')} avaliações${revRuins.length?` · <strong style="color:var(--coral-500)">${revRuins.length} nota${revRuins.length>1?'s':''} 1-2 (${revRuinsPct.toFixed(0)}%)</strong>`:''}</div>
+      </div>` : ''}
     </div>
 
+    ${diagnosticoHtml}
+    ${comentariosHtml}
     ${anunciosHtml}
+
+    <div class="perf-section-label" style="margin-top:22px">Últimos ${dias14.length} dias</div>
+    <div class="table-wrap"><table class="skup-tab">
+      <thead class="hub-thead"><tr>
+        <th>Dia</th><th style="text-align:right">Receita</th><th style="text-align:right">Un</th>
+        <th style="text-align:right">Visitas</th><th style="text-align:right">ADS</th><th style="text-align:right">TACOS</th>
+      </tr></thead>
+      <tbody class="hub-tbody">
+        ${dias14.map(d=>`<tr>
+          <td>${d.data.slice(8,10)}/${d.data.slice(5,7)}</td>
+          <td style="text-align:right">${lbxFmtCurto(d.receita)}</td>
+          <td style="text-align:right">${d.unidades}</td>
+          <td style="text-align:right">${d.visitas!==null?d.visitas.toLocaleString('pt-BR'):'—'}</td>
+          <td style="text-align:right">${lbxFmtCurto(d.gasto)}</td>
+          <td style="text-align:right;font-weight:600" class="${d.tacos!==null && d.tacos>l.metaTacos?'neg':''}">${d.tacos!==null?d.tacos.toFixed(1).replace('.',',')+'%':'—'}</td>
+        </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--slate-400)">Sem histórico ainda.</td></tr>'}
+      </tbody>
+    </table></div>
+    <div style="font-size:11px;color:var(--slate-400);margin-top:6px">Valores em R$. TACOS em vermelho passou da meta de ${l.metaTacos}%.</div>
 
     <div class="perf-section-label" style="margin-top:22px">Configuração</div>
     <div class="m-field"><label>Custo do produto (R$)</label><input type="number" step="0.01" id="pd-custo" value="${l.custo?(+l.custo).toFixed(2):''}"></div>
@@ -4194,24 +4249,6 @@ async function prodAbrirDrawer(chave){
     <div class="m-field"><label>Estoque mínimo (unidades)</label><input type="number" step="1" id="pd-estoque-min" value="${l.estoqueMin}"></div>
     <button class="btn btn-primary" style="margin-top:8px" onclick="prodSalvarDrawer('${l.sku||''}')">Salvar</button>
     <div id="pd-save-msg" style="font-size:12px;color:var(--green-600);margin-top:6px"></div>
-
-    <div class="perf-section-label" style="margin-top:22px">Últimos ${dias14.length} dias</div>
-    <div class="table-wrap"><table>
-      <thead class="hub-thead"><tr>
-        <th>Data</th><th style="text-align:right">Receita</th><th style="text-align:right">Unid.</th>
-        <th style="text-align:right">Visitas</th><th style="text-align:right">Gasto ADS</th><th style="text-align:right">TACOS</th>
-      </tr></thead>
-      <tbody class="hub-tbody">
-        ${dias14.map(d=>`<tr>
-          <td>${lbxDataBR(d.data)}</td>
-          <td style="text-align:right">${lbxFmtMoeda(d.receita)}</td>
-          <td style="text-align:right">${d.unidades}</td>
-          <td style="text-align:right">${d.visitas!==null?d.visitas.toLocaleString('pt-BR'):'—'}</td>
-          <td style="text-align:right">${lbxFmtMoeda(d.gasto)}</td>
-          <td style="text-align:right" class="${d.tacos!==null && d.tacos>l.metaTacos?'neg':''}">${d.tacos!==null?d.tacos.toFixed(2)+'%':'—'}</td>
-        </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--slate-400)">Sem histórico ainda.</td></tr>'}
-      </tbody>
-    </table></div>
   `;
 }
 
@@ -10271,7 +10308,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 'use strict';
 
 var _st = {
-  mes: null, dados: null, loading: false, initDone: false, view: 'cascata'
+  mes: null, dados: null, loading: false, initDone: false
 };
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
@@ -10329,7 +10366,7 @@ async function loadFin(){
     var [vR,aR,anR,vAR,aAR]=await Promise.all([
       sb.from('ml_vendas').select('item_id,unidades,receita,comissao,pedidos').gte('data',ini).lte('data',fim),
       sb.from('ml_ads_reports').select('item_id,gasto,vendas_atribuidas,impressoes,cliques,unidades_ads').gte('data',ini).lte('data',fim).neq('preliminar',true),
-      sb.from('ml_anuncios').select('item_id,sku').order('data',{ascending:false}).limit(1000),
+      sb.from('ml_anuncios').select('item_id,sku,titulo').order('data',{ascending:false}).limit(1000),
       sb.from('ml_vendas').select('item_id,receita').gte('data',iniA).lte('data',fimA),
       sb.from('ml_ads_reports').select('item_id,gasto').gte('data',iniA).lte('data',fimA).neq('preliminar',true)
     ]);
@@ -10337,8 +10374,8 @@ async function loadFin(){
     var v=vR.data||[], a=aR.data||[], an=anR.data||[];
     var vA=vAR.data||[], aA=aAR.data||[];
 
-    var i2s={}, seen={};
-    an.forEach(function(x){ if(x.sku&&!seen[x.item_id]){i2s[x.item_id]=x.sku;seen[x.item_id]=1;} });
+    var i2s={}, i2t={}, seen={};
+    an.forEach(function(x){ if(!seen[x.item_id]){ if(x.sku) i2s[x.item_id]=x.sku; i2t[x.item_id]=x.titulo||x.item_id; seen[x.item_id]=1; } });
 
     var _hubItemCache={};
     function hubDoItem(itemId){
@@ -10359,31 +10396,62 @@ async function loadFin(){
       cli+=parseInt(x.cliques)||0; uAds+=parseInt(x.unidades_ads)||0;
       vAds+=parseFloat(x.vendas_atribuidas)||0;
     });
-    var recPorItem={}, pedPorItem={}, rec=0,com=0,ped=0,uni=0;
+    var recPorItem={}, pedPorItem={}, uniPorItem={}, rec=0,com=0,ped=0,uni=0;
     v.forEach(function(x){
       var r=parseFloat(x.receita)||0;
       recPorItem[x.item_id]=(recPorItem[x.item_id]||0)+r;
       pedPorItem[x.item_id]=(pedPorItem[x.item_id]||0)+(parseInt(x.pedidos)||0);
+      uniPorItem[x.item_id]=(uniPorItem[x.item_id]||0)+(parseInt(x.unidades)||0);
       rec+=r; com+=parseFloat(x.comissao)||0; ped+=parseInt(x.pedidos)||0; uni+=parseInt(x.unidades)||0;
     });
 
-    /* itens linkados ao hub: MC hub e margem antes de ADS (MC + ADS alvo); ADS real por item */
-    var recHub=0, mcHubVal=0, antesAdsVal=0, gasAdsHub=0, pedHub=0, itensSemLink=0;
-    Object.keys(recPorItem).forEach(function(itemId){
-      var hr=hubDoItem(itemId);
-      if(!hr){ itensSemLink++; return; }
-      var r=recPorItem[itemId];
-      recHub+=r;
-      mcHubVal+=r*(hr.entry.mc/100);
-      antesAdsVal+=r*((hr.entry.mc+(hr.entry.ads||0))/100);
-      gasAdsHub+=gastoPorItem[itemId]||0;
-      pedHub+=pedPorItem[itemId]||0;
+    /* ── Consolida por SKU: é o nível em que o gestor decide ──
+       Itens linkados ao hub carregam MC real; os demais entram só como receita fora do cálculo. */
+    var porSku={};
+    function chaveDe(itemId){
+      var sku=i2s[itemId]||null;
+      return sku || ('item:'+itemId);
+    }
+    var todosItens={};
+    Object.keys(recPorItem).forEach(function(id){ todosItens[id]=1; });
+    Object.keys(gastoPorItem).forEach(function(id){ todosItens[id]=1; });
+    Object.keys(todosItens).forEach(function(itemId){
+      var k=chaveDe(itemId);
+      if(!porSku[k]){
+        var hr=hubDoItem(itemId);
+        porSku[k]={
+          sku:i2s[itemId]||null, chave:k, titulo:i2t[itemId]||itemId,
+          rec:0, ads:0, ped:0, uni:0,
+          linkado:!!hr, mcPct:hr?hr.entry.mc:null, adsAlvoPct:hr?(hr.entry.ads||0):null,
+        };
+      }
+      var o=porSku[k];
+      o.rec += recPorItem[itemId]||0;
+      o.ads += gastoPorItem[itemId]||0;
+      o.ped += pedPorItem[itemId]||0;
+      o.uni += uniPorItem[itemId]||0;
     });
-    /* item linkado com ADS mas sem venda no mês: gasto é real e come margem — entra no MPA */
-    Object.keys(gastoPorItem).forEach(function(itemId){
-      if(recPorItem[itemId]) return;
-      var hr=hubDoItem(itemId);
-      if(hr) gasAdsHub+=gastoPorItem[itemId];
+    var skusArr=Object.values(porSku);
+    skusArr.forEach(function(o){
+      if(o.linkado){
+        o.mcVal   = o.rec*(o.mcPct/100);
+        o.antesAds= o.rec*((o.mcPct+o.adsAlvoPct)/100);
+        o.mpaVal  = o.antesAds - o.ads;
+        o.mpaPct  = o.rec>0 ? o.mpaVal/o.rec*100 : null;
+        o.tacos   = o.rec>0 ? o.ads/o.rec*100 : null;
+        o.adsAlvoVal = o.rec*(o.adsAlvoPct/100);
+        o.excessoAds = o.ads - o.adsAlvoVal;   // >0 = gastou mais que o hub previu
+      } else {
+        o.mcVal=null; o.antesAds=null; o.mpaVal=null; o.mpaPct=null;
+        o.tacos = o.rec>0 ? o.ads/o.rec*100 : null;
+        o.adsAlvoVal=null; o.excessoAds=null;
+      }
+    });
+
+    /* totais dos linkados */
+    var recHub=0, mcHubVal=0, antesAdsVal=0, gasAdsHub=0, pedHub=0;
+    skusArr.filter(function(o){return o.linkado;}).forEach(function(o){
+      recHub+=o.rec; mcHubVal+=o.mcVal; antesAdsVal+=o.antesAds; gasAdsHub+=o.ads; pedHub+=o.ped;
     });
 
     var mpaVal=antesAdsVal-gasAdsHub;
@@ -10391,7 +10459,6 @@ async function loadFin(){
     var mpaPct=recHub>0?mpaVal/recHub:0;
     var cobHub=rec>0?recHub/rec:0;
     var tacosMes=rec>0?gasAds/rec:0;
-    var tacosHub=recHub>0?gasAdsHub/recHub:0;
 
     /* mês anterior — mesma régua (MC atual do hub; o hub não guarda histórico de MC) */
     var recPorItemA={}, recA=0;
@@ -10400,8 +10467,7 @@ async function loadFin(){
     aA.forEach(function(x){ var g=parseFloat(x.gasto)||0; gastoPorItemA[x.item_id]=(gastoPorItemA[x.item_id]||0)+g; gasA+=g; });
     var recHubA=0, antesAdsA=0, gasAdsHubA=0;
     Object.keys(recPorItemA).forEach(function(itemId){
-      var hr=hubDoItem(itemId);
-      if(!hr) return;
+      var hr=hubDoItem(itemId); if(!hr) return;
       var r=recPorItemA[itemId];
       recHubA+=r;
       antesAdsA+=r*((hr.entry.mc+(hr.entry.ads||0))/100);
@@ -10415,66 +10481,90 @@ async function loadFin(){
     var mpaPctA=recHubA>0?mpaValA/recHubA:null;
 
     _st.dados={rec,com,ped,uni,gasAds,imp,cli,uAds,vAds,
-               recHub,mcHubVal,antesAdsVal,gasAdsHub,mpaVal,pedHub,itensSemLink,
-               mcPct,mpaPct,cobHub,tacosMes,tacosHub,
-               recA,gasA,mpaValA,mpaPctA};
+               recHub,mcHubVal,antesAdsVal,gasAdsHub,mpaVal,pedHub,
+               mcPct,mpaPct,cobHub,tacosMes,
+               recA,gasA,mpaValA,mpaPctA,
+               skus:skusArr};
     window._finGetDados=function(){ return _st.dados; };
     if(typeof window.populateCentralAlerts==='function') window.populateCentralAlerts();
     render();
-  }catch(err){ console.error('[Financeiro]',err); }
+  }catch(err){
+    console.error('[Financeiro]',err);
+    var el=document.getElementById('fin-cascata-body');
+    if(el) el.innerHTML='<p class="fin-note">Não foi possível carregar os dados do mês. Confira se o sync já rodou.</p>';
+  }
   _st.loading=false;
 }
+
+window.finRecarregar=function(){ _st.dados=null; loadFin(); };
 
 /* ── render ──────────────────────────────────────────────────────────────── */
 function render(){
   var d=_st.dados; if(!d) return;
-
-  /* saúde da loja agora é a MPA: o que sobra depois do ADS real */
-  var saude=d.recHub<=0?'critico':(d.mpaPct>=0.12?'verde':(d.mpaPct>=0.05?'amarelo':'critico'));
-  var saudeTexto={verde:'✓ saudável',amarelo:'⚠ atenção',critico:'✕ crítico'}[saude];
-  function clsEl(id,cls){ var el=document.getElementById(id); if(el){ el.className=el.className.replace(/ (verde|amarelo|critico)/g,'').trimEnd()+' '+cls; } }
-  clsEl('fin-saude-dot',saude); clsEl('fin-saude-label',saude);
-  var hero=document.getElementById('fin-hero-card');
-  if(hero) hero.className='fin-hero-card'+(saude!=='verde'?' '+saude:'');
-  var badge=document.getElementById('fin-hero-badge');
-  if(badge){ badge.className='fin-hero-badge'+(saude!=='verde'?' '+saude:''); badge.textContent=saudeTexto; }
-
-  /* hero: MPA do mês */
-  var hl=document.getElementById('fin-hero-label');
-  if(hl) hl.textContent='MPA — MARGEM PÓS-ADS · '+mesLabel(_st.mes).toUpperCase();
-  var hv=document.getElementById('fin-hero-value');
-  if(hv) hv.textContent=d.recHub>0?(fmtP(d.mpaPct)+' · '+fmtR(d.mpaVal)):'— sem SKU linkado';
-  var hvs=document.getElementById('fin-hero-vs');
-  if(hvs){
-    var cobTxt='cobertura hub '+Math.round(d.cobHub*100)+'% da receita';
-    if(d.mpaPctA!==null&&d.recHub>0){
-      var diffPp=(d.mpaPct-d.mpaPctA)*100;
-      var seta=diffPp>=0?'↑':'↓';
-      hvs.textContent=seta+' '+Math.abs(diffPp).toFixed(1).replace('.',',')+' p.p. vs mês anterior · '+cobTxt;
-      hvs.style.color=diffPp>=0?'':(saude==='critico'?'#C0390F':'#B07A00');
-    } else {
-      hvs.textContent=cobTxt;
-    }
-  }
-
-  /* KPIs */
-  function setText(id,txt){ var el=document.getElementById(id); if(el) el.textContent=txt; }
-  setText('fin-kpi-receita',fmtR(d.rec));
-  setText('fin-kpi-margem',d.recHub>0?(fmtP(d.mcPct)+' · '+fmtR(d.mcHubVal)):'—');
-  setText('fin-kpi-pe',fmtP(d.tacosMes)+' · '+fmtR(d.gasAds));
-
-  renderView(_st.view);
+  renderHero(d);
+  renderCascata(d);
+  renderRankings(d);
+  renderSangria(d);
+  renderConcentracao(d);
+  renderIndicadores(d);
+  renderNaoLinkados(d);
 }
 
-/* ── cascata: da receita linkada até a MPA ───────────────────────────────── */
-function renderCascata(){
+function renderHero(d){
+  var el=document.getElementById('fin-hero'); if(!el) return;
+  var semHub=d.recHub<=0;
+  var mpaCls=semHub?'is-bad':(d.mpaPct>=0.12?'is-good':(d.mpaPct>=0.05?'':'is-bad'));
+  var vsTxt='';
+  if(d.mpaPctA!==null && !semHub){
+    var diffPp=(d.mpaPct-d.mpaPctA)*100;
+    vsTxt='<span class="'+(diffPp>=0?'delta-up':'delta-down')+'">'+(diffPp>=0?'↑':'↓')+Math.abs(diffPp).toFixed(1).replace('.',',')+' p.p.</span> <span class="hero-stat-ref">vs '+mesLabel(mesAnterior())+'</span>';
+  } else {
+    vsTxt='<span class="hero-stat-ref">sem base no mês anterior</span>';
+  }
+
+  el.innerHTML=
+     '<div class="hero-stat is-primary">'
+    +'<div class="hero-stat-label">Receita do mês</div>'
+    +'<div class="hero-stat-value">'+fmtR(d.rec)+'</div>'
+    +'<div class="hero-stat-foot"><span class="hero-stat-ref">'+d.ped.toLocaleString('pt-BR')+' pedidos · '+d.uni.toLocaleString('pt-BR')+' unidades</span></div>'
+    +'</div>'
+    +'<div class="hero-stat '+(semHub?'is-bad':'')+'">'
+    +'<div class="hero-stat-label">M.C. média — hub</div>'
+    +'<div class="hero-stat-value">'+(semHub?'—':fmtP(d.mcPct))+'</div>'
+    +'<div class="hero-stat-foot"><span class="hero-stat-ref">'+(semHub?'nenhum SKU linkado':fmtR(d.mcHubVal)+' sobre a receita linkada')+'</span></div>'
+    +'</div>'
+    +'<div class="hero-stat '+mpaCls+'">'
+    +'<div class="hero-stat-label">MPA — margem pós-ADS</div>'
+    +'<div class="hero-stat-value">'+(semHub?'—':fmtP(d.mpaPct))+'</div>'
+    +'<div class="hero-stat-foot">'+(semHub?'<span class="hero-stat-ref">linke os SKUs para calcular</span>':vsTxt+' <span class="hero-stat-ref">'+fmtR(d.mpaVal)+'</span>')+'</div>'
+    +'</div>'
+    +'<div class="hero-stat '+(d.tacosMes>0.07?'is-bad':'is-good')+'">'
+    +'<div class="hero-stat-label">TACOS do mês</div>'
+    +'<div class="hero-stat-value">'+fmtP(d.tacosMes)+'</div>'
+    +'<div class="hero-stat-foot"><span class="hero-stat-ref">'+fmtR(d.gasAds)+' de ADS</span></div>'
+    +'</div>';
+
+  var hint=document.getElementById('fin-cobertura-hint');
+  if(hint){
+    var pct=Math.round(d.cobHub*100);
+    hint.innerHTML='Cobertura do hub: <b style="color:'+(pct>=80?'var(--green-600)':'var(--coral-600)')+'">'+pct+'%</b> da receita';
+  }
+}
+
+function mesAnterior(){
+  var p=_st.mes.split('-'), y=parseInt(p[0]), m=parseInt(p[1]);
+  var yA=(m===1?y-1:y), mA=(m===1?12:m-1);
+  return yA+'-'+String(mA).padStart(2,'0');
+}
+
+/* ── cascata ─────────────────────────────────────────────────────────────── */
+function renderCascata(d){
   var el=document.getElementById('fin-cascata-body'); if(!el) return;
-  var d=_st.dados; if(!d){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>'; return; }
 
   if(d.recHub<=0){
-    el.innerHTML='<p class="fin-note"><strong>Nenhum SKU linkado ao Hub de Precificação neste mês.</strong> '
+    el.innerHTML='<div class="fin-cascata"><p class="fin-note"><strong>Nenhum SKU linkado ao Hub de Precificação neste mês.</strong> '
       +'A margem vem sempre do hub — abra a aba <em>Produtos</em>, clique nos SKUs marcados como "não linkado" e informe o SKU do hub. '
-      +'Receita do mês: '+fmtR(d.rec)+'.</p>';
+      +'Receita do mês: '+fmtR(d.rec)+'.</p></div>';
     return;
   }
 
@@ -10488,14 +10578,13 @@ function renderCascata(){
     {sinal:'=', label:'MPA — margem pós-ADS', val:d.mpaVal, tipo:d.mpaVal>=0?'res':'neg-res', result:true},
   ];
 
-  var maxVal=Math.max.apply(null,rows.map(function(r){return Math.abs(r.val||0);}));
-  if(maxVal===0) maxVal=1;
+  var maxVal=Math.max.apply(null,rows.map(function(r){return Math.abs(r.val||0);})) || 1;
 
-  var html=rows.map(function(r){
+  var html='<div class="fin-cascata">'+rows.map(function(r){
     var pct=Math.min(100,Math.abs(r.val||0)/maxVal*100).toFixed(1);
     var valStr=r.val<0?'−'+fmtR(Math.abs(r.val)):fmtR(r.val);
-    if(r.result) valStr+=' <span style="font-size:11px;color:#9A9A90;font-weight:400">'+fmtP(d.recHub>0?r.val/d.recHub:0)+'</span>';
-    var hubBadge=r.hubBadge?'<em class="fin-c-est" style="background:#2563EB;color:#fff;margin-left:4px">hub</em>':'';
+    if(r.result) valStr+=' <span style="font-size:11px;color:var(--slate-400);font-weight:400">'+fmtP(d.recHub>0?r.val/d.recHub:0)+'</span>';
+    var hubBadge=r.hubBadge?'<em class="fin-c-est">hub</em>':'';
     return '<div class="fin-cline'+(r.result?' result':'')+'">'
       +'<span class="fin-c-sinal">'+esc(r.sinal)+'</span>'
       +'<span class="fin-c-label">'+esc(r.label)+hubBadge+'</span>'
@@ -10505,88 +10594,201 @@ function renderCascata(){
   }).join('');
 
   var recFora=d.rec-d.recHub;
-  html+='<p class="fin-note"><strong>Hub de Precificação:</strong> a margem vem 100% do hub — custo, frete, tarifa e rebate já descontados lá. '
-    +'O ADS alvo do hub é substituído pelo gasto real do mês.'
-    +(recFora>0.005?' <strong>'+fmtR(recFora)+' de receita ('+Math.round((1-d.cobHub)*100)+'%) está fora do cálculo</strong> por falta de vínculo — linke os SKUs na aba <em>Produtos</em>.':'')
-    +' A comparação com o mês anterior usa a MC atual do hub nos dois meses (o hub não guarda histórico de MC).</p>';
+  html+='<p class="fin-note"><strong>Margem 100% do hub:</strong> custo, frete, tarifa e rebate já foram descontados lá. '
+    +'Aqui o ADS alvo do hub é trocado pelo gasto real do mês.'
+    +(recFora>0.005?' <strong>'+fmtR(recFora)+' de receita ('+Math.round((1-d.cobHub)*100)+'%) está fora do cálculo</strong> por falta de vínculo.':'')
+    +'</p></div>';
 
   el.innerHTML=html;
 }
 
-/* ── indicadores ─────────────────────────────────────────────────────────── */
-function renderIndicadores(){
-  var el=document.getElementById('fin-indicadores-body'); if(!el) return;
-  var d=_st.dados; if(!d){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>'; return; }
+/* ── rankings: quem fatura e quem entrega margem ─────────────────────────── */
+function renderRankings(d){
+  var el=document.getElementById('fin-rankings'); if(!el) return;
+  var comReceita=d.skus.filter(function(o){return o.rec>0;});
+  if(!comReceita.length){ el.innerHTML='<p class="fin-note">Sem vendas no mês.</p>'; return; }
 
+  var topFat=comReceita.slice().sort(function(a,b){return b.rec-a.rec;}).slice(0,8);
+  var linkados=comReceita.filter(function(o){return o.linkado;});
+  var topMc=linkados.slice().sort(function(a,b){return b.mcVal-a.mcVal;}).slice(0,8);
+
+  function nome(o){ return o.sku || o.titulo; }
+  function tabela(titulo, hint, itens, valorFn, subFn, totalRef){
+    if(!itens.length) return '<div><div class="sec-hint" style="margin:0 0 8px">'+esc(hint)+'</div>'
+      +'<p class="fin-note">Nenhum SKU linkado ao hub com venda no mês.</p></div>';
+    return '<div>'
+      +'<div class="sec-hint" style="margin:0 0 8px">'+esc(hint)+'</div>'
+      +'<div class="table-wrap"><table>'
+      +'<thead class="hub-thead"><tr><th>'+esc(titulo)+'</th><th style="text-align:right">Valor</th><th style="text-align:right">Peso</th></tr></thead>'
+      +'<tbody class="hub-tbody">'
+      +itens.map(function(o,i){
+        var val=valorFn(o);
+        var share=totalRef>0?val/totalRef*100:0;
+        return '<tr>'
+          +'<td style="max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(o.titulo)+'">'
+            +'<span class="fin-rank-num">'+(i+1)+'</span>'
+            +'<a href="#" onclick="event.preventDefault();finAbrirSku(\'' + esc(o.chave).replace(/'/g,"\\'") + '\')" style="color:var(--coral-600);text-decoration:none;font-weight:600">'+esc(nome(o))+'</a>'
+          +'</td>'
+          +'<td style="text-align:right;font-weight:600">'+fmtR(val)+'</td>'
+          +'<td style="text-align:right"><span class="fin-rank-share">'+share.toFixed(0)+'%</span><div style="height:3px;background:var(--slate-50);border-radius:2px;margin-top:3px"><div style="height:100%;width:'+Math.min(100,share).toFixed(0)+'%;background:var(--green-600);border-radius:2px"></div></div></td>'
+          +'</tr>'
+          +(subFn?'<tr><td colspan="3" style="padding-top:0;padding-bottom:8px;border-bottom:1px solid var(--slate-50)"><span style="font-size:10.5px;color:var(--slate-400)">'+subFn(o)+'</span></td></tr>':'');
+      }).join('')
+      +'</tbody></table></div></div>';
+  }
+
+  var totalRec=comReceita.reduce(function(s,o){return s+o.rec;},0);
+  var totalMc=linkados.reduce(function(s,o){return s+o.mcVal;},0);
+
+  el.innerHTML=
+     tabela('Maior faturamento', 'Quem mais vende no mês', topFat, function(o){return o.rec;}, function(o){
+       return o.linkado
+         ? 'M.C. '+o.mcPct.toFixed(1)+'% · entrega '+fmtR(o.mcVal)+' de margem'
+         : '<span style="color:var(--coral-600)">sem vínculo com o hub — margem desconhecida</span>';
+     }, totalRec)
+    +tabela('Maior margem em R$', 'Quem mais entrega M.C. em reais — é aqui que o resultado se forma', topMc, function(o){return o.mcVal;}, function(o){
+       return 'M.C. '+o.mcPct.toFixed(1)+'% sobre '+fmtR(o.rec)+' · MPA '+(o.mpaPct!==null?o.mpaPct.toFixed(1)+'%':'—');
+     }, totalMc);
+}
+
+/* ── sangria de ADS: gasto real vs alvo que o hub usou pra precificar ────── */
+function renderSangria(d){
+  var el=document.getElementById('fin-sangria'); if(!el) return;
+  var estourou=d.skus.filter(function(o){ return o.linkado && o.rec>0 && o.excessoAds>0.005; })
+                     .sort(function(a,b){ return b.excessoAds-a.excessoAds; });
+
+  if(!estourou.length){
+    el.innerHTML='<div class="attention is-clear"><div class="attention-head">Nenhum SKU gastou acima do ADS alvo do hub neste mês</div></div>';
+    return;
+  }
+  var totalExcesso=estourou.reduce(function(s,o){return s+o.excessoAds;},0);
+
+  el.innerHTML='<div class="sec-hint" style="margin:0 0 8px">O hub precificou contando com um ADS alvo. Onde o gasto real passou disso, a margem encolheu — e o valor abaixo é exatamente o quanto.</div>'
+    +'<div class="table-wrap"><table><thead class="hub-thead"><tr>'
+    +'<th>SKU</th><th style="text-align:right">TACOS real</th><th style="text-align:right">ADS alvo</th>'
+    +'<th style="text-align:right">Gasto real</th><th style="text-align:right">Excesso</th><th style="text-align:right">MPA</th>'
+    +'</tr></thead><tbody class="hub-tbody">'
+    +estourou.slice(0,12).map(function(o){
+      return '<tr>'
+        +'<td><a href="#" onclick="event.preventDefault();finAbrirSku(\'' + esc(o.chave).replace(/'/g,"\\'") + '\')" style="color:var(--coral-600);text-decoration:none;font-weight:600">'+esc(o.sku||o.titulo)+'</a></td>'
+        +'<td style="text-align:right;color:var(--coral-500);font-weight:600">'+o.tacos.toFixed(1)+'%</td>'
+        +'<td style="text-align:right;color:var(--slate-400)">'+o.adsAlvoPct.toFixed(1)+'%</td>'
+        +'<td style="text-align:right">'+fmtR(o.ads)+'</td>'
+        +'<td style="text-align:right;font-weight:600;color:var(--coral-500)">+'+fmtR(o.excessoAds)+'</td>'
+        +'<td style="text-align:right;'+(o.mpaPct<0?'color:var(--coral-500);font-weight:600':'')+'">'+(o.mpaPct!==null?o.mpaPct.toFixed(1)+'%':'—')+'</td>'
+        +'</tr>';
+    }).join('')
+    +'</tbody></table></div>'
+    +'<p class="fin-note"><strong>'+fmtR(totalExcesso)+'</strong> foi gasto em ADS acima do que o hub previu — '
+    +(d.mpaVal>0?'equivale a '+(totalExcesso/d.mpaVal*100).toFixed(0)+'% da sua MPA do mês. ':'')
+    +'Cortar verba aqui volta direto pra margem'+(estourou.length>12?' · mostrando os 12 maiores de '+estourou.length:'')+'.</p>';
+}
+
+/* ── concentração: de quantos SKUs a margem depende ──────────────────────── */
+function renderConcentracao(d){
+  var el=document.getElementById('fin-concentracao'); if(!el) return;
+  var linkados=d.skus.filter(function(o){return o.linkado && o.mcVal>0;})
+                     .sort(function(a,b){return b.mcVal-a.mcVal;});
+  if(linkados.length<2){ el.innerHTML='<p class="fin-note">Poucos SKUs linkados para medir concentração.</p>'; return; }
+
+  var total=linkados.reduce(function(s,o){return s+o.mcVal;},0);
+  var acum=0, n80=0;
+  for(var i=0;i<linkados.length;i++){ acum+=linkados[i].mcVal; n80++; if(acum>=total*0.8) break; }
+  var pctSkus=n80/linkados.length*100;
+
+  var top=linkados.slice(0,n80).reduce(function(s,o){return s+o.mcVal;},0);
+  var resto=linkados.slice(n80);
+  var meioN=Math.min(resto.length, Math.ceil(linkados.length*0.3));
+  var meio=resto.slice(0,meioN).reduce(function(s,o){return s+o.mcVal;},0);
+  var cauda=total-top-meio;
+
+  var risco = pctSkus<=20 ? 'alta' : pctSkus<=40 ? 'média' : 'baixa';
+  var recado = pctSkus<=20
+    ? 'Concentração alta: um problema de estoque ou de Buy Box em qualquer um desses SKUs vira problema de caixa no mesmo mês.'
+    : pctSkus<=40
+      ? 'Concentração média. Vale acompanhar de perto o estoque e o Buy Box desse grupo.'
+      : 'Margem bem distribuída — nenhum SKU isolado derruba o mês.';
+
+  function seg(val,cls,label){
+    var w=total>0?val/total*100:0;
+    if(w<2) return '';
+    return '<div class="fin-conc-seg '+cls+'" style="width:'+w.toFixed(1)+'%" title="'+esc(label)+': '+fmtR(val)+'">'+(w>=12?w.toFixed(0)+'%':'')+'</div>';
+  }
+
+  el.innerHTML='<div class="fin-conc">'
+    +'<div class="fin-conc-frase"><strong>'+n80+' de '+linkados.length+' SKUs</strong> ('+pctSkus.toFixed(0)+'%) respondem por 80% da sua margem de contribuição. '
+    +'Dependência <strong>'+risco+'</strong>. '+recado+'</div>'
+    +'<div class="fin-conc-barra">'
+      +seg(top,'top','Os '+n80+' principais')
+      +seg(meio,'meio','Intermediários')
+      +seg(cauda,'cauda','Cauda longa')
+    +'</div>'
+    +'<div class="fin-conc-legenda">'
+      +'<span class="l-top">Os '+n80+' principais — '+fmtR(top)+'</span>'
+      +(meio>0?'<span class="l-meio">Intermediários ('+meioN+') — '+fmtR(meio)+'</span>':'')
+      +(cauda>0?'<span class="l-cauda">Cauda ('+(linkados.length-n80-meioN)+') — '+fmtR(cauda)+'</span>':'')
+    +'</div>'
+    +'<p class="fin-note">Top '+n80+': '+linkados.slice(0,Math.min(n80,5)).map(function(o){return esc(o.sku||o.titulo);}).join(' · ')+(n80>5?' e mais '+(n80-5):'')+'</p>'
+    +'</div>';
+}
+
+/* ── indicadores ─────────────────────────────────────────────────────────── */
+function renderIndicadores(d){
+  var el=document.getElementById('fin-indicadores'); if(!el) return;
   var ticket=d.ped>0?d.rec/d.ped:0;
   var pctAds=d.uni>0?d.uAds/d.uni:0;
   var ctr=d.imp>0?d.cli/d.imp:0;
   var roas=d.gasAds>0?d.vAds/d.gasAds:0;
   var mpaPed=d.pedHub>0?d.mpaVal/d.pedHub:null;
 
-  var cards=[
-    {label:'Pedidos',          val:d.ped.toLocaleString('pt-BR'),    sub:'no mês'},
-    {label:'Unidades',         val:d.uni.toLocaleString('pt-BR'),    sub:'vendidas'},
-    {label:'Ticket Médio',     val:fmtR(ticket),                     sub:'receita ÷ pedidos'},
-    {label:'TACOS',            val:fmtP(d.tacosMes),                 sub:'gasto ADS ÷ receita total', dest:d.tacosMes>0.07},
-    {label:'M.C. (hub)',       val:d.recHub>0?fmtP(d.mcPct):'—',    sub:'média ponderada · itens linkados', dest:d.recHub>0&&d.mcPct<0.10},
-    {label:'MPA',              val:d.recHub>0?fmtP(d.mpaPct):'—',   sub:'margem pós-ADS real', dest:d.recHub>0&&d.mpaPct<0.05},
-    {label:'% Vendas via ADS', val:fmtP(pctAds),                     sub:'unidades via patrocinados'},
-    {label:'CTR',              val:fmtP(ctr),                        sub:'cliques ÷ impressões', dest:ctr<0.003},
-    {label:'ROAS',             val:roas.toFixed(2).replace('.',',')+'x', sub:'retorno sobre ADS'},
-    {label:'MPA por Pedido',   val:mpaPed!==null?fmtR(mpaPed):'—',  sub:'itens linkados ao hub', dest:mpaPed!==null&&mpaPed<0},
-    {label:'Cobertura hub',    val:fmtP(d.cobHub),                   sub:'da receita com MC do hub', dest:d.cobHub<0.8},
+  var cells=[
+    {label:'Ticket médio',    val:fmtR(ticket)},
+    {label:'MPA por pedido',  val:mpaPed!==null?fmtR(mpaPed):'—', cls:mpaPed!==null&&mpaPed<0?'neg':''},
+    {label:'ROAS',            val:roas.toFixed(2).replace('.',',')+'x'},
+    {label:'CTR',             val:fmtP(ctr), cls:ctr<0.003?'neg':''},
+    {label:'Venda via ADS',   val:fmtP(pctAds)},
+    {label:'Cobertura hub',   val:fmtP(d.cobHub), cls:d.cobHub<0.8?'neg':'pos'},
   ];
-
-  el.innerHTML='<div class="fin-ind-grid">'+cards.map(function(c){
-    return '<div class="fin-ind-card'+(c.dest?' destaque':'')+'">'
-      +'<div class="fin-ind-label">'+esc(c.label)+'</div>'
-      +'<div class="fin-ind-value">'+c.val+'</div>'
-      +'<div class="fin-ind-sub">'+esc(c.sub)+'</div>'
-      +'</div>';
-  }).join('')+'</div>';
+  el.innerHTML=cells.map(function(c){
+    return '<div class="metric-cell"><div class="metric-cell-label">'+esc(c.label)+'</div>'
+      +'<div class="metric-cell-value '+(c.cls||'')+'">'+c.val+'</div></div>';
+  }).join('');
 }
 
-/* ── repasses ─────────────────────────────────────────────────────────────── */
-function renderRepasses(){
-  var el=document.getElementById('fin-repasses-body'); if(!el) return;
-  var d=_st.dados; if(!d){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>'; return; }
+/* ── SKUs fora do cálculo ────────────────────────────────────────────────── */
+function renderNaoLinkados(d){
+  var el=document.getElementById('fin-naolinkados'); if(!el) return;
+  var fora=d.skus.filter(function(o){return !o.linkado && o.rec>0;})
+                 .sort(function(a,b){return b.rec-a.rec;});
+  if(!fora.length){ el.innerHTML=''; return; }
+  var totalFora=fora.reduce(function(s,o){return s+o.rec;},0);
 
-  var saida=d.com+d.gasAds;
-  var rows=[
-    ['Comissão ML (sale fee)', d.com,    d.rec>0?d.com/d.rec:0],
-    ['Gasto ADS patrocinados', d.gasAds, d.rec>0?d.gasAds/d.rec:0],
-  ];
-
-  el.innerHTML='<table class="fin-rep-table"><thead><tr>'
-    +'<th>Componente</th><th style="text-align:right">Valor</th><th style="text-align:right">% receita</th>'
-    +'</tr></thead><tbody>'
-    +rows.map(function(r){
-      return '<tr><td>'+esc(r[0])+'</td>'
-        +'<td class="r-val">'+fmtR(r[1])+'</td>'
-        +'<td class="r-pct">'+fmtP(r[2])+'</td></tr>';
+  el.innerHTML='<div class="sec-title">Fora do cálculo — '+fora.length+' SKU'+(fora.length>1?'s':'')+' sem vínculo</div>'
+    +'<div class="attention">'
+    +'<div class="attention-head">'+fmtR(totalFora)+' de receita sem margem calculada</div>'
+    +fora.slice(0,8).map(function(o){
+      return '<div class="attention-row">'
+        +'<span class="attention-sku">'+esc(o.sku||o.titulo.slice(0,18))+'</span>'
+        +'<span class="attention-why">Sem correspondência no Hub de Precificação</span>'
+        +'<span class="attention-num">'+fmtR(o.rec)+'</span>'
+        +'<a class="attention-link" href="#" onclick="event.preventDefault();finAbrirSku(\'' + esc(fora[0].chave).replace(/'/g,"\\'") + '\')">linkar</a>'
+        +'</div>';
     }).join('')
-    +'<tr class="fin-rep-total"><td>Total pago ao ML</td><td class="r-val">'+fmtR(saida)+'</td><td class="r-pct">'+fmtP(d.rec>0?saida/d.rec:0)+'</td></tr>'
-    +'</tbody></table>'
-    +'<p class="fin-rep-note">Comissão e ADS são dados reais da API do Mercado Livre. Frete, tarifa e rebate já estão dentro da MC do hub — não aparecem aqui pra não contar duas vezes.</p>';
+    +(fora.length>8?'<div class="attention-row"><span class="attention-why">+'+(fora.length-8)+' outros SKUs sem vínculo</span></div>':'')
+    +'</div>';
 }
 
-/* ── view switch ─────────────────────────────────────────────────────────── */
-window.finShowView=function(v,btn){
-  _st.view=v;
-  document.querySelectorAll('.fin-subnav-btn').forEach(function(b){b.classList.remove('active');});
-  if(btn) btn.classList.add('active');
-  document.querySelectorAll('.fin-view').forEach(function(el){el.style.display='none';});
-  var tg=document.getElementById('fin-view-'+v); if(tg) tg.style.display='block';
-  renderView(v);
+/* Abre o painel do SKU na aba Produtos a partir do Financeiro */
+window.finAbrirSku=function(chave){
+  try{
+    if(typeof goOperacao==='function') goOperacao();
+    if(typeof opGoTab==='function') opGoTab('vendas',document.getElementById('op-tab-vendas'));
+    setTimeout(function(){
+      if(typeof prodAbrirDrawer==='function') prodAbrirDrawer(chave);
+    }, 250);
+  }catch(e){ console.warn('[Financeiro] abrir SKU',e); }
 };
 
-function renderView(v){
-  if(!_st.dados) return;
-  if(v==='cascata')           renderCascata();
-  else if(v==='indicadores')  renderIndicadores();
-  else if(v==='repasses')     renderRepasses();
-}
 })(); // FinanceiroModule
 </script>
 
