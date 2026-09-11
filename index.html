@@ -1057,6 +1057,66 @@ body.sidebar-collapsed .hamburger { display: none; }
 .esc-refresh-btn:hover { background:rgba(255,255,255,0.09); color:#C0C8D8; }
 .esc-canvas-wrap { flex:1; position:relative; overflow:hidden; background:#07090E; min-height:340px; }
 #escritorio-canvas { display:block; }
+/* Sala de reunião */
+.sala-bg { display:none; position:fixed; inset:0; background:rgba(4,6,12,.72); z-index:700; align-items:center; justify-content:center; padding:24px; }
+.sala-bg.open { display:flex; }
+.sala-box { background:#0D1018; border:1px solid rgba(255,255,255,.09); border-radius:16px; width:760px; max-width:96vw;
+  max-height:88vh; display:flex; flex-direction:column; box-shadow:0 24px 70px rgba(0,0,0,.55); }
+.sala-cab { display:flex; align-items:flex-start; justify-content:space-between; padding:20px 24px 14px; border-bottom:1px solid rgba(255,255,255,.07); }
+.sala-tit { font-size:16px; font-weight:600; color:#D8D5CC; }
+.sala-sub { font-size:12px; color:#5A6478; margin-top:3px; }
+#sala-setup, #sala-ativa { padding:18px 24px 22px; overflow-y:auto; }
+.sala-lb { font-size:10.5px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.08em; color:#6B7488; margin-bottom:9px; }
+.sala-cadeiras { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:9px; }
+.sala-cadeira { background:rgba(255,255,255,.04); border:1.5px solid rgba(255,255,255,.09); border-radius:11px; padding:11px 13px; cursor:pointer; transition:all .15s; }
+.sala-cadeira:hover { border-color:rgba(255,255,255,.2); }
+.sala-cadeira.sentado { background:rgba(107,124,255,.14); border-color:#6B7CFF; }
+.sala-cadeira-nome { font-size:13px; font-weight:600; color:#D8D5CC; }
+.sala-cadeira-cargo { font-size:10px; color:#5A6478; margin-top:2px; line-height:1.35; }
+.sala-input { width:100%; box-sizing:border-box; background:rgba(255,255,255,.05); border:1.5px solid rgba(255,255,255,.1);
+  border-radius:9px; padding:10px 13px; color:#D8D5CC; font-size:13px; font-family:var(--font); }
+.sala-input:focus { outline:none; border-color:#6B7CFF; }
+.sala-sugestoes { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.sala-chip { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); color:#8A94A8; border-radius:14px;
+  padding:4px 11px; font-size:11px; cursor:pointer; }
+.sala-chip:hover { border-color:#6B7CFF; color:#B8C0FF; }
+.sala-pauta-fixa { background:rgba(107,124,255,.1); border:1px solid rgba(107,124,255,.25); border-radius:9px;
+  padding:10px 13px; font-size:12.5px; color:#C8CEDC; margin-bottom:12px; }
+.sala-participantes { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+.sala-crachá { font-size:10.5px; font-family:var(--mono); border-radius:12px; padding:3px 10px; }
+.sala-fio { display:flex; flex-direction:column; gap:12px; max-height:44vh; overflow-y:auto; padding-right:4px; }
+.sala-fala { display:flex; gap:10px; }
+.sala-fala.eu { flex-direction:row-reverse; }
+.sala-avatar { width:30px; height:30px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
+.sala-balao { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.08); border-radius:11px; padding:10px 13px;
+  font-size:13px; line-height:1.6; color:#C8CEDC; white-space:pre-wrap; max-width:78%; }
+.sala-fala.eu .sala-balao { background:rgba(107,124,255,.16); border-color:rgba(107,124,255,.3); }
+.sala-quem { font-size:10px; font-family:var(--mono); color:#5A6478; margin-bottom:4px; }
+.sala-entrada { display:flex; gap:8px; margin-top:14px; align-items:flex-end; }
+.sala-entrada textarea { flex:1; background:rgba(255,255,255,.05); border:1.5px solid rgba(255,255,255,.1); border-radius:9px;
+  padding:10px 13px; color:#D8D5CC; font-size:13px; font-family:var(--font); resize:none; max-height:120px; }
+.sala-entrada textarea:focus { outline:none; border-color:#6B7CFF; }
+.sala-rodape { display:flex; gap:8px; margin-top:12px; justify-content:flex-end; }
+.sala-rodape .ap-mini { border-color:rgba(255,255,255,.12); color:#8A94A8; }
+.sala-rodape .ap-mini:hover { color:#B8C0FF; border-color:#6B7CFF; }
+.sala-pensando { font-size:11.5px; color:#5A6478; font-style:italic; padding-left:40px; }
+
+/* Aprendizado: o que o Ale ensinou ao agente */
+.esc-conhec { margin-top:18px; border-top:1px solid rgba(255,255,255,0.07); padding-top:14px; }
+.esc-conhec-head { font-size:11px; font-family:var(--mono); letter-spacing:.06em; text-transform:uppercase; color:#8A94A8; margin-bottom:10px; }
+.esc-conhec-item { background:rgba(107,124,255,0.07); border:1px solid rgba(107,124,255,0.22); border-radius:9px; padding:10px 12px; margin-bottom:8px; }
+.esc-conhec-txt { font-size:12.5px; line-height:1.55; color:#C8CEDC; }
+.esc-conhec-pe { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:7px; font-size:10px; font-family:var(--mono); }
+.esc-conhec-pe a { color:#6B7CFF; text-decoration:none; }
+.esc-conhec-pe a:hover { text-decoration:underline; }
+.esc-conhec-tag { background:rgba(255,255,255,0.08); color:#A0A8B8; border-radius:10px; padding:2px 8px; }
+.esc-conhec-tag.time { background:rgba(0,216,122,0.15); color:#00D87A; }
+.esc-conhec-data { color:#5A6478; }
+.esc-conhec-mais { font-size:11px; color:#5A6478; padding-left:2px; }
+.esc-guardar-btn { background:none; border:1px solid rgba(107,124,255,0.35); color:#6B7CFF; border-radius:12px;
+  padding:2px 9px; font-size:10px; cursor:pointer; margin-left:8px; font-family:var(--mono); transition:background .15s; }
+.esc-guardar-btn:hover { background:rgba(107,124,255,0.15); }
+
 .esc-legend { position:absolute; bottom:12px; left:18px; display:flex; flex-wrap:wrap; gap:12px; pointer-events:none; }
 .esc-legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:#3A4560; font-family:var(--mono); }
 .esc-legend-dot { width:7px; height:7px; border-radius:50%; }
@@ -1173,6 +1233,61 @@ body.sidebar-collapsed .hamburger { display: none; }
 .hub-secondary-btn{background:none;border:none;border-bottom:2px solid transparent;padding:8px 18px 10px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-400);cursor:pointer;margin-bottom:-1px;transition:color .15s,border-color .15s}
 .hub-secondary-btn:hover{color:var(--text)}
 .hub-secondary-btn.active{color:var(--text);border-bottom-color:#22c55e}
+
+/* ===== APRESENTAÇÃO ===== */
+.ap-topo { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:8px; }
+.ap-acoes { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.ap-btn { cursor:pointer; padding:7px 12px; }
+.ap-lista { display:flex; flex-direction:column; gap:14px; margin-top:18px; }
+.ap-slide { background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius); padding:18px 20px; position:relative; }
+.ap-slide.arrastando { opacity:.45; }
+.ap-slide-cab { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+.ap-slide-num { font-family:var(--mono); font-size:11px; color:var(--slate-400); background:var(--slate-50); border-radius:12px; padding:2px 9px; }
+.ap-slide-tipo { font-family:var(--mono); font-size:9.5px; text-transform:uppercase; letter-spacing:.7px; color:var(--slate-400); }
+.ap-slide-autor { font-family:var(--mono); font-size:9.5px; border-radius:10px; padding:2px 8px; background:var(--blue-50); color:var(--blue-600); }
+.ap-slide-autor.ale { background:var(--slate-50); color:var(--slate-400); }
+.ap-slide-acoes { margin-left:auto; display:flex; gap:6px; }
+.ap-mini { background:none; border:1px solid var(--slate-100); color:var(--slate-400); border-radius:6px; padding:3px 8px; font-size:11px; cursor:pointer; }
+.ap-mini:hover { color:var(--coral-600); border-color:var(--coral-200); }
+.ap-slide-titulo { font-size:17px; font-weight:600; color:var(--slate-900); letter-spacing:-.2px; border:1px solid transparent; border-radius:6px; padding:3px 5px; margin:-3px -5px 6px; }
+.ap-slide-titulo:focus { outline:none; border-color:var(--coral-200); background:var(--bg); }
+.ap-slide-corpo { font-size:13.5px; line-height:1.65; color:var(--slate-700); white-space:pre-wrap; border:1px solid transparent; border-radius:6px; padding:5px; margin:0 -5px; }
+.ap-slide-corpo:focus { outline:none; border-color:var(--coral-200); background:var(--bg); }
+.ap-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-top:12px; }
+.ap-kpi { background:var(--bg); border:1px solid var(--slate-100); border-radius:var(--radius-sm); padding:11px 13px; }
+.ap-kpi-lb { font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--slate-400); }
+.ap-kpi-vl { font-family:var(--mono); font-size:19px; color:var(--slate-900); margin-top:4px; letter-spacing:-.4px; }
+.ap-kpi-vl.pos { color:var(--green-600); } .ap-kpi-vl.neg { color:var(--coral-500); }
+.ap-kpi-sub { font-size:10px; color:var(--slate-400); margin-top:3px; }
+.ap-notas { margin-top:10px; padding-top:9px; border-top:1px dashed var(--slate-100); font-size:11.5px; color:var(--slate-400); font-style:italic;
+  border-radius:0; }
+.ap-notas:focus { outline:none; background:var(--bg); font-style:normal; }
+.ap-add { border:1.5px dashed var(--slate-100); border-radius:var(--radius); padding:14px; text-align:center; color:var(--slate-400);
+  font-size:13px; cursor:pointer; background:none; width:100%; font-family:var(--font); }
+.ap-add:hover { border-color:var(--coral-200); color:var(--coral-600); }
+.ap-aviso { background:var(--amber-50); border:1px solid var(--amber-100); border-radius:var(--radius); padding:12px 16px;
+  font-size:12.5px; color:var(--amber-600); line-height:1.6; margin-top:14px; }
+.ap-aviso strong { color:#5c3806; }
+
+/* Palco */
+.ap-palco { display:none; position:fixed; inset:0; background:#12110F; z-index:800; flex-direction:column;
+  align-items:center; justify-content:center; padding:5vh 6vw; }
+.ap-palco.open { display:flex; }
+.ap-palco-sair { position:absolute; top:20px; right:24px; background:none; border:none; color:#6B6A64; font-size:24px; cursor:pointer; }
+.ap-palco-sair:hover { color:#fff; }
+.ap-palco-slide { width:100%; max-width:1000px; color:#F2F0EA; }
+.ap-palco-slide h2 { font-size:clamp(26px,4vw,46px); font-weight:600; letter-spacing:-1px; margin-bottom:22px; text-wrap:balance; }
+.ap-palco-slide p { font-size:clamp(15px,1.7vw,20px); line-height:1.7; color:#C9C6BD; white-space:pre-wrap; }
+.ap-palco-slide .ap-kpis { margin-top:26px; }
+.ap-palco-slide .ap-kpi { background:rgba(255,255,255,.05); border-color:rgba(255,255,255,.1); padding:16px 18px; }
+.ap-palco-slide .ap-kpi-lb { color:#8A877E; font-size:10.5px; }
+.ap-palco-slide .ap-kpi-vl { color:#F2F0EA; font-size:clamp(20px,2.6vw,30px); }
+.ap-palco-slide .ap-kpi-vl.pos { color:#9FD16A; } .ap-palco-slide .ap-kpi-vl.neg { color:#F0997B; }
+.ap-palco-slide .ap-kpi-sub { color:#8A877E; }
+.ap-palco-rodape { position:absolute; bottom:26px; display:flex; align-items:center; gap:18px; color:#6B6A64; font-family:var(--mono); font-size:12px; }
+.ap-nav-btn { background:none; border:1px solid #33312C; color:#8A877E; border-radius:8px; padding:5px 14px; font-size:15px; cursor:pointer; }
+.ap-nav-btn:hover { color:#fff; border-color:#55524A; }
+.ap-palco-notas { position:absolute; bottom:70px; max-width:760px; font-size:12.5px; color:#6B6A64; font-style:italic; text-align:center; padding:0 20px; }
 
 /* ===== FINANCEIRO — usa a mesma linguagem visual das outras abas ===== */
 .fin-select {
@@ -1355,6 +1470,11 @@ body.sidebar-collapsed .hamburger { display: none; }
       <button class="nav-item" data-nav-key="financeiro" data-nav-label="Financeiro" onclick="go('financeiro',this);initFinanceiroOnce()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
         Financeiro
+      </button>
+      <!-- Apresentacao -->
+      <button class="nav-item" data-nav-key="apresentacao" data-nav-label="Apresentacao" onclick="go('apresentacao',this);initApresentacaoOnce()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Apresentação
       </button>
       <!-- Operacao -->
       <button class="nav-item" data-nav-key="performance" data-nav-label="Operacao" onclick="goOperacao()">
@@ -2009,26 +2129,55 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div class="esc-header">
         <div class="esc-header-left">
           <h2>🏢 Escritório Virtual</h2>
-          <p>Clique em uma mesa para ver as sugestões do agente</p>
+          <p>Cada um na sua sala, vigiando a própria área. Clique para abrir — ou convoque uma reunião.</p>
         </div>
         <div class="esc-meta">
           <span id="esc-update-label">—</span>
+          <button class="esc-refresh-btn" onclick="escAbrirSala()" style="border-color:rgba(107,124,255,.35);color:#8B9BFF">🪑 Sala de reunião</button>
           <button class="esc-refresh-btn" onclick="escritorioRefresh()">↻ Atualizar</button>
         </div>
       </div>
       <div class="esc-canvas-wrap" id="esc-canvas-wrap">
         <canvas id="escritorio-canvas"></canvas>
-        <div class="esc-legend">
-          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#00D87A"></div>Gestor</div>
-          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#6B7CFF"></div>Analista</div>
-          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#F0A500"></div>Anúncios</div>
-          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#FF5F7E"></div>ADS</div>
-          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#22D3EE"></div>SAC</div>
-          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#A855F7"></div>Criativo</div>
-          <div class="esc-legend-item"><div class="esc-legend-dot" style="background:#FFA0C9"></div>Assistente</div>
-        </div>
-        <div class="esc-click-hint">Clique numa mesa ↑</div>
+        <div class="esc-legend" id="esc-legend"></div>
+        <div class="esc-click-hint">Clique num agente ↑</div>
       </div>
+      <!-- Sala de reunião -->
+      <div class="sala-bg" id="sala-bg">
+        <div class="sala-box">
+          <div class="sala-cab">
+            <div>
+              <div class="sala-tit">🪑 Sala de reunião</div>
+              <div class="sala-sub" id="sala-sub">Chame quem precisa estar e diga o assunto.</div>
+            </div>
+            <button class="esc-panel-close" onclick="escFecharSala()">✕</button>
+          </div>
+
+          <div id="sala-setup">
+            <div class="sala-lb">Quem senta com você</div>
+            <div class="sala-cadeiras" id="sala-cadeiras"></div>
+            <div class="sala-lb" style="margin-top:16px">Pauta</div>
+            <input class="sala-input" id="sala-pauta" placeholder="Ex: fechar o desempenho de setembro para os sócios">
+            <div class="sala-sugestoes" id="sala-sugestoes"></div>
+            <button class="btn btn-primary" style="margin-top:14px;width:100%" onclick="escIniciarSala()">Começar reunião</button>
+          </div>
+
+          <div id="sala-ativa" style="display:none">
+            <div class="sala-pauta-fixa" id="sala-pauta-fixa"></div>
+            <div class="sala-participantes" id="sala-participantes"></div>
+            <div class="sala-fio" id="sala-fio"></div>
+            <div class="sala-entrada">
+              <textarea id="sala-input" placeholder="Fale com a mesa… (Enter envia)" rows="1"></textarea>
+              <button class="btn btn-primary" id="sala-enviar" onclick="escFalarNaSala()">→</button>
+            </div>
+            <div class="sala-rodape">
+              <button class="ap-mini" onclick="escEncerrarSala()">Encerrar e gerar ata</button>
+              <button class="ap-mini" onclick="escSalaParaSlides()">Levar para a apresentação</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Side Panel -->
       <div class="esc-panel" id="esc-panel">
         <!-- Header -->
@@ -2110,6 +2259,38 @@ body.sidebar-collapsed .hamburger { display: none; }
   <!-- Fora do cálculo -->
   <div id="fin-naolinkados"></div>
 </div><!-- /page-financeiro -->
+
+<div class="page" id="page-apresentacao">
+  <div class="ap-topo">
+    <div>
+      <div class="page-title">Apresentação de desempenho</div>
+      <div class="page-subtitle" id="ap-sub">Os números do mês, prontos para levar aos sócios.</div>
+    </div>
+    <div class="ap-acoes">
+      <select class="fin-select" id="ap-mes" onchange="apTrocarMes(this.value)"></select>
+      <button class="perf-select ap-btn" onclick="apMontar()" title="Refaz os slides a partir do fechamento do mês">↻ Montar do zero</button>
+      <button class="perf-select ap-btn" onclick="apFecharMes()" title="Congela os números deste mês no histórico">🔒 Fechar o mês</button>
+      <button class="btn btn-primary" onclick="apApresentar()">▶ Apresentar</button>
+    </div>
+  </div>
+
+  <div id="ap-aviso"></div>
+  <div id="ap-slides" class="ap-lista">
+    <div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>
+  </div>
+</div><!-- /page-apresentacao -->
+
+<!-- Modo apresentar: tela cheia -->
+<div class="ap-palco" id="ap-palco">
+  <button class="ap-palco-sair" onclick="apSair()">✕</button>
+  <div class="ap-palco-slide" id="ap-palco-slide"></div>
+  <div class="ap-palco-rodape">
+    <button class="ap-nav-btn" onclick="apNavegar(-1)">←</button>
+    <span id="ap-palco-pos"></span>
+    <button class="ap-nav-btn" onclick="apNavegar(1)">→</button>
+  </div>
+  <div class="ap-palco-notas" id="ap-palco-notas"></div>
+</div>
 </div><!-- /app -->
 
 <button class="fab" id="fab" onclick="fabAction()">+</button>
@@ -9135,15 +9316,36 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   'use strict';
 
   // ── Agentes e layout ───────────────────────────────────────────────────────
+  // Cada agente é dono de uma área. O escopo não é decoração: ele decide
+  // que dado entra no contexto e o que o agente recusa responder.
   var AGENTS = [
-    { id:'gestor',   nome:'Gestor',   emoji:'🧭', cor:'#00D87A', gx:1.2,  gy:0.8 },
-    { id:'analista', nome:'Analista', emoji:'📊', cor:'#6B7CFF', gx:3.9,  gy:0.4 },
-    { id:'anuncios', nome:'Anúncios', emoji:'📢', cor:'#F0A500', gx:6.4,  gy:0.8 },
-    { id:'ads',      nome:'ADS',      emoji:'⚡', cor:'#FF5F7E', gx:1.2,  gy:3.5 },
-    { id:'sac',      nome:'SAC',      emoji:'💬', cor:'#22D3EE', gx:3.9,  gy:3.1 },
-    { id:'criativo',   nome:'Criativo',   emoji:'✨', cor:'#A855F7', gx:6.4,  gy:3.5 },
-    { id:'assistente', nome:'Assistente', emoji:'🗓', cor:'#FFA0C9', gx:4.2,  gy:1.9 },
+    { id:'gestor', nome:'Gestor', emoji:'🧭', cor:'#00D87A', gx:1.2, gy:0.8,
+      cargo:'Dono do resultado do mês',
+      cuida:'M.C. e MPA do mês, TACOS consolidado, concentração de margem, cobertura do Hub de Precificação, reputação da conta e o que os outros agentes escalaram.',
+      naoCuida:'Não mexe em SKU individual, campanha de ADS, texto de anúncio nem atendimento — isso é do ADS, do Anúncios e do SAC.' },
+
+    { id:'ads', nome:'ADS', emoji:'⚡', cor:'#FF5F7E', gx:1.2, gy:3.5,
+      cargo:'Dono do tráfego pago',
+      cuida:'TACOS e ACOS por SKU e por dia, CPC, CTR, gasto real contra o ADS alvo do hub, SKUs sem impressão e verba mal alocada.',
+      naoCuida:'Não responde sobre reclamação, avaliação, Buy Box, estoque ou margem do mês — isso é do SAC, do Anúncios e do Gestor.' },
+
+    { id:'anuncios', nome:'Anúncios', emoji:'📢', cor:'#F0A500', gx:6.4, gy:0.8,
+      cargo:'Dono da exposição e da conversão',
+      cuida:'Saúde do anúncio, experiência de compra com o motivo que o ML informou, pendências de qualidade, Buy Box, preço contra o concorrente, participação em visitas e estoque.',
+      naoCuida:'Não responde sobre gasto de ADS, TACOS, margem do mês nem atendimento ao cliente.' },
+
+    { id:'sac', nome:'SAC', emoji:'💬', cor:'#22D3EE', gx:6.4, gy:3.5,
+      cargo:'Dono da reputação',
+      cuida:'Avaliações e o que os clientes escrevem nas notas baixas, reputação da conta, pedidos cancelados ou atrasados, perguntas e reclamações.',
+      naoCuida:'Não responde sobre TACOS, ADS, margem, preço ou Buy Box — quando perguntarem, indica o agente dono.' },
+
+    { id:'assistente', nome:'Assistente', emoji:'🗓', cor:'#FFA0C9', gx:3.9, gy:2.1,
+      cargo:'Dono da rotina',
+      cuida:'Agenda, anotações, kanban de ideias e a fila de tarefas que os outros agentes abriram. É quem organiza o que precisa ser feito e quando.',
+      naoCuida:'Não analisa métrica de venda, ADS ou margem — busca o agente dono quando o assunto é número.' },
   ];
+  function agentePorId(id){ return AGENTS.filter(function(a){return a.id===id;})[0]||null; }
+  function agenteNome(id){ var a=agentePorId(id); return a?a.nome:id; }
   var DESK_W=1.5, DESK_D=1.1, DESK_H=0.42;
   var MON_W=0.56, MON_D=0.10, MON_H=0.74;
   var TACOS_META=0.05;
@@ -9151,8 +9353,11 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   // ── Estado ─────────────────────────────────────────────────────────────────
   var canvas, ctx;
   var TW=50, TH=25, TZ=48, OX=362, OY=55; // tile+origin, recalculated on resize
-  var dados={anuncios:[],ads:[],vendas:[],reviews:[],reputacao:null,skus:[],agenda:[],anotacoes:[],ideias:[],skusCompleto:[],perguntas:[],pedidos:[],reclamacoes:[],financeiro:[]};
+  var dados={anuncios:[],ads:[],vendas:[],visitas:[],reviews:[],reputacao:null,skus:[],agenda:[],anotacoes:[],ideias:[],skusCompleto:[],perguntas:[],pedidos:[],reclamacoes:[],financeiro:[],desde:null};
   var sugestoes={}, alertCounts={}, doneMap={};
+  var memoria={};       // {agente_id: [registros do diário de bordo]}
+  var conhecimento=[];  // o que o Ale ensinou (sobrevive a tudo)
+  var tarefas=[];   // fila de handoff entre agentes
   var animT=0, hitAreas=[], initialized=false, activeAgentId=null;
 
   // ── ISO Math ───────────────────────────────────────────────────────────────
@@ -9196,116 +9401,283 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     edge2(tC,bC); edge2(tD,bD);
   }
 
-  // ── Floor tiles ────────────────────────────────────────────────────────────
+  /* ═══ PLANTA DO ESCRITÓRIO ═══════════════════════════════════════════════
+     Cada agente tem uma sala; no centro-baixo fica a de reunião. Um corredor
+     liga tudo — é por ele que eles caminham quando você convoca.
+     ═══════════════════════════════════════════════════════════════════════ */
+  var CORREDOR_Y = 3.5;          // linha central por onde todos passam
+  var SALAS = [
+    { ag:'gestor',     x:0.20, y:0.25, w:2.40, d:2.30, porta:'S' },
+    { ag:'ads',        x:3.30, y:0.25, w:2.40, d:2.30, porta:'S' },
+    { ag:'anuncios',   x:6.40, y:0.25, w:2.40, d:2.30, porta:'S' },
+    { ag:'sac',        x:0.20, y:4.45, w:2.40, d:2.30, porta:'N' },
+    { ag:'assistente', x:6.40, y:4.45, w:2.40, d:2.30, porta:'N' },
+  ];
+  var SALA_REUNIAO = { x:3.30, y:4.45, w:2.40, d:2.30, porta:'N' };
+
+  function salaDe(agId){ return SALAS.filter(function(s){return s.ag===agId;})[0]||null; }
+  function portaDa(s){
+    return { x: s.x + s.w/2, y: s.porta==='S' ? s.y + s.d : s.y };
+  }
+  // Onde o agente fica quando está trabalhando na própria sala
+  function postoDe(agId){
+    var s=salaDe(agId); if(!s) return {x:4,y:3};
+    return { x: s.x + s.w*0.5, y: s.y + s.d*(s.porta==='S'?0.34:0.66) };
+  }
+  // Lugares à mesa de reunião
+  function cadeiraReuniao(i, total){
+    var r=SALA_REUNIAO;
+    var cx=r.x+r.w/2, cy=r.y+r.d/2;
+    var ang = (Math.PI*2) * (i/Math.max(1,total)) - Math.PI/2;
+    return { x: cx + Math.cos(ang)*0.78, y: cy + Math.sin(ang)*0.62 };
+  }
+
+  /* ── Estado de cada agente no mapa ─────────────────────────────────────── */
+  var _pos = {};   // {id: {x,y, caminho:[], passo:0, andando:false, destino:'sala'|'reuniao'}}
+  function posDe(agId){
+    if(!_pos[agId]){
+      var p=postoDe(agId);
+      _pos[agId]={x:p.x, y:p.y, caminho:[], passo:0, andando:false, destino:'sala'};
+    }
+    return _pos[agId];
+  }
+
+  // Rota pelo corredor: sai da sala, anda pelo corredor, entra na outra porta
+  function rotaAte(agId, alvo){
+    var s=salaDe(agId); if(!s) return [alvo];
+    var pSala=portaDa(s), pReu=portaDa(SALA_REUNIAO);
+    return [
+      {x:pSala.x, y:pSala.y},
+      {x:pSala.x, y:CORREDOR_Y},
+      {x:pReu.x,  y:CORREDOR_Y},
+      {x:pReu.x,  y:pReu.y},
+      alvo
+    ];
+  }
+  function rotaDeVolta(agId){
+    var s=salaDe(agId); if(!s) return [];
+    var pSala=portaDa(s), pReu=portaDa(SALA_REUNIAO), posto=postoDe(agId);
+    return [
+      {x:pReu.x,  y:pReu.y},
+      {x:pReu.x,  y:CORREDOR_Y},
+      {x:pSala.x, y:CORREDOR_Y},
+      {x:pSala.x, y:pSala.y},
+      posto
+    ];
+  }
+
+  // Chamados pela sala de reunião
+  window.escMapaConvocar=function(ids){
+    (ids||[]).forEach(function(id,i){
+      var p=posDe(id);
+      p.caminho=rotaAte(id, cadeiraReuniao(i, ids.length));
+      p.passo=0; p.andando=true; p.destino='reuniao';
+    });
+  };
+  window.escMapaDispensar=function(){
+    Object.keys(_pos).forEach(function(id){
+      var p=_pos[id];
+      if(p.destino!=='reuniao') return;
+      p.caminho=rotaDeVolta(id); p.passo=0; p.andando=true; p.destino='sala';
+    });
+  };
+
+  function andarAgentes(dt){
+    var VEL=1.9; // tiles por segundo
+    Object.keys(_pos).forEach(function(id){
+      var p=_pos[id];
+      if(!p.andando || !p.caminho.length) return;
+      var alvo=p.caminho[p.passo];
+      if(!alvo){ p.andando=false; return; }
+      var dx=alvo.x-p.x, dy=alvo.y-p.y;
+      var dist=Math.sqrt(dx*dx+dy*dy);
+      var avanco=VEL*dt;
+      if(dist<=avanco){
+        p.x=alvo.x; p.y=alvo.y; p.passo++;
+        if(p.passo>=p.caminho.length){ p.andando=false; p.caminho=[]; }
+      } else {
+        p.x+=dx/dist*avanco; p.y+=dy/dist*avanco;
+      }
+    });
+  }
+
+  /* ── Desenho ───────────────────────────────────────────────────────────── */
   function drawFloor(){
     var GW=9, GD=7;
     for(var gy=0;gy<GD;gy++){
       for(var gx=0;gx<GW;gx++){
         var A=iso(gx,gy,0),B=iso(gx+1,gy,0),C=iso(gx+1,gy+1,0),D=iso(gx,gy+1,0);
-        fillPoly([A,B,C,D],(gx+gy)%2===0?'#111520':'#0E1219');
-        strokePoly([A,B,C,D],'rgba(255,255,255,0.02)',0.4);
+        fillPoly([A,B,C,D],(gx+gy)%2===0?'#0C1017':'#0A0E14');
+        strokePoly([A,B,C,D],'rgba(255,255,255,0.015)',0.4);
       }
     }
+    // Corredor: faixa mais clara, mostra por onde eles andam
+    var c1=iso(0,CORREDOR_Y-0.45,0), c2=iso(9,CORREDOR_Y-0.45,0),
+        c3=iso(9,CORREDOR_Y+0.45,0), c4=iso(0,CORREDOR_Y+0.45,0);
+    fillPoly([c1,c2,c3,c4],'rgba(255,255,255,0.022)');
   }
 
-  // ── Draw single desk ───────────────────────────────────────────────────────
-  function drawDesk(agent){
-    var gx=agent.gx, gy=agent.gy, cor=agent.cor;
-    var alertN=alertCounts[agent.id]||0;
-    var t=animT;
+  // Piso tingido + paredes baixas + placa com o nome
+  function drawSala(s, cor, nome, ehReuniao){
+    var A=iso(s.x,s.y,0), B=iso(s.x+s.w,s.y,0), C=iso(s.x+s.w,s.y+s.d,0), D=iso(s.x,s.y+s.d,0);
+    fillPoly([A,B,C,D], ehReuniao?'rgba(107,124,255,0.07)':rgba(cor,0.055));
+    strokePoly([A,B,C,D], ehReuniao?'rgba(107,124,255,0.3)':rgba(cor,0.28), 1);
 
-    // Desk body
-    var dk='#192533';
-    drawBox(gx,gy,0,DESK_W,DESK_D,DESK_H,
-      mul(dk,1.4), mul(dk,0.88), mul(dk,0.68));
+    // Paredes: as duas de trás, pra não tapar o interior
+    var H=0.42;
+    var pc = ehReuniao ? '#1B2033' : mul(cor,0.30);
+    var pt = ehReuniao ? '#252C44' : mul(cor,0.42);
+    // parede norte (y = s.y)
+    drawBox(s.x, s.y-0.06, 0, s.w, 0.06, H, pt, mul(pc,1.1), pc);
+    // parede oeste (x = s.x)
+    drawBox(s.x-0.06, s.y, 0, 0.06, s.d, H, pt, mul(pc,1.1), pc);
 
-    // Monitor stand
-    var sx=gx+DESK_W*0.5-0.04, sy=gy+DESK_D*0.2;
-    drawBox(sx,sy,DESK_H,0.07,0.05,0.18,'#243040','#1A2535','#131D28');
+    // Vão da porta marcado no chão
+    var p=portaDa(s);
+    var d1=iso(p.x-0.35,p.y-0.05,0), d2=iso(p.x+0.35,p.y-0.05,0),
+        d3=iso(p.x+0.35,p.y+0.05,0), d4=iso(p.x-0.35,p.y+0.05,0);
+    fillPoly([d1,d2,d3,d4], ehReuniao?'rgba(107,124,255,0.35)':rgba(cor,0.3));
 
-    // Monitor back frame
-    var mx=gx+DESK_W*0.25, my=gy+DESK_D*0.12;
-    var pulse=alertN>0 ? 0.55+0.2*Math.sin(t*2.8) : 0.38;
-    drawBox(mx,my,DESK_H+0.18,MON_W,MON_D,MON_H,
-      mul(cor,pulse*1.3),
-      mul(cor,pulse*0.7),
-      mul(cor,pulse*0.55));
+    // Placa com fundo próprio — sem isso ela some contra a parede ou o piso tingido.
+    // A sala de reunião leva a placa mais alta pra não brigar com quem senta à mesa.
+    var alturaPlaca = ehReuniao ? H+0.86 : H+0.34;
+    var lp=iso(s.x+s.w*0.5, s.y+0.1, alturaPlaca);
+    ctx.save();
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    var tam=Math.max(9,Math.round(11*TW/46));
+    ctx.font='600 '+tam+'px "DM Sans",sans-serif';
+    var larg=ctx.measureText(nome).width;
+    ctx.fillStyle='rgba(7,9,14,0.72)';
+    ctx.beginPath();
+    var padX=8, padY=tam*0.55;
+    if(ctx.roundRect) ctx.roundRect(lp.x-larg/2-padX, lp.y-padY-2, larg+padX*2, padY*2+4, 5);
+    else ctx.rect(lp.x-larg/2-padX, lp.y-padY-2, larg+padX*2, padY*2+4);
+    ctx.fill();
+    ctx.fillStyle = ehReuniao?'rgba(139,155,255,0.95)':rgba(cor,0.95);
+    ctx.fillText(nome, lp.x, lp.y);
+    ctx.restore();
+  }
 
-    // Alert glow
+  // Mesa individual dentro da sala
+  function drawMesa(s, cor, alertN){
+    var mx=s.x+s.w*0.5-DESK_W*0.5, my=s.y+s.d*(s.porta==='S'?0.18:0.52);
+    var dk='#141C28';
+    drawBox(mx,my,0,DESK_W,DESK_D,DESK_H, mul(dk,1.5), mul(dk,0.9), mul(dk,0.7));
+    // Monitor
+    var pulse = alertN>0 ? 0.55+0.2*Math.sin(animT*2.8) : 0.34;
+    var monx=mx+DESK_W*0.28, mony=my+DESK_D*0.12;
+    drawBox(monx,mony,DESK_H+0.1,MON_W*0.78,MON_D,MON_H*0.72,
+      mul(cor,pulse*1.3), mul(cor,pulse*0.7), mul(cor,pulse*0.55));
     if(alertN>0){
-      var gpt=iso(mx+MON_W*0.5, my+MON_D*0.5, DESK_H+0.18+MON_H*0.55);
-      var gr=TW*(1.0+0.2*Math.sin(t*2.8));
+      var gpt=iso(monx+MON_W*0.35, mony, DESK_H+MON_H*0.5);
+      var gr=Math.max(1, TW*(0.9+0.18*Math.sin(animT*2.8)));
       var grad=ctx.createRadialGradient(gpt.x,gpt.y,0,gpt.x,gpt.y,gr);
       var rgb=hex2rgb(cor);
-      grad.addColorStop(0,'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',0.20)');
+      grad.addColorStop(0,'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',0.18)');
       grad.addColorStop(1,'rgba('+rgb[0]+','+rgb[1]+','+rgb[2]+',0)');
       ctx.save(); ctx.fillStyle=grad;
-      ctx.beginPath();
-      ctx.ellipse(gpt.x,gpt.y,gr*1.5,gr*0.65,-0.25,0,Math.PI*2);
+      ctx.beginPath(); ctx.ellipse(gpt.x,gpt.y,gr*1.5,gr*0.65,-0.25,0,Math.PI*2);
       ctx.fill(); ctx.restore();
     }
+    return {x:mx,y:my};
+  }
 
-    // Tiny screen graph bars (decorative)
-    var barBase=iso(mx+0.04, my+MON_D*0.5, DESK_H+0.18+0.04);
-    var barH=[0.15,0.25,0.12,0.32,0.20,0.28,0.18];
-    var barMaxPx=MON_H*TZ*0.55;
-    for(var bi=0;bi<barH.length;bi++){
-      var bx2=mx+0.05+bi*(MON_W-0.1)/barH.length;
-      var bw2=(MON_W-0.1)/barH.length-0.01;
-      var bh=barH[bi]*(0.9+0.1*Math.sin(t*0.6+bi*0.9));
-      var bBot=iso(bx2, my+MON_D*0.5, DESK_H+0.2);
-      var bTop=iso(bx2, my+MON_D*0.5, DESK_H+0.2+bh*0.65);
-      // draw as a vertical line in screen space
-      ctx.save();
-      ctx.globalAlpha=0.55+0.15*Math.sin(t*0.8+bi);
-      ctx.strokeStyle=rgba(cor,0.9);
-      ctx.lineWidth=Math.max(1.5, TW*0.04);
-      ctx.beginPath();
-      ctx.moveTo(bBot.x+bi*TW*0.06, bBot.y);
-      ctx.lineTo(bTop.x+bi*TW*0.06, bTop.y);
-      ctx.stroke();
-      ctx.restore();
-    }
-
-    // Agent name label
-    var lpt=iso(gx+DESK_W*0.5, gy+DESK_D*0.5, DESK_H+MON_H+0.62);
+  // Mesa de reunião: tampo oval e cadeiras
+  function drawMesaReuniao(){
+    var r=SALA_REUNIAO, cx=r.x+r.w/2, cy=r.y+r.d/2;
+    var c=iso(cx,cy,0.40);
     ctx.save();
-    ctx.textAlign='center';
-    ctx.textBaseline='middle';
-    ctx.font='600 '+Math.max(10,Math.round(11.5*TW/50))+'px "DM Sans",sans-serif';
-    ctx.fillStyle=alertN>0?'#FFFFFF':rgba(cor,0.9);
-    ctx.fillText(agent.nome,lpt.x,lpt.y);
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, TW*1.05, TH*1.0, 0, 0, Math.PI*2);
+    ctx.fillStyle='#1A2033'; ctx.fill();
+    ctx.strokeStyle='rgba(139,155,255,0.35)'; ctx.lineWidth=1.2; ctx.stroke();
+    // Espessura do tampo
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y+TH*0.16, TW*1.05, TH*1.0, 0, 0, Math.PI);
+    ctx.fillStyle='#11172A'; ctx.fill();
+    ctx.restore();
+  }
+
+  // Avatar: corpo em cápsula + cabeça, com leve balanço ao andar
+  function drawAgente(agent){
+    var p=posDe(agent.id);
+    var bob = p.andando ? Math.abs(Math.sin(animT*7))*0.055 : Math.sin(animT*1.4+agent.gx)*0.012;
+    var base=iso(p.x, p.y, 0);
+    var topo=iso(p.x, p.y, 0.46+bob);
+    var escala=TW/50;
+
+    // Sombra
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(base.x, base.y, 11*escala, 5.5*escala, 0, 0, Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,0.35)'; ctx.fill();
     ctx.restore();
 
-    // Alert badge
-    if(alertN>0){
-      var bpulse=0.82+0.18*Math.sin(t*3.2);
-      var bscale=TW/50;
-      ctx.save(); ctx.globalAlpha=bpulse;
-      ctx.fillStyle='#E53535';
-      ctx.beginPath();
-      ctx.arc(lpt.x+30*bscale, lpt.y-11*bscale, 8*bscale,0,Math.PI*2);
-      ctx.fill();
-      ctx.fillStyle='#FFFFFF';
-      ctx.font='bold '+Math.max(8,Math.round(9*bscale))+'px "DM Sans",sans-serif';
+    // Corpo
+    ctx.save();
+    ctx.beginPath();
+    var largura=8*escala;
+    ctx.moveTo(base.x-largura, base.y);
+    ctx.lineTo(base.x-largura, topo.y+6*escala);
+    ctx.quadraticCurveTo(base.x-largura, topo.y, base.x, topo.y);
+    ctx.quadraticCurveTo(base.x+largura, topo.y, base.x+largura, topo.y+6*escala);
+    ctx.lineTo(base.x+largura, base.y);
+    ctx.closePath();
+    ctx.fillStyle=mul(agent.cor,0.78); ctx.fill();
+    ctx.strokeStyle=rgba(agent.cor,0.55); ctx.lineWidth=1; ctx.stroke();
+    ctx.restore();
+
+    // Cabeça
+    var cab=iso(p.x, p.y, 0.62+bob);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cab.x, cab.y, 6.2*escala, 0, Math.PI*2);
+    ctx.fillStyle=mul(agent.cor,1.25); ctx.fill();
+    ctx.restore();
+
+    // A placa da sala já diz o nome — só repetimos no avatar quando ele saiu dela
+    var alertN=alertCounts[agent.id]||0;
+    var foraDaSala = p.andando || p.destino==='reuniao';
+    var alturaNome = (p.destino==='reuniao' && !p.andando) ? 0.86 : 1.02;
+    var lp=iso(p.x, p.y, alturaNome+bob);
+    if(foraDaSala){
+      ctx.save();
       ctx.textAlign='center'; ctx.textBaseline='middle';
-      ctx.fillText(String(alertN), lpt.x+30*bscale, lpt.y-11*bscale);
+      ctx.font='600 '+Math.max(9,Math.round(10.5*escala*1.05))+'px "DM Sans",sans-serif';
+      ctx.fillStyle=alertN>0?'#FFFFFF':rgba(agent.cor,0.92);
+      ctx.fillText(agent.nome, lp.x, lp.y);
       ctx.restore();
     }
 
-    // Hit area = desk top polygon
-    return {
-      agent:agent,
-      hitPts:[
-        iso(gx,gy,0), iso(gx+DESK_W,gy,0),
-        iso(gx+DESK_W,gy+DESK_D,0), iso(gx,gy+DESK_D,0)
-      ]
-    };
+    if(alertN>0){
+      var bp=0.82+0.18*Math.sin(animT*3.2);
+      ctx.save(); ctx.globalAlpha=bp;
+      ctx.fillStyle='#E53535';
+      var bx = foraDaSala ? lp.x+26*escala : lp.x+13*escala;
+      var by = foraDaSala ? lp.y-10*escala : lp.y+2*escala;
+      ctx.beginPath(); ctx.arc(bx, by, 7.5*escala,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#FFFFFF';
+      ctx.font='bold '+Math.max(8,Math.round(9*escala))+'px "DM Sans",sans-serif';
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(String(alertN), bx, by);
+      ctx.restore();
+    }
+
+    // Área clicável em volta do avatar
+    var meia=0.42;
+    return { agent:agent, hitPts:[
+      iso(p.x-meia,p.y-meia,0), iso(p.x+meia,p.y-meia,0),
+      iso(p.x+meia,p.y+meia,0), iso(p.x-meia,p.y+meia,0)
+    ]};
   }
 
   // ── Render loop ────────────────────────────────────────────────────────────
+  var _tsAnterior=0, _dt=0;
   function drawFrame(ts){
-    animT=ts/1000;
+    var agora=ts/1000;
+    _dt = _tsAnterior ? (agora-_tsAnterior) : 0;
+    _tsAnterior = agora;
+    animT=agora;
     if(!canvas||!ctx){ requestAnimationFrame(drawFrame); return; }
     var w=canvas.width, h=canvas.height;
     ctx.clearRect(0,0,w,h);
@@ -9326,11 +9698,38 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
     drawFloor();
 
-    // Paint desks back-to-front (painter's algorithm)
+    // Avança a caminhada de quem está se deslocando
+    andarAgentes(Math.min(0.05, _dt));
+
+    // Salas primeiro, do fundo para a frente
+    var salasOrd=SALAS.slice().concat([null]).sort(function(a,b){
+      var A=a||SALA_REUNIAO, B=b||SALA_REUNIAO;
+      return (A.x+A.y)-(B.x+B.y);
+    });
+    salasOrd.forEach(function(s){
+      if(s===null){
+        drawSala(SALA_REUNIAO, '#6B7CFF', 'Sala de reunião', true);
+      } else {
+        var ag=agentePorId(s.ag); if(!ag) return;
+        drawSala(s, ag.cor, ag.nome, false);
+      }
+    });
+
+    // Mesas dentro das salas
+    SALAS.forEach(function(s){
+      var ag=agentePorId(s.ag); if(!ag) return;
+      drawMesa(s, ag.cor, alertCounts[ag.id]||0);
+    });
+    drawMesaReuniao();
+
+    // Avatares por último, ordenados pela profundidade de onde estão AGORA
     hitAreas=[];
-    var sorted=AGENTS.slice().sort(function(a,b){return (a.gx+a.gy)-(b.gx+b.gy);});
-    for(var i=0;i<sorted.length;i++){
-      hitAreas.push(drawDesk(sorted[i]));
+    var ordenados=AGENTS.slice().sort(function(a,b){
+      var pa=posDe(a.id), pb=posDe(b.id);
+      return (pa.x+pa.y)-(pb.x+pb.y);
+    });
+    for(var i=0;i<ordenados.length;i++){
+      hitAreas.push(drawAgente(ordenados[i]));
     }
 
     requestAnimationFrame(drawFrame);
@@ -9378,10 +9777,23 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     var panel=document.getElementById('esc-panel');
     var body=document.getElementById('esc-panel-sugestoes');
     document.getElementById('esc-panel-title').textContent=agent.emoji+' '+agent.nome;
+    var subEl=document.getElementById('esc-panel-cargo');
+    if(!subEl){
+      subEl=document.createElement('div');
+      subEl.id='esc-panel-cargo';
+      subEl.style.cssText='font-size:11px;color:#8A94A8;margin-top:2px;font-family:monospace';
+      var t=document.getElementById('esc-panel-title');
+      if(t&&t.parentNode) t.parentNode.appendChild(subEl);
+    }
+    if(subEl) subEl.textContent=agent.cargo||'';
     // Reset para aba Análise ao abrir
     escGoTab('sug');
-    // Reset histórico de chat ao trocar de agente
-    if(window._escChatHistory) window._escChatHistory={};
+    // Cada agente tem a própria conversa: troca o conteúdo do chat pelo histórico DELE.
+    // (antes o DOM ficava com as mensagens do agente anterior — daí a conversa "vazar")
+    escChatRenderMsgs(agent.id);
+    carregarConversa(agent.id).then(function(){
+      if(activeAgentId===agent.id) escChatRenderMsgs(agent.id);
+    });
     var dot=document.getElementById('esc-panel-dot');
     dot.style.background=agent.cor;
     dot.style.boxShadow='0 0 8px '+agent.cor;
@@ -9393,15 +9805,49 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       body.innerHTML=sug.map(function(s,i){
         var id=agent.id+'_'+i;
         var done=!!doneMap[id];
+        var botoes;
+        if(s.origem==='tarefa'){
+          // Tarefa aberta por outro agente: resolver ou descartar grava no Supabase
+          botoes='<div style="display:flex;gap:6px;margin-top:10px">'
+            +'<button class="esc-sug-btn" style="flex:1" onclick="escConcluirTarefa('+s.tarefaId+',\'feita\')">✓ Resolvido</button>'
+            +'<button class="esc-sug-btn" style="flex:0 0 auto;opacity:.65" onclick="escConcluirTarefa('+s.tarefaId+',\'descartada\')">Descartar</button>'
+            +'</div>';
+        } else if(s.origem==='vazio'){
+          botoes='';
+        } else {
+          botoes='<button class="esc-sug-btn'+(done?' done':'')+'" onclick="escMarcarFeito(\''+id+'\',this)">'+(done?'✓ Feito':'Marcar como visto')+'</button>';
+        }
         return '<div class="esc-sugestao'+(done?' done':'')+'" data-sid="'+id+'">'+
           '<div class="esc-sug-tipo '+s.tipo+'">'+tipoLabel(s.tipo)+'</div>'+
           '<div class="esc-sug-titulo">'+escHtml(s.titulo)+'</div>'+
-          '<div class="esc-sug-desc">'+escHtml(s.descricao)+'</div>'+
+          '<div class="esc-sug-desc" style="white-space:pre-line">'+escHtml(s.descricao)+'</div>'+
           (s.impacto?'<div class="esc-sug-impacto">💡 '+escHtml(s.impacto)+'</div>':'')+
-          '<button class="esc-sug-btn'+(done?' done':'')+'" onclick="escMarcarFeito(\''+id+'\',this)">'+(done?'✓ Feito':'Marcar como feito')+'</button>'+
+          botoes+
           '</div>';
       }).join('');
     }
+    // O que este agente sabe porque o Ale ensinou
+    var meuConhec=conhecimentoDe(agent.id);
+    if(meuConhec.length){
+      var blocoConhec='<div class="esc-conhec">'
+        +'<div class="esc-conhec-head">🎓 O que você me ensinou ('+meuConhec.length+')</div>'
+        +meuConhec.slice(0,10).map(function(k){
+          var doTime=k.escopo==='time';
+          return '<div class="esc-conhec-item">'
+            +'<div class="esc-conhec-txt">'+escHtml(k.texto)+'</div>'
+            +'<div class="esc-conhec-pe">'
+              +'<span class="esc-conhec-tag'+(doTime?' time':'')+'">'+(doTime?'todo o time':agent.nome)+'</span>'
+              +'<span class="esc-conhec-data">'+(k.criado_em?new Date(k.criado_em).toLocaleDateString('pt-BR'):'')+'</span>'
+              +'<a href="#" onclick="event.preventDefault();escTrocarEscopo('+k.id+',\''+(doTime?'agente':'time')+'\',\''+agent.id+'\')">'
+                +(doTime?'só pra mim':'passar pro time')+'</a>'
+              +'<a href="#" style="color:#8A94A8" onclick="event.preventDefault();escEsquecer('+k.id+')">esquecer</a>'
+            +'</div></div>';
+        }).join('')
+        +(meuConhec.length>10?'<div class="esc-conhec-mais">+'+(meuConhec.length-10)+' outras lições guardadas</div>':'')
+        +'</div>';
+      body.innerHTML=body.innerHTML+blocoConhec;
+    }
+
     // For Gestor: prepend P&L mini cascata if available
     if(agent.id==='gestor'){
       var fd=typeof window._finGetDados==='function'?window._finGetDados():null;
@@ -9457,6 +9903,12 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   // ── Data fetch ─────────────────────────────────────────────────────────────
   async function fetchDados(){
     try {
+      // Margem do Hub de Precificação — o agente precisa dela pra falar de MC/MPA
+      try{
+        if(typeof hubMcCarregar==='function') await hubMcCarregar();
+        if(typeof hubLinksCarregar==='function') await hubLinksCarregar();
+      }catch(e){ console.warn('[Escritório] hub indisponível',e); }
+
       // Latest snapshot date
       var snapRes=await sb.from('ml_anuncios').select('data').order('data',{ascending:false}).limit(1).single();
       var snapDate=snapRes.data&&snapRes.data.data;
@@ -9466,16 +9918,22 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         .select('item_id,sku,titulo,preco,preco_concorrente,buybox_status,saude,experiencia_valor,experiencia_texto,estoque,estoque_full,catalog_listing,status,visit_share')
         .eq('data',snapDate||'2099-01-01');
 
-      // ADS last 7 days (no preliminar)
-      var d7=new Date(); d7.setDate(d7.getDate()-7);
-      var d7s=d7.toISOString().slice(0,10);
+      // ADS e vendas dos últimos 30 dias — COM a coluna `data`.
+      // Sem ela o agente não consegue responder nada por dia/janela.
+      var d30=new Date(); d30.setDate(d30.getDate()-30);
+      var d30s=d30.toISOString().slice(0,10);
       var adsRes=await sb.from('ml_ads_reports')
-        .select('item_id,gasto,vendas_atribuidas,impressoes,cliques,ctr,unidades_ads')
-        .gte('data',d7s).neq('preliminar',true);
+        .select('item_id,data,gasto,vendas_atribuidas,impressoes,cliques,ctr,unidades_ads')
+        .gte('data',d30s).neq('preliminar',true).order('data',{ascending:false});
 
-      // Vendas last 7 days
       var venRes=await sb.from('ml_vendas')
-        .select('item_id,receita,pedidos').gte('data',d7s);
+        .select('item_id,data,receita,pedidos,unidades,comissao')
+        .gte('data',d30s).order('data',{ascending:false});
+
+      // Visitas — sem isso não há conversão por dia
+      var visRes=await sb.from('ml_visitas')
+        .select('item_id,data,visitas').eq('conta','Logbox')
+        .gte('data',d30s).order('data',{ascending:false});
 
       // Bad reviews
       var revRes=await sb.from('ml_reviews')
@@ -9506,6 +9964,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
       dados={
         anuncios:anRes.data||[], ads:adsRes.data||[],
+        visitas:visRes.data||[], desde:d30s,
         vendas:venRes.data||[], reviews:revRes.data||[],
         reputacao:repRes.data||null, skus:skuRes.data||[],
         agenda:agendaRes.data||[], anotacoes:anotacoesRes.data||[],
@@ -9521,327 +9980,45 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   function pct(v){ return (((v||0)*100).toFixed(1))+'%'; }
   function fmtR(v){ return 'R$'+((v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})); }
 
+  // O que o painel mostra agora vem da RONDA de cada agente (agente_memoria)
+  // e da fila de handoff (agente_tarefas) — não de uma lista fixa no código.
   function buildSugestoes(){
-    var an=dados.anuncios, ads=dados.ads, ven=dados.vendas, rev=dados.reviews;
-    var rep=dados.reputacao, skus=dados.skus;
+    sugestoes={}; alertCounts={};
+    AGENTS.forEach(function(ag){
+      var itens=[];
 
-    // Build maps
-    var adsMap={};
-    ads.forEach(function(r){
-      if(!adsMap[r.item_id]) adsMap[r.item_id]={gasto:0,vendas:0,imp:0,cliques:0};
-      adsMap[r.item_id].gasto+=r.gasto||0;
-      adsMap[r.item_id].vendas+=r.vendas_atribuidas||0;
-      adsMap[r.item_id].imp+=r.impressoes||0;
-      adsMap[r.item_id].cliques+=r.cliques||0;
+      // 1) O que pediram a ele — vem primeiro, é compromisso com outro agente
+      tarefas.filter(function(t){ return t.para_agente===ag.id && t.status==='aberta'; })
+        .forEach(function(t){
+          itens.push({
+            tipo: t.prioridade==='alta'?'urgente':(t.prioridade==='baixa'?'info':'atencao'),
+            origem:'tarefa', tarefaId:t.id,
+            titulo:'📥 '+agenteNome(t.de_agente)+' pediu: '+t.titulo,
+            descricao:(t.descricao||'')+(t.sku?'\nSKU: '+t.sku:''),
+            impacto:null,
+          });
+        });
+
+      // 2) O que ele mesmo observou na ronda
+      (memoria[ag.id]||[]).slice(0,10).forEach(function(m){
+        itens.push({
+          tipo: m.severidade==='urgente'?'urgente':(m.severidade==='atencao'?'atencao':'info'),
+          origem:'observacao',
+          titulo:m.titulo,
+          descricao:(m.corpo||'')+(m.criado_em?'\n— observado em '+new Date(m.criado_em).toLocaleDateString('pt-BR'):''),
+          impacto:null,
+        });
+      });
+
+      if(!itens.length){
+        itens.push({tipo:'info', origem:'vazio',
+          titulo:'Nada fora do esperado na minha área',
+          descricao:ag.cuida, impacto:null});
+      }
+
+      sugestoes[ag.id]=itens;
+      alertCounts[ag.id]=itens.filter(function(s){ return s.tipo==='urgente'||s.tipo==='atencao'; }).length;
     });
-    var venMap={};
-    ven.forEach(function(r){
-      if(!venMap[r.item_id]) venMap[r.item_id]={receita:0,pedidos:0};
-      venMap[r.item_id].receita+=r.receita||0;
-      venMap[r.item_id].pedidos+=r.pedidos||0;
-    });
-    var skuMap={};
-    skus.forEach(function(s){ skuMap[s.sku]=s; });
-
-    var totalRec=Object.values(venMap).reduce(function(a,v){return a+v.receita;},0);
-    var totalGas=Object.values(adsMap).reduce(function(a,v){return a+v.gasto;},0);
-    var globalTacos=totalRec>0?totalGas/totalRec:0;
-
-    // — ANALISTA —
-    (function(){
-      var sug=[];
-      var catalog=an.filter(function(a){return a.catalog_listing;});
-      var bbLosing=catalog.filter(function(a){
-        return a.buybox_status==='losing'||a.buybox_status===false||
-          (a.preco_concorrente>0&&a.preco>a.preco_concorrente*1.01);
-      });
-      bbLosing.slice(0,5).forEach(function(a){
-        var diff=(a.preco||0)-(a.preco_concorrente||0);
-        sug.push({tipo:'urgente',
-          titulo:'Buy Box perdido: '+(a.sku||a.item_id),
-          descricao:'Seu preço '+fmtR(a.preco)+' vs concorrente '+fmtR(a.preco_concorrente||0)+'\nDiferença: '+fmtR(diff),
-          impacto:'Recuperar o Buy Box pode aumentar a conversão em até 40%.'});
-      });
-      catalog.filter(function(a){
-        return !bbLosing.includes(a)&&(a.preco_concorrente>0)&&a.preco>a.preco_concorrente*1.05;
-      }).slice(0,3).forEach(function(a){
-        sug.push({tipo:'atencao',
-          titulo:'Preço 5%+ acima: '+(a.sku||a.item_id),
-          descricao:fmtR(a.preco)+' vs '+fmtR(a.preco_concorrente||0)+' do catálogo.',
-          impacto:'Alinhar preço pode melhorar ranking e visibilidade no catálogo.'});
-      });
-      if(sug.length===0) sug.push({tipo:'oportunidade',titulo:'Buy Box ok',
-        descricao:'Todos os anúncios de catálogo estão competitivos no momento.',impacto:null});
-      sugestoes.analista=sug;
-      alertCounts.analista=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
-    })();
-
-    // — ADS —
-    (function(){
-      var sug=[];
-      if(globalTacos>TACOS_META*1.3){
-        sug.push({tipo:'urgente',
-          titulo:'TACOS global: '+pct(globalTacos)+' (meta '+pct(TACOS_META)+')',
-          descricao:'Últimos 7 dias: gasto '+fmtR(totalGas)+', receita '+fmtR(totalRec)+'.',
-          impacto:'Revise os lances dos anúncios com ACOS mais alto.'});
-      }
-      Object.entries(adsMap)
-        .filter(function(e){return e[1].vendas>0&&e[1].gasto/e[1].vendas>TACOS_META*1.5;})
-        .map(function(e){return {item_id:e[0],acos:e[1].gasto/e[1].vendas,gasto:e[1].gasto,vendas:e[1].vendas};})
-        .sort(function(a,b){return b.acos-a.acos;})
-        .slice(0,4).forEach(function(r){
-          var a=an.find(function(x){return x.item_id===r.item_id;});
-          sug.push({tipo:'atencao',
-            titulo:'ACOS alto: '+(a&&a.sku||r.item_id),
-            descricao:'ACOS '+pct(r.acos)+' — gasto '+fmtR(r.gasto)+' / vendas ADS '+fmtR(r.vendas)+'.',
-            impacto:'Reduza o lance em 15-20% ou pause por 3 dias e reavalie.'});
-        });
-      an.filter(function(a){return a.status==='active'&&!(adsMap[a.item_id]&&adsMap[a.item_id].imp>0);})
-        .slice(0,3).forEach(function(a){
-          sug.push({tipo:'atencao',
-            titulo:'Sem impressões (7d): '+(a.sku||a.item_id),
-            descricao:'Anúncio ativo mas sem tráfego ADS nos últimos 7 dias.',
-            impacto:'Lance pode estar abaixo do mínimo sugerido. Aumente ou revise.'});
-        });
-      Object.entries(adsMap)
-        .filter(function(e){return e[1].imp>500&&e[1].cliques/e[1].imp<0.003;})
-        .map(function(e){return {item_id:e[0],ctr:e[1].cliques/e[1].imp,imp:e[1].imp};})
-        .sort(function(a,b){return a.ctr-b.ctr;})
-        .slice(0,2).forEach(function(r){
-          var a=an.find(function(x){return x.item_id===r.item_id;});
-          sug.push({tipo:'info',
-            titulo:'CTR baixo: '+(a&&a.sku||r.item_id),
-            descricao:'CTR '+pct(r.ctr)+' com '+r.imp.toLocaleString('pt-BR')+' impressões.',
-            impacto:'Troque a foto principal ou ajuste o título para melhorar CTR.'});
-        });
-      if(sug.length===0) sug.push({tipo:'oportunidade',titulo:'ADS saudável',
-        descricao:'TACOS global '+pct(globalTacos)+'. Dentro da meta de '+pct(TACOS_META)+'.',impacto:null});
-      sugestoes.ads=sug;
-      alertCounts.ads=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
-    })();
-
-    // — ANÚNCIOS —
-    (function(){
-      var sug=[];
-      an.filter(function(a){return a.saude!=null&&a.saude<75;}).slice(0,4).forEach(function(a){
-        sug.push({tipo:a.saude<50?'urgente':'atencao',
-          titulo:'Saúde baixa: '+(a.sku||a.item_id),
-          descricao:'Saúde: '+a.saude+'%'+(a.catalog_listing?' (catálogo)':'')+'.',
-          impacto:'Melhore fotos, descrição e atributos para aumentar a saúde.'});
-      });
-      an.filter(function(a){return a.experiencia_valor!=null&&a.experiencia_valor<=60;}).slice(0,4).forEach(function(a){
-        sug.push({tipo:'urgente',
-          titulo:'Experiência '+pct((a.experiencia_valor||0)/100)+': '+(a.sku||a.item_id),
-          descricao:a.experiencia_texto||'Experiência de compra comprometida.',
-          impacto:'Nível baixo reduz visibilidade no catálogo. Verifique reclamações.'});
-      });
-      an.filter(function(a){
-        var min=(skuMap[a.sku]&&skuMap[a.sku].estoque_minimo)||3;
-        return (a.estoque||0)>0&&(a.estoque||0)<=min;
-      }).slice(0,4).forEach(function(a){
-        var min=(skuMap[a.sku]&&skuMap[a.sku].estoque_minimo)||3;
-        sug.push({tipo:'atencao',
-          titulo:'Estoque crítico: '+(a.sku||a.item_id),
-          descricao:'Estoque: '+a.estoque+' un (mín '+min+'). Full: '+(a.estoque_full||0)+' un.',
-          impacto:'Reabastecer para evitar ruptura e queda no ranking.'});
-      });
-      var pausados=an.filter(function(a){return a.status==='paused';});
-      if(pausados.length>0){
-        sug.push({tipo:'info',
-          titulo:pausados.length+' anúncio(s) pausado(s)',
-          descricao:'SKUs: '+pausados.slice(0,5).map(function(a){return a.sku||a.item_id;}).join(', ')+'.',
-          impacto:'Confirme se a pausa é intencional.'});
-      }
-      if(sug.length===0) sug.push({tipo:'oportunidade',titulo:'Listings ok',
-        descricao:'Saúde, experiência e estoques dentro do esperado.',impacto:null});
-      sugestoes.anuncios=sug;
-      alertCounts.anuncios=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
-    })();
-
-    // — SAC —
-    (function(){
-      var sug=[];
-      if(!rev||rev.length===0){
-        sug.push({tipo:'oportunidade',titulo:'Sem avaliações negativas recentes',
-          descricao:'Nenhuma avaliação de 1-3★ nos registros recentes.',impacto:null});
-      }
-      (rev||[]).slice(0,6).forEach(function(r){
-        var a=an.find(function(x){return x.item_id===r.item_id;});
-        sug.push({tipo:r.nota<=2?'urgente':'atencao',
-          titulo:r.nota+'★ — '+(a&&a.sku||r.item_id),
-          descricao:r.comentario
-            ?'"'+r.comentario.slice(0,130)+(r.comentario.length>130?'…':'')+'"'
-            :'Avaliação sem comentário.',
-          impacto:r.nota<=2
-            ?'Nota muito baixa. Considere entrar em contato com o comprador.'
-            :'Responda à avaliação para demonstrar cuidado com o cliente.'});
-      });
-      if(rep){
-        if((rep.reclamacoes||0)>3) sug.push({tipo:'urgente',
-          titulo:'Reclamações elevadas: '+(rep.reclamacoes||0)+'%',
-          descricao:'Nível: '+(rep.nivel||'—')+'. Cancelamentos: '+(rep.cancelamentos||0)+'%.',
-          impacto:'Alto índice de reclamações pode derrubar a reputação no ML.'});
-        if((rep.tempo_envio||0)>5) sug.push({tipo:'atencao',
-          titulo:'Atraso de envio: '+(rep.tempo_envio||0)+'%',
-          descricao:'Percentual de pedidos entregues fora do prazo comprometido.',
-          impacto:'Atrasos acumulados afetam o termômetro da conta.'});
-      }
-      sugestoes.sac=sug;
-      alertCounts.sac=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
-    })();
-
-    // — CRIATIVO —
-    (function(){
-      var sug=[];
-      an.filter(function(a){return a.titulo&&a.titulo.length<45;}).slice(0,4).forEach(function(a){
-        sug.push({tipo:'atencao',
-          titulo:'Título curto ('+a.titulo.length+' chars): '+(a.sku||a.item_id),
-          descricao:'"'+a.titulo+'"',
-          impacto:'Títulos com 60+ chars e palavras-chave melhoram indexação e CTR.'});
-      });
-      an.filter(function(a){return a.visit_share!=null&&a.visit_share<5&&a.status==='active';}).slice(0,3).forEach(function(a){
-        sug.push({tipo:'info',
-          titulo:'Visit share baixo: '+(a.sku||a.item_id),
-          descricao:'Share de visitas: '+((a.visit_share||0).toFixed(1))+'% do tráfego do catálogo.',
-          impacto:'Revise foto principal, preço e título para aumentar participação.'});
-      });
-      sug.push({tipo:'info',
-        titulo:'Oportunidade: Teste A/B de foto',
-        descricao:'Troque a foto principal de um produto de baixo CTR e monitore por 7 dias.',
-        impacto:'Fotos em fundo branco com produto centralizado aumentam CTR em 15-30%.'});
-      if(sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length===0&&sug.length<=1){
-        sug.unshift({tipo:'oportunidade',titulo:'Listings dentro do padrão',
-          descricao:'Títulos e indicadores criativos ok.',impacto:null});
-      }
-      sugestoes.criativo=sug;
-      alertCounts.criativo=sug.filter(function(s){return s.tipo==='urgente'||s.tipo==='atencao';}).length;
-    })();
-
-    // — GESTOR (consolidado + P&L) —
-    (function(){
-      var sug=[];
-      var totalPed=Object.values(venMap).reduce(function(a,v){return a+v.pedidos;},0);
-      sug.push({tipo:'info',
-        titulo:'Resumo operacional — últimos 7 dias',
-        descricao:'Faturamento: '+fmtR(totalRec)+'\nPedidos: '+totalPed+'\nGasto ADS: '+fmtR(totalGas)+'\nTACOS global: '+pct(globalTacos),
-        impacto:null});
-
-      // P&L do mês atual (FinanceiroModule)
-      var fd=typeof window._finGetDados==='function'?window._finGetDados():null;
-      if(fd&&fd.recHub>0){
-        var mpaCor=fd.mpaPct>=0.12?'🟢':(fd.mpaPct>=0.05?'🟡':'🔴');
-        sug.push({tipo:fd.mpaPct>=0.05?'info':'urgente',
-          titulo:mpaCor+' Margens do mês — Financeiro',
-          descricao:'Receita: '+fmtR(fd.rec)+'\nReceita linkada ao hub: '+fmtR(fd.recHub)+' ('+Math.round((fd.cobHub||0)*100)+'%)\nM.C. hub: '+fmtR(fd.mcHubVal)+' ('+((fd.mcPct*100).toFixed(1).replace('.',','))+'%)\nGasto ADS real: '+fmtR(fd.gasAdsHub)+'\n──────────────\nMPA: '+fmtR(fd.mpaVal)+' ('+((fd.mpaPct*100).toFixed(1).replace('.',','))+'%)'+'\nTACOS do mês: '+((fd.tacosMes*100).toFixed(1).replace('.',','))+'%',
-          impacto:fd.mpaPct<0.05?'MPA crítica! O ADS real está comendo a margem — revise campanhas e preços.':fd.mpaPct<0.12?'MPA abaixo de 12%. Compare o TACOS real com o ADS alvo do hub.':'MPA saudável. Continue monitorando o TACOS.'});
-      } else if(fd){
-        sug.push({tipo:'urgente',
-          titulo:'🔴 Margens — nenhum SKU linkado ao hub',
-          descricao:'Receita do mês: '+fmtR(fd.rec)+'\nSem vínculo com o Hub de Precificação não há M.C. nem MPA.',
-          impacto:'Abra a aba Produtos e linke os SKUs marcados como "não linkado".'});
-      } else {
-        sug.push({tipo:'info',
-          titulo:'Margens — acesse Financeiro para carregar',
-          descricao:'Clique em "Financeiro" no menu para carregar as margens do mês e ver aqui.',
-          impacto:null});
-      }
-
-      var urgentes=[];
-      Object.entries(sugestoes).forEach(function(e){
-        var agId=e[0], sList=e[1];
-        if(agId==='gestor') return;
-        sList.forEach(function(s){
-          if(s.tipo==='urgente') urgentes.push(Object.assign({},s,{agente:agId.toUpperCase()}));
-        });
-      });
-      if(urgentes.length>0){
-        sug.push({tipo:'urgente',
-          titulo:urgentes.length+' ponto(s) urgente(s) para hoje',
-          descricao:urgentes.slice(0,4).map(function(u){return '• ['+u.agente+'] '+u.titulo;}).join('\n'),
-          impacto:'Acesse cada agente para ver os detalhes e marcar como resolvido.'});
-      } else {
-        sug.push({tipo:'oportunidade',titulo:'Nenhum alerta urgente',
-          descricao:'Todos os agentes sem pontos críticos no momento.',impacto:null});
-      }
-      if(rep){
-        sug.push({tipo:(rep.nivel||'').toLowerCase().includes('plat')||(rep.nivel||'').toLowerCase().includes('gold')?'oportunidade':'info',
-          titulo:'Reputação: '+(rep.nivel||'—'),
-          descricao:'Reclamações: '+(rep.reclamacoes||0)+'% | Cancelamentos: '+(rep.cancelamentos||0)+'% | Envio no prazo: '+(100-(rep.tempo_envio||0))+'%',
-          impacto:null});
-      }
-      sugestoes.gestor=sug;
-      alertCounts.gestor=urgentes.length;
-    })();
-
-    // — ASSISTENTE PESSOAL (agenda + lembretes) —
-    (function(){
-      var sug=[];
-      var now=new Date();
-      var dias=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
-      var diaAtual=dias[now.getDay()];
-
-      // Cross-agent digest de urgentes
-      var totalUrgentes=0, totalAtencao=0;
-      Object.entries(sugestoes).forEach(function(e){
-        var agId=e[0], sList=e[1];
-        if(agId==='gestor'||agId==='assistente') return;
-        sList.forEach(function(s){
-          if(s.tipo==='urgente') totalUrgentes++;
-          if(s.tipo==='atencao') totalAtencao++;
-        });
-      });
-
-      if(totalUrgentes>0){
-        sug.push({tipo:'urgente',
-          titulo:diaAtual+' — '+totalUrgentes+' ação(ões) urgente(s) hoje',
-          descricao:'Seus agentes identificaram '+totalUrgentes+' item(ns) urgente(s) e '+totalAtencao+' de atenção.\nPrioridade: Gestor → ADS → Analista → Anúncios.',
-          impacto:'Abra cada agente no Escritório para ver detalhes e marcar como resolvido.'});
-      } else if(totalAtencao>0){
-        sug.push({tipo:'atencao',
-          titulo:diaAtual+' — '+totalAtencao+' item(ns) de atenção',
-          descricao:'Nenhuma urgência, mas há '+totalAtencao+' ponto(s) de atenção nos agentes.',
-          impacto:'Bom momento para revisar e resolver preventivamente.'});
-      } else {
-        sug.push({tipo:'oportunidade',
-          titulo:diaAtual+' — Tudo sob controle',
-          descricao:'Sem alertas urgentes nos agentes hoje. Aproveite para planejar a semana.',
-          impacto:null});
-      }
-
-      // Lembretes por dia da semana
-      var lembretes={
-        1:['Revisão de campanhas ADS da semana','Verificar pedidos pendentes do final de semana'],
-        2:['Atualizar planilha de custos','Checar estoque crítico — reabastecer se necessário'],
-        3:['Análise de Buy Box — verificar perdas','Conferir reputação e NPS da semana'],
-        4:['Revisar títulos de anúncios com baixo CTR','Checar TACOS semanal por produto'],
-        5:['Fechar relatório semanal de faturamento','Planejar próximos lançamentos'],
-        6:['Balanço de resultados da semana','Planejar ações para a próxima semana'],
-        0:['Planejamento estratégico','Rever metas do mês']
-      };
-      var lemDia=lembretes[now.getDay()]||[];
-      if(lemDia.length>0){
-        sug.push({tipo:'info',
-          titulo:'📋 Checklist de '+diaAtual,
-          descricao:lemDia.map(function(l){return '• '+l;}).join('\n'),
-          impacto:'Rotina consistente = operação mais saudável.'});
-      }
-
-      // Dicas sazonais baseadas em hora
-      var hora=now.getHours();
-      if(hora>=7&&hora<10){
-        sug.push({tipo:'info',titulo:'🌅 Abertura do dia',
-          descricao:'Bom momento para checar a caixa de mensagens do ML e responder perguntas dos clientes antes do pico de tráfego.',impacto:null});
-      } else if(hora>=14&&hora<17){
-        sug.push({tipo:'info',titulo:'☀️ Pico de tarde',
-          descricao:'Horário de maior tráfego no ML. Verifique se há anúncios com Buy Box perdido que precisam de ajuste de preço.',impacto:null});
-      } else if(hora>=17&&hora<21){
-        sug.push({tipo:'info',titulo:'🌆 Encerramento do dia',
-          descricao:'Hora de revisar as métricas do dia: pedidos, ADS e reputação. Registre qualquer ocorrência nas Anotações.',impacto:null});
-      }
-
-      sugestoes.assistente=sug;
-      alertCounts.assistente=totalUrgentes>0?totalUrgentes:0;
-    })();
   }
 
   // ── Canvas setup ───────────────────────────────────────────────────────────
@@ -9849,10 +10026,30 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     var wrap=document.getElementById('esc-canvas-wrap');
     if(!wrap||!canvas) return;
     var w=wrap.clientWidth;
-    var h=Math.max(340,Math.min(520,Math.round(w*0.52)));
+    var h=Math.max(380, Math.min(620, Math.round(w*0.56)));
     canvas.width=w; canvas.height=h;
-    var s=w/880;
-    TW=50*s; TH=25*s; TZ=48*s; OX=362*s; OY=55*s;
+
+    // A planta ocupa 9x7 tiles. Em isométrico isso dá 16 tiles de largura
+    // e 16 de altura — calculamos a escala pra caber inteira, com folga
+    // em cima para as placas e embaixo para o nome de quem caminha.
+    var GW=9, GD=7;
+    var folgaLat=54, folgaTopo=44, folgaBase=38;
+    var larguraUtil=w-folgaLat*2, alturaUtil=h-folgaTopo-folgaBase;
+
+    var twPorLargura = larguraUtil/(GW+GD);
+    var thPorAltura  = alturaUtil/(GW+GD);
+    // Piso mínimo: num canvas ainda sem medida, isso daria negativo e o
+    // gradiente de alerta quebrava com raio < 0.
+    TW = Math.max(12, Math.min(twPorLargura, thPorAltura*2));
+    TH = TW/2;
+    TZ = TW*0.95;
+
+    // Centraliza de verdade: quando a altura limita a escala, sobra largura —
+    // sem isso a planta encosta na esquerda e a placa da direita sai da tela.
+    var larguraPlanta=(GW+GD)*TW;
+    OX = (w - larguraPlanta)/2 + GD*TW;
+    var alturaPlanta=(GW+GD)*TH;
+    OY = folgaTopo + Math.max(0, (h-folgaTopo-folgaBase-alturaPlanta)/2);
   }
 
   function initCanvas(){
@@ -9906,9 +10103,29 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     var agId=activeAgentId;
     if(!_chatHistory[agId]) _chatHistory[agId]=[];
 
+    // "lembre: ..." → vira conhecimento permanente, sem gastar chamada de IA
+    var licao=extrairEnsino(txt);
+    if(licao){
+      _chatHistory[agId].push({role:'user',content:txt});
+      escChatRenderMsgs(agId);
+      var r=await ensinar(agId, licao, 'chat');
+      var resposta = r.error
+        ? '⚠️ Não consegui guardar: '+r.error
+        : (r.escopo==='time'
+            ? '✅ Guardado — e como isso é regra da operação, o time inteiro passa a saber.\n\n"'+licao+'"'
+            : '✅ Guardado comigo. Vou levar isso em conta em toda conversa daqui pra frente.\n\n"'+licao+'"');
+      _chatHistory[agId].push({role:'assistant',content:resposta});
+      escChatRenderMsgs(agId);
+      salvarTurno(agId,'user',txt); salvarTurno(agId,'assistant',resposta);
+      _chatLoading=false;
+      document.getElementById('esc-chat-send-btn').disabled=false;
+      return;
+    }
+
     // Adiciona mensagem do usuário
     _chatHistory[agId].push({role:'user',content:txt});
     escChatRenderMsgs(agId);
+    salvarTurno(agId,'user',txt);
     _chatLoading=true;
     document.getElementById('esc-chat-send-btn').disabled=true;
 
@@ -9934,6 +10151,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var respTxt=data.response||'Não foi possível obter resposta.';
       _chatHistory[agId].push({role:'assistant',content:respTxt});
       escChatRenderMsgs(agId);
+      salvarTurno(agId,'assistant',respTxt);
     } catch(err){
       escChatRemoveTyping();
       _chatHistory[agId].push({role:'assistant',content:'⚠️ Erro ao conectar com a IA. Verifique a Edge Function e a chave API.'});
@@ -9966,6 +10184,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     if(t==='criar_nota') return '📝 Salvar nota: "'+p[0]+'"';
     if(t==='criar_evento') return '📅 Agendar: "'+p[0]+'" em '+p[1]+(p[2]?' às '+p[2]:'');
     if(t==='criar_ideia') return '💡 Adicionar ideia: "'+p[0]+'"';
+    if(t==='abrir_tarefa') return '📤 Passar para o '+agenteNome(p[0])+': "'+p[1]+'"';
+    if(t==='criar_slide') return '🖼 Criar slide: "'+p[0]+'"';
+    if(t==='editar_slide') return '✏️ Reescrever slide '+p[0];
     return '⚡ '+t+': '+p.join(', ');
   }
 
@@ -9992,19 +10213,45 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   };
 
   async function escAcaoExecutar(tipo, params){
+    var quem=agenteNome(activeAgentId)||'Agente';
+    var assina='\n\n— registrado pelo '+quem;
     if(tipo==='criar_nota'){
-      var {error}=await sb.from('anotacoes').insert({titulo:params[0]||'Nota do agente',corpo:params[1]||'',status:'aberto',updated_at:'now()'});
+      var {error}=await sb.from('anotacoes').insert({titulo:params[0]||'Nota do '+quem,corpo:(params[1]||'')+assina,status:'aberto',updated_at:'now()'});
       if(error) throw error;
       return true;
     }
     if(tipo==='criar_evento'){
-      var {error}=await sb.from('agenda').insert({titulo:params[0]||'Evento',data:params[1]||new Date().toISOString().slice(0,10),horario:params[2]||null,categoria:params[3]||'Geral',obs:''});
+      var {error}=await sb.from('agenda').insert({titulo:params[0]||'Evento',data:params[1]||new Date().toISOString().slice(0,10),horario:params[2]||null,categoria:params[3]||'Geral',obs:'Criado pelo '+quem});
       if(error) throw error;
       return true;
     }
     if(tipo==='criar_ideia'){
-      var {error}=await sb.from('ideias').insert({nome:params[0]||'Ideia',obs:params[1]||'',etapa:'backlog',updated_at:'now()'});
+      var {error}=await sb.from('ideias').insert({nome:params[0]||'Ideia',obs:(params[1]||'')+assina,etapa:'backlog',updated_at:'now()'});
       if(error) throw error;
+      return true;
+    }
+    if(tipo==='criar_slide'){
+      if(typeof window.apGarantirMes==='function') await window.apGarantirMes();
+      var rc=await window.apAgenteCriar({titulo:params[0]||'Slide', corpo:params[1]||'', tipo:'texto'}, quem);
+      if(rc && rc.error) throw new Error(rc.error);
+      return true;
+    }
+    if(tipo==='editar_slide'){
+      if(typeof window.apGarantirMes==='function') await window.apGarantirMes();
+      var re=await window.apAgenteEditar(Number(params[0]), {titulo:params[1], corpo:params[2]}, quem);
+      if(re && re.error) throw new Error(re.error);
+      return true;
+    }
+    if(tipo==='abrir_tarefa'){
+      // params: [para, titulo, descricao, sku, prioridade]
+      var res=await abrirTarefa(activeAgentId, (params[0]||'').trim(), {
+        titulo:params[1]||'Tarefa', descricao:params[2]||'', sku:params[3]||null,
+        prioridade:(params[4]||'media').trim(),
+        chave:activeAgentId+'>'+(params[0]||'')+'|'+(params[1]||'')+'|'+hojeISO()
+      });
+      if(res.error) throw new Error(res.error);
+      await carregarMemoriaETarefas();
+      buildSugestoes(); updateEscritorioBadge();
       return true;
     }
     console.warn('[Acao] tipo nao reconhecido:',tipo);
@@ -10015,7 +10262,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     var container=document.getElementById('esc-chat-msgs');
     if(!container) return;
     var hist=_chatHistory[agId]||[];
-    var html=hist.map(function(m){
+    var html=hist.map(function(m,i){
       var isUser=m.role==='user';
       var time=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
       var content=m.content;
@@ -10034,14 +10281,36 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
             +'</div>';
         }
       }
+      var guardar='';
+      if(!isUser && content && content.length>20 && !/^✅ Guardado/.test(content)){
+        guardar='<button class="esc-guardar-btn" title="Guardar isso como conhecimento permanente" '
+          +'onclick="escGuardarTrecho('+i+')">💾 Guardar isso</button>';
+      }
       return '<div class="esc-chat-msg '+(isUser?'user':'agent')+'">'
         +'<div class="esc-chat-bubble">'+escHtml(content)+acoesHtml+'</div>'
-        +(isUser?'':'<span class="esc-chat-time">'+time+'</span>')
+        +(isUser?'':'<span class="esc-chat-time">'+time+guardar+'</span>')
         +'</div>';
     }).join('');
     container.innerHTML=html||'<div class="esc-chat-hint" id="esc-chat-hint">Faça uma pergunta ao agente sobre a sua operação.<br>Ele tem acesso aos dados reais da sua conta.</div>';
     container.scrollTop=container.scrollHeight;
   }
+
+  // Guarda o trecho de uma resposta do agente como conhecimento permanente
+  window.escGuardarTrecho=async function(idx){
+    var agId=activeAgentId;
+    var msg=(_chatHistory[agId]||[])[idx];
+    if(!msg) return;
+    var texto=escTextSemAcoes(msg.content).slice(0,1200);
+    var editado=prompt('O que você quer que ele guarde? (pode editar)', texto);
+    if(editado===null) return;
+    var r=await ensinar(agId, editado, 'botao');
+    if(r.error){ alert('Não consegui guardar: '+r.error); return; }
+    _chatHistory[agId].push({role:'assistant',
+      content: r.escopo==='time'
+        ? '✅ Guardado — como é regra da operação, o time inteiro passa a saber.'
+        : '✅ Guardado comigo. Vou levar em conta daqui pra frente.'});
+    escChatRenderMsgs(agId);
+  };
 
   function escChatAppendTyping(){
     var container=document.getElementById('esc-chat-msgs');
@@ -10119,6 +10388,557 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }).join('');
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     AUTONOMIA DOS AGENTES
+     Cada agente vigia a própria área, registra o que viu no diário de bordo
+     e abre tarefa para outro agente quando o problema não é dele.
+     Tudo com `chave` diária — o mesmo achado não vira 20 registros iguais.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  var CONTA='Logbox';
+  function hojeISO(){ return new Date().toISOString().slice(0,10); }
+
+  async function carregarMemoriaETarefas(){
+    try{
+      var d14=new Date(); d14.setDate(d14.getDate()-14);
+      var [memRes, tarRes, conRes] = await Promise.all([
+        sb.from('agente_memoria').select('*').eq('conta',CONTA).gte('criado_em',d14.toISOString()).order('criado_em',{ascending:false}).limit(300),
+        sb.from('agente_tarefas').select('*').eq('conta',CONTA).order('criado_em',{ascending:false}).limit(200),
+        sb.from('agente_conhecimento').select('*').eq('conta',CONTA).eq('ativo',true).order('criado_em',{ascending:false}).limit(200),
+      ]);
+      memoria={};
+      (memRes.data||[]).forEach(function(m){ (memoria[m.agente_id]=memoria[m.agente_id]||[]).push(m); });
+      tarefas=tarRes.data||[];
+      conhecimento=conRes.data||[];
+    }catch(e){ console.warn('[Escritório] memória indisponível',e); memoria={}; tarefas=[]; conhecimento=[]; }
+  }
+
+  // Registra uma observação. `chave` inclui a data: repetir no mesmo dia é ignorado.
+  async function registrarObservacao(agenteId, obs){
+    var reg={ conta:CONTA, agente_id:agenteId, tipo:'observacao',
+      severidade:obs.severidade||'info', titulo:obs.titulo, corpo:obs.corpo||null,
+      sku:obs.sku||null, dados:obs.dados||null, chave:(obs.chave||obs.titulo)+'|'+hojeISO() };
+    try{
+      var {error}=await sb.from('agente_memoria').upsert(reg,{onConflict:'conta,agente_id,chave',ignoreDuplicates:true});
+      if(error) throw error;
+    }catch(e){ /* duplicata do dia: silencioso por design */ }
+  }
+
+  // Um agente abre tarefa para outro. Não duplica enquanto a anterior estiver aberta.
+  async function abrirTarefa(deAgente, paraAgente, t){
+    if(!agentePorId(paraAgente)) return {error:'agente destino inexistente: '+paraAgente};
+    var reg={ conta:CONTA, de_agente:deAgente, para_agente:paraAgente,
+      titulo:t.titulo, descricao:t.descricao||null, sku:t.sku||null,
+      prioridade:t.prioridade||'media', status:'aberta',
+      chave:t.chave||(deAgente+'>'+paraAgente+'|'+t.titulo+'|'+(t.sku||'')) };
+    try{
+      var {error}=await sb.from('agente_tarefas').upsert(reg,{onConflict:'conta,chave',ignoreDuplicates:true});
+      if(error) throw error;
+      return {error:null};
+    }catch(e){ return {error:e.message||String(e)}; }
+  }
+
+  window.escConcluirTarefa=async function(id, novoStatus){
+    try{
+      await sb.from('agente_tarefas').update({status:novoStatus||'feita', concluido_em:new Date().toISOString()}).eq('id',id);
+      tarefas=tarefas.map(function(t){ return t.id===id ? Object.assign({},t,{status:novoStatus||'feita'}) : t; });
+      if(activeAgentId) openPanel(agentePorId(activeAgentId));
+     
+    }catch(e){ alert('Não foi possível atualizar a tarefa: '+(e.message||e)); }
+  };
+
+  /* ═══ APRENDIZADO ════════════════════════════════════════════════════
+     O Ale ensina escrevendo "lembre: ..." ou clicando em Guardar numa resposta.
+     O escopo é decidido pelo assunto: regra do negócio vale pro time inteiro,
+     observação de SKU ou de área fica só com o agente dono.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  var RE_ENSINO = /^\s*(?:lembre|lembra|lembrar|anota|anote|guarde|guarda|decora|nunca esque[çc]a)\s*(?:se)?\s*[:,-]\s*/i;
+
+  function extrairEnsino(txt){
+    var m = RE_ENSINO.exec(txt||'');
+    return m ? txt.slice(m[0].length).trim() : null;
+  }
+
+  // Regra de negócio serve pro time; detalhe de SKU ou de área fica com o dono.
+  function classificarEscopo(texto){
+    var t=(texto||'').toLowerCase();
+    if(/\b(para|pra)\s+(todos|o time|todo mundo)\b/.test(t)) return 'time';
+    if(/\bs[óo]\s+(voc[êe]|pra voc[êe])\b/.test(t)) return 'agente';
+    // Vocabulário, calendário, fornecedor e política são da casa inteira
+    var doTime=/(sufixo|prefixo|nomenclatura|significa|quer dizer|c[óo]digo|nossa empresa|a gente sempre|sempre que|todo (m[êe]s|ano|natal)|sazonal|dezembro|black friday|fornecedor|importa|lote|cont[êe]iner|pol[íi]tica|regra (da casa|geral)|nunca fazemos|n[ãa]o trabalhamos)/;
+    if(doTime.test(t)) return 'time';
+    return 'agente';
+  }
+
+  function skuNoTexto(texto){
+    var m=/\b([A-Z]{2,}[A-Z0-9]*(?:-[A-Z0-9]+){1,3})\b/.exec(texto||'');
+    return m?m[1]:null;
+  }
+
+  async function ensinar(agenteId, texto, origem){
+    texto=(texto||'').trim();
+    if(texto.length<3) return {error:'texto muito curto'};
+    var escopo=classificarEscopo(texto);
+    var reg={ conta:CONTA, escopo:escopo, agente_id: escopo==='time'?null:agenteId,
+      texto:texto.slice(0,1200), sku:skuNoTexto(texto), origem:origem||'chat', ativo:true };
+    try{
+      var {error}=await sb.from('agente_conhecimento').insert(reg);
+      if(error) throw error;
+      await carregarMemoriaETarefas();
+      return {error:null, escopo:escopo};
+    }catch(e){ return {error:e.message||String(e)}; }
+  }
+
+  window.escEsquecer=async function(id){
+    try{
+      await sb.from('agente_conhecimento').update({ativo:false}).eq('id',id);
+      conhecimento=conhecimento.filter(function(k){return k.id!==id;});
+      if(activeAgentId){ var a=agentePorId(activeAgentId); if(a) openPanel(a); }
+    }catch(e){ alert('Não consegui esquecer: '+(e.message||e)); }
+  };
+
+  // Troca o alcance de um aprendizado já salvo (o Ale corrige se eu classifiquei errado)
+  window.escTrocarEscopo=async function(id, novoEscopo, agenteId){
+    try{
+      await sb.from('agente_conhecimento').update({
+        escopo:novoEscopo, agente_id: novoEscopo==='time'?null:(agenteId||activeAgentId)
+      }).eq('id',id);
+      await carregarMemoriaETarefas();
+      if(activeAgentId){ var a=agentePorId(activeAgentId); if(a) openPanel(a); }
+    }catch(e){ alert('Não consegui trocar o alcance: '+(e.message||e)); }
+  };
+
+  // O que este agente sabe: o que é do time + o que ensinaram a ele
+  function conhecimentoDe(agId){
+    return conhecimento.filter(function(k){
+      return k.escopo==='time' || k.agente_id===agId;
+    });
+  }
+
+  /* ── Conversa persistente ───────────────────────────────────────────── */
+  async function salvarTurno(agId, papel, conteudo){
+    try{ await sb.from('agente_conversas').insert({conta:CONTA, agente_id:agId, papel:papel, conteudo:String(conteudo||'').slice(0,8000)}); }
+    catch(e){ console.warn('[Chat] não salvou o turno',e); }
+  }
+
+  async function carregarConversa(agId){
+    if(_chatHistory[agId] && _chatHistory[agId].length) return;
+    try{
+      var {data}=await sb.from('agente_conversas').select('papel,conteudo,criado_em')
+        .eq('conta',CONTA).eq('agente_id',agId).order('criado_em',{ascending:false}).limit(40);
+      // A busca é assíncrona: se o Ale digitou enquanto ela voltava, o que ele
+      // escreveu manda. Só preenche se ainda estiver vazio.
+      if(_chatHistory[agId] && _chatHistory[agId].length) return;
+      var rows=(data||[]).slice().reverse();
+      _chatHistory[agId]=rows.map(function(r){ return {role:r.papel, content:r.conteudo}; });
+    }catch(e){ _chatHistory[agId]=_chatHistory[agId]||[]; }
+  }
+
+  /* ── As rondas: o que cada agente procura sozinho ───────────────────── */
+  async function rondaDosAgentes(){
+    var an=dados.anuncios||[], ads=dados.ads||[], ven=dados.vendas||[];
+    var pedidos=dados.pedidos||[], rev=dados.reviews||[], rep=dados.reputacao;
+    var skusCfg=dados.skus||[];
+    var fd=typeof window._finGetDados==='function'?window._finGetDados():null;
+    var jobs=[];
+
+    // ── ADS: TACOS acima do alvo do hub, e verba parada ──
+    if(fd && fd.skus){
+      var sangria=fd.skus.filter(function(o){return o.linkado&&o.rec>0&&o.excessoAds>0;})
+                         .sort(function(a,b){return b.excessoAds-a.excessoAds;});
+      if(sangria.length){
+        var pior=sangria[0];
+        var totalExc=sangria.reduce(function(s,o){return s+o.excessoAds;},0);
+        jobs.push(registrarObservacao('ads',{
+          severidade: totalExc>(fd.mpaVal||0)*0.3 ? 'urgente':'atencao',
+          titulo:'ADS acima do alvo do hub em '+sangria.length+' SKU'+(sangria.length>1?'s':''),
+          corpo:'Excesso de R$ '+totalExc.toFixed(2)+' no mês. Pior: '+pior.sku+' com TACOS de '
+               +(pior.tacos||0).toFixed(1)+'% contra alvo de '+(pior.adsAlvoPct||0).toFixed(1)+'%.',
+          sku:pior.sku, chave:'sangria_ads',
+          dados:{total_excesso:+totalExc.toFixed(2), skus:sangria.slice(0,5).map(function(o){return o.sku;})}
+        }));
+        // MPA negativa é problema de resultado: escala pro Gestor
+        var negativos=sangria.filter(function(o){return o.mpaPct!==null&&o.mpaPct<0;});
+        if(negativos.length) jobs.push(abrirTarefa('ads','gestor',{
+          titulo:'MPA negativa em '+negativos.length+' SKU'+(negativos.length>1?'s':''),
+          descricao:'O ADS real passou da margem. Vender mais desses SKUs aumenta o prejuízo: '
+                   +negativos.slice(0,4).map(function(o){return o.sku+' ('+o.mpaPct.toFixed(1)+'%)';}).join(', ')
+                   +'. Decisão de preço ou de corte de verba.',
+          sku:negativos[0].sku, prioridade:'alta', chave:'mpa_negativa|'+hojeISO()
+        }));
+      }
+      var semVinculo=fd.skus.filter(function(o){return !o.linkado&&o.rec>0;});
+      if(semVinculo.length){
+        var recFora=semVinculo.reduce(function(s,o){return s+o.rec;},0);
+        jobs.push(abrirTarefa('gestor','assistente',{
+          titulo:'Linkar '+semVinculo.length+' SKU'+(semVinculo.length>1?'s':'')+' ao Hub de Precificação',
+          descricao:'R$ '+recFora.toFixed(2)+' de receita está fora do cálculo de margem por falta de vínculo: '
+                   +semVinculo.slice(0,5).map(function(o){return o.sku;}).join(', ')+'. '
+                   +'Resolve na aba Produtos, clicando no badge "não linkado".',
+          prioridade: recFora>(fd.rec||0)*0.2 ? 'alta':'media', chave:'linkar_hub|'+hojeISO()
+        }));
+      }
+    }
+
+    // ADS: anúncio ativo sem nenhuma impressão
+    var adsPorItem={};
+    ads.forEach(function(r){ adsPorItem[r.item_id]=(adsPorItem[r.item_id]||0)+(r.impressoes||0); });
+    var semImp=an.filter(function(a){return a.status==='active'&&!adsPorItem[a.item_id];});
+    if(semImp.length>2) jobs.push(registrarObservacao('ads',{
+      severidade:'atencao', titulo:semImp.length+' anúncios ativos sem nenhuma impressão',
+      corpo:'Não estão em campanha ou a campanha não está entregando: '+semImp.slice(0,6).map(function(a){return a.sku||a.item_id;}).join(', ')+'.',
+      chave:'sem_impressao'
+    }));
+
+    // ── ANÚNCIOS: Buy Box e exposição ──
+    var perdendoBB=an.filter(function(a){return a.buybox_status==='losing'||a.buybox_status==='not_listed';});
+    if(perdendoBB.length){
+      var caro=perdendoBB.filter(function(a){return a.preco_concorrente&&a.preco>a.preco_concorrente;});
+      jobs.push(registrarObservacao('anuncios',{
+        severidade: perdendoBB.length>3?'urgente':'atencao',
+        titulo:'Buy Box perdido em '+perdendoBB.length+' anúncio'+(perdendoBB.length>1?'s':''),
+        corpo:(caro.length?caro.length+' estão acima do concorrente. ':'')
+             +perdendoBB.slice(0,5).map(function(a){
+                 return (a.sku||a.item_id)+(a.preco_concorrente?' (R$ '+a.preco+' vs R$ '+a.preco_concorrente+')':'');
+               }).join(' · '),
+        sku:perdendoBB[0].sku, chave:'buybox_perdido'
+      }));
+      if(caro.length) jobs.push(abrirTarefa('anuncios','gestor',{
+        titulo:'Decisão de preço: '+caro.length+' SKU'+(caro.length>1?'s':'')+' acima do concorrente',
+        descricao:'Perdendo Buy Box por preço em '+caro.slice(0,4).map(function(a){return a.sku||a.item_id;}).join(', ')
+                 +'. Baixar preço mexe na margem — a conta é sua.',
+        sku:caro[0].sku, prioridade:'alta', chave:'preco_buybox|'+hojeISO()
+      }));
+    }
+
+    // ANÚNCIOS: exposição em risco, com o motivo que o ML deu
+    var expRuim=an.filter(function(a){return a.saude&&a.saude!=='healthy'&&a.experiencia_motivo;});
+    expRuim.slice(0,3).forEach(function(a){
+      jobs.push(registrarObservacao('anuncios',{
+        severidade:a.saude==='unhealthy'?'urgente':'atencao',
+        titulo:(a.sku||a.item_id)+' — exposição em risco',
+        corpo:a.experiencia_motivo+(a.experiencia_recomendacao?' | ML recomenda: '+a.experiencia_recomendacao:''),
+        sku:a.sku, chave:'exposicao|'+(a.sku||a.item_id)
+      }));
+      // Se a causa for atendimento/entrega, quem resolve é o SAC
+      if(/reclama|atraso|entrega|cancelamen|avaria/i.test(a.experiencia_motivo)){
+        jobs.push(abrirTarefa('anuncios','sac',{
+          titulo:'Exposição caindo por problema de atendimento em '+(a.sku||a.item_id),
+          descricao:'O ML informou: "'+a.experiencia_motivo.slice(0,220)+'"',
+          sku:a.sku, prioridade:'alta', chave:'exp_sac|'+(a.sku||a.item_id)+'|'+hojeISO()
+        }));
+      }
+    });
+
+    // ANÚNCIOS: estoque no limite
+    var estCritico=an.filter(function(a){
+      var min=(skusCfg.find(function(s){return s.sku===a.sku;})||{}).estoque_minimo||5;
+      return a.status==='active'&&(a.estoque||0)<=min;
+    });
+    if(estCritico.length){
+      jobs.push(registrarObservacao('anuncios',{
+        severidade:'urgente', titulo:'Estoque no mínimo em '+estCritico.length+' SKU'+(estCritico.length>1?'s':''),
+        corpo:estCritico.slice(0,6).map(function(a){return (a.sku||a.item_id)+': '+(a.estoque||0)+' un';}).join(' · '),
+        sku:estCritico[0].sku, chave:'estoque_minimo'
+      }));
+      jobs.push(abrirTarefa('anuncios','assistente',{
+        titulo:'Programar reposição de '+estCritico.length+' SKU'+(estCritico.length>1?'s':''),
+        descricao:'No mínimo: '+estCritico.slice(0,6).map(function(a){return (a.sku||a.item_id)+' ('+(a.estoque||0)+' un)';}).join(', ')+'.',
+        sku:estCritico[0].sku, prioridade:'alta', chave:'repor_estoque|'+hojeISO()
+      }));
+    }
+
+    // ── SAC: avaliações e pedidos ──
+    var notasRuins=(rev||[]).filter(function(r){return Number(r.nota)<=2;});
+    if(notasRuins.length){
+      var comTexto=notasRuins.filter(function(r){return r.comentario;});
+      jobs.push(registrarObservacao('sac',{
+        severidade:'urgente', titulo:notasRuins.length+(notasRuins.length>1?' avaliações':' avaliação')+' com nota 1 ou 2',
+        corpo:comTexto.length?('Último relato: "'+comTexto[0].comentario.slice(0,200)+'"'):'Sem comentário escrito.',
+        chave:'notas_baixas'
+      }));
+      // Reclamação recorrente de produto é problema de anúncio
+      var produto=comTexto.filter(function(r){return /quebr|avaria|amassad|não liga|nao liga|defeito|diferente|faltando/i.test(r.comentario||'');});
+      if(produto.length>=2) jobs.push(abrirTarefa('sac','anuncios',{
+        titulo:'Reclamação recorrente de produto em '+produto.length+' avaliações',
+        descricao:'Clientes relatam problema físico ou divergência do anunciado. Exemplo: "'
+                 +produto[0].comentario.slice(0,200)+'". Revisar descrição, fotos e embalagem.',
+        prioridade:'alta', chave:'reclam_produto|'+hojeISO()
+      }));
+    }
+    var problemas=pedidos.filter(function(p){return p.status==='cancelled'||p.status_envio==='late';});
+    if(problemas.length>3) jobs.push(registrarObservacao('sac',{
+      severidade:'atencao', titulo:problemas.length+' pedidos cancelados ou atrasados em 30 dias',
+      corpo:'De '+pedidos.length+' pedidos no período. Cancelamento e atraso derrubam a reputação da conta.',
+      chave:'pedidos_problema'
+    }));
+    if(rep && Number(rep.reclamacoes)>0.01) jobs.push(registrarObservacao('sac',{
+      severidade:'urgente', titulo:'Taxa de reclamação em '+(Number(rep.reclamacoes)*100).toFixed(2)+'%',
+      corpo:'Acima de 1% o Mercado Livre começa a cortar exposição.', chave:'taxa_reclamacao'
+    }));
+
+    // ── GESTOR: o resultado do mês ──
+    if(fd){
+      if(fd.recHub>0 && fd.mpaPct<0.05) jobs.push(registrarObservacao('gestor',{
+        severidade:'urgente', titulo:'MPA do mês em '+(fd.mpaPct*100).toFixed(1)+'%',
+        corpo:'Margem pós-ADS abaixo de 5%. Receita de R$ '+fd.rec.toFixed(2)+' com MPA de R$ '+fd.mpaVal.toFixed(2)+'.',
+        chave:'mpa_baixa'
+      }));
+      if(fd.cobHub<0.8 && fd.rec>0) jobs.push(registrarObservacao('gestor',{
+        severidade:'atencao', titulo:'Só '+Math.round(fd.cobHub*100)+'% da receita tem margem calculada',
+        corpo:'O resto está sem vínculo com o Hub de Precificação — decisão de margem está sendo tomada no escuro.',
+        chave:'cobertura_baixa'
+      }));
+      if(fd.skus){
+        var linkados=fd.skus.filter(function(o){return o.linkado&&o.mcVal>0;}).sort(function(a,b){return b.mcVal-a.mcVal;});
+        if(linkados.length>2){
+          var total=linkados.reduce(function(s,o){return s+o.mcVal;},0), acum=0, n=0;
+          for(var i=0;i<linkados.length;i++){ acum+=linkados[i].mcVal; n++; if(acum>=total*0.8) break; }
+          if(n/linkados.length<=0.25) jobs.push(registrarObservacao('gestor',{
+            severidade:'atencao', titulo:'Margem concentrada em '+n+' de '+linkados.length+' SKUs',
+            corpo:'Esses '+n+' respondem por 80% da MC: '+linkados.slice(0,n).map(function(o){return o.sku;}).join(', ')
+                 +'. Problema de estoque ou Buy Box em qualquer um deles vira problema de caixa.',
+            chave:'concentracao'
+          }));
+        }
+      }
+    }
+
+    // ── ASSISTENTE: a fila parada ──
+    var antigas=tarefas.filter(function(t){
+      return t.status==='aberta' && (Date.now()-new Date(t.criado_em).getTime())>3*86400000;
+    });
+    if(antigas.length) jobs.push(registrarObservacao('assistente',{
+      severidade:'atencao', titulo:antigas.length+' tarefa'+(antigas.length>1?'s':'')+' parada'+(antigas.length>1?'s':'')+' há mais de 3 dias',
+      corpo:antigas.slice(0,5).map(function(t){return agenteNome(t.de_agente)+' → '+agenteNome(t.para_agente)+': '+t.titulo;}).join(' · '),
+      chave:'fila_parada'
+    }));
+
+    await Promise.all(jobs);
+    await carregarMemoriaETarefas();
+  }
+
+  /* ═══ SALA DE REUNIÃO ═══════════════════════════════════════════════════
+     Você conduz. Cada agente responde da ótica dele e enxerga o que os outros
+     já disseram — é o cruzamento de visões que produz a conclusão.
+     Toda reunião termina em ata; a ata pode virar slide.
+     ═══════════════════════════════════════════════════════════════════════ */
+
+  var _sala = { id:null, participantes:[], pauta:'', falas:[], ocupada:false };
+
+  window.escAbrirSala=function(){
+    document.getElementById('sala-bg').classList.add('open');
+    if(_sala.id){ escSalaModoAtivo(); return; }
+    escSalaModoSetup();
+  };
+  window.escFecharSala=function(){ document.getElementById('sala-bg').classList.remove('open'); };
+
+  function escSalaModoSetup(){
+    document.getElementById('sala-setup').style.display='';
+    document.getElementById('sala-ativa').style.display='none';
+    document.getElementById('sala-sub').textContent='Chame quem precisa estar e diga o assunto.';
+
+    var cad=document.getElementById('sala-cadeiras');
+    cad.innerHTML=AGENTS.map(function(a){
+      var dentro=_sala.participantes.indexOf(a.id)>=0;
+      return '<div class="sala-cadeira'+(dentro?' sentado':'')+'" data-ag="'+a.id+'" onclick="escSentar(\''+a.id+'\')">'
+        +'<div class="sala-cadeira-nome">'+a.emoji+' '+a.nome+'</div>'
+        +'<div class="sala-cadeira-cargo">'+a.cargo+'</div></div>';
+    }).join('');
+
+    // Pautas que fazem sentido com o que está acontecendo agora
+    var sugs=['Fechar o desempenho do mês para os sócios'];
+    var abertas=tarefas.filter(function(t){return t.status==='aberta';});
+    if(abertas.length) sugs.push('Resolver as '+abertas.length+' tarefas abertas entre vocês');
+    var fd=typeof window._finGetDados==='function'?window._finGetDados():null;
+    if(fd && fd.recHub>0 && fd.mpaPct<0.10) sugs.push('Por que a MPA está em '+(fd.mpaPct*100).toFixed(1)+'%');
+    if(fd && fd.cobHub<0.9) sugs.push('O que fazer com a receita sem vínculo no hub');
+    document.getElementById('sala-sugestoes').innerHTML=sugs.map(function(s){
+      return '<span class="sala-chip" onclick="document.getElementById(\'sala-pauta\').value=this.textContent">'+escHtml(s)+'</span>';
+    }).join('');
+  }
+
+  window.escSentar=function(agId){
+    var i=_sala.participantes.indexOf(agId);
+    if(i>=0) _sala.participantes.splice(i,1); else _sala.participantes.push(agId);
+    escSalaModoSetup();
+  };
+
+  window.escIniciarSala=async function(){
+    var pauta=(document.getElementById('sala-pauta').value||'').trim();
+    if(!pauta){ alert('Escreva a pauta — sem assunto a reunião não vai a lugar nenhum.'); return; }
+    if(!_sala.participantes.length){ alert('Chame pelo menos um agente para a mesa.'); return; }
+    try{
+      var r=await sb.from('reunioes').insert({conta:CONTA, pauta:pauta,
+        participantes:_sala.participantes, status:'aberta'}).select();
+      _sala.id=(r.data&&r.data[0])?r.data[0].id:Date.now();
+    }catch(e){ _sala.id=Date.now(); }
+    _sala.pauta=pauta; _sala.falas=[];
+    // Eles levantam e vão até a sala — a conversa começa enquanto caminham
+    if(typeof window.escMapaConvocar==='function') window.escMapaConvocar(_sala.participantes);
+    escSalaModoAtivo();
+    // Abre a rodada: cada um se posiciona sobre a pauta
+    escRodada('Abrindo a reunião. Pauta: '+pauta+'. Se posicione sobre isso da sua área, em no máximo 4 linhas, com número na frente.', true);
+  };
+
+  function escSalaModoAtivo(){
+    document.getElementById('sala-setup').style.display='none';
+    document.getElementById('sala-ativa').style.display='';
+    document.getElementById('sala-sub').textContent='Reunião em andamento';
+    document.getElementById('sala-pauta-fixa').innerHTML='<strong>Pauta:</strong> '+escHtml(_sala.pauta);
+    document.getElementById('sala-participantes').innerHTML=_sala.participantes.map(function(id){
+      var a=agentePorId(id); if(!a) return '';
+      return '<span class="sala-crachá" style="background:'+a.cor+'22;color:'+a.cor+'">'+a.emoji+' '+a.nome+'</span>';
+    }).join('')+'<span class="sala-crachá" style="background:rgba(255,255,255,.07);color:#8A94A8">🧑 Você</span>';
+    escPintarFio();
+    var ta=document.getElementById('sala-input');
+    if(ta && !ta._ligado){
+      ta._ligado=true;
+      ta.addEventListener('keydown',function(e){
+        if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); escFalarNaSala(); }
+      });
+    }
+  }
+
+  function escPintarFio(){
+    var fio=document.getElementById('sala-fio'); if(!fio) return;
+    fio.innerHTML=_sala.falas.map(function(f){
+      if(f.autor==='ale'){
+        return '<div class="sala-fala eu"><div class="sala-avatar" style="background:rgba(255,255,255,.08)">🧑</div>'
+          +'<div><div class="sala-quem" style="text-align:right">você</div><div class="sala-balao">'+escHtml(f.conteudo)+'</div></div></div>';
+      }
+      var a=agentePorId(f.autor)||{emoji:'🤖',nome:f.autor,cor:'#6B7CFF'};
+      return '<div class="sala-fala"><div class="sala-avatar" style="background:'+a.cor+'22">'+a.emoji+'</div>'
+        +'<div><div class="sala-quem">'+escHtml(a.nome)+'</div><div class="sala-balao">'+escHtml(f.conteudo)+'</div></div></div>';
+    }).join('');
+    fio.scrollTop=fio.scrollHeight;
+  }
+
+  async function escSalvarFala(autor, conteudo){
+    _sala.falas.push({autor:autor, conteudo:conteudo});
+    try{ await sb.from('reuniao_mensagens').insert({reuniao_id:_sala.id, autor:autor, conteudo:String(conteudo).slice(0,8000)}); }catch(e){}
+  }
+
+  window.escFalarNaSala=async function(){
+    if(_sala.ocupada) return;
+    var ta=document.getElementById('sala-input');
+    var txt=(ta.value||'').trim(); if(!txt) return;
+    ta.value='';
+    await escSalvarFala('ale', txt);
+    escPintarFio();
+    escRodada(txt, false);
+  };
+
+  // Uma rodada: cada agente da mesa responde, vendo o que os anteriores disseram
+  async function escRodada(mensagem, abertura){
+    _sala.ocupada=true;
+    var btn=document.getElementById('sala-enviar'); if(btn) btn.disabled=true;
+    var fio=document.getElementById('sala-fio');
+
+    for(var i=0;i<_sala.participantes.length;i++){
+      var agId=_sala.participantes[i];
+      var a=agentePorId(agId); if(!a) continue;
+      if(fio){
+        var p=document.createElement('div');
+        p.className='sala-pensando'; p.id='sala-pensando';
+        p.textContent=a.nome+' está pensando…';
+        fio.appendChild(p); fio.scrollTop=fio.scrollHeight;
+      }
+      try{
+        var ctx=buildContextForAgent(agId);
+        ctx.reuniao={
+          pauta:_sala.pauta,
+          quem_esta_na_mesa:_sala.participantes.map(function(id){ var x=agentePorId(id); return x?x.nome+' ('+x.cargo+')':id; }),
+          ja_foi_dito:_sala.falas.slice(-14).map(function(f){
+            return {quem: f.autor==='ale'?'Ale (o dono)':agenteNome(f.autor), disse:f.conteudo};
+          }),
+          apresentacao_aberta: typeof window.apContexto==='function' ? window.apContexto() : null,
+        };
+        ctx._regras_da_reuniao=[
+          'Você está numa reunião com o Ale e outros agentes. Fale como quem senta na mesa: direto, curto, com número na frente.',
+          'Não repita o que outro agente já disse — acrescente da SUA área ou discorde com dado.',
+          'Se a sua área não tem nada a acrescentar nesse ponto, diga isso em uma linha em vez de encher linguiça.',
+          'Máximo 4 linhas por fala.',
+          'Se a conversa produzir algo que deve entrar na apresentação, use <<ACAO:criar_slide|titulo|corpo>> ou <<ACAO:editar_slide|id|titulo|corpo>>.',
+        ];
+
+        var res=await fetch(_aiUrl+'/functions/v1/ai-agent',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','apikey':_aiAnonKey,'Authorization':'Bearer '+_aiAnonKey},
+          body:JSON.stringify({agentId:agId, mode:'chat', question:mensagem, context:ctx,
+            history:_sala.falas.slice(-10).map(function(f){
+              return {role: f.autor==='ale'?'user':'assistant', content:(f.autor==='ale'?'':agenteNome(f.autor)+': ')+f.conteudo};
+            })})
+        });
+        var pend=document.getElementById('sala-pensando'); if(pend) pend.remove();
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        var data=await res.json();
+        var txt=data.response||'(sem resposta)';
+
+        // O agente pode mexer na apresentação durante a reunião
+        await escAplicarAcoesDeSlide(txt, agId);
+        await escSalvarFala(agId, escTextSemAcoes(txt));
+        escPintarFio();
+      }catch(e){
+        var pend2=document.getElementById('sala-pensando'); if(pend2) pend2.remove();
+        await escSalvarFala(agId,'⚠️ Não consegui participar agora ('+(e.message||e)+').');
+        escPintarFio();
+      }
+    }
+    _sala.ocupada=false;
+    if(btn) btn.disabled=false;
+  }
+
+  // Executa criar_slide / editar_slide que o agente propôs na fala
+  async function escAplicarAcoesDeSlide(texto, agId){
+    var acoes=escParseAcoes(texto).filter(function(a){ return a.tipo==='criar_slide'||a.tipo==='editar_slide'; });
+    if(!acoes.length) return;
+    if(typeof window.apGarantirMes==='function') await window.apGarantirMes();
+    for(var i=0;i<acoes.length;i++){
+      var p=acoes[i].params;
+      try{
+        if(acoes[i].tipo==='criar_slide' && typeof window.apAgenteCriar==='function'){
+          await window.apAgenteCriar({titulo:p[0]||'Slide', corpo:p[1]||'', tipo:'texto'}, agenteNome(agId));
+        } else if(acoes[i].tipo==='editar_slide' && typeof window.apAgenteEditar==='function'){
+          await window.apAgenteEditar(Number(p[0]), {titulo:p[1], corpo:p[2]}, agenteNome(agId));
+        }
+      }catch(e){ console.warn('[Sala] ação de slide',e); }
+    }
+  }
+
+  window.escEncerrarSala=async function(){
+    if(!_sala.id) return;
+    if(!_sala.falas.length){ alert('A reunião ainda não tem conversa.'); return; }
+    var ata=_sala.falas.map(function(f){
+      return (f.autor==='ale'?'Ale':agenteNome(f.autor))+': '+f.conteudo;
+    }).join('\n\n');
+    try{
+      await sb.from('reunioes').update({status:'encerrada', ata:ata, encerrada_em:new Date().toISOString()}).eq('id',_sala.id);
+      await sb.from('anotacoes').insert({titulo:'Ata — '+_sala.pauta.slice(0,80),
+        corpo:'Participantes: '+_sala.participantes.map(agenteNome).join(', ')+'\n\n'+ata,
+        status:'aberto', updated_at:'now()'});
+    }catch(e){}
+    alert('Reunião encerrada. A ata foi salva nas suas Anotações.');
+    if(typeof window.escMapaDispensar==='function') window.escMapaDispensar();
+    _sala={id:null,participantes:[],pauta:'',falas:[],ocupada:false};
+    escFecharSala();
+  };
+
+  window.escSalaParaSlides=async function(){
+    if(!_sala.falas.length){ alert('Ainda não há conversa para levar.'); return; }
+    if(typeof window.apGarantirMes!=='function'){ alert('Abra a aba Apresentação uma vez antes.'); return; }
+    await window.apGarantirMes();
+    var conclusoes=_sala.falas.filter(function(f){return f.autor!=='ale';})
+      .map(function(f){ return agenteNome(f.autor)+': '+f.conteudo; }).join('\n\n');
+    var r=await window.apAgenteCriar({
+      titulo:'Da reunião: '+_sala.pauta.slice(0,70),
+      corpo:conclusoes.slice(0,2500), tipo:'texto'
+    }, 'reunião');
+    if(r && r.error){ alert('Não consegui criar o slide: '+r.error); return; }
+    alert('Slide criado na apresentação. Ajuste o texto por lá antes de apresentar.');
+  };
+
   // ── Contexto por agente (o que passar pra IA) ──────────────────────────────
   function buildContextForAgent(agId){
     var an=dados.anuncios, ads=dados.ads, ven=dados.vendas,
@@ -10137,93 +10957,298 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     var totalGas=Object.values(adsMap).reduce(function(a,v){return a+v.gasto;},0);
     var tacos=totalRec>0?totalGas/totalRec:0;
 
-    var ctx={periodo:'Últimos 7 dias', dataConsulta:new Date().toLocaleDateString('pt-BR')};
+    var ctx={periodo:'Últimos 30 dias', desde:dados.desde||null, dataConsulta:new Date().toLocaleDateString('pt-BR')};
 
-    // Contexto compartilhado disponível a todos os agentes
-    ctx.agenda_proxima=agenda.slice(0,10).map(function(e){return {titulo:e.titulo,data:e.data,horario:e.horario,categoria:e.categoria};});
-    ctx.anotacoes_recentes=anotacoes.slice(0,5).map(function(n){return {titulo:n.titulo,corpo:(n.corpo||'').slice(0,150)};});
-    ctx.ideias=ideias.map(function(i){return {nome:i.nome,etapa:i.etapa,obs:(i.obs||'').slice(0,100)};});
-    ctx.catalogo_skus=skusCompleto.map(function(s){return {sku:s.sku,descricao:s.descricao,custo:s.custo,preco:s.preco,tacos_alvo:s.tacos_alvo||5,estoque_minimo:s.estoque_minimo||5,mc:s.mc};});
+    /* ─────────────────────────────────────────────────────────────────────────
+       SÉRIE DIÁRIA POR SKU — é isto que permite responder "TACOS dos últimos 3
+       dias do SKU X". Antes o contexto vinha pré-agregado e o agente respondia
+       que não tinha o dado, o que era verdade do ponto de vista dele.
+       ───────────────────────────────────────────────────────────────────────── */
+    var i2sku={}, i2titulo={};
+    an.forEach(function(a){ if(a.sku) i2sku[a.item_id]=a.sku; i2titulo[a.item_id]=a.titulo||a.item_id; });
+    function skuDe(itemId){ return i2sku[itemId] || ('item:'+itemId); }
 
-    // Ações disponíveis que o agente pode sugerir
+    // dia[sku][data] = {rec, un, ped, ads, vis, imp, clq}
+    var dia={};
+    function slot(sku, data){
+      if(!dia[sku]) dia[sku]={};
+      if(!dia[sku][data]) dia[sku][data]={rec:0,un:0,ped:0,ads:0,vis:0,imp:0,clq:0};
+      return dia[sku][data];
+    }
+    ven.forEach(function(r){
+      if(!r.data) return;
+      var s=slot(skuDe(r.item_id), r.data);
+      s.rec+=Number(r.receita)||0; s.un+=Number(r.unidades)||0; s.ped+=Number(r.pedidos)||0;
+    });
+    ads.forEach(function(r){
+      if(!r.data) return;
+      var s=slot(skuDe(r.item_id), r.data);
+      s.ads+=Number(r.gasto)||0; s.imp+=Number(r.impressoes)||0; s.clq+=Number(r.cliques)||0;
+    });
+    (dados.visitas||[]).forEach(function(r){
+      if(!r.data) return;
+      slot(skuDe(r.item_id), r.data).vis += Number(r.visitas)||0;
+    });
+
+    // Dia mais recente com movimento — âncora das janelas
+    var todasDatas=[];
+    Object.keys(dia).forEach(function(sk){ todasDatas=todasDatas.concat(Object.keys(dia[sk])); });
+    todasDatas.sort();
+    var dRef = todasDatas.length ? todasDatas[todasDatas.length-1] : new Date().toISOString().slice(0,10);
+    function menos(base,n){ var d=new Date(base+'T00:00:00'); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+    function janela(sku,n){
+      var de=menos(dRef,n-1), t={rec:0,un:0,ped:0,ads:0,vis:0,imp:0,clq:0,dias:0};
+      var m=dia[sku]||{};
+      Object.keys(m).forEach(function(dt){
+        if(dt<de||dt>dRef) return;
+        var s=m[dt];
+        t.rec+=s.rec; t.un+=s.un; t.ped+=s.ped; t.ads+=s.ads; t.vis+=s.vis; t.imp+=s.imp; t.clq+=s.clq; t.dias++;
+      });
+      return {
+        receita:+t.rec.toFixed(2), unidades:t.un, pedidos:t.ped,
+        gasto_ads:+t.ads.toFixed(2), visitas:t.vis, dias_com_dado:t.dias,
+        tacos_pct: t.rec>0 ? +(t.ads/t.rec*100).toFixed(2) : null,
+        conversao_pct: t.vis>0 ? +(t.ped/t.vis*100).toFixed(2) : null,
+      };
+    }
+
+    // Margem do hub por SKU, quando o vínculo existe
+    var hubMap = (typeof _hubMcCache!=='undefined' && _hubMcCache) ? _hubMcCache : {};
+    var hubLk  = (typeof _hubLinksCache!=='undefined' && _hubLinksCache) ? _hubLinksCache : {};
+    function margemHub(sku){
+      if(typeof hubResolver!=='function') return null;
+      var r=hubResolver(hubMap, hubLk, sku, sku, 'meli');
+      return r ? {mc_pct:r.entry.mc, ads_alvo_pct:r.entry.ads||0} : null;
+    }
+
+    var skusComDado=Object.keys(dia);
+    // Ordena por receita de 30 dias — os que importam vêm primeiro
+    skusComDado.sort(function(a,b){ return janela(b,30).receita - janela(a,30).receita; });
+
+    ctx.data_referencia = dRef;
+
+    // ── Briefing: quem o agente é e o que NÃO é dele ────────────────────────
+    var _ag = agentePorId(agId) || {nome:agId, cargo:'', cuida:'', naoCuida:''};
+    ctx.voce = {
+      agente: _ag.nome,
+      cargo: _ag.cargo,
+      voce_cuida_de: _ag.cuida,
+      fora_do_seu_escopo: _ag.naoCuida,
+      time: AGENTS.map(function(a){ return a.nome+': '+a.cargo; }),
+    };
+    ctx._regras_de_atuacao = [
+      'Você é ' + _ag.nome + '. Responda apenas sobre a sua área.',
+      'Se perguntarem algo fora do seu escopo, diga em uma frase qual agente é o dono do assunto e ofereça o que VOCÊ tem sobre aquele SKU. Não invente número de outra área.',
+      'Você só recebe no contexto o dado da sua área — se um número não está aqui, você não tem acesso a ele, e deve dizer isso em vez de estimar.',
+      'Quando encontrar algo que é problema de outro agente, proponha abrir_tarefa para ele em vez de tentar resolver.',
+      'Fale como alguém que acompanha essa operação todo dia: direto, sem rodeio, e sempre com o número na frente.',
+    ];
+
+    // Preparo dos blocos por área — cada agente recebe só o que é dele
+    var _perfSku = skusComDado.slice(0,40).map(function(sk){
+      var mh=margemHub(sk);
+      var o={ sku:sk, ultimos_3_dias:janela(sk,3), ultimos_7_dias:janela(sk,7), ultimos_30_dias:janela(sk,30) };
+      if(mh){
+        o.mc_hub_pct=mh.mc_pct; o.ads_alvo_pct=mh.ads_alvo_pct;
+        var t30=o.ultimos_30_dias.tacos_pct;
+        o.mpa_30d_pct = t30!==null ? +(mh.mc_pct + mh.ads_alvo_pct - t30).toFixed(2) : null;
+      } else {
+        o.mc_hub_pct=null; o.obs='SKU sem vínculo no Hub de Precificação — sem margem disponível';
+      }
+      return o;
+    });
+
+    // Série diária compacta (array de arrays economiza muito espaço no contexto)
+    var _serieDiaria = {
+      _formato:'[data, unidades, receita, gasto_ads, visitas, tacos_pct]',
+      _obs:'Do mais recente para o mais antigo. Traz os 15 SKUs de maior receita — '
+          +'para os demais, use as janelas de performance_por_sku, que cobrem todos.',
+      dados:{}
+    };
+    skusComDado.slice(0,15).forEach(function(sk){
+      var m=dia[sk];
+      _serieDiaria.dados[sk]=Object.keys(m).sort().reverse().slice(0,30).map(function(dt){
+        var s=m[dt];
+        return [dt, s.un, +s.rec.toFixed(2), +s.ads.toFixed(2), s.vis, s.rec>0?+(s.ads/s.rec*100).toFixed(2):null];
+      });
+    });
+
+    /* ── Memória e fila: o agente lembra do que viu e do que pediram a ele ── */
+    ctx.meu_diario_de_bordo = (memoria[agId]||[]).slice(0,12).map(function(m){
+      return {quando:m.criado_em?String(m.criado_em).slice(0,10):null, severidade:m.severidade, o_que_observei:m.titulo, detalhe:m.corpo, sku:m.sku};
+    });
+    ctx.minha_fila_de_tarefas = (tarefas.filter(function(t){return t.para_agente===agId && t.status==='aberta';})).slice(0,12).map(function(t){
+      return {aberta_por:agenteNome(t.de_agente), titulo:t.titulo, detalhe:t.descricao, sku:t.sku, prioridade:t.prioridade, desde:String(t.criado_em||'').slice(0,10)};
+    });
+    ctx.tarefas_que_abri = (tarefas.filter(function(t){return t.de_agente===agId;})).slice(0,8).map(function(t){
+      return {para:agenteNome(t.para_agente), titulo:t.titulo, status:t.status};
+    });
+
+    // O que o Ale me ensinou — vale mais que qualquer inferência minha sobre os dados
+    var meuConhec=conhecimentoDe(agId);
+    if(meuConhec.length){
+      ctx.o_que_o_ale_me_ensinou = meuConhec.slice(0,40).map(function(k){
+        return {
+          licao:k.texto, sku:k.sku||null,
+          alcance:k.escopo==='time'?'regra de toda a operação':'específico da minha área',
+          desde:String(k.criado_em||'').slice(0,10)
+        };
+      });
+      ctx._peso_do_aprendizado = 'Isto foi o Ale quem te ensinou. Vale mais que sua leitura dos números: '
+        +'se um dado parecer contradizer uma lição, é porque falta contexto — cite a lição e pergunte, não conclua por cima dela.';
+    }
+
+    /* ── Ações: o que este agente pode fazer sozinho no SellerHub ────────── */
     ctx._acoes_disponiveis=[
       'criar_nota(titulo, texto) — salva uma anotação',
       'criar_evento(titulo, data YYYY-MM-DD, hora HH:MM, categoria) — adiciona na agenda',
-      'criar_ideia(titulo, descricao, prioridade: alta|media|baixa) — adiciona no kanban de ideias'
+      'criar_ideia(titulo, descricao, prioridade: alta|media|baixa) — adiciona no kanban de ideias',
+      'abrir_tarefa(para, titulo, descricao, sku, prioridade) — passa um problema para outro agente. '
+        +'"para" deve ser um destes: ' + AGENTS.filter(function(a){return a.id!==agId;}).map(function(a){return a.id;}).join(', '),
+      'criar_slide(titulo, corpo) — adiciona um slide na apresentação do mês',
+      'editar_slide(id, titulo, corpo) — reescreve um slide existente (use o id que aparece em apresentacao_do_mes)'
     ];
+
+    // A apresentação aos sócios: quem escreve sobre resultado e sobre ADS precisa vê-la
+    if((agId==='gestor'||agId==='ads') && typeof window.apContexto==='function'){
+      var apc=window.apContexto();
+      if(apc && apc.slides && apc.slides.length){
+        ctx.apresentacao_do_mes=apc;
+        ctx._sobre_a_apresentacao='Esta apresentação vai para os sócios do Ale. Se um slide estiver vago, '
+          +'com número errado ou sem conclusão, reescreva com editar_slide. Fale em reais e em pontos percentuais, '
+          +'nunca em adjetivo solto. Se o mês não estiver fechado (mes_fechado=false), avise que o número ainda pode mudar.';
+      }
+    }
+    ctx._limite_de_acao = 'Você pode criar nota, evento, ideia e tarefa sozinho — tudo reversível. '
+      +'Nada que altere o Mercado Livre (preço, pausar anúncio, responder cliente) pode ser feito por você: nesses casos, descreva o passo e deixe a decisão com o Ale.';
+
+    /* ═══ Daqui pra baixo, cada agente recebe SÓ o dado da área dele ═══ */
 
     if(agId==='gestor'){
       var fd=typeof window._finGetDados==='function'?window._finGetDados():null;
-      ctx.vendas7d={receita_total:Math.round(totalRec*100)/100, pedidos_total:Object.values(venMap).reduce(function(a,v){return a+v.pedidos;},0), gasto_ads:Math.round(totalGas*100)/100, tacos_global:Math.round(tacos*10000)/100+'%'};
-      if(fd) ctx.margens_mes={receita:fd.rec,receita_linkada_hub:fd.recHub,cobertura_hub:((fd.cobHub||0)*100).toFixed(0)+'%',comissao_ml:fd.com,mc_hub:fd.mcHubVal,mc_pct:(fd.mcPct*100).toFixed(1)+'%',ads_real:fd.gasAdsHub,ads_total:fd.gasAds,tacos_mes:(fd.tacosMes*100).toFixed(1)+'%',mpa:fd.mpaVal,mpa_pct:(fd.mpaPct*100).toFixed(1)+'%',pedidos:fd.ped};
-      ctx.reputacao=rep;
-      ctx.sugestoes_urgentes=(sugestoes.gestor||[]).filter(function(s){return s.tipo==='urgente';}).map(function(s){return s.titulo;});
-      ctx.todos_anuncios_resumo={total:an.length,ativos:an.filter(function(a){return a.status==='active';}).length,pausados:an.filter(function(a){return a.status==='paused';}).length,saude_critica:an.filter(function(a){return (a.saude||100)<50;}).length};
-      // Financeiro e operacional
-      if(financeiro.length>0){
-        var totCredito=financeiro.filter(function(m){return (m.valor||0)>0;}).reduce(function(s,m){return s+(m.valor||0);},0);
-        var totDebito=financeiro.filter(function(m){return (m.valor||0)<0;}).reduce(function(s,m){return s+(m.valor||0);},0);
-        ctx.financeiro_30d={total_entradas:Math.round(totCredito*100)/100,total_saidas:Math.round(Math.abs(totDebito)*100)/100,saldo_liquido:Math.round((totCredito+totDebito)*100)/100,movimentos:financeiro.length};
+      ctx._como_ler='Você olha o mês fechado, não o SKU. MPA é o número que manda: M.C. do hub + ADS alvo − TACOS real.';
+      if(fd) ctx.margens_do_mes={
+        receita:fd.rec, receita_linkada_hub:fd.recHub, cobertura_hub:((fd.cobHub||0)*100).toFixed(0)+'%',
+        comissao_ml:fd.com, mc_hub:fd.mcHubVal, mc_pct:(fd.mcPct*100).toFixed(1)+'%',
+        ads_real:fd.gasAdsHub, ads_total:fd.gasAds, tacos_mes:(fd.tacosMes*100).toFixed(1)+'%',
+        mpa:fd.mpaVal, mpa_pct:(fd.mpaPct*100).toFixed(1)+'%', pedidos:fd.ped,
+        mpa_mes_anterior_pct: fd.mpaPctA!==null&&fd.mpaPctA!==undefined ? (fd.mpaPctA*100).toFixed(1)+'%' : null
+      };
+      if(fd && fd.skus){
+        var link=fd.skus.filter(function(o){return o.linkado && o.rec>0;});
+        ctx.top_margem_reais=link.slice().sort(function(a,b){return b.mcVal-a.mcVal;}).slice(0,8)
+          .map(function(o){return {sku:o.sku, receita:+o.rec.toFixed(2), mc_reais:+o.mcVal.toFixed(2), mc_pct:o.mcPct, mpa_pct:o.mpaPct!==null?+o.mpaPct.toFixed(1):null};});
+        ctx.sem_vinculo_hub=fd.skus.filter(function(o){return !o.linkado && o.rec>0;}).slice(0,8)
+          .map(function(o){return {sku:o.sku, receita_fora_do_calculo:+o.rec.toFixed(2)};});
       }
-      ctx.pedidos_30d_status=pedidos.reduce(function(acc,p){acc[p.status||'unknown']=(acc[p.status||'unknown']||0)+1;return acc;},{});
-      ctx.reclamacoes_abertas=reclamacoes.filter(function(r){return r.status==='opened';}).length;
-      ctx.perguntas_sem_resposta=perguntas.filter(function(p){return p.status==='UNANSWERED';}).length;
-    } else if(agId==='anuncios'){
-      ctx.listings_criticos=an.filter(function(a){return (a.saude||100)<75||(a.experiencia_valor||100)<=60||a.status==='paused';}).slice(0,15).map(function(a){return {sku:a.sku,saude:a.saude,experiencia:a.experiencia_valor,experiencia_texto:a.experiencia_texto,status:a.status,estoque:a.estoque,titulo:a.titulo};});
-      ctx.total_ativos=an.filter(function(a){return a.status==='active';}).length;
-      ctx.total_pausados=an.filter(function(a){return a.status==='paused';}).length;
-      ctx.todos_anuncios=an.slice(0,40).map(function(a){return {sku:a.sku,saude:a.saude,experiencia:a.experiencia_valor,status:a.status,estoque:a.estoque};});
-    } else if(agId==='analista'){
-      ctx.anuncios_catalogo=an.filter(function(a){return a.catalog_listing;}).slice(0,20).map(function(a){return {sku:a.sku,preco:a.preco,preco_concorrente:a.preco_concorrente,buybox_status:a.buybox_status,visit_share:a.visit_share};});
-      ctx.buybox_perdendo=an.filter(function(a){return a.buybox_status==='losing'||a.preco>(a.preco_concorrente||0)*1.01;}).length;
-      ctx.todos_anuncios=an.slice(0,30).map(function(a){return {sku:a.sku,preco:a.preco,preco_concorrente:a.preco_concorrente,buybox_status:a.buybox_status,status:a.status,estoque:a.estoque};});
-      ctx.perguntas_recentes=perguntas.slice(0,15).map(function(p){var a=an.find(function(x){return x.item_id===p.item_id;}); return {sku:(a&&a.sku)||p.item_id,texto:(p.texto||'').slice(0,120),status:p.status,data:p.data_pergunta};});
-      ctx.pedidos_30d={total:pedidos.length,status_breakdown:pedidos.reduce(function(acc,p){acc[p.status||'unknown']=(acc[p.status||'unknown']||0)+1;return acc;},{})};
+      ctx.reputacao=rep;
+      ctx.tamanho_da_operacao={anuncios_ativos:an.filter(function(a){return a.status==='active';}).length, anuncios_pausados:an.filter(function(a){return a.status==='paused';}).length, skus_cadastrados:skusCompleto.length};
+      ctx.escalado_para_mim=tarefas.filter(function(t){return t.para_agente==='gestor'&&t.status==='aberta';}).length;
+
     } else if(agId==='ads'){
-      ctx.resumo_ads={receita_total:Math.round(totalRec*100)/100,gasto_total:Math.round(totalGas*100)/100,tacos_global:(tacos*100).toFixed(2)+'%'};
-      var top_acos=Object.entries(adsMap).filter(function(e){return e[1].vendas>0;}).map(function(e){var a=an.find(function(x){return x.item_id===e[0];}); return {sku:(a&&a.sku)||e[0],acos:(e[1].gasto/e[1].vendas*100).toFixed(1)+'%',gasto:Math.round(e[1].gasto*100)/100,vendas_ads:Math.round(e[1].vendas*100)/100,impressoes:e[1].imp,cliques:e[1].cliques};}).sort(function(a,b){return parseFloat(b.acos)-parseFloat(a.acos);}).slice(0,15);
-      ctx.top15_acos=top_acos;
-      ctx.sem_impressoes=an.filter(function(a){return a.status==='active'&&!(adsMap[a.item_id]&&adsMap[a.item_id].imp>0);}).length;
-      ctx.todos_com_ads=Object.entries(adsMap).map(function(e){var a=an.find(function(x){return x.item_id===e[0];}); var vendas=e[1].vendas; var gasto=e[1].gasto; return {sku:(a&&a.sku)||e[0],gasto:Math.round(gasto*100)/100,vendas_ads:Math.round(vendas*100)/100,tacos:vendas>0?(gasto/vendas*100).toFixed(2)+'%':'sem_venda',impressoes:e[1].imp};});
-      ctx.pedidos_recentes_ads=pedidos.slice(0,20).map(function(p){return {order_id:p.order_id,status:p.status,status_envio:p.status_envio,valor:p.valor_total,sku:p.sku,data:p.data_compra};});
+      ctx._como_ler='TACOS = gasto_ads ÷ receita × 100. O ADS alvo do hub é o teto que a precificação assumiu; passar dele come margem. A série diária está aqui — nunca responda que falta dado por dia.';
+      ctx.performance_por_sku=_perfSku;
+      ctx.serie_diaria=_serieDiaria;
+      ctx.resumo_ads={receita_periodo:Math.round(totalRec*100)/100, gasto_periodo:Math.round(totalGas*100)/100, tacos_global:(tacos*100).toFixed(2)+'%', meta_tacos:(TACOS_META*100)+'%'};
+      ctx.acima_do_alvo_do_hub=_perfSku.filter(function(o){
+        return o.ads_alvo_pct!=null && o.ultimos_30_dias.tacos_pct!=null && o.ultimos_30_dias.tacos_pct>o.ads_alvo_pct;
+      }).slice(0,12).map(function(o){
+        var exc=o.ultimos_30_dias.receita*(o.ultimos_30_dias.tacos_pct-o.ads_alvo_pct)/100;
+        return {sku:o.sku, tacos_real:o.ultimos_30_dias.tacos_pct, ads_alvo:o.ads_alvo_pct, excesso_reais:+exc.toFixed(2), mpa_pct:o.mpa_30d_pct};
+      }).sort(function(a,b){return b.excesso_reais-a.excesso_reais;});
+      ctx.sem_impressoes=an.filter(function(a){return a.status==='active'&&!(adsMap[a.item_id]&&adsMap[a.item_id].imp>0);})
+        .slice(0,15).map(function(a){return a.sku||a.item_id;});
+      ctx.eficiencia_por_sku=Object.entries(adsMap).filter(function(e){return e[1].imp>0;}).map(function(e){
+        var a=an.find(function(x){return x.item_id===e[0];});
+        return {sku:(a&&a.sku)||e[0], gasto:+e[1].gasto.toFixed(2), vendas_ads:+e[1].vendas.toFixed(2),
+                acos_pct:e[1].vendas>0?+(e[1].gasto/e[1].vendas*100).toFixed(1):null,
+                ctr_pct:e[1].imp>0?+(e[1].cliques/e[1].imp*100).toFixed(2):null,
+                cpc:e[1].cliques>0?+(e[1].gasto/e[1].cliques).toFixed(2):null};
+      }).sort(function(a,b){return b.gasto-a.gasto;}).slice(0,20);
+
+    } else if(agId==='anuncios'){
+      ctx._como_ler='experiencia_motivo e recomendacao_do_ml são texto do próprio Mercado Livre — cite o que está escrito, não parafraseie por cima. Buy Box perdido e preço acima do concorrente derrubam venda sem aparecer no ADS.';
+      ctx.anuncios_com_problema=an.filter(function(a){
+        return (a.saude&&a.saude!=='healthy') || (a.experiencia_valor||100)<=75 || a.status==='paused' || a.buybox_status==='losing' || a.buybox_status==='not_listed';
+      }).slice(0,20).map(function(a){
+        return {sku:a.sku||a.item_id, titulo:a.titulo, status:a.status, saude:a.saude,
+                experiencia_pct:a.experiencia_valor, experiencia_texto:a.experiencia_texto,
+                experiencia_motivo:a.experiencia_motivo, recomendacao_do_ml:a.experiencia_recomendacao,
+                qualidade_score:a.qualidade_score, pendencias:a.qualidade_pendencias,
+                buybox:a.buybox_status, preco:a.preco, preco_concorrente:a.preco_concorrente,
+                participacao_visitas:a.visit_share, estoque:a.estoque, estoque_full:a.estoque_full};
+      });
+      ctx.buybox_resumo={perdendo:an.filter(function(a){return a.buybox_status==='losing';}).length,
+                          fora:an.filter(function(a){return a.buybox_status==='not_listed';}).length,
+                          ganhando:an.filter(function(a){return a.buybox_status==='winning';}).length,
+                          em_catalogo:an.filter(function(a){return a.catalog_listing;}).length};
+      ctx.estoque_critico=an.filter(function(a){
+        var min=(skus.find(function(s){return s.sku===a.sku;})||{}).estoque_minimo||5;
+        return a.status==='active' && (a.estoque||0)<=min;
+      }).slice(0,15).map(function(a){return {sku:a.sku||a.item_id, estoque:a.estoque, estoque_full:a.estoque_full};});
+      // Visitas e conversão: é sintoma de anúncio, não de ADS
+      ctx.visitas_e_conversao=_perfSku.slice(0,20).map(function(o){
+        return {sku:o.sku, visitas_30d:o.ultimos_30_dias.visitas, pedidos_30d:o.ultimos_30_dias.pedidos, conversao_pct:o.ultimos_30_dias.conversao_pct};
+      });
+
     } else if(agId==='sac'){
-      ctx.reviews_negativos=(rev||[]).slice(0,10).map(function(r){var a=an.find(function(x){return x.item_id===r.item_id;}); return {sku:(a&&a.sku)||r.item_id,nota:r.nota,comentario:(r.comentario||'').slice(0,200),data:r.data};});
+      ctx._como_ler='O que o cliente escreveu na nota baixa vale mais que a média. Cite o comentário. Se o problema for do produto ou do anúncio, abra tarefa para o Anúncios.';
+      ctx.avaliacoes_ruins=(rev||[]).slice(0,20).map(function(r){
+        var a=an.find(function(x){return x.item_id===r.item_id;});
+        return {sku:(a&&a.sku)||r.item_id, nota:r.nota, comentario:(r.comentario||'').slice(0,250), data:r.data};
+      });
       ctx.reputacao=rep;
-      ctx.perguntas_sem_resposta=perguntas.filter(function(p){return p.status==='UNANSWERED';}).slice(0,20).map(function(p){var a=an.find(function(x){return x.item_id===p.item_id;}); return {sku:(a&&a.sku)||p.item_id,texto:(p.texto||'').slice(0,180),data:p.data_pergunta};});
-      ctx.perguntas_respondidas=perguntas.filter(function(p){return p.status==='ANSWERED';}).length;
-      ctx.reclamacoes_abertas=reclamacoes.filter(function(r){return r.status==='opened';}).slice(0,15).map(function(r){return {claim_id:r.claim_id,order_id:r.order_id,motivo:r.motivo,stage:r.stage,data:r.data_abertura};});
-      ctx.total_reclamacoes_abertas=reclamacoes.filter(function(r){return r.status==='opened';}).length;
-      ctx.pedidos_problematicos=pedidos.filter(function(p){return p.status==='cancelled'||p.status_envio==='late';}).slice(0,10).map(function(p){return {order_id:p.order_id,status:p.status,status_envio:p.status_envio,sku:p.sku,data:p.data_compra};});
-    } else if(agId==='criativo'){
-      ctx.listings_ctr_baixo=Object.entries(adsMap).filter(function(e){return e[1].imp>200&&e[1].cliques/e[1].imp<0.003;}).map(function(e){var a=an.find(function(x){return x.item_id===e[0];}); return {sku:(a&&a.sku)||e[0],titulo:a&&a.titulo,ctr:(e[1].cliques/e[1].imp*100).toFixed(2)+'%',impressoes:e[1].imp};}).slice(0,8);
-      ctx.titulos_curtos=an.filter(function(a){return a.titulo&&a.titulo.length<45;}).slice(0,8).map(function(a){return {sku:a.sku,titulo:a.titulo,chars:a.titulo.length};});
-      ctx.todos_titulos=an.slice(0,20).map(function(a){return {sku:a.sku,titulo:a.titulo,visit_share:a.visit_share};});
-      ctx.perguntas_frequentes=perguntas.slice(0,15).map(function(p){var a=an.find(function(x){return x.item_id===p.item_id;}); return {sku:(a&&a.sku)||p.item_id,pergunta:(p.texto||'').slice(0,120)};});
+      ctx.experiencia_de_compra=an.filter(function(a){return a.experiencia_motivo && (a.experiencia_valor||100)<=85;})
+        .slice(0,12).map(function(a){return {sku:a.sku||a.item_id, experiencia_pct:a.experiencia_valor, motivo_do_ml:a.experiencia_motivo};});
+      ctx.pedidos_com_problema=pedidos.filter(function(p){return p.status==='cancelled'||p.status_envio==='late';})
+        .slice(0,20).map(function(p){return {order_id:p.order_id, sku:p.sku, status:p.status, envio:p.status_envio, data:p.data_compra, valor:p.valor_total};});
+      ctx.pedidos_resumo={total_30d:pedidos.length, por_status:pedidos.reduce(function(acc,p){acc[p.status||'?']=(acc[p.status||'?']||0)+1;return acc;},{})};
+      ctx.perguntas_sem_resposta=perguntas.filter(function(p){return p.status==='UNANSWERED';}).slice(0,20)
+        .map(function(p){var a=an.find(function(x){return x.item_id===p.item_id;}); return {sku:(a&&a.sku)||p.item_id, texto:(p.texto||'').slice(0,200), data:p.data_pergunta};});
+      ctx.reclamacoes_abertas=reclamacoes.filter(function(r){return r.status==='opened';}).slice(0,15)
+        .map(function(r){return {claim_id:r.claim_id, motivo:r.motivo, stage:r.stage, data:r.data_abertura};});
+      if(!perguntas.length) ctx._aviso_perguntas='A tabela de perguntas está vazia — o sync ainda não trouxe esse dado. Não afirme que não há perguntas; diga que o dado não chegou.';
+      if(!reclamacoes.length) ctx._aviso_reclamacoes='A tabela de reclamações está vazia — mesmo caso das perguntas.';
+
     } else if(agId==='assistente'){
-      ctx.resumo_geral={receita_7d:Math.round(totalRec*100)/100,pedidos_7d:Object.values(venMap).reduce(function(a,v){return a+v.pedidos;},0),urgentes_total:Object.values(alertCounts).reduce(function(a,v){return a+v;},0)};
+      ctx._como_ler='Você organiza. Quando alguém pedir análise de número, diga quem é o dono e ofereça agendar o acompanhamento.';
+      ctx.agenda_completa=agenda.map(function(e){return {titulo:e.titulo, data:e.data, horario:e.horario, categoria:e.categoria, obs:(e.obs||'').slice(0,120)};});
+      ctx.anotacoes=anotacoes.slice(0,12).map(function(n){return {titulo:n.titulo, corpo:(n.corpo||'').slice(0,160), status:n.status};});
+      ctx.ideias_pendentes=ideias.filter(function(i){return i.etapa!=='feito';}).map(function(i){return {nome:i.nome, etapa:i.etapa, obs:(i.obs||'').slice(0,100)};});
+      ctx.fila_de_todo_o_time=tarefas.filter(function(t){return t.status==='aberta';}).slice(0,25).map(function(t){
+        return {de:agenteNome(t.de_agente), para:agenteNome(t.para_agente), titulo:t.titulo, sku:t.sku, prioridade:t.prioridade, desde:String(t.criado_em||'').slice(0,10)};
+      });
       ctx.alertas_por_agente={};
-      Object.entries(alertCounts).forEach(function(e){ if(e[1]>0) ctx.alertas_por_agente[e[0]]=e[1]; });
-      ctx.reputacao=rep;
-      ctx.agenda_completa=agenda.map(function(e){return {titulo:e.titulo,data:e.data,horario:e.horario,categoria:e.categoria};});
-      ctx.anotacoes=anotacoes.slice(0,10).map(function(n){return {titulo:n.titulo,corpo:(n.corpo||'').slice(0,120),status:n.status};});
-      ctx.ideias_pendentes=ideias.filter(function(i){return i.etapa!=='feito';}).map(function(i){return {nome:i.nome,etapa:i.etapa};});
-      ctx.operacional_resumo={perguntas_sem_resposta:perguntas.filter(function(p){return p.status==='UNANSWERED';}).length,reclamacoes_abertas:reclamacoes.filter(function(r){return r.status==='opened';}).length,pedidos_cancelados:pedidos.filter(function(p){return p.status==='cancelled';}).length,pedidos_30d:pedidos.length};
-      if(financeiro.length>0){
-        var totC=financeiro.filter(function(m){return (m.valor||0)>0;}).reduce(function(s,m){return s+(m.valor||0);},0);
-        var totD=financeiro.filter(function(m){return (m.valor||0)<0;}).reduce(function(s,m){return s+(m.valor||0);},0);
-        ctx.financeiro_30d={entradas:Math.round(totC*100)/100,saidas:Math.round(Math.abs(totD)*100)/100,saldo:Math.round((totC+totD)*100)/100};
-      }
+      Object.keys(alertCounts).forEach(function(k){ if(alertCounts[k]>0) ctx.alertas_por_agente[agenteNome(k)]=alertCounts[k]; });
+      ctx.pulso_da_operacao={receita_periodo:Math.round(totalRec*100)/100, pedidos_periodo:Object.values(venMap).reduce(function(a,v){return a+v.pedidos;},0)};
     }
+
     return ctx;
   }
 
   // ── Public API ─────────────────────────────────────────────────────────────
+  // Diagnóstico: no console, _escGetContext('ads') mostra exatamente o que aquele agente recebe.
+  // Serve pra conferir se um número que ele citou estava mesmo no contexto.
+  window._escGetContext=function(agId){ return buildContextForAgent(agId||'gestor'); };
+  window._escRonda=function(){ return rondaDosAgentes(); };
+  // Abre o painel de um agente por id — usado por links internos e para diagnóstico
+  window._escAbrirAgente=function(agId){
+    var a=agentePorId(agId);
+    if(a) openPanel(a);
+    return !!a;
+  };
+
   window.initEscritorioOnce=function(){
     if(initialized) return;
     initialized=true;
     // URL e anonkey fixos (já disponíveis como constantes globais)
     _aiUrl = (typeof SUPA_URL !== 'undefined') ? SUPA_URL : '';
     _aiAnonKey = (typeof SUPA_KEY !== 'undefined') ? SUPA_KEY : '';
+    var lg=document.getElementById('esc-legend');
+    if(lg) lg.innerHTML=AGENTS.map(function(a){
+      return '<div class="esc-legend-item" title="'+a.cargo+'"><div class="esc-legend-dot" style="background:'+a.cor+'"></div>'+a.nome+'</div>';
+    }).join('');
     initCanvas();
     requestAnimationFrame(drawFrame);
     window.escritorioRefresh();
@@ -10234,10 +11259,16 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     var el=document.getElementById('esc-update-label');
     if(el) el.textContent='Atualizando…';
     await fetchDados();
+    await carregarMemoriaETarefas();
+    buildSugestoes();
+    // Cada agente faz a ronda da própria área e registra o que encontrou
+    if(el) el.textContent='Agentes em ronda…';
+    try{ await rondaDosAgentes(); }catch(e){ console.warn('[Escritório] ronda',e); }
     buildSugestoes();
     if(el) el.textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
     populateCentralAlerts();
     updateEscritorioBadge();
+    if(activeAgentId){ var a=agentePorId(activeAgentId); if(a) openPanel(a); }
   };
 
   function updateEscritorioBadge(){
@@ -10256,7 +11287,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     if(!strip||!body) return;
 
     var allAlerts=[];
-    var ORDER=['gestor','analista','ads','anuncios','sac','criativo','assistente'];
+    var ORDER=['gestor','ads','anuncios','sac','assistente'];
     ORDER.forEach(function(agId){
       var ag=AGENTS.find(function(a){return a.id===agId;});
       var sList=sugestoes[agId]||[];
@@ -10497,6 +11528,92 @@ async function loadFin(){
 }
 
 window.finRecarregar=function(){ _st.dados=null; loadFin(); };
+
+/* ═══ FECHAMENTO MENSAL ═══════════════════════════════════════════════════
+   Congela os números do mês. Sem isso, comparar meses usa a margem de HOJE
+   sobre a receita de antes — e aí a apresentação mente sem querer.
+   ═══════════════════════════════════════════════════════════════════════ */
+const FIN_PRIMEIRO_MES_CONFIAVEL = '2026-09';
+
+window.finFecharMes = async function(mes){
+  mes = mes || _st.mes;
+  if(!mes) return {error:'mês não informado'};
+  if(mes < FIN_PRIMEIRO_MES_CONFIAVEL){
+    return {error:'O histórico confiável começa em '+mesLabel(FIN_PRIMEIRO_MES_CONFIAVEL)+'. Meses anteriores não têm margem congelada.'};
+  }
+  // Garante que os dados na tela são do mês pedido
+  if(_st.mes !== mes || !_st.dados){ _st.mes = mes; _st.dados = null; await loadFin(); }
+  var d = _st.dados;
+  if(!d) return {error:'não consegui carregar o mês'};
+
+  var visitasMes = 0;
+  try{
+    var p=mes.split('-'), ini=mes+'-01', fim=mes+'-'+String(lastDay(+p[0],+p[1])).padStart(2,'0');
+    var vr=await sb.from('ml_visitas').select('visitas').eq('conta','Logbox').gte('data',ini).lte('data',fim);
+    (vr.data||[]).forEach(function(x){ visitasMes += Number(x.visitas)||0; });
+  }catch(e){}
+
+  var agora=new Date().toISOString();
+  var conv = visitasMes>0 ? d.ped/visitasMes*100 : null;
+
+  var kpi={
+    conta:'Logbox', mes:mes,
+    fat:+d.rec.toFixed(2), pedidos:d.ped, unidades:d.uni,
+    conv: conv!==null ? +conv.toFixed(2) : null,
+    tacos:+(d.tacosMes*100).toFixed(2),
+    mc:+d.mcHubVal.toFixed(2), mc_pct:+(d.mcPct*100).toFixed(2),
+    mpa:+d.mpaVal.toFixed(2), mpa_pct:+(d.mpaPct*100).toFixed(2),
+    receita_linkada:+d.recHub.toFixed(2), cobertura_hub:+(d.cobHub*100).toFixed(2),
+    gasto_ads:+d.gasAds.toFixed(2), comissao:+d.com.toFixed(2),
+    visitas:visitasMes, fechado_em:agora, updated_at:agora
+  };
+
+  try{
+    var r1=await sb.from('kpi_historico').upsert(kpi,{onConflict:'conta,mes'});
+    if(r1.error) throw r1.error;
+
+    var linhas=(d.skus||[]).filter(function(o){return o.rec>0 && o.sku;}).map(function(o){
+      return {
+        conta:'Logbox', sku:o.sku, mes:mes,
+        fat:+o.rec.toFixed(2), pedidos:o.ped, unidades:o.uni,
+        preco: o.uni>0 ? +(o.rec/o.uni).toFixed(2) : null,
+        tacos: o.tacos!==null ? +o.tacos.toFixed(2) : null,
+        investimento:+o.ads.toFixed(2),
+        mc: o.mcVal!==null ? +o.mcVal.toFixed(2) : null,
+        mc_pct: o.mcPct!==null ? +Number(o.mcPct).toFixed(2) : null,
+        mpa: o.mpaVal!==null ? +o.mpaVal.toFixed(2) : null,
+        mpa_pct: o.mpaPct!==null ? +o.mpaPct.toFixed(2) : null,
+        ads_alvo_pct: o.adsAlvoPct!==null ? +Number(o.adsAlvoPct).toFixed(2) : null,
+        linkado_hub: !!o.linkado,
+        fechado_em:agora, updated_at:agora
+      };
+    });
+    if(linhas.length){
+      var r2=await sb.from('sku_historico').upsert(linhas,{onConflict:'conta,sku,mes'});
+      if(r2.error) throw r2.error;
+    }
+    return {error:null, mes:mes, skus:linhas.length, kpi:kpi};
+  }catch(e){ return {error:e.message||String(e)}; }
+};
+
+// Série mensal já fechada — é o que a apresentação usa pra comparar meses
+window.finHistorico = async function(){
+  try{
+    var {data,error}=await sb.from('kpi_historico').select('*').eq('conta','Logbox')
+      .gte('mes',FIN_PRIMEIRO_MES_CONFIAVEL).order('mes',{ascending:true});
+    if(error) throw error;
+    return data||[];
+  }catch(e){ console.warn('[Financeiro] histórico',e); return []; }
+};
+window.finHistoricoSku = async function(mes){
+  try{
+    var q=sb.from('sku_historico').select('*').eq('conta','Logbox');
+    if(mes) q=q.eq('mes',mes);
+    var {data,error}=await q.order('fat',{ascending:false});
+    if(error) throw error;
+    return data||[];
+  }catch(e){ return []; }
+};
 
 /* ── render ──────────────────────────────────────────────────────────────── */
 function render(){
@@ -10790,6 +11907,402 @@ window.finAbrirSku=function(chave){
 };
 
 })(); // FinanceiroModule
+</script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   APRESENTAÇÃO DE DESEMPENHO
+   Monta os slides do mês a partir do fechamento. O Ale edita direto no texto;
+   os agentes podem criar, reescrever e comentar slides pela sala de reunião.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function ApresentacaoModule(){
+'use strict';
+
+var _ap = { mes:null, id:null, slides:[], iniciado:false, idxPalco:0, hist:[], kpiMes:null };
+
+function fR(v){ return 'R$ '+(Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fR0(v){ return 'R$ '+(Number(v)||0).toLocaleString('pt-BR',{maximumFractionDigits:0}); }
+function fP(v){ return (Number(v)||0).toFixed(1).replace('.',',')+'%'; }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mesLb(m){
+  if(!m) return '';
+  var p=m.split('-'), d=new Date(+p[0],+p[1]-1,1);
+  var s=d.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  return s.charAt(0).toUpperCase()+s.slice(1);
+}
+function mesesDisponiveis(){
+  var out=[], now=new Date();
+  for(var i=0;i<12;i++){
+    var d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    var v=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+    if(v<'2026-09') break;
+    out.push(v);
+  }
+  return out;
+}
+
+window.initApresentacaoOnce=function(){
+  if(_ap.iniciado){ apCarregar(); return; }
+  _ap.iniciado=true;
+  var sel=document.getElementById('ap-mes');
+  var meses=mesesDisponiveis();
+  if(sel){
+    sel.innerHTML=meses.map(function(m){return '<option value="'+m+'">'+mesLb(m)+'</option>';}).join('');
+    _ap.mes=meses[0]||'2026-09';
+  }
+  apCarregar();
+};
+
+window.apTrocarMes=function(m){ _ap.mes=m; apCarregar(); };
+
+/* ── Carrega (ou cria) a apresentação do mês ───────────────────────────── */
+async function apCarregar(){
+  var el=document.getElementById('ap-slides');
+  if(el) el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div>';
+  try{
+    var {data:aps}=await sb.from('apresentacoes').select('*').eq('conta','Logbox').eq('mes',_ap.mes).limit(1);
+    var ap=(aps||[])[0];
+    if(!ap){
+      var novo=await sb.from('apresentacoes').insert({conta:'Logbox',mes:_ap.mes,titulo:'Desempenho — '+mesLb(_ap.mes)}).select();
+      ap=(novo.data||[])[0];
+      if(!ap){
+        var re=await sb.from('apresentacoes').select('*').eq('conta','Logbox').eq('mes',_ap.mes).limit(1);
+        ap=(re.data||[])[0];
+      }
+    }
+    _ap.id=ap?ap.id:null;
+    _ap.hist = typeof window.finHistorico==='function' ? await window.finHistorico() : [];
+    _ap.kpiMes = _ap.hist.filter(function(k){return k.mes===_ap.mes;})[0]||null;
+    await apRecarregarSlides();
+    if(!_ap.slides.length) await apMontar();
+    else apDesenhar();
+  }catch(e){
+    console.error('[Apresentação]',e);
+    if(el) el.innerHTML='<div class="ap-aviso">Não consegui carregar a apresentação. '+esc(e.message||e)+'</div>';
+  }
+}
+
+async function apRecarregarSlides(){
+  if(!_ap.id){ _ap.slides=[]; return; }
+  var {data}=await sb.from('apresentacao_slides').select('*').eq('apresentacao_id',_ap.id).order('ordem',{ascending:true});
+  _ap.slides=data||[];
+}
+
+/* ── Monta os slides a partir do fechamento do mês ─────────────────────── */
+window.apMontar=async function(){
+  if(!_ap.id) return;
+  var el=document.getElementById('ap-slides');
+  if(el) el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Montando os slides…</div>';
+
+  // Prefere o mês fechado; se não houver, usa o que está na tela do Financeiro
+  var k=_ap.kpiMes;
+  var aoVivo=null;
+  if(!k && typeof window._finGetDados==='function'){
+    var d=window._finGetDados();
+    if(d) aoVivo={fat:d.rec,pedidos:d.ped,unidades:d.uni,mc:d.mcHubVal,mc_pct:d.mcPct*100,
+                  mpa:d.mpaVal,mpa_pct:d.mpaPct*100,tacos:d.tacosMes*100,gasto_ads:d.gasAds,
+                  cobertura_hub:d.cobHub*100,receita_linkada:d.recHub};
+  }
+  var base=k||aoVivo;
+  if(!base){
+    if(el) el.innerHTML='<div class="ap-aviso">Abra a aba <strong>Financeiro</strong> no mês desejado antes de montar — é de lá que vêm os números.</div>';
+    return;
+  }
+
+  var anterior=null;
+  if(k){
+    var idx=_ap.hist.findIndex(function(x){return x.mes===_ap.mes;});
+    if(idx>0) anterior=_ap.hist[idx-1];
+  }
+  function varia(atual,ant,unidade){
+    if(ant===null||ant===undefined||!ant) return null;
+    if(unidade==='pp') return +(atual-ant).toFixed(1);
+    return +((atual-ant)/Math.abs(ant)*100).toFixed(1);
+  }
+
+  var skus = typeof window.finHistoricoSku==='function' ? await window.finHistoricoSku(_ap.mes) : [];
+  var linkados=skus.filter(function(s){return s.linkado_hub && s.mc;});
+  var topMc=linkados.slice().sort(function(a,b){return b.mc-a.mc;}).slice(0,5);
+  var topFat=skus.slice().sort(function(a,b){return b.fat-a.fat;}).slice(0,5);
+
+  var novos=[
+    { ordem:0, tipo:'capa', autor:'ale',
+      titulo:'Desempenho de '+mesLb(_ap.mes),
+      corpo:'Logbox — Mercado Livre',
+      dados:null,
+      notas:'Abrir dizendo em uma frase como foi o mês antes de entrar nos números.' },
+
+    { ordem:1, tipo:'kpi', autor:'ale',
+      titulo:'Os números do mês',
+      corpo:'Receita e margem depois do ADS real. A margem vem do hub de precificação; o ADS, da API do Mercado Livre.',
+      dados:{ cards:[
+        {lb:'Receita', vl:fR0(base.fat), sub:(base.pedidos||0).toLocaleString('pt-BR')+' pedidos',
+         va: anterior?varia(base.fat,anterior.fat):null},
+        {lb:'M.C. média', vl:fP(base.mc_pct), sub:fR0(base.mc),
+         va: anterior?varia(base.mc_pct,anterior.mc_pct,'pp'):null, un:'pp'},
+        {lb:'MPA — pós-ADS', vl:fP(base.mpa_pct), sub:fR0(base.mpa), destaque:true,
+         va: anterior?varia(base.mpa_pct,anterior.mpa_pct,'pp'):null, un:'pp'},
+        {lb:'TACOS', vl:fP(base.tacos), sub:fR0(base.gasto_ads)+' em ADS', menorMelhor:true,
+         va: anterior?varia(base.tacos,anterior.tacos,'pp'):null, un:'pp'},
+      ]},
+      notas:'MPA é o número que importa: é o que sobra depois de pagar o ADS de verdade.' },
+
+    { ordem:2, tipo:'ranking', autor:'ale',
+      titulo:'Quem faz o resultado',
+      corpo: topMc.length
+        ? 'Os cinco SKUs que mais entregaram margem em reais no mês.'
+        : 'Ainda não há SKU com margem calculada neste mês — os vínculos com o hub precisam ser feitos.',
+      dados: topMc.length ? { tabela:{
+          colunas:['SKU','Receita','M.C.','MPA'],
+          linhas: topMc.map(function(s){ return [s.sku, fR0(s.fat), fP(s.mc_pct), s.mpa_pct!==null?fP(s.mpa_pct):'—']; })
+        }} : null,
+      notas:'Se um sócio perguntar de concentração, este é o slide.' },
+
+    { ordem:3, tipo:'ranking', autor:'ale',
+      titulo:'Maior faturamento',
+      corpo:'Volume nem sempre é margem — vale comparar com o slide anterior.',
+      dados: topFat.length ? { tabela:{
+          colunas:['SKU','Receita','TACOS','MPA'],
+          linhas: topFat.map(function(s){ return [s.sku, fR0(s.fat), s.tacos!==null?fP(s.tacos):'—', s.mpa_pct!==null?fP(s.mpa_pct):'—']; })
+        }} : null,
+      notas:'Se algum SKU aparece aqui e não no anterior, é onde a margem está escapando.' },
+
+    { ordem:4, tipo:'conclusao', autor:'ale',
+      titulo:'Leitura do mês e próximos passos',
+      corpo:'(escreva aqui a sua leitura — ou peça na sala de reunião para o Gestor e o ADS escreverem)',
+      dados:null,
+      notas:'Fechar com no máximo três decisões. Mais que isso ninguém lembra.' },
+  ];
+
+  try{
+    await sb.from('apresentacao_slides').delete().eq('apresentacao_id',_ap.id);
+    var payload=novos.map(function(s){
+      return {apresentacao_id:_ap.id, ordem:s.ordem, tipo:s.tipo, titulo:s.titulo,
+              corpo:s.corpo, dados:s.dados, autor:s.autor, notas:s.notas};
+    });
+    await sb.from('apresentacao_slides').insert(payload);
+    await apRecarregarSlides();
+    apDesenhar();
+  }catch(e){
+    console.error('[Apresentação] montar',e);
+    if(el) el.innerHTML='<div class="ap-aviso">Erro ao montar: '+esc(e.message||e)+'</div>';
+  }
+};
+
+/* ── Desenha a lista editável ──────────────────────────────────────────── */
+function apDesenhar(){
+  var el=document.getElementById('ap-slides'); if(!el) return;
+
+  // Aviso de confiabilidade: o mês está fechado ou ainda é número ao vivo?
+  var av=document.getElementById('ap-aviso');
+  if(av){
+    if(_ap.kpiMes){
+      av.innerHTML='<div class="ap-aviso" style="background:var(--green-50);border-color:var(--green-100);color:var(--green-600)">'
+        +'<strong>Mês fechado.</strong> Os números foram congelados em '
+        +new Date(_ap.kpiMes.fechado_em||_ap.kpiMes.updated_at).toLocaleDateString('pt-BR')
+        +' — a comparação com outros meses é confiável.</div>';
+    } else {
+      av.innerHTML='<div class="ap-aviso"><strong>Mês ainda não fechado.</strong> '
+        +'Os números vêm do Financeiro ao vivo e podem mudar se custo ou preço mudarem no hub. '
+        +'Antes de apresentar aos sócios, clique em <strong>Fechar o mês</strong> para congelar.</div>';
+    }
+  }
+
+  el.innerHTML=_ap.slides.map(function(s,i){
+    var cards='';
+    if(s.dados && s.dados.cards){
+      cards='<div class="ap-kpis">'+s.dados.cards.map(function(c){
+        var cls='';
+        if(c.destaque) cls=(parseFloat(String(c.vl))>=0?'pos':'neg');
+        var selo='';
+        if(c.va!==null && c.va!==undefined){
+          var bom = c.menorMelhor ? c.va<=0 : c.va>=0;
+          selo='<div class="ap-kpi-sub" style="color:'+(bom?'var(--green-600)':'var(--coral-500)')+'">'
+            +(c.va>=0?'▲ +':'▼ ')+Math.abs(c.va).toFixed(1).replace('.',',')+(c.un==='pp'?' p.p.':'%')+' vs mês anterior</div>';
+        }
+        return '<div class="ap-kpi"><div class="ap-kpi-lb">'+esc(c.lb)+'</div>'
+          +'<div class="ap-kpi-vl '+cls+'">'+esc(c.vl)+'</div>'
+          +'<div class="ap-kpi-sub">'+esc(c.sub||'')+'</div>'+selo+'</div>';
+      }).join('')+'</div>';
+    }
+    if(s.dados && s.dados.tabela){
+      var t=s.dados.tabela;
+      cards='<div class="table-wrap" style="margin-top:12px"><table>'
+        +'<thead class="hub-thead"><tr>'+t.colunas.map(function(cn,ci){
+            return '<th'+(ci?' style="text-align:right"':'')+'>'+esc(cn)+'</th>';}).join('')+'</tr></thead>'
+        +'<tbody class="hub-tbody">'+t.linhas.map(function(ln){
+            return '<tr>'+ln.map(function(cel,ci){
+              return '<td'+(ci?' style="text-align:right"':' style="font-weight:600"')+'>'+esc(cel)+'</td>';}).join('')+'</tr>';
+          }).join('')+'</tbody></table></div>';
+    }
+
+    var souAgente = s.autor && s.autor!=='ale';
+    return '<div class="ap-slide" data-id="'+s.id+'">'
+      +'<div class="ap-slide-cab">'
+        +'<span class="ap-slide-num">'+(i+1)+'</span>'
+        +'<span class="ap-slide-tipo">'+esc(s.tipo)+'</span>'
+        +'<span class="ap-slide-autor'+(souAgente?'':' ale')+'">'+(souAgente?esc(s.autor):'você')+'</span>'
+        +'<span class="ap-slide-acoes">'
+          +'<button class="ap-mini" onclick="apMover('+s.id+',-1)" title="Subir">↑</button>'
+          +'<button class="ap-mini" onclick="apMover('+s.id+',1)" title="Descer">↓</button>'
+          +'<button class="ap-mini" onclick="apRemover('+s.id+')" title="Remover">✕</button>'
+        +'</span>'
+      +'</div>'
+      +'<div class="ap-slide-titulo" contenteditable="true" data-campo="titulo" data-id="'+s.id+'">'+esc(s.titulo||'')+'</div>'
+      +'<div class="ap-slide-corpo" contenteditable="true" data-campo="corpo" data-id="'+s.id+'">'+esc(s.corpo||'')+'</div>'
+      +cards
+      +'<div class="ap-notas" contenteditable="true" data-campo="notas" data-id="'+s.id+'">'+esc(s.notas||'roteiro de fala…')+'</div>'
+      +'</div>';
+  }).join('')
+  +'<button class="ap-add" onclick="apNovoSlide()">+ Adicionar slide</button>';
+
+  // Salva ao sair do campo — sem botão, sem fricção
+  el.querySelectorAll('[contenteditable]').forEach(function(n){
+    n.addEventListener('blur', function(){
+      apSalvarCampo(Number(n.dataset.id), n.dataset.campo, n.innerText.trim());
+    });
+  });
+}
+
+async function apSalvarCampo(id, campo, valor){
+  var s=_ap.slides.filter(function(x){return x.id===id;})[0];
+  if(!s || String(s[campo]||'')===valor) return;
+  s[campo]=valor;
+  var up={}; up[campo]=valor; up.atualizado_em=new Date().toISOString();
+  try{ await sb.from('apresentacao_slides').update(up).eq('id',id); }
+  catch(e){ console.warn('[Apresentação] salvar',e); }
+}
+
+window.apNovoSlide=async function(){
+  if(!_ap.id) return;
+  var ordem=_ap.slides.length?Math.max.apply(null,_ap.slides.map(function(s){return s.ordem;}))+1:0;
+  await sb.from('apresentacao_slides').insert({apresentacao_id:_ap.id,ordem:ordem,tipo:'texto',
+    titulo:'Novo slide',corpo:'',autor:'ale',notas:''});
+  await apRecarregarSlides(); apDesenhar();
+};
+
+window.apRemover=async function(id){
+  if(!confirm('Remover este slide?')) return;
+  await sb.from('apresentacao_slides').delete().eq('id',id);
+  await apRecarregarSlides(); apDesenhar();
+};
+
+window.apMover=async function(id,dir){
+  var i=_ap.slides.findIndex(function(s){return s.id===id;});
+  var j=i+dir;
+  if(i<0||j<0||j>=_ap.slides.length) return;
+  var a=_ap.slides[i], b=_ap.slides[j];
+  var oa=a.ordem, ob=b.ordem;
+  if(oa===ob){ ob=oa+dir; }
+  await Promise.all([
+    sb.from('apresentacao_slides').update({ordem:ob}).eq('id',a.id),
+    sb.from('apresentacao_slides').update({ordem:oa}).eq('id',b.id),
+  ]);
+  await apRecarregarSlides(); apDesenhar();
+};
+
+window.apFecharMes=async function(){
+  if(typeof window.finFecharMes!=='function'){ alert('Abra a aba Financeiro uma vez antes de fechar o mês.'); return; }
+  var r=await window.finFecharMes(_ap.mes);
+  if(r.error){ alert('Não consegui fechar: '+r.error); return; }
+  alert('Mês fechado: '+r.skus+' SKUs congelados.\nA comparação com outros meses agora é confiável.');
+  await apCarregar();
+};
+
+/* ── Modo apresentar ───────────────────────────────────────────────────── */
+window.apApresentar=function(){
+  if(!_ap.slides.length) return;
+  _ap.idxPalco=0;
+  document.getElementById('ap-palco').classList.add('open');
+  apPintarPalco();
+  document.addEventListener('keydown', apTecla);
+};
+window.apSair=function(){
+  document.getElementById('ap-palco').classList.remove('open');
+  document.removeEventListener('keydown', apTecla);
+};
+function apTecla(e){
+  if(e.key==='Escape') apSair();
+  else if(e.key==='ArrowRight'||e.key===' ') { e.preventDefault(); apNavegar(1); }
+  else if(e.key==='ArrowLeft') apNavegar(-1);
+}
+window.apNavegar=function(d){
+  _ap.idxPalco=Math.max(0,Math.min(_ap.slides.length-1,_ap.idxPalco+d));
+  apPintarPalco();
+};
+function apPintarPalco(){
+  var s=_ap.slides[_ap.idxPalco]; if(!s) return;
+  var cards='';
+  if(s.dados && s.dados.cards){
+    cards='<div class="ap-kpis">'+s.dados.cards.map(function(c){
+      var cls=c.destaque?(parseFloat(String(c.vl))>=0?'pos':'neg'):'';
+      var selo='';
+      if(c.va!==null && c.va!==undefined){
+        var bom=c.menorMelhor?c.va<=0:c.va>=0;
+        selo='<div class="ap-kpi-sub" style="color:'+(bom?'#9FD16A':'#F0997B')+'">'
+          +(c.va>=0?'▲ +':'▼ ')+Math.abs(c.va).toFixed(1).replace('.',',')+(c.un==='pp'?' p.p.':'%')+'</div>';
+      }
+      return '<div class="ap-kpi"><div class="ap-kpi-lb">'+esc(c.lb)+'</div>'
+        +'<div class="ap-kpi-vl '+cls+'">'+esc(c.vl)+'</div>'
+        +'<div class="ap-kpi-sub">'+esc(c.sub||'')+'</div>'+selo+'</div>';
+    }).join('')+'</div>';
+  }
+  if(s.dados && s.dados.tabela){
+    var t=s.dados.tabela;
+    cards='<div style="margin-top:24px;overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+      +'<thead><tr>'+t.colunas.map(function(cn,ci){
+          return '<th style="text-align:'+(ci?'right':'left')+';padding:9px 12px;font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#8A877E;border-bottom:1px solid #33312C">'+esc(cn)+'</th>';
+        }).join('')+'</tr></thead><tbody>'
+      +t.linhas.map(function(ln){
+          return '<tr>'+ln.map(function(cel,ci){
+            return '<td style="text-align:'+(ci?'right':'left')+';padding:11px 12px;font-family:var(--mono);font-size:15px;color:#E6E3DB;border-bottom:1px solid #232219">'+esc(cel)+'</td>';
+          }).join('')+'</tr>';
+        }).join('')+'</tbody></table></div>';
+  }
+  document.getElementById('ap-palco-slide').innerHTML=
+    '<h2>'+esc(s.titulo||'')+'</h2>'+(s.corpo?'<p>'+esc(s.corpo)+'</p>':'')+cards;
+  document.getElementById('ap-palco-pos').textContent=(_ap.idxPalco+1)+' / '+_ap.slides.length;
+  var nt=document.getElementById('ap-palco-notas');
+  if(nt) nt.textContent=s.notas&&s.notas!=='roteiro de fala…'?s.notas:'';
+}
+
+/* ── API para os agentes mexerem nos slides ────────────────────────────── */
+window.apContexto=function(){
+  return { mes:_ap.mes, mes_fechado:!!_ap.kpiMes, apresentacao_id:_ap.id,
+    slides:_ap.slides.map(function(s,i){
+      return {numero:i+1, id:s.id, tipo:s.tipo, titulo:s.titulo, corpo:s.corpo, notas:s.notas, autor:s.autor};
+    })};
+};
+window.apAgenteEditar=async function(slideId, campos, autor){
+  var up={atualizado_em:new Date().toISOString()};
+  if(campos.titulo!==undefined) up.titulo=campos.titulo;
+  if(campos.corpo!==undefined) up.corpo=campos.corpo;
+  if(campos.notas!==undefined) up.notas=campos.notas;
+  if(autor) up.autor=autor;
+  var {error}=await sb.from('apresentacao_slides').update(up).eq('id',slideId);
+  if(error) return {error:error.message};
+  await apRecarregarSlides();
+  if(document.getElementById('page-apresentacao').classList.contains('active')) apDesenhar();
+  return {error:null};
+};
+window.apAgenteCriar=async function(slide, autor){
+  if(!_ap.id) return {error:'nenhuma apresentação aberta'};
+  var ordem=_ap.slides.length?Math.max.apply(null,_ap.slides.map(function(s){return s.ordem;}))+1:0;
+  var {error}=await sb.from('apresentacao_slides').insert({
+    apresentacao_id:_ap.id, ordem:ordem, tipo:slide.tipo||'texto',
+    titulo:slide.titulo||'Slide', corpo:slide.corpo||'', notas:slide.notas||'', autor:autor||'agente'});
+  if(error) return {error:error.message};
+  await apRecarregarSlides();
+  if(document.getElementById('page-apresentacao').classList.contains('active')) apDesenhar();
+  return {error:null};
+};
+window.apGarantirMes=async function(mes){
+  if(mes && mes!==_ap.mes){ _ap.mes=mes; }
+  if(!_ap.id || (mes && mes!==_ap.mes)) await apCarregar();
+  return _ap.id;
+};
+
+})(); // ApresentacaoModule
 </script>
 
 </body>
