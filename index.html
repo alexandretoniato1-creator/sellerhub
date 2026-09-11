@@ -12054,9 +12054,36 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
   var _sala = { id:null, participantes:[], pauta:'', falas:[], ocupada:false, forcarTodos:false };
 
-  window.escAbrirSala=function(){
+  /* A reunião vive no Supabase, não na memória da aba. Fechar o app, atualizar
+     a página ou trocar de aparelho não encerra nada — mas até aqui a tela não
+     sabia disso e caía na criação de uma reunião nova, como se a anterior
+     tivesse sumido. Agora ela volta com o fio inteiro. */
+  async function escRetomarAberta(){
+    if(_sala.id) return true;
+    try{
+      var r=await sb.from('reunioes').select('id,pauta,participantes')
+        .eq('conta',CONTA).eq('status','aberta').order('id',{ascending:false}).limit(1);
+      var reu=(r.data||[])[0];
+      if(!reu) return false;
+      var m=await sb.from('reuniao_mensagens').select('autor,conteudo,criado_em')
+        .eq('reuniao_id',reu.id).order('criado_em',{ascending:true}).limit(200);
+      _sala.id=reu.id;
+      _sala.pauta=reu.pauta||'';
+      _sala.participantes=Array.isArray(reu.participantes)?reu.participantes.slice():[];
+      _sala.falas=(m.data||[]).map(function(f){ return {autor:f.autor, conteudo:f.conteudo}; });
+      _sala.ocupada=false; _sala.forcarTodos=false;
+      if(typeof window.escMapaConvocar==='function') window.escMapaConvocar(_sala.participantes);
+      return true;
+    }catch(e){ console.warn('[Escritório] não consegui retomar a reunião',e); return false; }
+  }
+
+  window.escAbrirSala=async function(){
     document.getElementById('sala-bg').classList.add('open');
     if(_sala.id){ escSalaModoAtivo(); return; }
+    var sub=document.getElementById('sala-sub');
+    if(sub) sub.textContent='Procurando reunião em andamento…';
+    var tinha=await escRetomarAberta();
+    if(tinha){ escSalaModoAtivo(); return; }
     escSalaModoSetup();
   };
   window.escFecharSala=function(){ document.getElementById('sala-bg').classList.remove('open'); };
@@ -12112,7 +12139,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   function escSalaModoAtivo(){
     document.getElementById('sala-setup').style.display='none';
     document.getElementById('sala-ativa').style.display='';
-    document.getElementById('sala-sub').textContent='Reunião em andamento';
+    document.getElementById('sala-sub').textContent='Reunião em andamento · '
+      +_sala.falas.length+' fala'+(_sala.falas.length===1?'':'s')
+      +' · continua salva mesmo se você fechar o app';
     document.getElementById('sala-pauta-fixa').innerHTML='<strong>Pauta:</strong> '+escHtml(_sala.pauta);
     escPintarControles();
     escPintarFio();
@@ -12881,6 +12910,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }).join('');
     initCanvas();
     requestAnimationFrame(drawFrame);
+    // Se havia reunião aberta, eles já aparecem sentados na sala.
+    escRetomarAberta();
     window.escritorioRefresh();
     setInterval(window.escritorioRefresh,10*60*1000);
   };
