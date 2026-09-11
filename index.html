@@ -1107,7 +1107,46 @@ body.sidebar-collapsed .hamburger { display: none; }
 .sala-pauta-fixa { background:rgba(107,124,255,.1); border:1px solid rgba(107,124,255,.25); border-radius:9px;
   padding:10px 13px; font-size:12.5px; color:#C8CEDC; margin-bottom:12px; }
 .sala-participantes { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
-.sala-crachá { font-size:10.5px; font-family:var(--mono); border-radius:12px; padding:3px 10px; }
+.sala-crachá { font-size:10.5px; font-family:var(--mono); border-radius:12px; padding:3px 10px; cursor:pointer; transition:opacity .15s,border-color .15s; }
+.sala-crachá:hover { opacity:.82; }
+.sala-crachá.fora { background:rgba(255,255,255,.04); color:#5E6675; border:1px dashed rgba(255,255,255,.14); }
+.sala-crachá.sala-todos { background:rgba(255,255,255,.05); color:#8A94A8; border:1px solid rgba(255,255,255,.12); margin-left:auto; }
+.sala-crachá.sala-todos.on { background:rgba(107,124,255,.18); color:#9DAAFF; border-color:rgba(107,124,255,.45); }
+.sala-sistema { align-self:center; font-size:11px; font-family:var(--mono); color:#6E7788;
+  background:rgba(255,255,255,.04); border-radius:10px; padding:4px 12px; }
+
+/* Faixa de pulso e diário do escritório */
+.esc-pulso { display:flex; gap:8px; flex-wrap:wrap; align-items:center; padding:10px 4px 0;
+  font-size:11.5px; color:#8A94A8; font-family:var(--mono); }
+.esc-pulso b { color:#C8CEDC; font-weight:600; }
+.esc-pulso .pulso-ag { display:inline-flex; align-items:center; gap:5px; background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:3px 10px; cursor:pointer; }
+.esc-pulso .pulso-ag:hover { background:rgba(255,255,255,.08); }
+.esc-pulso .pulso-ag.ativo { border-color:rgba(0,216,122,.45); color:#4ADE9A; }
+.diario-filtros { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+.diario-filtro { font-size:10.5px; font-family:var(--mono); border-radius:12px; padding:3px 10px;
+  background:rgba(255,255,255,.04); color:#8A94A8; border:1px solid rgba(255,255,255,.08); cursor:pointer; }
+.diario-filtro.on { background:rgba(107,124,255,.18); color:#9DAAFF; border-color:rgba(107,124,255,.45); }
+.diario-linha { display:flex; flex-direction:column; gap:2px; max-height:56vh; overflow-y:auto; padding-right:4px; }
+.diario-dia { font-size:10.5px; font-family:var(--mono); color:#5E6675; text-transform:uppercase;
+  letter-spacing:.5px; margin:14px 0 6px; }
+.diario-item { display:grid; grid-template-columns:46px 18px 1fr; gap:9px; align-items:start;
+  padding:7px 8px; border-radius:8px; }
+.diario-item:hover { background:rgba(255,255,255,.035); }
+.diario-hora { font-size:11px; font-family:var(--mono); color:#5E6675; padding-top:1px; }
+.diario-emoji { font-size:13px; line-height:1.3; }
+.diario-txt { font-size:12.5px; color:#C8CEDC; line-height:1.45; }
+.diario-txt .diario-ag { font-weight:600; }
+.diario-sub2 { font-size:11.5px; color:#7B8496; line-height:1.45; margin-top:2px; }
+.diario-vazio { font-size:12.5px; color:#7B8496; line-height:1.55; padding:14px 2px; }
+/* Bloco "agora" no topo do painel do agente */
+.esc-agora { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08);
+  border-radius:10px; padding:10px 12px; margin-bottom:12px; }
+.esc-agora.ativo { border-color:rgba(0,216,122,.4); background:rgba(0,216,122,.07); }
+.esc-agora-lab { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.5px;
+  color:#6E7788; margin-bottom:4px; }
+.esc-agora-txt { font-size:12.5px; color:#C8CEDC; line-height:1.45; }
+.esc-agora-quando { font-size:11px; color:#6E7788; margin-top:3px; font-family:var(--mono); }
 .sala-fio { display:flex; flex-direction:column; gap:12px; max-height:44vh; overflow-y:auto; padding-right:4px; }
 .sala-fala { display:flex; gap:10px; }
 .sala-fala.eu { flex-direction:row-reverse; }
@@ -2211,6 +2250,7 @@ body.sidebar-collapsed .hamburger { display: none; }
         </div>
         <div class="esc-meta">
           <span id="esc-update-label">—</span>
+          <button class="esc-refresh-btn" onclick="escAbrirDiario()" style="border-color:rgba(0,216,122,.3);color:#4ADE9A">📋 Diário</button>
           <button class="esc-refresh-btn" onclick="escAbrirSala()" style="border-color:rgba(107,124,255,.35);color:#8B9BFF">🪑 Sala de reunião</button>
           <button class="esc-refresh-btn" onclick="escritorioRefresh()">↻ Atualizar</button>
         </div>
@@ -2219,6 +2259,23 @@ body.sidebar-collapsed .hamburger { display: none; }
         <canvas id="escritorio-canvas"></canvas>
         <div class="esc-legend" id="esc-legend"></div>
         <div class="esc-click-hint">Clique num agente ↑</div>
+      </div>
+      <!-- Faixa de vida: o que aconteceu, sem precisar abrir nada -->
+      <div class="esc-pulso" id="esc-pulso"></div>
+
+      <!-- Diário do escritório -->
+      <div class="sala-bg" id="diario-bg">
+        <div class="sala-box">
+          <div class="sala-cab">
+            <div>
+              <div class="sala-tit">📋 Diário do escritório</div>
+              <div class="sala-sub" id="diario-sub">Tudo o que eles olharam e fizeram, com hora.</div>
+            </div>
+            <button class="esc-panel-close" onclick="escFecharDiario()">✕</button>
+          </div>
+          <div class="diario-filtros" id="diario-filtros"></div>
+          <div class="diario-linha" id="diario-linha"></div>
+        </div>
       </div>
       <!-- Sala de reunião -->
       <div class="sala-bg" id="sala-bg">
@@ -9900,6 +9957,24 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       cuida:'Agenda, anotações, kanban de ideias e a fila de tarefas que os outros agentes abriram. É quem organiza o que precisa ser feito e quando.',
       naoCuida:'Não analisa métrica de venda, ADS ou margem — busca o agente dono quando o assunto é número.' },
   ];
+  /* Dono de cada assunto. Não é enfeite: é o que decide quem abre a boca na
+     reunião quando o Ale pergunta sem citar nome. Antes, qualquer pergunta
+     fazia os cinco responderem a mesma coisa — e quando havia ação no meio,
+     executarem a mesma coisa cinco vezes. */
+  var TEMAS = {
+    gestor:     /\bm\.?c\.?\b|margem|mpa|lucro|resultado|faturamento|receita|concentra|hub de precifica|precifica|custo|pre[çc]o de venda|s[óo]cio|apresenta[çc][ãa]o|fechamento do m[êe]s|rentab/i,
+    ads:        /\bads\b|tacos|acos|campanha|patrocinad|\bcpc\b|\bctr\b|impress[õo]|clique|verba|m[íi]dia|lance|or[çc]amento/i,
+    anuncios:   /an[úu]ncio|t[íi]tulo|descri[çc][ãa]o|foto|v[íi]deo|ficha t[ée]cnica|buy ?box|cat[áa]logo|exposi[çc][ãa]o|convers[ãa]o|visita|estoque|reposi[çc][ãa]o|qualidade|concorrente|ranking|posicionamento/i,
+    sac:        /reclama|avalia[çc][ãa]o|nota (1|2|baixa)|reputa[çc][ãa]o|cliente|comprador|experi[êe]ncia de compra|\bpdd\b|\bpnr\b|media[çc][ãa]o|cancelamento|atraso|entrega|devolu|pergunta do|heran[çc]a|categoria/i,
+    assistente: /agend|marcar|marque|lembr|tarefa|anota[çc]|ideia|kanban|rotina|organiz|calend[áa]rio|compromisso/i,
+  };
+  // Quantos termos da área aparecem no texto — usado só para ordenar.
+  function pesoDoTema(agId, txt){
+    var re=TEMAS[agId]; if(!re || !txt) return 0;
+    var g=new RegExp(re.source,'gi');
+    var m=String(txt).match(g);
+    return m?m.length:0;
+  }
   function agentePorId(id){ return AGENTS.filter(function(a){return a.id===id;})[0]||null; }
   function agenteNome(id){ var a=agentePorId(id); return a?a.nome:id; }
   var DESK_W=1.5, DESK_D=1.1, DESK_H=0.42;
@@ -10275,6 +10350,50 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       ctx.restore();
     }
 
+    /* Balão de atividade. Enquanto ele trabalha o balão pulsa; quando termina
+       fica parado por alguns minutos mostrando o que fez. É o sinal de vida
+       que faltava — sem ele o escritório parece um cenário vazio. */
+    var at=atividadeDe(agent.id);
+    if(at){
+      var trabalhando = at.estado!=='feito';
+      var info = ESTADOS[at.estado] || {emoji:'✅'};
+      var flut = trabalhando ? Math.sin(animT*2.6)*2.2*escala : 0;
+      // Fica sempre acima da placa de nome, senão os dois se encavalam quando
+      // o agente está fora da sala dele.
+      var alturaBalao = foraDaSala ? (alturaNome+0.30) : 1.16;
+      var bpos = iso(p.x, p.y, alturaBalao+bob);
+      var bw = 22*escala, bh = 17*escala, rr = 7*escala;
+      var bx2 = bpos.x, by2 = bpos.y - 6*escala + flut;
+      ctx.save();
+      ctx.globalAlpha = trabalhando ? (0.80+0.20*Math.sin(animT*3.4)) : 0.72;
+      ctx.beginPath();
+      ctx.moveTo(bx2-bw/2+rr, by2-bh/2);
+      ctx.lineTo(bx2+bw/2-rr, by2-bh/2);
+      ctx.quadraticCurveTo(bx2+bw/2, by2-bh/2, bx2+bw/2, by2-bh/2+rr);
+      ctx.lineTo(bx2+bw/2, by2+bh/2-rr);
+      ctx.quadraticCurveTo(bx2+bw/2, by2+bh/2, bx2+bw/2-rr, by2+bh/2);
+      ctx.lineTo(bx2-bw/2+rr, by2+bh/2);
+      ctx.quadraticCurveTo(bx2-bw/2, by2+bh/2, bx2-bw/2, by2+bh/2-rr);
+      ctx.lineTo(bx2-bw/2, by2-bh/2+rr);
+      ctx.quadraticCurveTo(bx2-bw/2, by2-bh/2, bx2-bw/2+rr, by2-bh/2);
+      ctx.closePath();
+      ctx.fillStyle = trabalhando ? 'rgba(18,24,36,0.96)' : 'rgba(18,24,36,0.82)';
+      ctx.fill();
+      ctx.strokeStyle = trabalhando ? rgba(agent.cor,0.75) : rgba(agent.cor,0.35);
+      ctx.lineWidth = 1.2; ctx.stroke();
+      // rabicho apontando pra cabeça
+      ctx.beginPath();
+      ctx.moveTo(bx2-3.2*escala, by2+bh/2-0.6);
+      ctx.lineTo(bx2, by2+bh/2+5*escala);
+      ctx.lineTo(bx2+3.2*escala, by2+bh/2-0.6);
+      ctx.closePath(); ctx.fill();
+      ctx.globalAlpha=1;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.font=Math.max(9,Math.round(10.5*escala))+'px "DM Sans",sans-serif';
+      ctx.fillText(info.emoji, bx2, by2+0.5*escala);
+      ctx.restore();
+    }
+
     // Área clicável em volta do avatar
     var meia=0.42;
     return { agent:agent, hitPts:[
@@ -10380,6 +10499,34 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   }
 
   // ── Side panel ─────────────────────────────────────────────────────────────
+  /* "O que ele está fazendo agora" — primeira coisa do painel, porque é a
+     primeira pergunta do Ale quando ele clica num agente. */
+  function escBlocoAgora(agId){
+    var at=atividadeDe(agId);
+    var ult=ultimoFeito(agId);
+    if(at){
+      var trabalhando=at.estado!=='feito';
+      var info=ESTADOS[at.estado]||{emoji:'✅',label:'Terminou'};
+      return '<div class="esc-agora'+(trabalhando?' ativo':'')+'">'
+        +'<div class="esc-agora-lab">'+(trabalhando?'Agora':'Acabou de fazer')+'</div>'
+        +'<div class="esc-agora-txt">'+info.emoji+' '+escHtml(at.texto||info.label)+'</div>'
+        +'<div class="esc-agora-quando">'+(trabalhando?'em andamento':haQuantoTempo(new Date(at.desde).toISOString()))+'</div>'
+        +'</div>';
+    }
+    if(ult){
+      return '<div class="esc-agora">'
+        +'<div class="esc-agora-lab">Última vez que trabalhou</div>'
+        +'<div class="esc-agora-txt">'+escHtml(ult.titulo||'')+'</div>'
+        +'<div class="esc-agora-quando">'+haQuantoTempo(ult.criado_em)+' · '+horaCurta(ult.criado_em)+'</div>'
+        +'</div>';
+    }
+    return '<div class="esc-agora">'
+      +'<div class="esc-agora-lab">Agora</div>'
+      +'<div class="esc-agora-txt">Parado. Ainda não rodou nenhuma ronda hoje.</div>'
+      +'<div class="esc-agora-quando">Clique em ↻ Atualizar para mandar ele varrer a área.</div>'
+      +'</div>';
+  }
+
   function tipoLabel(tipo){
     return {urgente:'🔴 Precisa de ação', atencao:'🟡 Fique de olho', info:'🔵 Info',
             sugestao:'🔎 Vale olhar', ronda:'🕑 Ronda', ok:'🟢 Tudo certo',
@@ -10413,10 +10560,11 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     dot.style.boxShadow='0 0 8px '+agent.cor;
 
     var sug=sugestoes[agent.id]||[];
+    var agoraHtml=escBlocoAgora(agent.id);
     if(sug.length===0){
-      body.innerHTML='<div class="esc-empty"><div class="esc-empty-icon">✓</div><div style="color:#A0A8B8;font-size:14px">Nenhum ponto de atenção</div><div class="esc-empty-sub">Tudo analisado e dentro do esperado.</div></div>';
+      body.innerHTML=agoraHtml+'<div class="esc-empty"><div class="esc-empty-icon">✓</div><div style="color:#A0A8B8;font-size:14px">Nenhum ponto de atenção</div><div class="esc-empty-sub">Tudo analisado e dentro do esperado.</div></div>';
     } else {
-      body.innerHTML=sug.map(function(s,i){
+      body.innerHTML=agoraHtml+sug.map(function(s,i){
         var id=agent.id+'_'+i;
         var done=!!doneMap[id];
         var botoes;
@@ -10832,6 +10980,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     salvarTurno(agId,'user',txt);
     _chatLoading=true;
     document.getElementById('esc-chat-send-btn').disabled=true;
+    escAtividade(agId,'pensando','Respondendo você: "'+txt.slice(0,50)+'"');
+    escPintarPulso();
 
     // Indicador de digitação
     escChatAppendTyping();
@@ -10863,6 +11013,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       console.error('[Chat]',err);
     }
     _chatLoading=false;
+    escAtividade(agId,'ocioso',null);
+    escPintarPulso();
     document.getElementById('esc-chat-send-btn').disabled=false;
   };
 
@@ -11323,8 +11475,166 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
                          vendas60:dados.vendas60, reclamacoes:dados.reclamacoes });
   }
 
+  /* ═══ O QUE ELES ESTÃO FAZENDO ════════════════════════════════════════
+     Cinco bonecos parados na tela não dizem se alguém trabalhou. O balão na
+     cabeça é o sinal de vida: aparece enquanto o agente está ocupado e fica
+     um tempo depois mostrando o que ele acabou de fazer. Clicar abre o
+     detalhe no painel dele.
+     ═══════════════════════════════════════════════════════════════════ */
+  var atividade={};            // {agId: {estado, texto, desde}}
+  var ESTADOS={
+    analisando:{emoji:'🔎', label:'Analisando'},
+    agindo:    {emoji:'⚡', label:'Executando'},
+    falando:   {emoji:'💬', label:'Na conversa'},
+    pensando:  {emoji:'💭', label:'Pensando'},
+  };
+  // Quanto tempo o balão fica depois que o agente termina.
+  var ATIV_RASTRO_MS = 3*60*1000;
+
+  function escAtividade(agId, estado, texto){
+    if(!agId) return;
+    if(estado==='ocioso'){
+      var ant=atividade[agId];
+      // Não apaga: vira rastro, pra ele não "terminar" e sumir antes de ser visto.
+      if(ant) atividade[agId]={estado:'feito', texto:ant.texto, desde:Date.now()};
+      return;
+    }
+    atividade[agId]={estado:estado, texto:texto||'', desde:Date.now()};
+  }
+  function atividadeDe(agId){
+    var a=atividade[agId]; if(!a) return null;
+    if(a.estado==='feito' && Date.now()-a.desde > ATIV_RASTRO_MS){ delete atividade[agId]; return null; }
+    return a;
+  }
+  // O que ele fez por último, segundo o diário de bordo dele.
+  function ultimoFeito(agId){
+    var m=(memoria[agId]||[]).slice().sort(function(a,b){
+      return String(b.criado_em||'').localeCompare(String(a.criado_em||''));
+    });
+    return m[0]||null;
+  }
+  function horaCurta(iso){
+    if(!iso) return '';
+    var d=new Date(iso); if(isNaN(d)) return '';
+    return d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  }
+  function haQuantoTempo(iso){
+    if(!iso) return '';
+    var ms=Date.now()-new Date(iso).getTime();
+    if(isNaN(ms)) return '';
+    var min=Math.floor(ms/60000);
+    if(min<1) return 'agora mesmo';
+    if(min<60) return 'há '+min+' min';
+    var h=Math.floor(min/60);
+    if(h<24) return 'há '+h+'h';
+    var d=Math.floor(h/24);
+    return d===1?'ontem':'há '+d+' dias';
+  }
+
+  /* Faixa embaixo do escritório: o estado dos cinco numa linha só, pra não
+     precisar clicar em cada um pra saber se alguém trabalhou. */
+  function escPintarPulso(){
+    var el=document.getElementById('esc-pulso'); if(!el) return;
+    var hoje=hojeISO();
+    var acoesHoje=0, ultimo=null;
+    AGENTS.forEach(function(a){
+      (memoria[a.id]||[]).forEach(function(m){
+        if(String(m.criado_em||'').slice(0,10)!==hoje) return;
+        acoesHoje++;
+        if(!ultimo || String(m.criado_em)>String(ultimo)) ultimo=m.criado_em;
+      });
+    });
+    var chips=AGENTS.map(function(a){
+      var at=atividadeDe(a.id);
+      var ult=ultimoFeito(a.id);
+      var trabalhando = at && at.estado!=='feito';
+      var txt = trabalhando ? (ESTADOS[at.estado]||{emoji:'💭'}).emoji+' trabalhando'
+              : ult ? haQuantoTempo(ult.criado_em)
+              : 'parado';
+      return '<span class="pulso-ag'+(trabalhando?' ativo':'')+'" onclick="_escAbrirAgente(\'' + a.id + '\')"'
+        +' title="'+escHtml(at?at.texto:(ult?ult.titulo:'Sem registro ainda'))+'">'
+        +a.emoji+' <b>'+a.nome+'</b> · '+escHtml(txt)+'</span>';
+    }).join('');
+    el.innerHTML='<span>'+(acoesHoje?'<b>'+acoesHoje+'</b> registro'+(acoesHoje>1?'s':'')+' hoje'
+      +(ultimo?' · último '+horaCurta(ultimo):''):'Nenhum registro hoje ainda')+'</span>'+chips;
+  }
+
+  /* ── Diário do escritório: tudo o que eles fizeram, em ordem ─────────── */
+  var _diarioFiltro='todos';
+  window.escAbrirDiario=function(){
+    var bg=document.getElementById('diario-bg'); if(bg) bg.classList.add('open');
+    escPintarDiario();
+  };
+  window.escFecharDiario=function(){
+    var bg=document.getElementById('diario-bg'); if(bg) bg.classList.remove('open');
+  };
+  window.escFiltrarDiario=function(f){ _diarioFiltro=f; escPintarDiario(); };
+
+  function escPintarDiario(){
+    var fEl=document.getElementById('diario-filtros');
+    var lEl=document.getElementById('diario-linha');
+    if(!fEl||!lEl) return;
+
+    fEl.innerHTML='<span class="diario-filtro'+(_diarioFiltro==='todos'?' on':'')
+      +'" onclick="escFiltrarDiario(\'todos\')">Todos</span>'
+      +AGENTS.map(function(a){
+        return '<span class="diario-filtro'+(_diarioFiltro===a.id?' on':'')
+          +'" onclick="escFiltrarDiario(\'' + a.id + '\')">'+a.emoji+' '+a.nome+'</span>';
+      }).join('');
+
+    var itens=[];
+    AGENTS.forEach(function(a){
+      if(_diarioFiltro!=='todos' && _diarioFiltro!==a.id) return;
+      (memoria[a.id]||[]).forEach(function(m){ itens.push({ag:a, m:m}); });
+    });
+    itens.sort(function(x,y){ return String(y.m.criado_em||'').localeCompare(String(x.m.criado_em||'')); });
+
+    var subEl=document.getElementById('diario-sub');
+    if(!itens.length){
+      lEl.innerHTML='<div class="diario-vazio">Nada registrado ainda. O diário enche sozinho: cada ronda, '
+        +'cada alerta e cada ação executada numa reunião entram aqui com hora. '
+        +'Clique em <strong>↻ Atualizar</strong> no topo para mandar todos varrerem a área agora.</div>';
+      if(subEl) subEl.textContent='Tudo o que eles olharam e fizeram, com hora.';
+      return;
+    }
+
+    var icone={ronda:'🕑', urgente:'🔴', atencao:'🟡', sugestao:'🔎', info:'🔵'};
+    var html='', diaAtual='';
+    itens.slice(0,200).forEach(function(o){
+      var dia=String(o.m.criado_em||'').slice(0,10);
+      if(dia!==diaAtual){
+        diaAtual=dia;
+        html+='<div class="diario-dia">'+(dia===hojeISO()?'Hoje':lbxDataBR(dia))+'</div>';
+      }
+      var ic=icone[o.m.severidade]||icone[o.m.tipo]||'•';
+      // "Executei criar_evento: X" é o comprovante de ação — merece destaque.
+      var executou=/^Executei /.test(o.m.titulo||'');
+      html+='<div class="diario-item">'
+        +'<div class="diario-hora">'+horaCurta(o.m.criado_em)+'</div>'
+        +'<div class="diario-emoji">'+(executou?'⚡':ic)+'</div>'
+        +'<div><div class="diario-txt"><span class="diario-ag" style="color:'+o.ag.cor+'">'+o.ag.nome+'</span> · '
+          +escHtml(o.m.titulo||'')+'</div>'
+        +(o.m.corpo?'<div class="diario-sub2">'+escHtml(String(o.m.corpo).slice(0,240))+'</div>':'')
+        +'</div></div>';
+    });
+    lEl.innerHTML=html;
+    if(subEl) subEl.textContent=itens.length+' registro'+(itens.length>1?'s':'')+' nos últimos 14 dias.';
+  }
+
   /* ── As rondas: o que cada agente procura sozinho ───────────────────── */
   async function rondaDosAgentes(){
+    // Acende o balão de todo mundo antes de começar: é o que o Ale vê no
+    // escritório enquanto a ronda roda.
+    AGENTS.forEach(function(a){
+      escAtividade(a.id,'analisando', ({
+        gestor:'Fechando M.C., MPA e TACOS do mês',
+        ads:'Conferindo TACOS por SKU contra o alvo do hub',
+        anuncios:'Varrendo saúde, Buy Box, preço e estoque',
+        sac:'Olhando experiência de compra, reclamações e avaliações',
+        assistente:'Revisando agenda, tarefas e ideias',
+      })[a.id] || 'Varrendo a área');
+    });
+    escPintarPulso();
     var an=dados.anuncios||[], ads=dados.ads||[], ven=dados.vendas||[];
     var pedidos=dados.pedidos||[], rev=dados.reviews||[], rep=dados.reputacao;
     var skusCfg=dados.skus||[];
@@ -11654,8 +11964,10 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         conferi:['Saúde e motivo informado pelo ML','Buy Box e preço contra o concorrente','Estoque contra o mínimo de cada SKU','Pendências de qualidade'],
       },
       sac:{
-        o_que:'Varri '+(rev||[]).length+' avaliações recentes, a reputação da conta e '+(pedidos||[]).length+' pedidos dos últimos 30 dias.',
-        conferi:['Notas 1 e 2 e o que o cliente escreveu','Taxa de reclamação e cancelamento','Pedidos cancelados ou atrasados'],
+        o_que:'Varri a experiência de compra de '+(exp?exp.itens.length:0)+' anúncios, '
+             +(dados.reclamacoes||[]).length+' reclamações de 60 dias, '+(rev||[]).length+' avaliações e '
+             +(pedidos||[]).length+' pedidos dos últimos 30 dias.',
+        conferi:['Nota de experiência e queda de faixa em 7 dias','Herança por categoria','Anúncios que mais geram reclamação (PDD e PNR)','Taxa de reclamação e cancelamento','Notas 1 e 2 e o que o cliente escreveu'],
       },
       gestor:{
         o_que: fd ? ('Fechei o mês em '+(fd.rec||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' de receita, com '+Math.round((fd.cobHub||0)*100)+'% da margem coberta pelo hub.')
@@ -11670,6 +11982,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
     Object.keys(varreduras).forEach(function(agId){
       var v=varreduras[agId];
+      // Troca o balão de "analisando" para o que ele terminou de fazer.
+      escAtividade(agId,'feito', v.o_que);
       jobs.push(registrarObservacao(agId,{
         tipo:'ronda', severidade:'ronda',
         titulo:'Ronda das '+hora,
@@ -11728,6 +12042,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     if(_errosDeRonda.length){
       console.warn('[Escritório] a ronda teve '+_errosDeRonda.length+' falha(s) de gravação:', _errosDeRonda);
     }
+    escPintarPulso();
     await carregarMemoriaETarefas();
   }
 
@@ -11737,7 +12052,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
      Toda reunião termina em ata; a ata pode virar slide.
      ═══════════════════════════════════════════════════════════════════════ */
 
-  var _sala = { id:null, participantes:[], pauta:'', falas:[], ocupada:false };
+  var _sala = { id:null, participantes:[], pauta:'', falas:[], ocupada:false, forcarTodos:false };
 
   window.escAbrirSala=function(){
     document.getElementById('sala-bg').classList.add('open');
@@ -11799,10 +12114,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     document.getElementById('sala-ativa').style.display='';
     document.getElementById('sala-sub').textContent='Reunião em andamento';
     document.getElementById('sala-pauta-fixa').innerHTML='<strong>Pauta:</strong> '+escHtml(_sala.pauta);
-    document.getElementById('sala-participantes').innerHTML=_sala.participantes.map(function(id){
-      var a=agentePorId(id); if(!a) return '';
-      return '<span class="sala-crachá" style="background:'+a.cor+'22;color:'+a.cor+'">'+a.emoji+' '+a.nome+'</span>';
-    }).join('')+'<span class="sala-crachá" style="background:rgba(255,255,255,.07);color:#8A94A8">🧑 Você</span>';
+    escPintarControles();
     escPintarFio();
     var ta=document.getElementById('sala-input');
     if(ta && !ta._ligado){
@@ -11813,12 +12125,50 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }
   }
 
+  /* Crachás da mesa durante a reunião: clicar tira ou traz alguém no meio da
+     conversa. Quem entra depois lê o fio inteiro antes de falar, então não
+     precisa de resumo. O "Todos" força a mesa inteira a responder a próxima. */
+  function escPintarControles(){
+    var el=document.getElementById('sala-participantes'); if(!el) return;
+    el.innerHTML=AGENTS.map(function(a){
+      var dentro=_sala.participantes.indexOf(a.id)>=0;
+      return '<span class="sala-crachá'+(dentro?'':' fora')+'" title="'+escHtml(dentro?'Tirar da reunião':'Chamar para a reunião')+'"'
+        +' style="'+(dentro?'background:'+a.cor+'22;color:'+a.cor:'')+'"'
+        +' onclick="escTrocarNaMesa(\''+a.id+'\')">'+a.emoji+' '+a.nome+(dentro?'':' +')+'</span>';
+    }).join('')
+      +'<span class="sala-crachá" style="background:rgba(255,255,255,.07);color:#8A94A8">🧑 Você</span>'
+      +'<span class="sala-crachá sala-todos'+(_sala.forcarTodos?' on':'')+'" onclick="escAlternarTodos()"'
+      +' title="Por padrão só o dono do assunto responde. Ligue para ouvir a mesa inteira na próxima pergunta.">'
+      +(_sala.forcarTodos?'🔊 Todos respondem':'🎯 Só quem é do assunto')+'</span>';
+  }
+
+  window.escTrocarNaMesa=async function(agId){
+    if(_sala.ocupada) return;
+    var a=agentePorId(agId); if(!a) return;
+    var i=_sala.participantes.indexOf(agId);
+    if(i>=0){
+      if(_sala.participantes.length<=1){ alert('Precisa sobrar alguém na mesa.'); return; }
+      _sala.participantes.splice(i,1);
+      await escSalvarFala('sistema', a.nome+' saiu da reunião.');
+    }else{
+      _sala.participantes.push(agId);
+      await escSalvarFala('sistema', a.nome+' entrou na reunião — leu o que já foi dito.');
+    }
+    try{ await sb.from('reunioes').update({participantes:_sala.participantes}).eq('id',_sala.id); }catch(e){}
+    escPintarControles(); escPintarFio();
+    if(typeof window.escMapaConvocar==='function') window.escMapaConvocar(_sala.participantes);
+  };
+
   function escPintarFio(){
     var fio=document.getElementById('sala-fio'); if(!fio) return;
     fio.innerHTML=_sala.falas.map(function(f){
       if(f.autor==='ale'){
         return '<div class="sala-fala eu"><div class="sala-avatar" style="background:rgba(255,255,255,.08)">🧑</div>'
           +'<div><div class="sala-quem" style="text-align:right">você</div><div class="sala-balao">'+escHtml(f.conteudo)+'</div></div></div>';
+      }
+      // Movimento da mesa: alguém passou a bola, entrou ou saiu.
+      if(f.autor==='sistema'){
+        return '<div class="sala-sistema">'+escHtml(f.conteudo)+'</div>';
       }
       var a=agentePorId(f.autor)||{emoji:'🤖',nome:f.autor,cor:'#6B7CFF'};
       return '<div class="sala-fala"><div class="sala-avatar" style="background:'+a.cor+'22">'+a.emoji+'</div>'
@@ -11832,18 +12182,48 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     try{ await sb.from('reuniao_mensagens').insert({reuniao_id:_sala.id, autor:autor, conteudo:String(conteudo).slice(0,8000)}); }catch(e){}
   }
 
-  // "Assistente, faz X" → só o Assistente responde. Sem isso, os quatro
-  // respondem e executam a mesma coisa quatro vezes.
-  function destinatarioDaFala(txt){
+  /* ── Quem abre a boca ──────────────────────────────────────────────────
+     Três regras, nesta ordem:
+       1. citou nome (ou @nome) → só quem foi chamado;
+       2. o assunto tem dono → o dono (no máximo dois, se o tema for de dois);
+       3. não deu pra saber → o Gestor, que é o dono do resultado e pode
+          passar a bola pra quem for.
+     O Ale pode forçar a mesa inteira pelo botão "Todos".
+     ───────────────────────────────────────────────────────────────────── */
+  function nomesCitados(txt){
     var t=(txt||'').toLowerCase();
-    var achados=_sala.participantes.filter(function(id){
+    return _sala.participantes.filter(function(id){
       var a=agentePorId(id); if(!a) return false;
-      var nome=a.nome.toLowerCase();
-      // Só conta como chamado direto se o nome aparece no começo ou com @
-      return new RegExp('(^|[\\s,.:;!?])@?'+nome+'([\\s,.:;!?]|$)').test(t.slice(0,120));
+      var nome=a.nome.toLowerCase().replace(/[^\wçãáéíóúâêô]/g,'');
+      return new RegExp('(^|[\\s,.:;!?@])@?'+nome+'([\\s,.:;!?]|$)','i').test(t);
     });
-    return achados.length===1 ? achados[0] : null;
   }
+
+  function quemResponde(txt){
+    if(_sala.forcarTodos) return _sala.participantes.slice();
+    var citados=nomesCitados(txt);
+    if(citados.length) return citados;
+
+    var pontuados=_sala.participantes
+      .map(function(id){ return {id:id, peso:pesoDoTema(id, txt)}; })
+      .filter(function(o){ return o.peso>0; })
+      .sort(function(a,b){ return b.peso-a.peso; });
+
+    if(pontuados.length){
+      // Dois no máximo, e o segundo só entra se pesar quase tanto quanto o
+      // primeiro. Senão a "pergunta de dois assuntos" vira mesa inteira de novo.
+      var out=[pontuados[0].id];
+      if(pontuados[1] && pontuados[1].peso >= pontuados[0].peso) out.push(pontuados[1].id);
+      return out;
+    }
+    var g=_sala.participantes.indexOf('gestor')>=0 ? 'gestor' : _sala.participantes[0];
+    return g ? [g] : [];
+  }
+
+  window.escAlternarTodos=function(){
+    _sala.forcarTodos=!_sala.forcarTodos;
+    escPintarControles();
+  };
 
   window.escFalarNaSala=async function(){
     if(_sala.ocupada) return;
@@ -11852,20 +12232,25 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     ta.value='';
     await escSalvarFala('ale', txt);
     escPintarFio();
-    escRodada(txt, false, destinatarioDaFala(txt));
+    escRodada(txt, false, quemResponde(txt));
   };
 
-  // Uma rodada: cada agente da mesa responde, vendo o que os anteriores disseram.
-  // Se a fala foi endereçada a alguém, só essa pessoa responde.
-  async function escRodada(mensagem, abertura, apenas){
+  // Uma rodada. A fila é dinâmica: um agente pode passar a bola pra outro
+  // (<<ACAO:passar|id|motivo>>) e esse outro entra no fim da fila. No máximo
+  // dois repasses, senão vira bola de neve e a reunião não termina.
+  async function escRodada(mensagem, abertura, quem){
     _sala.ocupada=true;
     var btn=document.getElementById('sala-enviar'); if(btn) btn.disabled=true;
     var fio=document.getElementById('sala-fio');
 
-    var fila = apenas ? [apenas] : _sala.participantes;
+    var fila = Array.isArray(quem) ? quem.slice() : (quem ? [quem] : _sala.participantes.slice());
+    var jaFalou={}, repasses=0;
     for(var i=0;i<fila.length;i++){
       var agId=fila[i];
+      if(jaFalou[agId]) continue;
+      jaFalou[agId]=true;
       var a=agentePorId(agId); if(!a) continue;
+      escAtividade(agId,'falando','Na reunião: '+(_sala.pauta||'').slice(0,60));
       if(fio){
         var p=document.createElement('div');
         p.className='sala-pensando'; p.id='sala-pensando';
@@ -11878,28 +12263,32 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           pauta:_sala.pauta,
           quem_esta_na_mesa:_sala.participantes.map(function(id){ var x=agentePorId(id); return x?x.nome+' ('+x.cargo+')':id; }),
           ja_foi_dito:_sala.falas.slice(-14).map(function(f){
-            return {quem: f.autor==='ale'?'Ale (o dono)':agenteNome(f.autor), disse:f.conteudo};
+            return {quem: f.autor==='ale'?'Ale (o dono)'
+                        : f.autor==='sistema'?'(movimento da mesa)'
+                        : agenteNome(f.autor), disse:f.conteudo};
           }),
           apresentacao_aberta: typeof window.apContexto==='function' ? window.apContexto() : null,
         };
         ctx._regras_da_reuniao=[
-          'Você está numa reunião com o Ale e outros agentes. Fale como quem senta na mesa: direto, curto, com número na frente.',
-          'Não repita o que outro agente já disse — acrescente da SUA área ou discorde com dado.',
-          'Se a sua área não tem nada a acrescentar nesse ponto, diga isso em uma linha em vez de encher linguiça.',
-          'Máximo 4 linhas por fala.',
-          'Você PODE agir durante a reunião. As ações em _acoes_disponiveis funcionam aqui do mesmo jeito: '
-            +'criar_evento, criar_nota, criar_ideia, abrir_tarefa, criar_slide e editar_slide.',
-          'Quando o Ale pedir para agendar algo, emita um <<ACAO:criar_evento|titulo|AAAA-MM-DD|HH:MM|categoria>> por compromisso. '
-            +'Pegue a data em calendario — não invente. Diga o que agendou em uma linha; o sistema confirma o resto embaixo da sua fala.',
-          'Se o pedido foi endereçado a outro agente, não execute a ação: ele já está cuidando disso.',
-          'Nunca diga que fez algo sem emitir a ação correspondente. Se não emitiu, não aconteceu.',
+          'Reunião com o Ale. Fale como gente numa mesa: no máximo 3 linhas, sem lista, sem negrito, sem título.',
+          'Abra pelo número ou pelo fato. Nada de "vou analisar", "boa pergunta", "com base nos dados" ou repetir a pergunta.',
+          'Uma recomendação por fala, no imperativo: "corta a verba do X", "sobe o preço do Y pra 79". Não ofereça três caminhos.',
+          'Se você não sabe, diga em uma linha o que falta pra saber. Não encha com o que sabe de outra coisa.',
+          'Não repita o que outro já disse. Concordar em silêncio é melhor que concordar em voz alta.',
+          'Se o assunto é de outro agente, passe: <<ACAO:passar|id_do_agente|motivo em 5 palavras>>. '
+            +'Ids válidos: gestor, ads, anuncios, sac, assistente. Passe no máximo uma vez por fala, e não passe de volta pra quem acabou de falar.',
+          'Você PODE agir na reunião: criar_evento, criar_nota, criar_ideia, abrir_tarefa, criar_slide e editar_slide.',
+          'Agendar exige <<ACAO:criar_evento|titulo|AAAA-MM-DD|HH:MM|categoria>>. Data sai de calendario, não da sua cabeça. '
+            +'Anuncie em uma linha; o comprovante o sistema põe embaixo.',
+          'Se o pedido foi endereçado a outro agente, não execute a ação: ele está cuidando disso.',
+          'Nunca diga que fez algo sem emitir a ação. Se não emitiu, não aconteceu.',
         ];
 
         var res=await fetch(_aiUrl+'/functions/v1/ai-agent',{
           method:'POST',
           headers:{'Content-Type':'application/json','apikey':_aiAnonKey,'Authorization':'Bearer '+_aiAnonKey},
           body:JSON.stringify({agentId:agId, mode:'chat', question:mensagem, context:ctx,
-            history:_sala.falas.slice(-10).map(function(f){
+            history:_sala.falas.filter(function(f){return f.autor!=='sistema';}).slice(-10).map(function(f){
               return {role: f.autor==='ale'?'user':'assistant', content:(f.autor==='ale'?'':agenteNome(f.autor)+': ')+f.conteudo};
             })})
         });
@@ -11908,15 +12297,34 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         var data=await res.json();
         var txt=data.response||'(sem resposta)';
 
-        // Executa o que ele propôs e anexa o comprovante à fala
+        // O passe não é uma ação executável — é quem fala em seguida.
+        var passes=escParseAcoes(txt).filter(function(x){return x.tipo==='passar';});
         var feitos=await escAplicarAcoes(txt, agId);
         await escSalvarFala(agId, escTextSemAcoes(txt)+resumoDasAcoes(feitos));
         escPintarFio();
+
+        for(var q=0;q<passes.length && repasses<2;q++){
+          var alvo=(passes[q].params[0]||'').trim().toLowerCase();
+          var motivo=(passes[q].params[1]||'').trim();
+          if(!agentePorId(alvo) || jaFalou[alvo] || alvo===agId) continue;
+          // Se ele já está na fila desta rodada, não houve passe nenhum: ele ia
+          // falar de qualquer jeito, e anunciar isso só polui o fio.
+          if(fila.indexOf(alvo)>i) continue;
+          if(_sala.participantes.indexOf(alvo)<0) _sala.participantes.push(alvo);
+          repasses++;
+          fila.push(alvo);
+          await escSalvarFala('sistema', a.nome+' passou pro '+agenteNome(alvo)
+            +(motivo?' — '+motivo:'')+'.');
+          escPintarFio(); escPintarControles();
+          if(typeof window.escMapaConvocar==='function') window.escMapaConvocar(_sala.participantes);
+          break;   // um passe por fala
+        }
       }catch(e){
         var pend2=document.getElementById('sala-pensando'); if(pend2) pend2.remove();
         await escSalvarFala(agId,'⚠️ Não consegui participar agora ('+(e.message||e)+').');
         escPintarFio();
       }
+      escAtividade(agId,'ocioso',null);
     }
     _sala.ocupada=false;
     if(btn) btn.disabled=false;
@@ -11926,10 +12334,14 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   // aconteceu de fato. Antes só slides passavam — evento, nota e tarefa eram
   // descartados em silêncio, e o texto da a\u00e7\u00e3o sumia junto.
   async function escAplicarAcoes(texto, agId){
-    var acoes=escParseAcoes(texto);
+    // `passar` não executa nada — decide quem fala em seguida. Quem cuida dele
+    // é a rodada; aqui ele só atrapalharia, virando "ação não reconhecida".
+    var acoes=escParseAcoes(texto).filter(function(x){ return x.tipo!=='passar'; });
     if(!acoes.length) return [];
     var feitos=[];
     var antes=activeAgentId;
+    escAtividade(agId,'agindo', acoes.map(function(x){return escAcaoLabel(x);}).join(' · ').slice(0,90));
+    escPintarPulso();
     activeAgentId=agId;   // escAcaoExecutar assina com o agente da vez
     for(var i=0;i<acoes.length;i++){
       var a=acoes[i];
@@ -11984,6 +12396,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     if(!_sala.id) return;
     if(!_sala.falas.length){ alert('A reunião ainda não tem conversa.'); return; }
     var ata=_sala.falas.map(function(f){
+      if(f.autor==='sistema') return '— '+f.conteudo+' —';
       return (f.autor==='ale'?'Ale':agenteNome(f.autor))+': '+f.conteudo;
     }).join('\n\n');
     try{
@@ -11994,7 +12407,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }catch(e){}
     alert('Reunião encerrada. A ata foi salva nas suas Anotações.');
     if(typeof window.escMapaDispensar==='function') window.escMapaDispensar();
-    _sala={id:null,participantes:[],pauta:'',falas:[],ocupada:false};
+    _sala={id:null,participantes:[],pauta:'',falas:[],ocupada:false,forcarTodos:false};
     escFecharSala();
   };
 
@@ -12115,7 +12528,16 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       'Se perguntarem algo fora do seu escopo, diga em uma frase qual agente é o dono do assunto e ofereça o que VOCÊ tem sobre aquele SKU. Não invente número de outra área.',
       'Você só recebe no contexto o dado da sua área — se um número não está aqui, você não tem acesso a ele, e deve dizer isso em vez de estimar.',
       'Quando encontrar algo que é problema de outro agente, proponha abrir_tarefa para ele em vez de tentar resolver.',
-      'Fale como alguém que acompanha essa operação todo dia: direto, sem rodeio, e sempre com o número na frente.',
+      /* Tom. Estava escrito de um jeito que ainda dava licença pra parágrafo de
+         abertura e três alternativas — e o Ale reclamou, com razão, que eles
+         falam demais. Aqui as regras são negativas de propósito: é mais fácil
+         cortar um vício nomeando ele. */
+      'Fale como quem trabalha nessa operação todo dia e tem pouco tempo. No máximo 6 linhas, e quase sempre 3 bastam.',
+      'Comece pelo número ou pelo fato. Nada de "boa pergunta", "vou analisar", "com base nos dados fornecidos", nem repetir a pergunta antes de responder.',
+      'Uma recomendação, no imperativo, com o valor: "corta R$ 300 de ADS no VA-BA05" e não "você poderia considerar reduzir o investimento".',
+      'Só use lista quando forem 3 itens ou mais do mesmo tipo. Resposta curta é texto corrido.',
+      'Não feche com "posso ajudar em mais alguma coisa" nem com resumo do que você acabou de dizer.',
+      'Se não tem o número, uma linha dizendo o que falta. Não compense falando do que você sabe de outro assunto.',
     ];
 
     // Preparo dos blocos por área — cada agente recebe só o que é dele
@@ -12474,6 +12896,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     try{ await rondaDosAgentes(); }catch(e){ console.warn('[Escritório] ronda',e); }
     buildSugestoes();
     if(el) el.textContent='Atualizado '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    escPintarPulso();
     populateCentralAlerts();
     updateEscritorioBadge();
     if(activeAgentId){ var a=agentePorId(activeAgentId); if(a) openPanel(a); }
