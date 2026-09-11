@@ -1821,7 +1821,7 @@ body.sidebar-collapsed .hamburger { display: none; }
         </tr></thead>
         <tbody class="hub-tbody" id="prod-tbody"></tbody>
       </table></div>
-      <div class="sec-hint" style="margin-top:8px">M.C. vem sempre do Hub de Precificação (inclui frete, tarifa, rebate e ADS alvo) — sem cálculo local. MPA = margem pós-ADS: M.C. + ADS alvo − TACOS real do período. SKU "não linkado" = sem correspondência no hub; clique nele para linkar. Estoque mostra depósito + Full. Exp. = experiência de compra.</div>
+      <div class="sec-hint" style="margin-top:8px">M.C. vem sempre do Hub de Precificação, já líquida de frete, tarifa, rebate e impostos — e ANTES do ADS. MPA = margem pós-ADS: M.C. − TACOS real do período. SKU "não linkado" = sem correspondência no hub; clique nele para linkar. Estoque mostra depósito + Full. Exp. = experiência de compra.</div>
 
       <!-- Nível 3: contexto de margem -->
       <div class="sec-title">Margem por SKU — melhores e piores</div>
@@ -2466,6 +2466,26 @@ function hubResolver(hubMcMap, hubLinks, sku, chaveLocal, marketplace) {
   }
   return null;
 }
+
+/* ── A M.C. do Ale é ANTES do ADS ──────────────────────────────────────────
+   O hub de precificação devolve a margem já com o ADS alvo descontado. A
+   fórmula dele (precificacao-sync, cMarg) é:
+
+     margem = preço − custo ajustado − frete − (tarifa − rebate)
+              − (preço × ADS) − PIS − ICMS − IPI
+                ^^^^^^^^^^^^^ o ADS alvo sai aqui
+
+   Essa não é a margem de contribuição da operação: a M.C. do Ale é antes do
+   ADS. Somando o alvo de volta, a M.C. vira a margem real pré-ADS e a conta
+   que ele usa fecha com o ADS saindo UMA vez, no valor que de fato gastou:
+
+     MPA = M.C. − TACOS real
+
+   A correção mora aqui, na origem. Espalhá-la pelos módulos foi o que já
+   produziu duas fórmulas diferentes de MPA dentro do mesmo arquivo.
+   ───────────────────────────────────────────────────────────────────────── */
+function hubMcPre(entry){ return entry ? Number(entry.mc||0) + Number(entry.ads||0) : null; }
+function hubAdsAlvo(entry){ return entry ? Number(entry.ads||0) : 0; }
 
 // Salva (ou remove, se skuHub vazio) o vínculo manual e limpa o cache.
 async function hubLinkSalvar(chaveLocal, skuHub) {
@@ -3719,18 +3739,17 @@ async function renderPerformance(){
   (anunciosRes.data||[]).forEach(a=>{ if(!anuncioPorItem[a.item_id]) anuncioPorItem[a.item_id]=a; });
 
   // M.C. e MPA do período — sempre do Hub de Precificação (itens linkados)
-  let perfRecHub=0, perfMcHub=0, perfAntesAds=0, perfGasAdsHub=0;
+  let perfRecHub=0, perfMcHub=0, perfGasAdsHub=0;
   Object.entries(porItem).forEach(([itemId,o])=>{
     const sku = anuncioPorItem[itemId]?.sku || null;
     const chave = sku || `item:${itemId}`;
     const hr = hubResolver(hubMcMap, hubLinks, sku, chave, 'meli');
     if(!hr) return;
     perfRecHub += o.receita;
-    perfMcHub += o.receita*(hr.entry.mc/100);
-    perfAntesAds += o.receita*((hr.entry.mc+(hr.entry.ads||0))/100);
+    perfMcHub += o.receita*(hubMcPre(hr.entry)/100);   // M.C. antes do ADS
     perfGasAdsHub += o.gasto;
   });
-  const perfMpa = perfAntesAds - perfGasAdsHub;
+  const perfMpa = perfMcHub - perfGasAdsHub;   // MPA = M.C. − ADS real
   const perfMcPct = perfRecHub>0 ? perfMcHub/perfRecHub*100 : null;
   const perfMpaPct = perfRecHub>0 ? perfMpa/perfRecHub*100 : null;
   const perfCobHub = atual.receita>0 ? perfRecHub/atual.receita*100 : 0;
@@ -4220,12 +4239,10 @@ async function renderProdutos(){
     const chaveLocal = sku || `item:${principal.itemId}`;
     const hubRes = hubResolver(hubMcMap, hubLinks, sku, chaveLocal, 'meli');
     const hubEntry = hubRes ? hubRes.entry : null;
-    const mc = hubEntry !== null ? hubEntry.mc : null;
-    // MPA (Margem Pós-ADS): MC hub + ADS alvo do hub − TACOS real do período.
-    // O hub desconta o ADS alvo na MC; aqui trocamos o alvo pelo gasto real.
-    const mpa = hubEntry !== null && tacosPct !== null
-      ? (mc + (hubEntry.ads || 0) - tacosPct)
-      : null;
+    // M.C. antes do ADS (o hub entrega já com o alvo descontado — ver hubMcPre).
+    const mc = hubEntry !== null ? hubMcPre(hubEntry) : null;
+    // MPA (Margem Pós-ADS) = M.C. − TACOS real do período.
+    const mpa = hubEntry !== null && tacosPct !== null ? (mc - tacosPct) : null;
     const hubLinked = hubEntry !== null;
     const hubViaLink = hubRes ? hubRes.viaLink : false;
     const hubSkuUsado = hubRes ? hubRes.skuHub : null;
@@ -4374,7 +4391,7 @@ function desenharProdutosTabela(){
       <td style="text-align:right">${l.conversao!==null?l.conversao.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right" class="${l.tacosPct!==null && l.tacosPct>l.metaTacos?'neg':''}" title="Meta: ${l.metaTacos}%">${l.tacosPct!==null?l.tacosPct.toFixed(1)+'%':'—'}</td>
       <td style="text-align:right;${l.mc!==null&&l.mc<15?'color:var(--coral-500)':''}" title="${l.hubLinked?'MC do Hub de Precificação'+(l.hubViaLink?' — linkado como '+l.hubSkuUsado:'')+(l.mcAtualizadaEm?' — atualizada '+new Date(l.mcAtualizadaEm).toLocaleDateString('pt-BR'):''):'SKU não encontrado no hub — clique para linkar'}">${l.mc!==null?l.mc.toFixed(1)+'%<span style="font-size:9px;vertical-align:super;margin-left:2px;color:var(--slate-400)">hub</span>':`<span onclick="prodAbrirDrawer('${l.chave}')" style="cursor:pointer;display:inline-block;font-size:10px;font-weight:700;color:#B45309;background:#FEF3C7;border:1px solid #FCD34D;border-radius:20px;padding:2px 8px;white-space:nowrap">não linkado</span>`}</td>
-      <td style="text-align:right;font-weight:600;${l.mpa!==null&&l.mpa<0?'color:var(--coral-500)':(l.mpa!==null&&l.mpa>=15?'color:var(--green-600)':'')}" title="MPA = MC do hub + ADS alvo − TACOS real do período">${l.mpa!==null?l.mpa.toFixed(1)+'%':'—'}</td>
+      <td style="text-align:right;font-weight:600;${l.mpa!==null&&l.mpa<0?'color:var(--coral-500)':(l.mpa!==null&&l.mpa>=15?'color:var(--green-600)':'')}" title="MPA = M.C. (antes do ADS) − TACOS real do período">${l.mpa!==null?l.mpa.toFixed(1)+'%':'—'}</td>
       <td>${bbBadge(l)}</td>
       <td style="text-align:right" class="${estoqueBaixo?'neg':''}" title="Depósito: ${l.estoqueDeposito??'—'} · Full: ${l.estoqueFull??'—'} · Mínimo: ${l.estoqueMin}">${estoqueTotal>0?estoqueTotal.toLocaleString('pt-BR'):(l.estoque??'—')}</td>
       <td style="text-align:right">${expBadge(l)}</td>
@@ -4696,7 +4713,7 @@ async function prodAbrirDrawer(chave){
   const cpc30 = j30.cli>0 ? j30.gasto/j30.cli : null;
   const pctUnAds = j30.unidades>0 ? (j30.uAds/j30.unidades*100) : null;
   const cvClique = j30.cli>0 ? (j30.uAds/j30.cli*100) : null;
-  const mpa30 = (l.mc!==null && tacos30!==null) ? (l.mc + (l.hubAdsAlvo||0) - tacos30) : null;
+  const mpa30 = (l.mc!==null && tacos30!==null) ? (l.mc - tacos30) : null;   // M.C. já é pré-ADS
 
   /* estoque + cobertura */
   const estoqueTotal = ((l.estoqueDeposito??0)+(l.estoqueFull??0)) || (l.estoque??0);
@@ -4731,7 +4748,7 @@ async function prodAbrirDrawer(chave){
         <div class="skup-kpi-sub">${l.mcAtualizadaEm?'atualizada '+new Date(l.mcAtualizadaEm).toLocaleDateString('pt-BR'):'Hub de Precificação'} · ADS alvo ${( l.hubAdsAlvo||0).toFixed(1)}%</div></div>
       <div class="skup-margem-card"><div class="skup-kpi-label">MPA — PÓS-ADS (30D)</div>
         <div class="skup-margem-val ${mpa30!==null&&mpa30<0?'ruim':mpa30!==null&&mpa30>=15?'bom':''}">${mpa30!==null?mpa30.toFixed(1)+'%':'—'}</div>
-        <div class="skup-kpi-sub">M.C. + ADS alvo − TACOS real (${tacos30!==null?tacos30.toFixed(1)+'%':'—'})</div></div>
+        <div class="skup-kpi-sub">M.C. − TACOS real (${tacos30!==null?tacos30.toFixed(1)+'%':'—'})</div></div>
       <div class="skup-margem-card"><div class="skup-kpi-label">MPA EM R$ (30D)</div>
         <div class="skup-margem-val">${mpa30!==null?lbxFmtMoeda(j30.receita*mpa30/100):'—'}</div>
         <div class="skup-kpi-sub">sobre ${lbxFmtMoeda(j30.receita)} de receita</div></div>
@@ -5619,6 +5636,13 @@ async function deleteSkuMes(contaKey, sku, month) {
 function openSkuDrawer(sku) {
   const precRow = D[conta].find(r => r.sku === sku);
   const desc = precRow?.desc || '';
+  // A tabela local `skus` guarda mc/tacos de quando o SellerHub calculava
+  // margem sozinho. Hoje esses campos estão zerados, e este painel mostrava
+  // "M.C. —" com "MPA 0,0%" em verde — pior do que não mostrar nada.
+  // Passa a ler o hub, igual ao resto do app.
+  const hrDrawer = (typeof hubResolver === 'function' && typeof _hubMcCache !== 'undefined' && _hubMcCache)
+    ? hubResolver(_hubMcCache, _hubLinksCache || {}, sku, sku, 'meli') : null;
+  const mcDrawer = hrDrawer ? hubMcPre(hrDrawer.entry) : null;
   document.getElementById('sku-drawer-title').textContent = sku;
   document.getElementById('sku-drawer-sub').textContent = desc;
 
@@ -5633,6 +5657,10 @@ function openSkuDrawer(sku) {
     : (activeData.length ? activeData.reduce((s,d)=>s+d.tacos,0)/activeData.length : 0);
   const bestIdx = activeData.length ? allMonths.indexOf(activeData.reduce((a,b)=>b.fat>a.fat?b:a)) : -1;
   const bestLabel = bestIdx>=0 ? perfMonthFull[bestIdx] : '—';
+  // TACOS e MPA do card de cima: o TACOS sai do histórico real de investimento,
+  // e o MPA da M.C. do hub menos esse TACOS. Sem hub não existe MPA.
+  const tacosDrawer = avgTacos > 0 ? avgTacos : null;
+  const mpaDrawer = (mcDrawer !== null && tacosDrawer !== null) ? (mcDrawer - tacosDrawer) : null;
 
   const activeIdxs = allMonths.map((d,i)=>d.fat>0?i:-1).filter(i=>i>=0);
   let deltaHtml = '';
@@ -5648,9 +5676,9 @@ function openSkuDrawer(sku) {
     <div class="row-expand-kpis">
       <div class="row-expand-kpi"><div class="row-expand-kpi-label">Custo</div><div class="row-expand-kpi-val">${precRow?.custo>0?fmtBRL(precRow.custo):'—'}</div></div>
       <div class="row-expand-kpi"><div class="row-expand-kpi-label">Preço</div><div class="row-expand-kpi-val">${precRow?.preco>0?fmtBRL(precRow.preco):'—'}</div></div>
-      <div class="row-expand-kpi"><div class="row-expand-kpi-label">M.C.</div><div class="row-expand-kpi-val" style="${precRow?.mc>0&&precRow.mc<15?'color:var(--coral-500)':precRow?.mc>=22?'color:var(--green-600)':''}">${precRow?.mc>0?precRow.mc.toFixed(1)+'%':'—'}</div></div>
-      <div class="row-expand-kpi"><div class="row-expand-kpi-label">TACOS</div><div class="row-expand-kpi-val" style="${precRow?.tacos>15?'color:var(--coral-500)':''}">${precRow?.tacos>0?precRow.tacos.toFixed(1)+'%':'—'}</div></div>
-      <div class="row-expand-kpi"><div class="row-expand-kpi-label">MPA</div><div class="row-expand-kpi-val" style="${precRow&&mpa(precRow)<0?'color:var(--coral-500)':'color:var(--green-600)'}">${precRow?mpa(precRow).toFixed(1)+'%':'—'}</div></div>
+      <div class="row-expand-kpi"><div class="row-expand-kpi-label">M.C.</div><div class="row-expand-kpi-val" style="${mcDrawer!==null&&mcDrawer<15?'color:var(--coral-500)':mcDrawer>=22?'color:var(--green-600)':''}" title="Hub de Precificação, antes do ADS">${mcDrawer!==null?mcDrawer.toFixed(1)+'%':'sem vínculo no hub'}</div></div>
+      <div class="row-expand-kpi"><div class="row-expand-kpi-label">TACOS</div><div class="row-expand-kpi-val" style="${tacosDrawer!==null&&tacosDrawer>15?'color:var(--coral-500)':''}">${tacosDrawer!==null?tacosDrawer.toFixed(1)+'%':'—'}</div></div>
+      <div class="row-expand-kpi"><div class="row-expand-kpi-label">MPA</div><div class="row-expand-kpi-val" style="${mpaDrawer!==null&&mpaDrawer<0?'color:var(--coral-500)':'color:var(--green-600)'}" title="M.C. − TACOS real">${mpaDrawer!==null?mpaDrawer.toFixed(1)+'%':'—'}</div></div>
     </div>
   </div>
   <div style="margin-bottom:20px">
@@ -9849,8 +9877,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   var AGENTS = [
     { id:'gestor', nome:'Gestor', emoji:'🧭', cor:'#00D87A', gx:1.2, gy:0.8,
       cargo:'Dono do resultado do mês',
-      cuida:'M.C. e MPA do mês, TACOS consolidado, concentração de margem, cobertura do Hub de Precificação, reputação da conta e o que os outros agentes escalaram.',
-      naoCuida:'Não mexe em SKU individual, campanha de ADS, texto de anúncio nem atendimento — isso é do ADS, do Anúncios e do SAC.' },
+      cuida:'M.C. e MPA — do mês e de qualquer SKU, em qualquer janela, inclusive hoje. TACOS consolidado, concentração de margem, cobertura do Hub de Precificação, reputação da conta e o que os outros agentes escalaram.',
+      naoCuida:'Não gerencia campanha de ADS, não escreve anúncio e não atende cliente — isso é do ADS, do Anúncios e do SAC. Mas margem de SKU é dele, não deles.' },
 
     { id:'ads', nome:'ADS', emoji:'⚡', cor:'#FF5F7E', gx:1.2, gy:3.5,
       cargo:'Dono do tráfego pago',
@@ -12064,7 +12092,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     function margemHub(sku){
       if(typeof hubResolver!=='function') return null;
       var r=hubResolver(hubMap, hubLk, sku, sku, 'meli');
-      return r ? {mc_pct:r.entry.mc, ads_alvo_pct:r.entry.ads||0} : null;
+      return r ? {mc_pct:hubMcPre(r.entry), ads_alvo_pct:hubAdsAlvo(r.entry)} : null;
     }
 
     var skusComDado=Object.keys(dia);
@@ -12091,18 +12119,42 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     ];
 
     // Preparo dos blocos por área — cada agente recebe só o que é dele
-    var _perfSku = skusComDado.slice(0,40).map(function(sk){
+    // Corte alto de propósito: um SKU que fica de fora vira "não tenho esse dado"
+    // na boca do agente, e a culpa parece dele. Se cortar, o agente precisa saber.
+    var _LIMITE_SKU = 60;
+    var _perfSku = skusComDado.slice(0,_LIMITE_SKU).map(function(sk){
       var mh=margemHub(sk);
-      var o={ sku:sk, ultimos_3_dias:janela(sk,3), ultimos_7_dias:janela(sk,7), ultimos_30_dias:janela(sk,30) };
+      var o={ sku:sk, hoje:janela(sk,1), ultimos_3_dias:janela(sk,3),
+              ultimos_7_dias:janela(sk,7), ultimos_30_dias:janela(sk,30) };
       if(mh){
         o.mc_hub_pct=mh.mc_pct; o.ads_alvo_pct=mh.ads_alvo_pct;
-        var t30=o.ultimos_30_dias.tacos_pct;
-        o.mpa_30d_pct = t30!==null ? +(mh.mc_pct + mh.ads_alvo_pct - t30).toFixed(2) : null;
+        // MPA em TODA janela, e em reais — não só em 30 dias e não só em %.
+        // "Quanto esse SKU me deu de MPA hoje" é pergunta de rotina, e antes
+        // o agente não tinha como responder porque o número não existia aqui.
+        ['hoje','ultimos_3_dias','ultimos_7_dias','ultimos_30_dias'].forEach(function(j){
+          var w=o[j];
+          w.mc_reais = +(w.receita*mh.mc_pct/100).toFixed(2);
+          w.mpa_pct  = w.tacos_pct!==null ? +(mh.mc_pct - w.tacos_pct).toFixed(2) : null;
+          w.mpa_reais= w.mpa_pct!==null ? +(w.receita*w.mpa_pct/100).toFixed(2) : null;
+        });
+        o.mpa_30d_pct = o.ultimos_30_dias.mpa_pct;
       } else {
         o.mc_hub_pct=null; o.obs='SKU sem vínculo no Hub de Precificação — sem margem disponível';
       }
       return o;
     });
+    var _cortouSku = skusComDado.length > _LIMITE_SKU;
+    var _comoLerMpaSku=(_cortouSku
+        ? 'ATENÇÃO: margem_por_sku traz os '+_LIMITE_SKU+' SKUs de maior receita, de '+skusComDado.length
+          +' com dado. Se perguntarem de um SKU que não está na lista, diga que ele ficou fora do recorte — não diga que o dado não existe. '
+        : '')
+      +'MPA = M.C. − TACOS real da janela. A M.C. aqui é ANTES do ADS: o hub entrega ela já com o alvo '
+      +'descontado e o SellerHub soma o alvo de volta, então o ADS sai uma vez só, pelo que foi gasto de verdade. '
+      +'Está calculado em % e em reais '
+      +'para hoje, 3, 7 e 30 dias em margem_por_sku — nunca responda que falta dado por SKU ou por dia. '
+      +'A janela "hoje" é o dia de data_referencia e é volátil: um dia com pouco ADS infla o MPA e um dia '
+      +'com muito ADS afunda. Cite o número, mas diga que um dia sozinho não é tendência e traga o de 7 dias junto. '
+      +'SKU com mc_hub_pct null não tem vínculo no hub — aí não existe MPA, e o que falta é linkar, não calcular.';
 
     // Série diária compacta (array de arrays economiza muito espaço no contexto)
     var _serieDiaria = {
@@ -12220,7 +12272,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
     if(agId==='gestor'){
       var fd=typeof window._finGetDados==='function'?window._finGetDados():null;
-      ctx._como_ler='Você olha o mês fechado, não o SKU. MPA é o número que manda: M.C. do hub + ADS alvo − TACOS real.';
+      ctx._como_ler='Você é o dono do resultado. Começa pelo mês, mas desce ao SKU sempre que a pergunta for de margem — '
+        +'margem por SKU é sua, não de outro agente. '+_comoLerMpaSku;
       if(fd) ctx.margens_do_mes={
         receita:fd.rec, receita_linkada_hub:fd.recHub, cobertura_hub:((fd.cobHub||0)*100).toFixed(0)+'%',
         comissao_ml:fd.com, mc_hub:fd.mcHubVal, mc_pct:(fd.mcPct*100).toFixed(1)+'%',
@@ -12228,11 +12281,21 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         mpa:fd.mpaVal, mpa_pct:(fd.mpaPct*100).toFixed(1)+'%', pedidos:fd.ped,
         mpa_mes_anterior_pct: fd.mpaPctA!==null&&fd.mpaPctA!==undefined ? (fd.mpaPctA*100).toFixed(1)+'%' : null
       };
+      // Margem SKU a SKU, com MPA por janela — inclusive a de hoje. Antes aqui
+      // só entravam os 8 maiores, e o agente respondia com honestidade que não
+      // tinha o número: o dado existia, eu é que não entregava pra ele.
+      ctx.margem_por_sku=_perfSku;
+      ctx._como_ler_margem_por_sku=_comoLerMpaSku;
+      ctx.serie_diaria=_serieDiaria;
       if(fd && fd.skus){
         var link=fd.skus.filter(function(o){return o.linkado && o.rec>0;});
-        ctx.top_margem_reais=link.slice().sort(function(a,b){return b.mcVal-a.mcVal;}).slice(0,8)
-          .map(function(o){return {sku:o.sku, receita:+o.rec.toFixed(2), mc_reais:+o.mcVal.toFixed(2), mc_pct:o.mcPct, mpa_pct:o.mpaPct!==null?+o.mpaPct.toFixed(1):null};});
-        ctx.sem_vinculo_hub=fd.skus.filter(function(o){return !o.linkado && o.rec>0;}).slice(0,8)
+        ctx.margem_do_mes_por_sku=link.slice().sort(function(a,b){return b.mcVal-a.mcVal;})
+          .map(function(o){return {sku:o.sku, receita:+o.rec.toFixed(2), mc_reais:+o.mcVal.toFixed(2),
+            mc_pct:o.mcPct, ads_alvo_pct:o.adsAlvoPct, tacos_pct:o.tacos!==null?+o.tacos.toFixed(2):null,
+            mpa_pct:o.mpaPct!==null?+o.mpaPct.toFixed(1):null};});
+        ctx._como_ler_margem_do_mes='margem_do_mes_por_sku é o mês corrente fechado pelo Financeiro, com TODOS os SKUs linkados — não é um top N. Use para ranking e concentração; use margem_por_sku para janelas curtas.';
+        ctx.sem_vinculo_hub=fd.skus.filter(function(o){return !o.linkado && o.rec>0;})
+          .sort(function(a,b){return b.rec-a.rec;})
           .map(function(o){return {sku:o.sku, receita_fora_do_calculo:+o.rec.toFixed(2)};});
       }
       ctx.reputacao=rep;
@@ -12598,7 +12661,7 @@ async function loadFin(){
         porSku[k]={
           sku:i2s[itemId]||null, chave:k, titulo:i2t[itemId]||itemId,
           rec:0, ads:0, ped:0, uni:0,
-          linkado:!!hr, mcPct:hr?hr.entry.mc:null, adsAlvoPct:hr?(hr.entry.ads||0):null,
+          linkado:!!hr, mcPct:hr?hubMcPre(hr.entry):null, adsAlvoPct:hr?hubAdsAlvo(hr.entry):null,
         };
       }
       var o=porSku[k];
@@ -12610,9 +12673,10 @@ async function loadFin(){
     var skusArr=Object.values(porSku);
     skusArr.forEach(function(o){
       if(o.linkado){
+        // mcPct já é a M.C. antes do ADS. MPA = M.C. − ADS real, sem somar alvo.
         o.mcVal   = o.rec*(o.mcPct/100);
-        o.antesAds= o.rec*((o.mcPct+o.adsAlvoPct)/100);
-        o.mpaVal  = o.antesAds - o.ads;
+        o.antesAds= o.mcVal;
+        o.mpaVal  = o.mcVal - o.ads;
         o.mpaPct  = o.rec>0 ? o.mpaVal/o.rec*100 : null;
         o.tacos   = o.rec>0 ? o.ads/o.rec*100 : null;
         o.adsAlvoVal = o.rec*(o.adsAlvoPct/100);
@@ -12630,7 +12694,7 @@ async function loadFin(){
       recHub+=o.rec; mcHubVal+=o.mcVal; antesAdsVal+=o.antesAds; gasAdsHub+=o.ads; pedHub+=o.ped;
     });
 
-    var mpaVal=antesAdsVal-gasAdsHub;
+    var mpaVal=mcHubVal-gasAdsHub;   // M.C. (pré-ADS) − ADS real
     var mcPct=recHub>0?mcHubVal/recHub:0;
     var mpaPct=recHub>0?mpaVal/recHub:0;
     var cobHub=rec>0?recHub/rec:0;
@@ -12646,7 +12710,7 @@ async function loadFin(){
       var hr=hubDoItem(itemId); if(!hr) return;
       var r=recPorItemA[itemId];
       recHubA+=r;
-      antesAdsA+=r*((hr.entry.mc+(hr.entry.ads||0))/100);
+      antesAdsA+=r*(hubMcPre(hr.entry)/100);
       gasAdsHubA+=gastoPorItemA[itemId]||0;
     });
     Object.keys(gastoPorItemA).forEach(function(itemId){
@@ -12834,8 +12898,8 @@ function renderCascata(d){
   var deduHub=d.recHub-d.antesAdsVal;
   var rows=[
     {sinal:'',  label:'Receita linkada ao hub ('+Math.round(d.cobHub*100)+'% da receita)', val:d.recHub, tipo:'pos'},
-    {sinal:S,   label:'Deduções hub (custo + frete + tarifa + rebate)', val:deduHub, tipo:'neg', hubBadge:true},
-    {sinal:'=', label:'Margem antes do ADS', val:d.antesAdsVal, tipo:'res', result:true},
+    {sinal:S,   label:'Deduções hub (custo + frete + tarifa + rebate + impostos)', val:deduHub, tipo:'neg', hubBadge:true},
+    {sinal:'=', label:'M.C. — margem de contribuição, antes do ADS', val:d.antesAdsVal, tipo:'res', result:true},
     {sinal:S,   label:'Gasto ADS real (itens linkados)', val:d.gasAdsHub, tipo:'ads'},
     {sinal:'=', label:'MPA — margem pós-ADS', val:d.mpaVal, tipo:d.mpaVal>=0?'res':'neg-res', result:true},
   ];
