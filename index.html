@@ -10212,21 +10212,43 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }
   };
 
+  // Numa reunião mais de um agente pode emitir a mesma ação. Sem esta checagem,
+  // um pedido de agendar vira cinco compromissos iguais.
+  async function jaExiste(tabela, filtros){
+    try{
+      var q=sb.from(tabela).select('id');
+      Object.keys(filtros).forEach(function(k){ q=q.eq(k, filtros[k]); });
+      var {data}=await q.limit(1);
+      return !!(data && data.length);
+    }catch(e){ return false; }
+  }
+
   async function escAcaoExecutar(tipo, params){
     var quem=agenteNome(activeAgentId)||'Agente';
     var assina='\n\n— registrado pelo '+quem;
     if(tipo==='criar_nota'){
-      var {error}=await sb.from('anotacoes').insert({titulo:params[0]||'Nota do '+quem,corpo:(params[1]||'')+assina,status:'aberto',updated_at:'now()'});
+      var tituloNota=params[0]||'Nota do '+quem;
+      if(await jaExiste('anotacoes',{titulo:tituloNota})) return true;  // já registrado
+      var {error}=await sb.from('anotacoes').insert({titulo:tituloNota,corpo:(params[1]||'')+assina,status:'aberto',updated_at:'now()'});
       if(error) throw error;
       return true;
     }
     if(tipo==='criar_evento'){
-      var {error}=await sb.from('agenda').insert({titulo:params[0]||'Evento',data:params[1]||new Date().toISOString().slice(0,10),horario:params[2]||null,categoria:params[3]||'Geral',obs:'Criado pelo '+quem});
+      var tituloEv=params[0]||'Evento';
+      var dataEv=params[1]||new Date().toISOString().slice(0,10);
+      var horaEv=params[2]||null;
+      // Mesmo título, no mesmo dia e hora = é o mesmo compromisso
+      var filtro={titulo:tituloEv, data:dataEv};
+      if(horaEv) filtro.horario=horaEv;
+      if(await jaExiste('agenda',filtro)) return true;
+      var {error}=await sb.from('agenda').insert({titulo:tituloEv,data:dataEv,horario:horaEv,categoria:params[3]||'Geral',obs:'Criado pelo '+quem});
       if(error) throw error;
       return true;
     }
     if(tipo==='criar_ideia'){
-      var {error}=await sb.from('ideias').insert({nome:params[0]||'Ideia',obs:(params[1]||'')+assina,etapa:'backlog',updated_at:'now()'});
+      var nomeIdeia=params[0]||'Ideia';
+      if(await jaExiste('ideias',{nome:nomeIdeia})) return true;
+      var {error}=await sb.from('ideias').insert({nome:nomeIdeia,obs:(params[1]||'')+assina,etapa:'backlog',updated_at:'now()'});
       if(error) throw error;
       return true;
     }
@@ -10820,6 +10842,19 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     try{ await sb.from('reuniao_mensagens').insert({reuniao_id:_sala.id, autor:autor, conteudo:String(conteudo).slice(0,8000)}); }catch(e){}
   }
 
+  // "Assistente, faz X" → só o Assistente responde. Sem isso, os quatro
+  // respondem e executam a mesma coisa quatro vezes.
+  function destinatarioDaFala(txt){
+    var t=(txt||'').toLowerCase();
+    var achados=_sala.participantes.filter(function(id){
+      var a=agentePorId(id); if(!a) return false;
+      var nome=a.nome.toLowerCase();
+      // Só conta como chamado direto se o nome aparece no começo ou com @
+      return new RegExp('(^|[\\s,.:;!?])@?'+nome+'([\\s,.:;!?]|$)').test(t.slice(0,120));
+    });
+    return achados.length===1 ? achados[0] : null;
+  }
+
   window.escFalarNaSala=async function(){
     if(_sala.ocupada) return;
     var ta=document.getElementById('sala-input');
@@ -10827,17 +10862,19 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     ta.value='';
     await escSalvarFala('ale', txt);
     escPintarFio();
-    escRodada(txt, false);
+    escRodada(txt, false, destinatarioDaFala(txt));
   };
 
-  // Uma rodada: cada agente da mesa responde, vendo o que os anteriores disseram
-  async function escRodada(mensagem, abertura){
+  // Uma rodada: cada agente da mesa responde, vendo o que os anteriores disseram.
+  // Se a fala foi endereçada a alguém, só essa pessoa responde.
+  async function escRodada(mensagem, abertura, apenas){
     _sala.ocupada=true;
     var btn=document.getElementById('sala-enviar'); if(btn) btn.disabled=true;
     var fio=document.getElementById('sala-fio');
 
-    for(var i=0;i<_sala.participantes.length;i++){
-      var agId=_sala.participantes[i];
+    var fila = apenas ? [apenas] : _sala.participantes;
+    for(var i=0;i<fila.length;i++){
+      var agId=fila[i];
       var a=agentePorId(agId); if(!a) continue;
       if(fio){
         var p=document.createElement('div');
@@ -10855,12 +10892,33 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           }),
           apresentacao_aberta: typeof window.apContexto==='function' ? window.apContexto() : null,
         };
+        // Datas prontas: sem isso o agente chuta o dia e agenda para a data errada
+        var _h=new Date();
+        var _diaSem=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][_h.getDay()];
+        function _maisDias(n){ var d=new Date(_h); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+        function _proximo(diaAlvo){
+          var d=new Date(_h); var delta=(diaAlvo-d.getDay()+7)%7; if(delta===0) delta=7;
+          d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10);
+        }
+        ctx.calendario={
+          hoje:_h.toISOString().slice(0,10), hoje_e:_diaSem,
+          amanha:_maisDias(1),
+          proxima_segunda:_proximo(1), proxima_terca:_proximo(2), proxima_quarta:_proximo(3),
+          proxima_quinta:_proximo(4), proxima_sexta:_proximo(5),
+          _obs:'Use estas datas em criar_evento. Nunca escreva uma data que você não viu aqui.'
+        };
+
         ctx._regras_da_reuniao=[
           'Você está numa reunião com o Ale e outros agentes. Fale como quem senta na mesa: direto, curto, com número na frente.',
           'Não repita o que outro agente já disse — acrescente da SUA área ou discorde com dado.',
           'Se a sua área não tem nada a acrescentar nesse ponto, diga isso em uma linha em vez de encher linguiça.',
           'Máximo 4 linhas por fala.',
-          'Se a conversa produzir algo que deve entrar na apresentação, use <<ACAO:criar_slide|titulo|corpo>> ou <<ACAO:editar_slide|id|titulo|corpo>>.',
+          'Você PODE agir durante a reunião. As ações em _acoes_disponiveis funcionam aqui do mesmo jeito: '
+            +'criar_evento, criar_nota, criar_ideia, abrir_tarefa, criar_slide e editar_slide.',
+          'Quando o Ale pedir para agendar algo, emita um <<ACAO:criar_evento|titulo|AAAA-MM-DD|HH:MM|categoria>> por compromisso. '
+            +'Pegue a data em calendario — não invente. Diga o que agendou em uma linha; o sistema confirma o resto embaixo da sua fala.',
+          'Se o pedido foi endereçado a outro agente, não execute a ação: ele já está cuidando disso.',
+          'Nunca diga que fez algo sem emitir a ação correspondente. Se não emitiu, não aconteceu.',
         ];
 
         var res=await fetch(_aiUrl+'/functions/v1/ai-agent',{
@@ -10876,9 +10934,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         var data=await res.json();
         var txt=data.response||'(sem resposta)';
 
-        // O agente pode mexer na apresentação durante a reunião
-        await escAplicarAcoesDeSlide(txt, agId);
-        await escSalvarFala(agId, escTextSemAcoes(txt));
+        // Executa o que ele propôs e anexa o comprovante à fala
+        var feitos=await escAplicarAcoes(txt, agId);
+        await escSalvarFala(agId, escTextSemAcoes(txt)+resumoDasAcoes(feitos));
         escPintarFio();
       }catch(e){
         var pend2=document.getElementById('sala-pensando'); if(pend2) pend2.remove();
@@ -10890,21 +10948,58 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     if(btn) btn.disabled=false;
   }
 
-  // Executa criar_slide / editar_slide que o agente propôs na fala
-  async function escAplicarAcoesDeSlide(texto, agId){
-    var acoes=escParseAcoes(texto).filter(function(a){ return a.tipo==='criar_slide'||a.tipo==='editar_slide'; });
-    if(!acoes.length) return;
-    if(typeof window.apGarantirMes==='function') await window.apGarantirMes();
+  // Executa TODAS as ações que o agente propôs na fala e devolve o que
+  // aconteceu de fato. Antes só slides passavam — evento, nota e tarefa eram
+  // descartados em silêncio, e o texto da a\u00e7\u00e3o sumia junto.
+  async function escAplicarAcoes(texto, agId){
+    var acoes=escParseAcoes(texto);
+    if(!acoes.length) return [];
+    var feitos=[];
+    var antes=activeAgentId;
+    activeAgentId=agId;   // escAcaoExecutar assina com o agente da vez
     for(var i=0;i<acoes.length;i++){
-      var p=acoes[i].params;
+      var a=acoes[i];
       try{
-        if(acoes[i].tipo==='criar_slide' && typeof window.apAgenteCriar==='function'){
-          await window.apAgenteCriar({titulo:p[0]||'Slide', corpo:p[1]||'', tipo:'texto'}, agenteNome(agId));
-        } else if(acoes[i].tipo==='editar_slide' && typeof window.apAgenteEditar==='function'){
-          await window.apAgenteEditar(Number(p[0]), {titulo:p[1], corpo:p[2]}, agenteNome(agId));
-        }
-      }catch(e){ console.warn('[Sala] ação de slide',e); }
+        var ok=await escAcaoExecutar(a.tipo, a.params);
+        feitos.push({tipo:a.tipo, params:a.params, ok:!!ok,
+                     erro: ok?null:'ação não reconhecida'});
+      }catch(e){
+        feitos.push({tipo:a.tipo, params:a.params, ok:false, erro:String(e.message||e)});
+      }
     }
+    activeAgentId=antes;
+
+    // Fica registrado no diário: é assim que o agente sabe depois o que fez
+    for(var j=0;j<feitos.length;j++){
+      var f=feitos[j];
+      try{
+        await registrarObservacao(agId,{
+          severidade: f.ok?'info':'atencao',
+          titulo: (f.ok?'Executei ':'Falhei ao executar ')+f.tipo+': '+String(f.params[0]||'').slice(0,60),
+          corpo: (f.ok?'Feito na reunião. ':'Erro: '+f.erro+'. ')+'Parâmetros: '+f.params.join(' | ').slice(0,300),
+          chave:'acao|'+f.tipo+'|'+String(f.params[0]||'').slice(0,40)+'|'+Date.now()
+        });
+      }catch(e){}
+    }
+    if(feitos.length) await carregarMemoriaETarefas();
+    return feitos;
+  }
+
+  // Resumo visível do que foi feito — o Ale precisa ver, não adivinhar
+  function resumoDasAcoes(feitos){
+    if(!feitos.length) return '';
+    var linhas=feitos.map(function(f){
+      var rot = f.tipo==='criar_evento' ? ('📅 '+f.params[0]+' — '+f.params[1]+(f.params[2]?' às '+f.params[2]:''))
+              : f.tipo==='criar_nota'   ? ('📝 Nota: '+f.params[0])
+              : f.tipo==='criar_ideia'  ? ('💡 Ideia: '+f.params[0])
+              : f.tipo==='abrir_tarefa' ? ('📤 Tarefa para '+agenteNome(f.params[0])+': '+f.params[1])
+              : f.tipo==='criar_slide'  ? ('🖼 Slide: '+f.params[0])
+              : f.tipo==='editar_slide' ? ('✏️ Slide '+f.params[0]+' reescrito')
+              : (f.tipo+': '+f.params.join(', '));
+      return (f.ok?'✓ ':'✕ ')+rot+(f.ok?'':' — '+f.erro);
+    });
+    var houveErro=feitos.some(function(f){return !f.ok;});
+    return '\n\n'+(houveErro?'⚠️ Nem tudo deu certo:':'Registrado no SellerHub:')+'\n'+linhas.join('\n');
   }
 
   window.escEncerrarSala=async function(){
@@ -11075,6 +11170,12 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     });
 
     /* ── Memória e fila: o agente lembra do que viu e do que pediram a ele ── */
+    // Qualquer agente pode ser chamado para agendar algo, então todos precisam
+    // enxergar o que já está marcado — senão duplicam compromisso.
+    ctx.agenda_proxima=(agenda||[]).slice(0,15).map(function(e){
+      return {titulo:e.titulo, data:e.data, horario:e.horario, categoria:e.categoria};
+    });
+
     ctx.meu_diario_de_bordo = (memoria[agId]||[]).slice(0,12).map(function(m){
       return {quando:m.criado_em?String(m.criado_em).slice(0,10):null, severidade:m.severidade, o_que_observei:m.titulo, detalhe:m.corpo, sku:m.sku};
     });
@@ -11122,6 +11223,24 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }
     ctx._limite_de_acao = 'Você pode criar nota, evento, ideia e tarefa sozinho — tudo reversível. '
       +'Nada que altere o Mercado Livre (preço, pausar anúncio, responder cliente) pode ser feito por você: nesses casos, descreva o passo e deixe a decisão com o Ale.';
+
+    // Comprovante do que este agente realmente executou. Sem isto ele inventa
+    // explicações de sistemas que não existem quando algo não aparece.
+    ctx.minhas_acoes_recentes=(memoria[agId]||[])
+      .filter(function(m){ return /^(Executei|Falhei ao executar)/.test(m.titulo||''); })
+      .slice(0,15).map(function(m){
+        return {quando:String(m.criado_em||'').slice(0,16).replace('T',' '), o_que:m.titulo, detalhe:m.corpo};
+      });
+
+    ctx._como_o_sellerhub_funciona = [
+      'A agenda do Ale é uma tabela no Supabase dele. Não existe sincronização com Google Agenda, app externo, '
+        +'calendário escondido nem cache. Um evento só aparece se alguém emitiu <<ACAO:criar_evento|...>> e a ação foi executada.',
+      'Quando o Ale disser que algo não apareceu, NÃO liste causas genéricas de sistema. Olhe minhas_acoes_recentes: '
+        +'se a ação não está lá, você não a executou — assuma isso e execute agora. Se está lá e falhou, diga o erro que aparece no detalhe.',
+      'agenda_proxima e agenda_completa mostram o que está gravado de verdade. Consulte antes de responder sobre a agenda.',
+      'Você não tem acesso a nada fora do SellerHub e das APIs do Mercado Livre. Nunca sugira conferir configurações, '
+        +'dar refresh no app ou verificar outro calendário: isso não existe aqui.'
+    ];
 
     /* ═══ Daqui pra baixo, cada agente recebe SÓ o dado da área dele ═══ */
 
@@ -12287,6 +12406,9 @@ window.apAgenteEditar=async function(slideId, campos, autor){
 };
 window.apAgenteCriar=async function(slide, autor){
   if(!_ap.id) return {error:'nenhuma apresentação aberta'};
+  // Evita slide repetido quando dois agentes propõem a mesma coisa na reunião
+  var repetido=_ap.slides.filter(function(s){ return (s.titulo||'')===(slide.titulo||''); })[0];
+  if(repetido) return {error:null, jaExistia:true};
   var ordem=_ap.slides.length?Math.max.apply(null,_ap.slides.map(function(s){return s.ordem;}))+1:0;
   var {error}=await sb.from('apresentacao_slides').insert({
     apresentacao_id:_ap.id, ordem:ordem, tipo:slide.tipo||'texto',
