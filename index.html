@@ -1057,6 +1057,19 @@ body.sidebar-collapsed .hamburger { display: none; }
 .esc-refresh-btn:hover { background:rgba(255,255,255,0.09); color:#C0C8D8; }
 .esc-canvas-wrap { flex:1; position:relative; overflow:hidden; background:#07090E; min-height:340px; }
 #escritorio-canvas { display:block; }
+/* Blocos da aba Análise */
+.esc-divisor { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.1em;
+  color:#5A6478; margin:20px 0 10px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); }
+.esc-sugestao.esc-sug-olhar { border-color:rgba(107,124,255,0.28); background:rgba(107,124,255,0.05); }
+.esc-sugestao.esc-ronda { background:rgba(255,255,255,0.025); border-color:rgba(255,255,255,0.06); padding:11px 14px; }
+.esc-ronda-cab { display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:5px; }
+.esc-ronda-cab span:first-child { font-size:12px; font-weight:600; color:#9AA4B8; }
+.esc-ronda-hora { font-size:10px; font-family:var(--mono); color:#5A6478; white-space:nowrap; }
+.esc-sugestao.esc-ronda .esc-sug-desc { font-size:11.5px; color:#6B7488; line-height:1.55; }
+.esc-sug-tipo.sugestao { color:#8B9BFF; }
+.esc-sug-tipo.ok { color:#00D87A; }
+.esc-sug-tipo.ronda { color:#5A6478; }
+
 /* Sala de reunião */
 .sala-bg { display:none; position:fixed; inset:0; background:rgba(4,6,12,.72); z-index:700; align-items:center; justify-content:center; padding:24px; }
 .sala-bg.open { display:flex; }
@@ -9356,6 +9369,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   var dados={anuncios:[],ads:[],vendas:[],visitas:[],reviews:[],reputacao:null,skus:[],agenda:[],anotacoes:[],ideias:[],skusCompleto:[],perguntas:[],pedidos:[],reclamacoes:[],financeiro:[],desde:null};
   var sugestoes={}, alertCounts={}, doneMap={};
   var memoria={};       // {agente_id: [registros do diário de bordo]}
+  var urgenciasPorAgente={};  // quantos papéis empilhar na mesa de cada um
   var conhecimento=[];  // o que o Ale ensinou (sobrevive a tudo)
   var tarefas=[];   // fila de handoff entre agentes
   var animT=0, hitAreas=[], initialized=false, activeAgentId=null;
@@ -9579,6 +9593,44 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       ctx.beginPath(); ctx.ellipse(gpt.x,gpt.y,gr*1.5,gr*0.65,-0.25,0,Math.PI*2);
       ctx.fill(); ctx.restore();
     }
+    // Papéis na mesa: um por urgência. É o sinal de longe de que tem
+    // coisa esperando decisão naquela sala.
+    var urgencias=urgenciasPorAgente[s.ag]||0;
+    if(urgencias>0){
+      var folhas=Math.min(urgencias,5);
+      for(var f=0;f<folhas;f++){
+        var px=mx+DESK_W*0.68, py=my+DESK_D*0.30+f*0.012;
+        var alt=DESK_H+0.012+f*0.009;
+        var inclina=(f%2===0?1:-1)*0.02*f;
+        var A=iso(px+inclina, py, alt), B=iso(px+0.30+inclina, py, alt),
+            C=iso(px+0.30, py+0.24, alt), D=iso(px, py+0.24, alt);
+        fillPoly([A,B,C,D], f===folhas-1 ? '#E8E4D8' : '#C9C4B6');
+        strokePoly([A,B,C,D],'rgba(0,0,0,0.25)',0.5);
+        // Linhas de texto na folha de cima
+        if(f===folhas-1){
+          for(var ln=0; ln<3; ln++){
+            var y1=py+0.06+ln*0.055;
+            var e1=iso(px+0.05+inclina, y1, alt+0.001), e2=iso(px+0.22+inclina, y1, alt+0.001);
+            ctx.save();
+            ctx.strokeStyle='rgba(90,86,74,0.55)';
+            ctx.lineWidth=Math.max(0.7, TW*0.012);
+            ctx.beginPath(); ctx.moveTo(e1.x,e1.y); ctx.lineTo(e2.x,e2.y); ctx.stroke();
+            ctx.restore();
+          }
+        }
+      }
+      // Clipe vermelho quando a pilha passa de 3 — dá pra ver do outro lado da sala
+      if(urgencias>=3){
+        var cp=iso(mx+DESK_W*0.83, my+DESK_D*0.30, DESK_H+0.012+folhas*0.009);
+        ctx.save();
+        ctx.fillStyle='#E53535';
+        ctx.globalAlpha=0.75+0.25*Math.sin(animT*2.2);
+        ctx.beginPath();
+        ctx.ellipse(cp.x, cp.y, TW*0.055, TH*0.10, 0, 0, Math.PI*2);
+        ctx.fill(); ctx.restore();
+      }
+    }
+
     return {x:mx,y:my};
   }
 
@@ -9596,6 +9648,22 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     ctx.ellipse(c.x, c.y+TH*0.16, TW*1.05, TH*1.0, 0, 0, Math.PI);
     ctx.fillStyle='#11172A'; ctx.fill();
     ctx.restore();
+
+    // Pauta em cima da mesa quando há tarefa esperando entre os agentes
+    var pendentes=tarefas.filter(function(t){return t.status==='aberta';}).length;
+    if(pendentes>0){
+      var pa=iso(cx-0.18, cy-0.10, 0.41), pb=iso(cx+0.18, cy-0.10, 0.41),
+          pc2=iso(cx+0.18, cy+0.14, 0.41), pd=iso(cx-0.18, cy+0.14, 0.41);
+      fillPoly([pa,pb,pc2,pd],'#E8E4D8');
+      strokePoly([pa,pb,pc2,pd],'rgba(0,0,0,0.3)',0.5);
+      var nt=iso(cx, cy+0.02, 0.42);
+      ctx.save();
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.font='bold '+Math.max(8,Math.round(9*TW/46))+'px "DM Sans",sans-serif';
+      ctx.fillStyle='#6B6A64';
+      ctx.fillText(String(pendentes), nt.x, nt.y);
+      ctx.restore();
+    }
   }
 
   // Avatar: corpo em cápsula + cabeça, com leve balanço ao andar
@@ -9769,7 +9837,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
   // ── Side panel ─────────────────────────────────────────────────────────────
   function tipoLabel(tipo){
-    return {urgente:'🔴 Urgente',atencao:'🟡 Atenção',info:'🔵 Info',oportunidade:'🟢 Oportunidade'}[tipo]||tipo;
+    return {urgente:'🔴 Precisa de ação', atencao:'🟡 Fique de olho', info:'🔵 Info',
+            sugestao:'🔎 Vale olhar', ronda:'🕑 Ronda', ok:'🟢 Tudo certo',
+            oportunidade:'🟢 Oportunidade'}[tipo]||tipo;
   }
 
   function openPanel(agent){
@@ -9812,19 +9882,38 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
             +'<button class="esc-sug-btn" style="flex:1" onclick="escConcluirTarefa('+s.tarefaId+',\'feita\')">✓ Resolvido</button>'
             +'<button class="esc-sug-btn" style="flex:0 0 auto;opacity:.65" onclick="escConcluirTarefa('+s.tarefaId+',\'descartada\')">Descartar</button>'
             +'</div>';
-        } else if(s.origem==='vazio'){
+        } else if(s.origem==='vazio' || s.origem==='ronda'){
           botoes='';
         } else {
           botoes='<button class="esc-sug-btn'+(done?' done':'')+'" onclick="escMarcarFeito(\''+id+'\',this)">'+(done?'✓ Feito':'Marcar como visto')+'</button>';
         }
-        return '<div class="esc-sugestao'+(done?' done':'')+'" data-sid="'+id+'">'+
-          '<div class="esc-sug-tipo '+s.tipo+'">'+tipoLabel(s.tipo)+'</div>'+
-          '<div class="esc-sug-titulo">'+escHtml(s.titulo)+'</div>'+
+        var classeExtra = s.origem==='ronda' ? ' esc-ronda' : (s.tipo==='sugestao' ? ' esc-sug-olhar' : '');
+        var cabecalho = s.origem==='ronda'
+          ? '<div class="esc-ronda-cab"><span>'+escHtml(s.titulo)+'</span><span class="esc-ronda-hora">'+escHtml(dataHora(s.quando))+'</span></div>'
+          : '<div class="esc-sug-tipo '+s.tipo+'">'+tipoLabel(s.tipo)+'</div>'
+           +'<div class="esc-sug-titulo">'+escHtml(s.titulo)+'</div>';
+        return '<div class="esc-sugestao'+(done?' done':'')+classeExtra+'" data-sid="'+id+'">'+
+          cabecalho+
           '<div class="esc-sug-desc" style="white-space:pre-line">'+escHtml(s.descricao)+'</div>'+
           (s.impacto?'<div class="esc-sug-impacto">💡 '+escHtml(s.impacto)+'</div>':'')+
           botoes+
           '</div>';
       }).join('');
+
+      // Separadores entre os blocos, pra leitura não virar uma lista só
+      var primeiraSug=sug.findIndex(function(s){return s.tipo==='sugestao';});
+      var primeiraRonda=sug.findIndex(function(s){return s.origem==='ronda';});
+      var partes=body.innerHTML.split('<div class="esc-sugestao');
+      if(partes.length>1){
+        var montado=partes[0];
+        for(var pi=1;pi<partes.length;pi++){
+          var idx=pi-1;
+          if(idx===primeiraSug && primeiraSug>0) montado+='<div class="esc-divisor">O que vale você olhar</div>';
+          if(idx===primeiraRonda && primeiraRonda>0) montado+='<div class="esc-divisor">O que eu verifiquei</div>';
+          montado+='<div class="esc-sugestao'+partes[pi];
+        }
+        body.innerHTML=montado;
+      }
     }
     // O que este agente sabe porque o Ale ensinou
     var meuConhec=conhecimentoDe(agent.id);
@@ -9982,8 +10071,17 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
   // O que o painel mostra agora vem da RONDA de cada agente (agente_memoria)
   // e da fila de handoff (agente_tarefas) — não de uma lista fixa no código.
+  function dataHora(ts){
+    if(!ts) return '';
+    var d=new Date(ts);
+    var hoje=new Date();
+    var mesmoDia = d.toDateString()===hoje.toDateString();
+    var hora=d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    return mesmoDia ? ('hoje às '+hora) : (d.toLocaleDateString('pt-BR')+' às '+hora);
+  }
+
   function buildSugestoes(){
-    sugestoes={}; alertCounts={};
+    sugestoes={}; alertCounts={}; urgenciasPorAgente={};
     AGENTS.forEach(function(ag){
       var itens=[];
 
@@ -9999,25 +10097,48 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           });
         });
 
-      // 2) O que ele mesmo observou na ronda
-      (memoria[ag.id]||[]).slice(0,10).forEach(function(m){
+      // 2) O que ele encontrou na ronda — problemas primeiro
+      var mem=memoria[ag.id]||[];
+      mem.filter(function(m){ return m.severidade==='urgente'||m.severidade==='atencao'; })
+        .slice(0,10).forEach(function(m){
+          itens.push({
+            tipo: m.severidade==='urgente'?'urgente':'atencao',
+            origem:'observacao',
+            titulo:m.titulo,
+            descricao:(m.corpo||'')+(m.criado_em?'\n\nVisto em '+dataHora(m.criado_em):''),
+            impacto:null,
+          });
+        });
+
+      // 3) O que ele sugere que o Ale olhe — não é urgente, mas rende
+      mem.filter(function(m){ return m.severidade==='sugestao'; }).slice(0,5).forEach(function(m){
         itens.push({
-          tipo: m.severidade==='urgente'?'urgente':(m.severidade==='atencao'?'atencao':'info'),
-          origem:'observacao',
+          tipo:'sugestao', origem:'sugestao',
           titulo:m.titulo,
-          descricao:(m.corpo||'')+(m.criado_em?'\n— observado em '+new Date(m.criado_em).toLocaleDateString('pt-BR'):''),
+          descricao:(m.corpo||'')+(m.criado_em?'\n\nAnotado em '+dataHora(m.criado_em):''),
           impacto:null,
         });
       });
 
       if(!itens.length){
-        itens.push({tipo:'info', origem:'vazio',
-          titulo:'Nada fora do esperado na minha área',
+        itens.push({tipo:'ok', origem:'vazio',
+          titulo:'Varri minha área e não achei nada fora do esperado',
           descricao:ag.cuida, impacto:null});
       }
 
+      // 4) Registro das rondas — fecha o painel mostrando o trabalho feito
+      mem.filter(function(m){ return m.severidade==='ronda'; }).slice(0,6).forEach(function(m){
+        itens.push({
+          tipo:'ronda', origem:'ronda',
+          titulo:m.titulo, descricao:m.corpo||'',
+          quando:m.criado_em, impacto:null,
+        });
+      });
+
       sugestoes[ag.id]=itens;
+      // Badge conta só o que exige ação. Ronda e sugestão não acendem alerta.
       alertCounts[ag.id]=itens.filter(function(s){ return s.tipo==='urgente'||s.tipo==='atencao'; }).length;
+      urgenciasPorAgente[ag.id]=itens.filter(function(s){ return s.tipo==='urgente'; }).length;
     });
   }
 
@@ -10197,8 +10318,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     try {
       var ok=await escAcaoExecutar(tipo,params);
       if(ok){
-        btnEl.textContent='✅ Aplicado!';
-        btnEl.style.background='#22C55E';
+        btnEl.textContent = (ok && ok.aviso) ? ('⚠ '+ok.aviso) : '✅ Aplicado!';
+        btnEl.style.background = (ok && ok.aviso) ? '#B45309' : '#22C55E';
         btnEl.style.color='#fff';
         // Recarrega dados locais para manter contexto fresco
         setTimeout(function(){ fetchDados(); },800);
@@ -10241,9 +10362,20 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var filtro={titulo:tituloEv, data:dataEv};
       if(horaEv) filtro.horario=horaEv;
       if(await jaExiste('agenda',filtro)) return true;
+
+      // Outro compromisso no mesmo horário: marca, mas avisa em vez de esconder
+      var choque=null;
+      if(horaEv){
+        try{
+          var {data:mesmoHorario}=await sb.from('agenda').select('titulo')
+            .eq('data',dataEv).eq('horario',horaEv).limit(1);
+          if(mesmoHorario && mesmoHorario.length) choque=mesmoHorario[0].titulo;
+        }catch(e){}
+      }
+
       var {error}=await sb.from('agenda').insert({titulo:tituloEv,data:dataEv,horario:horaEv,categoria:params[3]||'Geral',obs:'Criado pelo '+quem});
       if(error) throw error;
-      return true;
+      return choque ? {ok:true, aviso:'choca com "'+choque+'" no mesmo horário'} : true;
     }
     if(tipo==='criar_ideia'){
       var nomeIdeia=params[0]||'Ideia';
@@ -10436,15 +10568,21 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   }
 
   // Registra uma observação. `chave` inclui a data: repetir no mesmo dia é ignorado.
+  // Erro de verdade tem que aparecer — um catch silencioso aqui já escondeu a
+  // ronda inteira quebrada por causa de um índice parcial.
   async function registrarObservacao(agenteId, obs){
-    var reg={ conta:CONTA, agente_id:agenteId, tipo:'observacao',
+    var reg={ conta:CONTA, agente_id:agenteId, tipo:obs.tipo||'observacao',
       severidade:obs.severidade||'info', titulo:obs.titulo, corpo:obs.corpo||null,
       sku:obs.sku||null, dados:obs.dados||null, chave:(obs.chave||obs.titulo)+'|'+hojeISO() };
-    try{
-      var {error}=await sb.from('agente_memoria').upsert(reg,{onConflict:'conta,agente_id,chave',ignoreDuplicates:true});
-      if(error) throw error;
-    }catch(e){ /* duplicata do dia: silencioso por design */ }
+    var {error}=await sb.from('agente_memoria').upsert(reg,{onConflict:'conta,agente_id,chave',ignoreDuplicates:true});
+    if(error){
+      // 23505 = a mesma observação já foi registrada hoje. Isso é esperado.
+      if(error.code==='23505') return;
+      console.error('[Escritório] não consegui registrar observação de '+agenteId+':', error.message||error);
+      _errosDeRonda.push(agenteNome(agenteId)+': '+(error.message||error));
+    }
   }
+  var _errosDeRonda=[];
 
   // Um agente abre tarefa para outro. Não duplica enquanto a anterior estiver aberta.
   async function abrirTarefa(deAgente, paraAgente, t){
@@ -10453,11 +10591,13 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       titulo:t.titulo, descricao:t.descricao||null, sku:t.sku||null,
       prioridade:t.prioridade||'media', status:'aberta',
       chave:t.chave||(deAgente+'>'+paraAgente+'|'+t.titulo+'|'+(t.sku||'')) };
-    try{
-      var {error}=await sb.from('agente_tarefas').upsert(reg,{onConflict:'conta,chave',ignoreDuplicates:true});
-      if(error) throw error;
-      return {error:null};
-    }catch(e){ return {error:e.message||String(e)}; }
+    var {error}=await sb.from('agente_tarefas').upsert(reg,{onConflict:'conta,chave,status',ignoreDuplicates:true});
+    if(error && error.code!=='23505'){
+      console.error('[Escritório] não consegui abrir tarefa:', error.message||error);
+      _errosDeRonda.push('tarefa '+deAgente+'→'+paraAgente+': '+(error.message||error));
+      return {error:error.message||String(error)};
+    }
+    return {error:null};
   }
 
   window.escConcluirTarefa=async function(id, novoStatus){
@@ -10737,7 +10877,97 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       chave:'fila_parada'
     }));
 
+    /* ── Fecho da ronda: o que cada um verificou, com horário ──────────────
+       Sem isto o painel só mostra problema — e quando não há problema, parece
+       que o agente não fez nada. */
+    var agora=new Date();
+    var hora=agora.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    var carimbo=hojeISO()+'_'+agora.getHours();  // um fecho por hora, não a cada refresh
+
+    var totalAtivos=an.filter(function(a){return a.status==='active';}).length;
+    var diasComDado=dados.desde?('desde '+lbxDataBR(dados.desde)):'últimos 30 dias';
+
+    var varreduras={
+      ads:{
+        o_que:'Varri '+totalAtivos+' anúncios ativos, o gasto de ADS dia a dia ('+diasComDado+') e o alvo do hub de cada SKU.',
+        conferi:['TACOS por SKU e por dia','Gasto real contra o ADS alvo do hub','Anúncios ativos sem impressão','ACOS, CTR e CPC'],
+      },
+      anuncios:{
+        o_que:'Varri '+totalAtivos+' anúncios ativos: saúde, experiência de compra, Buy Box, preço e estoque.',
+        conferi:['Saúde e motivo informado pelo ML','Buy Box e preço contra o concorrente','Estoque contra o mínimo de cada SKU','Pendências de qualidade'],
+      },
+      sac:{
+        o_que:'Varri '+(rev||[]).length+' avaliações recentes, a reputação da conta e '+(pedidos||[]).length+' pedidos dos últimos 30 dias.',
+        conferi:['Notas 1 e 2 e o que o cliente escreveu','Taxa de reclamação e cancelamento','Pedidos cancelados ou atrasados'],
+      },
+      gestor:{
+        o_que: fd ? ('Fechei o mês em '+(fd.rec||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' de receita, com '+Math.round((fd.cobHub||0)*100)+'% da margem coberta pelo hub.')
+                  : 'Ainda não consegui ler o Financeiro deste mês — abra a aba uma vez para eu ter os números.',
+        conferi:['M.C. e MPA do mês','TACOS consolidado','Concentração de margem','Receita sem vínculo no hub'],
+      },
+      assistente:{
+        o_que:'Olhei a agenda, as anotações, as ideias e a fila de tarefas entre os agentes.',
+        conferi:['Compromissos próximos','Tarefas paradas há mais de 3 dias','Ideias sem andamento'],
+      },
+    };
+
+    Object.keys(varreduras).forEach(function(agId){
+      var v=varreduras[agId];
+      jobs.push(registrarObservacao(agId,{
+        tipo:'ronda', severidade:'ronda',
+        titulo:'Ronda das '+hora,
+        corpo:v.o_que+'\n\nConferi: '+v.conferi.join(' · '),
+        chave:'ronda|'+carimbo
+      }));
+    });
+
+    /* ── O que vale a pena o Ale olhar, mesmo sem ser urgente ────────────── */
+    var sugestoes=[];
+    if(fd && fd.skus){
+      // Faturam bem mas entregam pouca margem — não é urgência, é oportunidade
+      var linkados=fd.skus.filter(function(o){return o.linkado && o.rec>0;});
+      if(linkados.length>2){
+        var recMedia=linkados.reduce(function(s,o){return s+o.rec;},0)/linkados.length;
+        var armadilhas=linkados.filter(function(o){ return o.rec>recMedia && o.mpaPct!==null && o.mpaPct<8; })
+                               .sort(function(a,b){return b.rec-a.rec;});
+        if(armadilhas.length) sugestoes.push({ag:'gestor',
+          titulo:'Vale olhar: '+armadilhas.length+' SKU'+(armadilhas.length>1?'s que faturam':' que fatura')+' bem e entrega'+(armadilhas.length>1?'m':'')+' pouca margem',
+          corpo:armadilhas.slice(0,4).map(function(o){
+            return o.sku+' — '+o.rec.toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' de receita com MPA de '+o.mpaPct.toFixed(1)+'%';
+          }).join('\n')+'\n\nNão é urgente, mas é onde um ajuste de preço rende mais.',
+          chave:'sugestao_armadilha'});
+      }
+      var caros=fd.skus.filter(function(o){return o.linkado && o.tacos!==null && o.adsAlvoPct!==null && o.tacos>o.adsAlvoPct*1.5;});
+      if(caros.length) sugestoes.push({ag:'ads',
+        titulo:'Vale olhar: '+caros.length+' SKU'+(caros.length>1?'s gastando':' gastando')+' bem acima do alvo',
+        corpo:caros.slice(0,4).map(function(o){ return o.sku+' — TACOS '+o.tacos.toFixed(1)+'% contra alvo de '+o.adsAlvoPct.toFixed(1)+'%'; }).join('\n')
+             +'\n\nPode ser estratégia de lançamento. Se não for, tem verba escapando.',
+        chave:'sugestao_ads_caro'});
+    }
+    var semVideo=an.filter(function(a){ return a.qualidade_pendencias && /v[íi]deo/i.test(a.qualidade_pendencias); });
+    if(semVideo.length>=3) sugestoes.push({ag:'anuncios',
+      titulo:'Vale olhar: '+semVideo.length+' anúncios sem vídeo',
+      corpo:'O próprio ML aponta isso como pendência de qualidade nesses anúncios. Vídeo costuma segurar conversão em produto técnico.\n'
+           +semVideo.slice(0,5).map(function(a){return '· '+(a.sku||a.item_id);}).join('\n'),
+      chave:'sugestao_video'});
+    var notasBoas=(rev||[]).filter(function(r){return Number(r.nota)>=4;}).length;
+    if(notasBoas>20) sugestoes.push({ag:'sac',
+      titulo:'Vale olhar: '+notasBoas+' avaliações boas para aproveitar',
+      corpo:'Cliente satisfeito escrevendo bem é material de anúncio. Vale puxar os melhores comentários para a descrição ou para a ficha do produto.',
+      chave:'sugestao_reviews_bons'});
+
+    sugestoes.forEach(function(s){
+      jobs.push(registrarObservacao(s.ag,{
+        tipo:'sugestao', severidade:'sugestao',
+        titulo:s.titulo, corpo:s.corpo, chave:s.chave
+      }));
+    });
+
+    _errosDeRonda=[];
     await Promise.all(jobs);
+    if(_errosDeRonda.length){
+      console.warn('[Escritório] a ronda teve '+_errosDeRonda.length+' falha(s) de gravação:', _errosDeRonda);
+    }
     await carregarMemoriaETarefas();
   }
 
@@ -10892,22 +11122,6 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           }),
           apresentacao_aberta: typeof window.apContexto==='function' ? window.apContexto() : null,
         };
-        // Datas prontas: sem isso o agente chuta o dia e agenda para a data errada
-        var _h=new Date();
-        var _diaSem=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'][_h.getDay()];
-        function _maisDias(n){ var d=new Date(_h); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
-        function _proximo(diaAlvo){
-          var d=new Date(_h); var delta=(diaAlvo-d.getDay()+7)%7; if(delta===0) delta=7;
-          d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10);
-        }
-        ctx.calendario={
-          hoje:_h.toISOString().slice(0,10), hoje_e:_diaSem,
-          amanha:_maisDias(1),
-          proxima_segunda:_proximo(1), proxima_terca:_proximo(2), proxima_quarta:_proximo(3),
-          proxima_quinta:_proximo(4), proxima_sexta:_proximo(5),
-          _obs:'Use estas datas em criar_evento. Nunca escreva uma data que você não viu aqui.'
-        };
-
         ctx._regras_da_reuniao=[
           'Você está numa reunião com o Ale e outros agentes. Fale como quem senta na mesa: direto, curto, com número na frente.',
           'Não repita o que outro agente já disse — acrescente da SUA área ou discorde com dado.',
@@ -10962,6 +11176,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       try{
         var ok=await escAcaoExecutar(a.tipo, a.params);
         feitos.push({tipo:a.tipo, params:a.params, ok:!!ok,
+                     aviso: (ok && ok.aviso) ? ok.aviso : null,
                      erro: ok?null:'ação não reconhecida'});
       }catch(e){
         feitos.push({tipo:a.tipo, params:a.params, ok:false, erro:String(e.message||e)});
@@ -10996,7 +11211,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
               : f.tipo==='criar_slide'  ? ('🖼 Slide: '+f.params[0])
               : f.tipo==='editar_slide' ? ('✏️ Slide '+f.params[0]+' reescrito')
               : (f.tipo+': '+f.params.join(', '));
-      return (f.ok?'✓ ':'✕ ')+rot+(f.ok?'':' — '+f.erro);
+      if(!f.ok) return '✕ '+rot+' — '+f.erro;
+      return (f.aviso?'⚠ ':'✓ ')+rot+(f.aviso?' — '+f.aviso:'');
     });
     var houveErro=feitos.some(function(f){return !f.ok;});
     return '\n\n'+(houveErro?'⚠️ Nem tudo deu certo:':'Registrado no SellerHub:')+'\n'+linhas.join('\n');
@@ -11170,6 +11386,24 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     });
 
     /* ── Memória e fila: o agente lembra do que viu e do que pediram a ele ── */
+    // Datas prontas. Isto vale em QUALQUER conversa, não só na reunião:
+    // sem o calendário à mão o agente chuta o dia e agenda na data errada.
+    var _h=new Date();
+    var _diasSem=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+    function _maisDias(n){ var d=new Date(_h); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+    function _proximo(alvo){
+      var d=new Date(_h); var delta=(alvo-d.getDay()+7)%7; if(delta===0) delta=7;
+      d.setDate(d.getDate()+delta); return d.toISOString().slice(0,10);
+    }
+    ctx.calendario={
+      hoje:_h.toISOString().slice(0,10), hoje_e:_diasSem[_h.getDay()],
+      amanha:_maisDias(1), amanha_e:_diasSem[(_h.getDay()+1)%7],
+      proxima_segunda:_proximo(1), proxima_terca:_proximo(2), proxima_quarta:_proximo(3),
+      proxima_quinta:_proximo(4), proxima_sexta:_proximo(5), proximo_sabado:_proximo(6),
+      _obs:'Datas para usar em criar_evento. Nunca escreva uma data que não esteja aqui. '
+          +'"Segunda" significa proxima_segunda; confira o dia da semana antes de marcar.'
+    };
+
     // Qualquer agente pode ser chamado para agendar algo, então todos precisam
     // enxergar o que já está marcado — senão duplicam compromisso.
     ctx.agenda_proxima=(agenda||[]).slice(0,15).map(function(e){
@@ -11203,7 +11437,11 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     /* ── Ações: o que este agente pode fazer sozinho no SellerHub ────────── */
     ctx._acoes_disponiveis=[
       'criar_nota(titulo, texto) — salva uma anotação',
-      'criar_evento(titulo, data YYYY-MM-DD, hora HH:MM, categoria) — adiciona na agenda',
+      'criar_evento(titulo, data YYYY-MM-DD, hora HH:MM, categoria) — adiciona na agenda. '
+        +'O título é lido pelo Ale no celular meses depois: escreva em português claro, dizendo o que ele vai FAZER '
+        +'("Revisar anúncios com o agente Anúncios"), não em jargão ("Sync Anúncios", "Briefing", "Daily", "Check-in"). '
+        +'Sem emoji, sem sigla, sem palavra em inglês. Antes de marcar, veja agenda_proxima: não repita algo que já está lá '
+        +'nem marque dois compromissos no mesmo horário.',
       'criar_ideia(titulo, descricao, prioridade: alta|media|baixa) — adiciona no kanban de ideias',
       'abrir_tarefa(para, titulo, descricao, sku, prioridade) — passa um problema para outro agente. '
         +'"para" deve ser um destes: ' + AGENTS.filter(function(a){return a.id!==agId;}).map(function(a){return a.id;}).join(', '),
