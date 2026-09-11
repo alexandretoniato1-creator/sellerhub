@@ -1057,6 +1057,17 @@ body.sidebar-collapsed .hamburger { display: none; }
 .esc-refresh-btn:hover { background:rgba(255,255,255,0.09); color:#C0C8D8; }
 .esc-canvas-wrap { flex:1; position:relative; overflow:hidden; background:#07090E; min-height:340px; }
 #escritorio-canvas { display:block; }
+/* Fila de notificações no painel do agente */
+.esc-notif { margin-top:18px; border-top:1px solid rgba(255,255,255,0.07); padding-top:14px; }
+.esc-notif-head { font-size:11px; font-family:var(--mono); letter-spacing:.06em; text-transform:uppercase; color:#8A94A8; margin-bottom:10px; }
+.esc-notif-item { display:flex; align-items:baseline; gap:8px; padding:7px 0; border-top:1px solid rgba(255,255,255,0.04); font-size:12px; }
+.esc-notif-item:first-of-type { border-top:none; }
+.esc-notif-marca { flex-shrink:0; font-size:11px; }
+.esc-notif-txt { flex:1; color:#C8CEDC; line-height:1.45; }
+.esc-notif-st { font-family:var(--mono); font-size:9.5px; color:#5A6478; white-space:nowrap; }
+.esc-notif-st.ok { color:#00D87A; }
+.esc-notif-pe { font-size:10.5px; color:#5A6478; margin-top:9px; line-height:1.5; }
+
 /* Blocos da aba Análise */
 .esc-divisor { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.1em;
   color:#5A6478; margin:20px 0 10px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); }
@@ -1427,6 +1438,47 @@ body.sidebar-collapsed .hamburger { display: none; }
 .skup-diag-lista { margin:0; padding-left:18px; }
 .skup-diag-lista li { font-size:12.5px; line-height:1.6; color:var(--slate-700); }
 
+/* Experiência de compra — a nota grande primeiro, porque é o que decide exposição */
+.skup-exp { display:flex; flex-direction:column; gap:10px; }
+.skup-exp-item { background:var(--bg); border:1px solid var(--slate-100); border-radius:var(--radius-sm); padding:12px 14px; }
+.skup-exp-head { display:flex; align-items:baseline; gap:9px; flex-wrap:wrap; margin-bottom:7px; }
+.skup-exp-nota { font-size:26px; font-weight:700; font-family:var(--mono); line-height:1; font-variant-numeric:tabular-nums; }
+.skup-exp-faixa { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; }
+.skup-exp-origem { font-size:11px; color:var(--slate-500); background:var(--slate-100); border-radius:20px; padding:2px 9px; }
+.skup-exp-txt { font-size:12.5px; line-height:1.55; color:var(--slate-700); margin:0 0 10px; }
+.skup-exp-nums { display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:8px; }
+.skup-exp-nums > div { display:flex; flex-direction:column; gap:2px; }
+.skup-exp-num-lab { font-size:10px; text-transform:uppercase; letter-spacing:.4px; color:var(--slate-400); font-family:var(--mono); }
+.skup-exp-num { font-size:16px; font-weight:600; font-family:var(--mono); color:var(--slate-700); font-variant-numeric:tabular-nums; }
+.skup-exp-alerta { margin-top:10px; font-size:12px; line-height:1.5; color:var(--coral-600); background:#FEF2F2; border-left:3px solid var(--coral-500); border-radius:var(--radius-sm); padding:8px 11px; }
+.skup-exp-rodape { font-size:11px; line-height:1.5; color:var(--slate-400); }
+
+/* Aba Experiência de compra */
+.exp-kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin-top:14px; }
+.exp-kpi { background:var(--card); border:1px solid var(--slate-100); border-radius:var(--radius); padding:14px 16px; }
+.exp-kpi-lab { font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--slate-400); font-family:var(--mono); margin-bottom:6px; }
+.exp-kpi-val { font-size:28px; font-weight:700; font-family:var(--mono); line-height:1; font-variant-numeric:tabular-nums; color:var(--slate-700); }
+.exp-kpi-sub { font-size:11.5px; color:var(--slate-500); margin-top:6px; line-height:1.4; }
+.exp-movs { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:10px; }
+.exp-mov { background:var(--bg); border:1px solid var(--slate-100); border-left:3px solid var(--slate-200); border-radius:var(--radius-sm); padding:11px 13px; }
+.exp-mov.ruim { border-left-color:var(--coral-500); }
+.exp-mov.bom { border-left-color:var(--green-600); }
+.exp-mov-sku { font-size:12.5px; font-weight:600; color:var(--slate-700); }
+.exp-mov-nums { display:flex; align-items:baseline; gap:7px; font-family:var(--mono); font-size:19px; margin:4px 0 3px; font-variant-numeric:tabular-nums; }
+.exp-mov-seta { font-size:14px; color:var(--slate-400); }
+.exp-mov-tag { font-size:11px; color:var(--slate-500); }
+.exp-mov-motivo { font-size:11.5px; line-height:1.45; color:var(--slate-500); margin-top:6px; }
+.exp-grafico { background:var(--card); border:1px solid var(--slate-100); border-radius:var(--radius); padding:14px 16px 10px; }
+.exp-legenda { display:flex; flex-wrap:wrap; gap:14px; margin-top:8px; font-size:11px; color:var(--slate-500); }
+.exp-legenda span { display:inline-flex; align-items:center; gap:5px; }
+.exp-legenda i { width:10px; height:3px; border-radius:2px; display:inline-block; }
+.exp-tag { font-size:10.5px; font-weight:700; border-radius:20px; padding:2px 9px; white-space:nowrap; }
+.exp-tag.alerta { color:#B45309; background:#FEF3C7; border:1px solid #FCD34D; }
+.exp-tag.ok { color:var(--green-600); background:#ECFDF5; border:1px solid #A7F3D0; }
+.exp-tag.neutra { color:var(--slate-500); background:var(--slate-100); border:1px solid var(--slate-200); }
+.exp-vazio { font-size:12.5px; color:var(--slate-500); background:var(--bg); border:1px solid var(--slate-100); border-radius:var(--radius-sm); padding:12px 14px; line-height:1.5; }
+.exp-rodape { font-size:11.5px; line-height:1.55; color:var(--slate-400); margin-top:20px; }
+
 /* Avaliações ruins */
 .skup-revs { display:flex; flex-direction:column; gap:8px; }
 .skup-rev-item { background:var(--coral-50); border:1px solid var(--coral-200); border-radius:var(--radius-sm); padding:10px 12px; }
@@ -1609,6 +1661,19 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div class="hub-secondary-nav" id="operacao-tabs">
         <button class="hub-secondary-btn active" id="op-tab-vendas" onclick="opGoTab('vendas',this)">📈 Vendas</button>
         <button class="hub-secondary-btn" id="op-tab-produtos" onclick="opGoTab('produtos',this)">📦 Produtos</button>
+        <button class="hub-secondary-btn" id="op-tab-experiencia" onclick="opGoTab('experiencia',this)">⭐ Experiência</button>
+      </div>
+
+      <!-- Secao Experiencia de compra -->
+      <div id="op-section-experiencia" style="display:none">
+        <div class="page-title">Operação — Experiência de compra</div>
+        <div class="page-subtitle">A régua que o Mercado Livre usa pra cortar exposição: nota por anúncio, herança por categoria e quem está puxando pra baixo</div>
+        <div id="exp-kpis" class="exp-kpis"></div>
+        <div id="exp-quedas"></div>
+        <div id="exp-grafico-wrap"></div>
+        <div id="exp-categorias"></div>
+        <div id="exp-ofensoras"></div>
+        <div id="exp-rodape" class="exp-rodape"></div>
       </div>
       <!-- Secao Vendas -->
       <div id="op-section-vendas">
@@ -2727,6 +2792,14 @@ function opGoTab(tab,btn){
   if(btn) btn.classList.add('active');
   var sv=document.getElementById('op-section-vendas');
   var sp=document.getElementById('op-section-produtos');
+  var se=document.getElementById('op-section-experiencia');
+  if(se) se.style.display = tab==='experiencia' ? '' : 'none';
+  if(tab==='experiencia'){
+    if(sv) sv.style.display='none';
+    if(sp) sp.style.display='none';
+    renderExperiencia();
+    return;
+  }
   if(tab==='vendas'){
     if(sv) sv.style.display='';
     if(sp) sp.style.display='none';
@@ -3377,16 +3450,196 @@ function lbxPendencias(txt){
   return String(txt).split('|').map(s=>s.trim()).filter(Boolean);
 }
 
+/* ═══ EXPERIÊNCIA DE COMPRA ══════════════════════════════════════════
+   Regra publicada pelo Mercado Livre (fluxograma de set/2026):
+
+     item com 100+ vendas em 60 dias ──→ NOTA PRÓPRIA
+                                         (reclamação do próprio anúncio)
+     menos que isso ──→ a categoria do vendedor tem 200+ vendas?
+                          sim ──→ HERDA a nota do vendedor na categoria
+                          não ──→ SEM EXPERIÊNCIA
+
+     A nota sai da comparação com a média (benchmark) da CATEGORIA:
+       Boa   75–100 → ao menos 1,9× MENOS reclamação que a média
+       Média 50–74  → 2× a 2,9× MAIS reclamação que a média
+       Ruim  até 30 → ao menos 3× MAIS reclamação que a média
+
+     PDD = reclamação do produto aberta pelo comprador.
+
+   Duas consequências que mudam a operação:
+   1. A conta pode ter 0,16% de reclamação e ainda assim ter anúncio
+      fora da faixa Boa — o corte é por categoria, não por conta.
+   2. Um anúncio ruim contamina os anúncios NOVOS da mesma categoria,
+      porque eles herdam a nota enquanto não fazem 100 vendas.
+
+   O benchmark da categoria não é exposto na API pública. Temos a nota
+   final e o texto que o ML escreveu — e é só isso que citamos.
+   ═══════════════════════════════════════════════════════════════════ */
+
+var EXP_MIN_BOA=75, EXP_MIN_MEDIA=50;
+var EXP_VENDAS_ITEM=100, EXP_VENDAS_CATEGORIA=200;
+
+function expFaixa(v){
+  if(v===null||v===undefined||v<0) return 'sem';
+  if(v>=EXP_MIN_BOA) return 'boa';
+  if(v>=EXP_MIN_MEDIA) return 'media';
+  return 'ruim';
+}
+function expFaixaNome(f){
+  return f==='boa'?'Boa':f==='media'?'Média':f==='ruim'?'Ruim':'Sem experiência';
+}
+// O próprio ML escreve a herança no texto ("calculamos com base nas suas
+// vendas na mesma categoria"). Ler o que ele diz é mais confiável do que
+// deduzir pela contagem de vendas — o corte de 100 é critério dele.
+function expOrigem(a){
+  var v=a.experiencia_valor;
+  if(v===null||v===undefined||v<0) return 'sem';
+  var m=(a.experiencia_motivo||'').toLowerCase();
+  if(/n[ãa]o temos informa[çc][õo]es suficientes|na mesma categoria|com base na sua categoria/.test(m)) return 'heranca';
+  return 'proprio';
+}
+function expOrigemNome(o){
+  return o==='proprio'?'nota própria':o==='heranca'?'herdada da categoria':'sem cálculo ainda';
+}
+// PDD e PNR são famílias de código do ML. PDD é a que o fluxograma define
+// como reclamação do produto. PNR é a família de "produto não recebido" —
+// leitura nossa do código, o post não define essa sigla.
+function expGrupoReclamacao(motivo){
+  var m=String(motivo||'').toUpperCase();
+  if(m.indexOf('PDD')===0) return 'produto';
+  if(m.indexOf('PNR')===0) return 'nao_recebido';
+  return 'outro';
+}
+
+function expPanorama(fonte){
+  fonte=fonte||{};
+  var an=(fonte.anuncios||[]).filter(function(a){return a.status!=='closed';});
+  var un60={}, rec60={};
+  (fonte.vendas60||[]).forEach(function(v){
+    un60[v.item_id]=(un60[v.item_id]||0)+(v.unidades||0);
+    rec60[v.item_id]=(rec60[v.item_id]||0)+Number(v.receita||0);
+  });
+
+  var reclPorItem={}, semItem=0;
+  (fonte.reclamacoes||[]).forEach(function(r){
+    if(!r.item_id){ semItem++; return; }
+    var o=reclPorItem[r.item_id]=reclPorItem[r.item_id]||{total:0,produto:0,nao_recebido:0,outro:0,abertas:0,disputa:0};
+    o.total++; o[expGrupoReclamacao(r.motivo)]++;
+    if(r.status==='opened') o.abertas++;
+    if(r.stage==='dispute') o.disputa++;
+  });
+
+  // Nota de 7 dias atrás: o snapshot mais recente até D-7 de cada item.
+  var antes={};
+  (fonte.anunciosAntes||[]).forEach(function(r){ if(!(r.item_id in antes)) antes[r.item_id]=r; });
+
+  var vazio={total:0,produto:0,nao_recebido:0,outro:0,abertas:0,disputa:0};
+  var itens=an.map(function(a){
+    var u=un60[a.item_id]||0;
+    var rc=reclPorItem[a.item_id]||vazio;
+    var ant=antes[a.item_id];
+    var faixa=expFaixa(a.experiencia_valor);
+    var valor=(a.experiencia_valor===null||a.experiencia_valor===undefined||a.experiencia_valor<0)?null:a.experiencia_valor;
+    var valorAntes=(ant&&ant.experiencia_valor!=null&&ant.experiencia_valor>=0)?ant.experiencia_valor:null;
+    var caiu=(valor!==null && valorAntes!==null && valor<valorAntes);
+    return {
+      item_id:a.item_id, sku:a.sku||a.item_id, titulo:a.titulo||'',
+      categoria:a.categoria||'(sem categoria)',
+      valor:valor, faixa:faixa, faixaNome:expFaixaNome(faixa),
+      origem:expOrigem(a), origemNome:expOrigemNome(expOrigem(a)),
+      motivo:a.experiencia_motivo||null, recomendacao:a.experiencia_recomendacao||null,
+      unidades60:u, receita60:+(rec60[a.item_id]||0).toFixed(2),
+      faltamParaNotaPropria: u>=EXP_VENDAS_ITEM ? 0 : EXP_VENDAS_ITEM-u,
+      reclamacoes:rc,
+      taxaRecl: u>0 ? +(rc.total/u*100).toFixed(2) : null,
+      valorAntes:valorAntes, dataAntes:ant?ant.data:null,
+      caiu:caiu, quedaPontos: caiu ? valorAntes-valor : 0,
+      mudouDeFaixa: caiu && expFaixa(valorAntes)!==faixa
+    };
+  });
+
+  var cats={};
+  itens.forEach(function(i){
+    var c=cats[i.categoria]=cats[i.categoria]||{categoria:i.categoria, itens:[],
+      unidades60:0, receita60:0, reclamacoes:0, piorValor:null, dependem:0};
+    c.itens.push(i); c.unidades60+=i.unidades60; c.receita60+=i.receita60;
+    c.reclamacoes+=i.reclamacoes.total;
+    if(i.valor!==null && (c.piorValor===null || i.valor<c.piorValor)) c.piorValor=i.valor;
+    if(i.origem!=='proprio') c.dependem++;
+  });
+  var categorias=Object.keys(cats).map(function(k){
+    var c=cats[k];
+    c.qtd=c.itens.length;
+    c.receita60=+c.receita60.toFixed(2);
+    c.piorFaixa=expFaixa(c.piorValor);
+    c.temBaseDeCategoria=c.unidades60>=EXP_VENDAS_CATEGORIA;
+    c.taxaRecl=c.unidades60>0 ? +(c.reclamacoes/c.unidades60*100).toFixed(2) : null;
+    // O que torna isso urgente: existe anúncio fora da faixa Boa E existem
+    // anúncios que dependem dessa nota por ainda não terem cálculo próprio.
+    c.herancaEmRisco = c.piorValor!==null && c.piorValor<EXP_MIN_BOA && c.dependem>0;
+    return c;
+  }).sort(function(a,b){return b.unidades60-a.unidades60;});
+
+  return {
+    itens:itens, categorias:categorias,
+    ofensoras: itens.filter(function(i){return i.reclamacoes.total>0;})
+                    .sort(function(a,b){return b.reclamacoes.total-a.reclamacoes.total;}),
+    foraDaFaixaBoa: itens.filter(function(i){return i.faixa==='media'||i.faixa==='ruim';})
+                         .sort(function(a,b){return (a.valor||0)-(b.valor||0);}),
+    semExperiencia: itens.filter(function(i){return i.faixa==='sem';}),
+    quedas: itens.filter(function(i){return i.caiu;}).sort(function(a,b){return b.quedaPontos-a.quedaPontos;}),
+    prestesANotaPropria: itens.filter(function(i){
+      return i.origem!=='proprio' && i.unidades60>=EXP_VENDAS_ITEM*0.7 && i.unidades60<EXP_VENDAS_ITEM;
+    }),
+    reclamacoesSemItem:semItem,
+    temDadoDeReclamacao:(fonte.reclamacoes||[]).length>0,
+    temHistorico:(fonte.anunciosAntes||[]).length>0
+  };
+}
+
 async function lbxCarregarTudo(){
-  const [anunciosRes, adsRes, vendasRes, repRes, skusRes, visitasRes] = await Promise.all([
+  // 60 dias é a janela da experiência de compra do ML. As reclamações entram
+  // aqui porque é delas que sai a taxa por anúncio e o ranking de ofensoras.
+  const d60 = new Date(); d60.setDate(d60.getDate()-60);
+  const [anunciosRes, adsRes, vendasRes, repRes, skusRes, visitasRes, reclamacoesRes] = await Promise.all([
     sb.from('ml_anuncios').select('*').eq('conta','Logbox').order('data',{ascending:false}),
     sb.from('ml_ads_reports').select('*').eq('conta','Logbox').order('data',{ascending:false}),
     sb.from('ml_vendas').select('*').eq('conta','Logbox').order('data',{ascending:false}),
     sb.from('ml_reputacao').select('*').eq('conta','Logbox').order('data',{ascending:false}).limit(1),
     sb.from('skus').select('*').eq('conta','Logbox'),
     sb.from('ml_visitas').select('*').eq('conta','Logbox').order('data',{ascending:false}),
+    sb.from('ml_reclamacoes').select('claim_id,item_id,status,stage,motivo,data_abertura')
+      .eq('conta','Logbox').gte('data_abertura',d60.toISOString()).limit(1000),
   ]);
-  return {anunciosRes, adsRes, vendasRes, repRes, skusRes, visitasRes};
+  return {anunciosRes, adsRes, vendasRes, repRes, skusRes, visitasRes, reclamacoesRes};
+}
+
+// Monta o panorama de experiência a partir do que o módulo de Produtos já
+// carregou: o snapshot mais recente, o snapshot de 7 dias atrás e as vendas
+// de 60 dias somadas por anúncio. É a MESMA função que alimenta o SAC — não
+// existe segunda implementação da regra pra divergir da primeira.
+function lbxExpDaTela(anunciosRows, vendasRows, reclamacoesRows){
+  const porData = {};
+  (anunciosRows||[]).forEach(a=>{ (porData[a.data]=porData[a.data]||[]).push(a); });
+  const datas = Object.keys(porData).sort().reverse();
+  if(!datas.length) return expPanorama({});
+  const limite = new Date(); limite.setDate(limite.getDate()-7);
+  const limiteS = limite.toISOString().slice(0,10);
+  const dataAntes = datas.find(d=>d<=limiteS);   // snapshot mais recente até D-7
+  const antes = dataAntes
+    ? porData[dataAntes].map(a=>({item_id:a.item_id, experiencia_valor:a.experiencia_valor, data:a.data}))
+    : [];
+
+  const corte = new Date(); corte.setDate(corte.getDate()-60);
+  const corteS = corte.toISOString().slice(0,10);
+  const soma = {};
+  (vendasRows||[]).forEach(v=>{
+    if(v.data < corteS) return;
+    const o = soma[v.item_id] = soma[v.item_id] || {item_id:v.item_id, unidades:0, receita:0};
+    o.unidades += Number(v.unidades||0); o.receita += Number(v.receita||0);
+  });
+  return expPanorama({ anuncios:porData[datas[0]], anunciosAntes:antes,
+                       vendas60:Object.values(soma), reclamacoes:reclamacoesRows||[] });
 }
 
 // ===== PERFORMANCE (visão de conta, por período — pensada pra apresentação) =====
@@ -3796,6 +4049,10 @@ function desenharComparativo2(){
 
 // ===== PRODUTOS (visão por SKU/anúncio — densa, uso operacional diário) =====
 let prodDadosCache = null;
+// Panorama de experiência de compra do catálogo inteiro. Fica aqui porque a
+// herança é um fato da CATEGORIA: pra dizer quantos anúncios dependem de uma
+// nota, o painel de um SKU precisa enxergar os vizinhos dele.
+let prodExpCache = null;
 let prodPeriodo = '7d';
 
 function prodPeriodoMudou(v){
@@ -3843,11 +4100,12 @@ async function renderProdutos(){
   const tbody = document.getElementById('prod-tbody');
   tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--slate-400)">Carregando...</td></tr>';
 
-  const [{anunciosRes, adsRes, vendasRes, skusRes, visitasRes}, hubMcMap, hubLinks] = await Promise.all([
+  const [{anunciosRes, adsRes, vendasRes, skusRes, visitasRes, reclamacoesRes}, hubMcMap, hubLinks] = await Promise.all([
     lbxCarregarTudo(),
     hubMcCarregar(),
     hubLinksCarregar(),
   ]);
+  prodExpCache = lbxExpDaTela(anunciosRes.data, vendasRes.data, reclamacoesRes && reclamacoesRes.data);
   if(anunciosRes.error||adsRes.error||vendasRes.error||skusRes.error||visitasRes.error){
     tbody.innerHTML = '<tr><td colspan="11" style="text-align:center;color:var(--coral-500)">Erro ao carregar dados. Confira se o sync já rodou.</td></tr>';
     return;
@@ -4159,6 +4417,218 @@ async function prodUpsertSku(sku, campos){
   return true;
 }
 
+/* ═══ ABA EXPERIÊNCIA DE COMPRA ═══════════════════════════════════════════
+   Três perguntas, nessa ordem:
+     1. alguma nota caiu desde a semana passada?  (o aviso mais barato)
+     2. que categoria está com a herança comprometida?  (o dano que se espalha)
+     3. qual anúncio está gerando a reclamação?  (onde se age)
+   ════════════════════════════════════════════════════════════════════════ */
+let expTelaCache = null;
+
+function expCorFaixa(f){
+  return f==='boa' ? 'var(--green-600)' : f==='media' ? '#B07A00'
+       : f==='ruim' ? 'var(--coral-500)' : 'var(--slate-400)';
+}
+
+async function renderExperiencia(){
+  const kpisEl = document.getElementById('exp-kpis');
+  if(!kpisEl) return;
+  kpisEl.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Carregando...</div>';
+
+  const { anunciosRes, vendasRes, reclamacoesRes } = await lbxCarregarTudo();
+  if(anunciosRes.error){
+    kpisEl.innerHTML = '<div style="color:var(--coral-500);font-size:13px">Erro ao carregar. Confira se o sync já rodou.</div>';
+    return;
+  }
+  const anuncios = anunciosRes.data || [];
+  const recl = (reclamacoesRes && reclamacoesRes.data) || [];
+  const exp = lbxExpDaTela(anuncios, vendasRes.data, recl);
+  expTelaCache = exp;
+
+  const totalRecl = exp.itens.reduce((s,i)=>s+i.reclamacoes.total,0) + exp.reclamacoesSemItem;
+  const totalUn = exp.itens.reduce((s,i)=>s+i.unidades60,0);
+  const taxaGlobal = totalUn>0 ? (totalRecl/totalUn*100) : null;
+  const emRisco = exp.categorias.filter(c=>c.herancaEmRisco);
+  const trocaram = exp.quedas.filter(i=>i.mudouDeFaixa);
+
+  /* ── 1. Os números do topo ── */
+  const kpi = (lab, val, sub, cor) => `
+    <div class="exp-kpi">
+      <div class="exp-kpi-lab">${lab}</div>
+      <div class="exp-kpi-val" ${cor?`style="color:${cor}"`:''}>${val}</div>
+      <div class="exp-kpi-sub">${sub}</div>
+    </div>`;
+  kpisEl.innerHTML =
+    kpi('Fora da faixa Boa', exp.foraDaFaixaBoa.length,
+        `de ${exp.itens.length} anúncios ativos`,
+        exp.foraDaFaixaBoa.length ? 'var(--coral-500)' : 'var(--green-600)') +
+    kpi('Caíram de faixa em 7 dias', trocaram.length,
+        trocaram.length ? trocaram.map(i=>i.sku).slice(0,2).join(', ') : 'nenhuma mudança de faixa',
+        trocaram.length ? 'var(--coral-500)' : 'var(--green-600)') +
+    kpi('Categorias com herança em risco', emRisco.length,
+        (()=>{ const n=emRisco.reduce((s,c)=>s+c.dependem,0);
+               return emRisco.length ? `${n} anúncio${n>1?'s':''} pendurado${n>1?'s':''} nessa nota` : 'nenhuma categoria comprometida'; })(),
+        emRisco.length ? '#B07A00' : 'var(--green-600)') +
+    kpi('Reclamações em 60 dias', totalRecl.toLocaleString('pt-BR'),
+        taxaGlobal!==null ? `${taxaGlobal.toFixed(2)}% sobre ${totalUn.toLocaleString('pt-BR')} un vendidas` : 'sem base de vendas');
+
+  /* ── 2. O que mudou desde a semana passada ── */
+  const quedasEl = document.getElementById('exp-quedas');
+  const movimentos = exp.itens.filter(i=>
+    i.valor!==null && i.valorAntes!==null && i.valor!==i.valorAntes
+  ).sort((a,b)=>(a.valor-a.valorAntes)-(b.valor-b.valorAntes));
+  quedasEl.innerHTML = !movimentos.length
+    ? `<div class="perf-section-label" style="margin-top:24px">Movimento na última semana</div>
+       <div class="exp-vazio">${exp.temHistorico
+         ? 'Nenhuma nota mudou desde o snapshot de 7 dias atrás.'
+         : 'Ainda não há snapshot de 7 dias atrás para comparar. Isso aparece assim que o sync acumular histórico.'}</div>`
+    : `<div class="perf-section-label" style="margin-top:24px">Movimento na última semana (${movimentos.length})</div>
+       <div class="exp-movs">
+         ${movimentos.map(i=>{
+           const caiu = i.valor < i.valorAntes;
+           return `<div class="exp-mov ${caiu?'ruim':'bom'}">
+             <div class="exp-mov-sku">${lbxEsc(i.sku)}</div>
+             <div class="exp-mov-nums">
+               <span style="color:${expCorFaixa(expFaixa(i.valorAntes))}">${i.valorAntes}</span>
+               <span class="exp-mov-seta">${caiu?'↘':'↗'}</span>
+               <span style="color:${expCorFaixa(i.faixa)};font-weight:700">${i.valor}</span>
+             </div>
+             <div class="exp-mov-tag">${i.mudouDeFaixa
+               ? `mudou de faixa · agora ${i.faixaNome}`
+               : `${Math.abs(i.valor-i.valorAntes)} pontos, segue ${i.faixaNome}`}</div>
+             ${i.motivo?`<div class="exp-mov-motivo">${lbxEsc(lbxPrimeiraFrase(i.motivo,130))}</div>`:''}
+           </div>`;
+         }).join('')}
+       </div>`;
+
+  /* ── 3. A curva: quantos anúncios em cada faixa, dia a dia ── */
+  document.getElementById('exp-grafico-wrap').innerHTML = expDesenharSerie(anuncios);
+
+  /* ── 4. Categorias: é aqui que a herança se enxerga ── */
+  const catsEl = document.getElementById('exp-categorias');
+  const catsComDado = exp.categorias.filter(c=>c.qtd>0);
+  catsEl.innerHTML = `
+    <div class="perf-section-label" style="margin-top:26px">Categorias</div>
+    <div class="page-subtitle" style="margin-top:-6px;margin-bottom:10px">O ML calcula a nota contra a média de cada categoria. Anúncio sem 100 vendas em 60 dias herda a nota do vendedor <em>naquela</em> categoria.</div>
+    <div class="table-wrap"><table>
+      <thead class="hub-thead"><tr>
+        <th>Categoria</th><th style="text-align:right">Anúncios</th><th style="text-align:right">Un 60d</th>
+        <th style="text-align:right">Receita 60d</th><th style="text-align:right">Pior nota</th>
+        <th style="text-align:right">Herdam</th><th style="text-align:right">Reclam.</th>
+        <th style="text-align:right">Taxa</th><th>Situação</th>
+      </tr></thead>
+      <tbody class="hub-tbody">
+        ${catsComDado.map(c=>`
+          <tr>
+            <td style="font-weight:600;font-family:var(--mono);font-size:12px">${lbxEsc(c.categoria)}</td>
+            <td style="text-align:right">${c.qtd}</td>
+            <td style="text-align:right">${c.unidades60.toLocaleString('pt-BR')}</td>
+            <td style="text-align:right">${lbxFmtMoeda(c.receita60)}</td>
+            <td style="text-align:right;font-weight:600;color:${expCorFaixa(c.piorFaixa)}">${c.piorValor!==null?c.piorValor:'—'}</td>
+            <td style="text-align:right">${c.dependem||'—'}</td>
+            <td style="text-align:right">${c.reclamacoes||'—'}</td>
+            <td style="text-align:right;${c.taxaRecl!==null&&c.taxaRecl>=0.5?'color:var(--coral-500);font-weight:600':''}">${c.taxaRecl!==null?c.taxaRecl+'%':'—'}</td>
+            <td>${
+              c.herancaEmRisco
+                ? `<span class="exp-tag alerta">herança em risco</span>`
+                : !c.temBaseDeCategoria
+                  ? `<span class="exp-tag neutra">sem 200 vendas</span>`
+                  : `<span class="exp-tag ok">saudável</span>`
+            }</td>
+          </tr>`).join('')}
+      </tbody>
+    </table></div>`;
+
+  /* ── 5. Top ofensoras ── */
+  const ofEl = document.getElementById('exp-ofensoras');
+  ofEl.innerHTML = !exp.temDadoDeReclamacao
+    ? `<div class="perf-section-label" style="margin-top:26px">Anúncios que mais geram reclamação</div>
+       <div class="exp-vazio">A tabela de reclamações não trouxe nada nos últimos 60 dias. Isso não quer dizer que não há reclamação — quer dizer que o dado não chegou.</div>`
+    : `<div class="perf-section-label" style="margin-top:26px">Anúncios que mais geram reclamação (60 dias)</div>
+       <div class="page-subtitle" style="margin-top:-6px;margin-bottom:10px">PDD é a reclamação de produto aberta pelo comprador — é ela que alimenta o cálculo da experiência.</div>
+       <div class="table-wrap"><table>
+         <thead class="hub-thead"><tr>
+           <th>Anúncio</th><th style="text-align:right">Nota</th><th style="text-align:right">Un 60d</th>
+           <th style="text-align:right">Reclam.</th><th style="text-align:right">Taxa</th>
+           <th style="text-align:right">PDD</th><th style="text-align:right">Não recebido</th>
+           <th style="text-align:right">Em mediação</th>
+         </tr></thead>
+         <tbody class="hub-tbody">
+           ${exp.ofensoras.slice(0,20).map(i=>`
+             <tr>
+               <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${lbxEsc(i.titulo)}">
+                 <span style="font-weight:600">${lbxEsc(i.sku)}</span>
+                 <span style="color:var(--slate-400);font-size:11px"> · ${lbxEsc(i.categoria)}</span>
+               </td>
+               <td style="text-align:right;font-weight:600;color:${expCorFaixa(i.faixa)}">${i.valor!==null?i.valor:'—'}</td>
+               <td style="text-align:right">${i.unidades60.toLocaleString('pt-BR')}</td>
+               <td style="text-align:right;font-weight:600">${i.reclamacoes.total}</td>
+               <td style="text-align:right;${i.taxaRecl!==null&&i.taxaRecl>=0.5?'color:var(--coral-500);font-weight:600':''}">${i.taxaRecl!==null?i.taxaRecl+'%':'—'}</td>
+               <td style="text-align:right">${i.reclamacoes.produto||'—'}</td>
+               <td style="text-align:right">${i.reclamacoes.nao_recebido||'—'}</td>
+               <td style="text-align:right;${i.reclamacoes.disputa?'color:var(--coral-500)':''}">${i.reclamacoes.disputa||'—'}</td>
+             </tr>`).join('')}
+         </tbody>
+       </table></div>`;
+
+  /* ── 6. O que a ferramenta não sabe ── */
+  document.getElementById('exp-rodape').innerHTML = `
+    Boa 75–100 · Média 50–74 · Ruim até 30. O corte é contra a <strong>média da categoria</strong>, e esse número de referência não vem na API pública do Mercado Livre — o SellerHub não o estima.
+    ${exp.reclamacoesSemItem?`<br>${exp.reclamacoesSemItem} reclamação${exp.reclamacoesSemItem>1?'ões ficaram':' ficou'} sem anúncio identificado (o ML não devolveu o pedido). Cont${exp.reclamacoesSemItem>1?'am':'a'} no total do topo, mas fica${exp.reclamacoesSemItem>1?'m':''} fora do ranking por anúncio.`:''}`;
+}
+
+// Quantos anúncios em cada faixa, por dia. Mostra tendência — a foto do dia
+// esconde uma operação que vem escorregando há três semanas.
+function expDesenharSerie(anuncios){
+  const corte = new Date(); corte.setDate(corte.getDate()-60);
+  const corteS = corte.toISOString().slice(0,10);
+  const porDia = {};
+  (anuncios||[]).forEach(a=>{
+    if(!a.data || a.data < corteS) return;
+    const d = porDia[a.data] = porDia[a.data] || {boa:0, media:0, ruim:0, sem:0};
+    d[expFaixa(a.experiencia_valor)]++;
+  });
+  const dias = Object.keys(porDia).sort();
+  if(dias.length < 2) return '';
+
+  const W=800, H=200, PL=34, PR=10, PT=14, PB=24;
+  const maxTotal = Math.max(...dias.map(d=>{ const o=porDia[d]; return o.boa+o.media+o.ruim+o.sem; }));
+  const x = i => PL + (dias.length===1?0:i*(W-PL-PR)/(dias.length-1));
+  const y = v => H - PB - (maxTotal? v/maxTotal*(H-PT-PB) : 0);
+
+  const series = [
+    {chave:'boa',   nome:'Boa',            cor:'#0E9F6E'},
+    {chave:'media', nome:'Média',          cor:'#B07A00'},
+    {chave:'ruim',  nome:'Ruim',           cor:'#E5484D'},
+    {chave:'sem',   nome:'Sem experiência',cor:'#94A3B8'},
+  ];
+  const linhas = series.map(s=>{
+    const pts = dias.map((d,i)=>`${x(i).toFixed(1)},${y(porDia[d][s.chave]).toFixed(1)}`).join(' ');
+    return `<polyline points="${pts}" fill="none" stroke="${s.cor}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  }).join('');
+
+  const ticks = [0, Math.round(maxTotal/2), maxTotal].filter((v,i,a)=>a.indexOf(v)===i);
+  const grade = ticks.map(t=>
+    `<line x1="${PL}" y1="${y(t).toFixed(1)}" x2="${W-PR}" y2="${y(t).toFixed(1)}" stroke="currentColor" stroke-opacity=".12"/>
+     <text x="${PL-6}" y="${(y(t)+4).toFixed(1)}" text-anchor="end" font-size="10" fill="currentColor" fill-opacity=".5">${t}</text>`
+  ).join('');
+  const rotulos = [0, dias.length-1].map(i=>
+    `<text x="${x(i).toFixed(1)}" y="${H-6}" text-anchor="${i===0?'start':'end'}" font-size="10" fill="currentColor" fill-opacity=".5">${lbxDataBR(dias[i])}</text>`
+  ).join('');
+
+  return `
+    <div class="perf-section-label" style="margin-top:26px">Distribuição das notas ao longo do tempo</div>
+    <div class="page-subtitle" style="margin-top:-6px;margin-bottom:10px">Quantos anúncios em cada faixa, dia a dia. A inclinação diz mais que a foto de hoje.</div>
+    <div class="exp-grafico">
+      <svg width="100%" height="200" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="color:var(--slate-700)">
+        ${grade}${linhas}${rotulos}
+      </svg>
+      <div class="exp-legenda">
+        ${series.map(s=>`<span><i style="background:${s.cor}"></i>${s.nome}</span>`).join('')}
+      </div>
+    </div>`;
+}
+
 // ===== GAVETA DE EDIÇÃO COMPLETA DO PRODUTO =====
 async function prodAbrirDrawer(chave){
   const l = (prodDadosCache||[]).find(x=>x.chave===chave);
@@ -4306,6 +4776,50 @@ async function prodAbrirDrawer(chave){
       </tbody>
     </table></div>`;
 
+  /* ── Experiência de compra, na régua do próprio Mercado Livre ─────────────
+     A nota sozinha não diz o que fazer. O que diz é se ela é PRÓPRIA (o item
+     já tem 100+ vendas em 60 dias e responde pelo que ele mesmo causou) ou
+     HERDADA da categoria — nesse caso mexer no anúncio não muda nada, e o que
+     resolve é consertar quem está puxando a categoria pra baixo. */
+  const expItens = ((prodExpCache && prodExpCache.itens) || []).filter(i=>l.itemIds.indexOf(i.item_id)>=0);
+  const expCats  = (prodExpCache && prodExpCache.categorias) || [];
+  const expCorDaFaixa = f => f==='boa' ? 'var(--green-600)' : f==='media' ? '#B07A00' : f==='ruim' ? 'var(--coral-500)' : 'var(--slate-400)';
+  const experienciaHtml = !expItens.length ? '' : `
+    <div class="perf-section-label" style="margin-top:22px">Experiência de compra — como o ML calcula</div>
+    <div class="skup-exp">
+      ${expItens.map(i=>{
+        const cat = expCats.find(c=>c.categoria===i.categoria);
+        const herdeiros = cat ? cat.dependem : 0;
+        const linhaHeranca = i.origem==='proprio'
+          ? `Nota própria: o anúncio fez <strong>${i.unidades60.toLocaleString('pt-BR')} vendas</strong> em 60 dias, então responde pelas reclamações dele mesmo.`
+          : i.origem==='heranca'
+            ? `Nota herdada: com <strong>${i.unidades60.toLocaleString('pt-BR')} venda${i.unidades60===1?'':'s'}</strong> em 60 dias — faltam ${i.faltamParaNotaPropria.toLocaleString('pt-BR')} para as 100 que dariam nota própria — esse anúncio carrega a nota do seu desempenho na categoria ${lbxEsc(i.categoria)}. Mexer só neste anúncio não muda a nota.`
+            : `Sem cálculo ainda: o anúncio não tem vendas suficientes e a categoria ${lbxEsc(i.categoria)} girou ${(cat?cat.unidades60:0).toLocaleString('pt-BR')} un em 60 dias — abaixo das 200 que o ML pede para herdar.`;
+        return `
+        <div class="skup-exp-item">
+          <div class="skup-exp-head">
+            <span class="skup-exp-nota" style="color:${expCorDaFaixa(i.faixa)}">${i.valor!==null?i.valor:'—'}</span>
+            <span class="skup-exp-faixa" style="color:${expCorDaFaixa(i.faixa)}">${i.faixaNome}</span>
+            <span class="skup-exp-origem">${i.origemNome}</span>
+            ${i.valorAntes!==null && i.valor!==null && i.valor!==i.valorAntes
+              ? `<span class="skup-delta ${i.valor<i.valorAntes?'ruim':'bom'}">${i.valor<i.valorAntes?'↘':'↗'} era ${i.valorAntes} em ${lbxDataBR(i.dataAntes)}</span>`
+              : ''}
+          </div>
+          <p class="skup-exp-txt">${linhaHeranca}</p>
+          <div class="skup-exp-nums">
+            <div><span class="skup-exp-num-lab">Reclamações 60d</span><span class="skup-exp-num">${i.reclamacoes.total}</span></div>
+            <div><span class="skup-exp-num-lab">Taxa sobre vendas</span><span class="skup-exp-num" style="${i.taxaRecl!==null&&i.taxaRecl>=0.5?'color:var(--coral-500)':''}">${i.taxaRecl!==null?i.taxaRecl+'%':'—'}</span></div>
+            <div><span class="skup-exp-num-lab">De produto (PDD)</span><span class="skup-exp-num">${i.reclamacoes.produto}</span></div>
+            <div><span class="skup-exp-num-lab">Em mediação</span><span class="skup-exp-num" style="${i.reclamacoes.disputa?'color:var(--coral-500)':''}">${i.reclamacoes.disputa}</span></div>
+          </div>
+          ${herdeiros && i.origem==='proprio' && i.faixa!=='boa'
+            ? `<div class="skup-exp-alerta">Atenção: ${herdeiros} anúncio${herdeiros>1?'s':''} da categoria ${lbxEsc(i.categoria)} ainda ${herdeiros>1?'herdam':'herda'} a nota do vendedor nessa categoria. Enquanto esta estiver fora da faixa Boa, ${herdeiros>1?'eles nascem':'ele nasce'} penalizado${herdeiros>1?'s':''}.</div>`
+            : ''}
+        </div>`;
+      }).join('')}
+      <div class="skup-exp-rodape">Boa 75–100 · Média 50–74 · Ruim até 30. O ML compara com a média da categoria — esse número de referência não vem na API, então o SellerHub não o estima.</div>
+    </div>`;
+
   /* diagnóstico do ML — motivo real da exposição, recomendação e pendências de qualidade.
      Usa o anúncio de pior saúde do grupo; é ele que limita a exposição do SKU. */
   const ordemSaude = {unhealthy:0, warning:1, healthy:2};
@@ -4414,6 +4928,7 @@ async function prodAbrirDrawer(chave){
       </div>` : ''}
     </div>
 
+    ${experienciaHtml}
     ${diagnosticoHtml}
     ${comentariosHtml}
     ${anunciosHtml}
@@ -9344,12 +9859,12 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
     { id:'anuncios', nome:'Anúncios', emoji:'📢', cor:'#F0A500', gx:6.4, gy:0.8,
       cargo:'Dono da exposição e da conversão',
-      cuida:'Saúde do anúncio, experiência de compra com o motivo que o ML informou, pendências de qualidade, Buy Box, preço contra o concorrente, participação em visitas e estoque.',
+      cuida:'Saúde do anúncio, pendências de qualidade, Buy Box, preço contra o concorrente, participação em visitas e estoque. Age no anúncio quando a experiência de compra cai — mas quem diagnostica a causa é o SAC.',
       naoCuida:'Não responde sobre gasto de ADS, TACOS, margem do mês nem atendimento ao cliente.' },
 
     { id:'sac', nome:'SAC', emoji:'💬', cor:'#22D3EE', gx:6.4, gy:3.5,
-      cargo:'Dono da reputação',
-      cuida:'Avaliações e o que os clientes escrevem nas notas baixas, reputação da conta, pedidos cancelados ou atrasados, perguntas e reclamações.',
+      cargo:'Dono da reputação e da experiência de compra',
+      cuida:'Experiência de compra por anúncio e por categoria (cálculo próprio × herança), reclamações PDD e PNR com os anúncios top ofensores, avaliações e o que os clientes escrevem nas notas baixas, reputação da conta, pedidos cancelados ou atrasados e perguntas.',
       naoCuida:'Não responde sobre TACOS, ADS, margem, preço ou Buy Box — quando perguntarem, indica o agente dono.' },
 
     { id:'assistente', nome:'Assistente', emoji:'🗓', cor:'#FFA0C9', gx:3.9, gy:2.1,
@@ -9366,11 +9881,12 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   // ── Estado ─────────────────────────────────────────────────────────────────
   var canvas, ctx;
   var TW=50, TH=25, TZ=48, OX=362, OY=55; // tile+origin, recalculated on resize
-  var dados={anuncios:[],ads:[],vendas:[],visitas:[],reviews:[],reputacao:null,skus:[],agenda:[],anotacoes:[],ideias:[],skusCompleto:[],perguntas:[],pedidos:[],reclamacoes:[],financeiro:[],desde:null};
+  var dados={anuncios:[],ads:[],vendas:[],visitas:[],reviews:[],reputacao:null,skus:[],agenda:[],anotacoes:[],ideias:[],skusCompleto:[],perguntas:[],pedidos:[],reclamacoes:[],financeiro:[],vendas60:[],anunciosAntes:[],desde:null};
   var sugestoes={}, alertCounts={}, doneMap={};
   var memoria={};       // {agente_id: [registros do diário de bordo]}
   var urgenciasPorAgente={};  // quantos papéis empilhar na mesa de cada um
   var conhecimento=[];  // o que o Ale ensinou (sobrevive a tudo)
+  var notificacoes=[];  // fila do que vai (ou foi) para o celular
   var tarefas=[];   // fila de handoff entre agentes
   var animT=0, hitAreas=[], initialized=false, activeAgentId=null;
 
@@ -9915,6 +10431,25 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         body.innerHTML=montado;
       }
     }
+    // O que este agente mandou (ou vai mandar) para o celular
+    var minhasNotif=notificacoes.filter(function(n){ return n.agente_id===agent.id && n.status!=='expirada'; }).slice(0,6);
+    if(minhasNotif.length){
+      var naFila=minhasNotif.filter(function(n){return n.status==='na_fila';}).length;
+      body.innerHTML=body.innerHTML+'<div class="esc-notif">'
+        +'<div class="esc-notif-head">📲 No seu celular'+(naFila?' — '+naFila+' na fila':'')+'</div>'
+        +minhasNotif.map(function(n){
+          var enviada=n.status==='enviada';
+          return '<div class="esc-notif-item">'
+            +'<span class="esc-notif-marca '+(n.severidade==='urgente'?'urgente':'')+'">'+(n.severidade==='urgente'?'⚠️':'🔎')+'</span>'
+            +'<span class="esc-notif-txt">'+escHtml(n.titulo)+'</span>'
+            +'<span class="esc-notif-st'+(enviada?' ok':'')+'">'
+              +(enviada?('enviada '+dataHora(n.enviado_em)):'aguardando janela')+'</span>'
+            +'</div>';
+        }).join('')
+        +(naFila?'<div class="esc-notif-pe">Avisos saem em dia útil, das 8h às 20h, no máximo 8 por dia.</div>':'')
+        +'</div>';
+    }
+
     // O que este agente sabe porque o Ale ensinou
     var meuConhec=conhecimentoDe(agent.id);
     if(meuConhec.length){
@@ -10002,10 +10537,23 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var snapRes=await sb.from('ml_anuncios').select('data').order('data',{ascending:false}).limit(1).single();
       var snapDate=snapRes.data&&snapRes.data.data;
 
-      // All catalog anúncios from latest snapshot
-      var anRes=await sb.from('ml_anuncios')
-        .select('item_id,sku,titulo,preco,preco_concorrente,buybox_status,saude,experiencia_valor,experiencia_texto,estoque,estoque_full,catalog_listing,status,visit_share')
-        .eq('data',snapDate||'2099-01-01');
+      // All catalog anúncios from latest snapshot.
+      // `categoria`, `experiencia_motivo` e `experiencia_recomendacao` faltavam
+      // neste select: o texto do próprio ML chegava undefined nos agentes, que
+      // eram instruídos a citá-lo. A regra de experiência de compra é POR
+      // CATEGORIA — sem a coluna `categoria` não dá pra enxergar a herança.
+      var colsAnuncio='item_id,sku,titulo,categoria,preco,preco_concorrente,buybox_status,saude,'
+        +'experiencia_valor,experiencia_texto,experiencia_cor,experiencia_motivo,experiencia_recomendacao,'
+        +'estoque,estoque_full,catalog_listing,status,visit_share';
+      var anRes=await sb.from('ml_anuncios').select(colsAnuncio).eq('data',snapDate||'2099-01-01');
+
+      // Snapshot de 7 dias atrás: é com ele que enxergamos QUEDA de experiência.
+      // Uma nota que cai de 100 para 75 hoje é o aviso mais barato que existe.
+      var d7=new Date(); d7.setDate(d7.getDate()-7);
+      var anAntesRes=await sb.from('ml_anuncios')
+        .select('item_id,experiencia_valor,experiencia_texto,data')
+        .lte('data',d7.toISOString().slice(0,10))
+        .order('data',{ascending:false}).limit(400);
 
       // ADS e vendas dos últimos 30 dias — COM a coluna `data`.
       // Sem ela o agente não consegue responder nada por dia/janela.
@@ -10018,6 +10566,12 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var venRes=await sb.from('ml_vendas')
         .select('item_id,data,receita,pedidos,unidades,comissao')
         .gte('data',d30s).order('data',{ascending:false});
+
+      // 60 dias é a janela que o Mercado Livre usa para a experiência de compra.
+      // 30 não serve aqui: o corte de 100 vendas do item é medido em 60.
+      var d60=new Date(); d60.setDate(d60.getDate()-60);
+      var ven60Res=await sb.from('ml_vendas')
+        .select('item_id,unidades,receita').gte('data',d60.toISOString().slice(0,10));
 
       // Visitas — sem isso não há conversão por dia
       var visRes=await sb.from('ml_visitas')
@@ -10047,7 +10601,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         sb.from('skus').select('sku,descricao,custo,preco,tacos_alvo,estoque_minimo,mc,rebait').eq('conta','Logbox'),
         sb.from('ml_perguntas').select('question_id,item_id,texto,status,data_pergunta,resposta').eq('conta','Logbox').order('data_pergunta',{ascending:false}).limit(100),
         sb.from('ml_pedidos').select('order_id,status,status_envio,data_compra,valor_total,item_id,sku').eq('conta','Logbox').gte('data_compra',d30str+'T00:00:00').order('data_compra',{ascending:false}).limit(200),
-        sb.from('ml_reclamacoes').select('claim_id,order_id,item_id,status,stage,motivo,data_abertura').eq('conta','Logbox').order('data_abertura',{ascending:false}).limit(50),
+        sb.from('ml_reclamacoes').select('claim_id,order_id,item_id,status,stage,motivo,data_abertura').eq('conta','Logbox').gte('data_abertura',d60.toISOString()).order('data_abertura',{ascending:false}).limit(500),
         sb.from('ml_financeiro').select('movement_id,tipo,valor,data,descricao,order_id').eq('conta','Logbox').gte('data',d30str).order('data',{ascending:false}).limit(200)
       ]);
 
@@ -10060,6 +10614,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         ideias:ideiasRes.data||[], skusCompleto:skusCompletoRes.data||[],
         perguntas:perguntasRes.data||[], pedidos:pedidosRes.data||[],
         reclamacoes:reclamacoesRes.data||[], financeiro:financeiroRes.data||[],
+        vendas60:ven60Res.data||[], anunciosAntes:anAntesRes.data||[],
         snapDate:snapDate
       };
     } catch(e){ console.error('[Escritório] fetch error',e); }
@@ -10303,7 +10858,11 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   function escAcaoLabel(acao){
     var t=acao.tipo, p=acao.params;
     if(t==='criar_nota') return '📝 Salvar nota: "'+p[0]+'"';
-    if(t==='criar_evento') return '📅 Agendar: "'+p[0]+'" em '+p[1]+(p[2]?' às '+p[2]:'');
+    if(t==='criar_evento'){
+      var lem = (p[4]!==undefined && p[4]!=='') ? parseInt(p[4],10) : 15;
+      if(isNaN(lem)||lem<0) lem=15;
+      return '📅 Agendar: "'+p[0]+'" em '+p[1]+(p[2]?' às '+p[2]:'')+(p[2]?' · alarme '+lem+' min antes':'');
+    }
     if(t==='criar_ideia') return '💡 Adicionar ideia: "'+p[0]+'"';
     if(t==='abrir_tarefa') return '📤 Passar para o '+agenteNome(p[0])+': "'+p[1]+'"';
     if(t==='criar_slide') return '🖼 Criar slide: "'+p[0]+'"';
@@ -10358,6 +10917,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var tituloEv=params[0]||'Evento';
       var dataEv=params[1]||new Date().toISOString().slice(0,10);
       var horaEv=params[2]||null;
+      // Sem lembrete o push só avisa na hora exata — inútil pra se preparar.
+      var lembrete = params[4]!==undefined && params[4]!=='' ? parseInt(params[4],10) : 15;
+      if(isNaN(lembrete) || lembrete<0) lembrete=15;
       // Mesmo título, no mesmo dia e hora = é o mesmo compromisso
       var filtro={titulo:tituloEv, data:dataEv};
       if(horaEv) filtro.horario=horaEv;
@@ -10373,7 +10935,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         }catch(e){}
       }
 
-      var {error}=await sb.from('agenda').insert({titulo:tituloEv,data:dataEv,horario:horaEv,categoria:params[3]||'Geral',obs:'Criado pelo '+quem});
+      var {error}=await sb.from('agenda').insert({titulo:tituloEv,data:dataEv,horario:horaEv,
+        categoria:params[3]||'Geral', lembrete_min: horaEv ? lembrete : null,
+        obs:'Criado pelo '+quem});
       if(error) throw error;
       return choque ? {ok:true, aviso:'choca com "'+choque+'" no mesmo horário'} : true;
     }
@@ -10555,16 +11119,18 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   async function carregarMemoriaETarefas(){
     try{
       var d14=new Date(); d14.setDate(d14.getDate()-14);
-      var [memRes, tarRes, conRes] = await Promise.all([
+      var [memRes, tarRes, conRes, notRes] = await Promise.all([
         sb.from('agente_memoria').select('*').eq('conta',CONTA).gte('criado_em',d14.toISOString()).order('criado_em',{ascending:false}).limit(300),
         sb.from('agente_tarefas').select('*').eq('conta',CONTA).order('criado_em',{ascending:false}).limit(200),
         sb.from('agente_conhecimento').select('*').eq('conta',CONTA).eq('ativo',true).order('criado_em',{ascending:false}).limit(200),
+        sb.from('agente_notificacoes').select('*').eq('conta',CONTA).gte('criado_em',d14.toISOString()).order('criado_em',{ascending:false}).limit(60),
       ]);
       memoria={};
       (memRes.data||[]).forEach(function(m){ (memoria[m.agente_id]=memoria[m.agente_id]||[]).push(m); });
       tarefas=tarRes.data||[];
       conhecimento=conRes.data||[];
-    }catch(e){ console.warn('[Escritório] memória indisponível',e); memoria={}; tarefas=[]; conhecimento=[]; }
+      notificacoes=notRes.data||[];
+    }catch(e){ console.warn('[Escritório] memória indisponível',e); memoria={}; tarefas=[]; conhecimento=[]; notificacoes=[]; }
   }
 
   // Registra uma observação. `chave` inclui a data: repetir no mesmo dia é ignorado.
@@ -10580,9 +11146,33 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       if(error.code==='23505') return;
       console.error('[Escritório] não consegui registrar observação de '+agenteId+':', error.message||error);
       _errosDeRonda.push(agenteNome(agenteId)+': '+(error.message||error));
+      return;
+    }
+    // Urgência vai para o celular. Fica aqui — e não espalhado por cada
+    // regra da ronda — pra não existir urgência que esquece de notificar.
+    if(reg.severidade==='urgente'){
+      await notificarNoCelular(agenteId,{
+        severidade:'urgente', titulo:obs.titulo, corpo:obs.corpo,
+        sku:obs.sku, chave:obs.chave||obs.titulo
+      });
     }
   }
   var _errosDeRonda=[];
+
+  // Enfileira um aviso para o celular. Quem decide QUANDO enviar é o
+  // push-notify: ele respeita a janela de horário e o teto diário.
+  // A chave carrega a data para o mesmo aviso não voltar todo dia.
+  async function notificarNoCelular(agenteId, n){
+    var reg={ conta:CONTA, agente_id:agenteId,
+      severidade: n.severidade==='sugestao' ? 'sugestao' : 'urgente',
+      titulo:n.titulo, corpo:(n.corpo||'').slice(0,300), sku:n.sku||null,
+      chave:(n.chave||n.titulo)+'|'+hojeISO(), status:'na_fila' };
+    var {error}=await sb.from('agente_notificacoes').upsert(reg,{onConflict:'conta,chave',ignoreDuplicates:true});
+    if(error && error.code!=='23505'){
+      console.error('[Escritório] não consegui enfileirar notificação:', error.message||error);
+      _errosDeRonda.push('push '+agenteNome(agenteId)+': '+(error.message||error));
+    }
+  }
 
   // Um agente abre tarefa para outro. Não duplica enquanto a anterior estiver aberta.
   async function abrirTarefa(deAgente, paraAgente, t){
@@ -10695,6 +11285,14 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var rows=(data||[]).slice().reverse();
       _chatHistory[agId]=rows.map(function(r){ return {role:r.papel, content:r.conteudo}; });
     }catch(e){ _chatHistory[agId]=_chatHistory[agId]||[]; }
+  }
+
+  // A leitura do fluxograma mora no escopo global (perto do lbxCarregarTudo),
+  // porque o painel do SKU e a aba de experiencia usam a MESMA conta. Duas
+  // implementacoes da mesma regra viram dois numeros diferentes na tela.
+  function expDaOperacao(){
+    return expPanorama({ anuncios:dados.anuncios, anunciosAntes:dados.anunciosAntes,
+                         vendas60:dados.vendas60, reclamacoes:dados.reclamacoes });
   }
 
   /* ── As rondas: o que cada agente procura sozinho ───────────────────── */
@@ -10840,6 +11438,137 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       corpo:'Acima de 1% o Mercado Livre começa a cortar exposição.', chave:'taxa_reclamacao'
     }));
 
+    /* ── SAC: experiência de compra ───────────────────────────────────────
+       A taxa da conta engana. O ML corta exposição comparando o anúncio com
+       a MÉDIA DA CATEGORIA dele — dá pra ter 0,16% na conta e um anúncio
+       fora da faixa Boa ao mesmo tempo. E o que está fora arrasta junto todo
+       anúncio novo da mesma categoria, que herda a nota até fazer 100 vendas.
+       ──────────────────────────────────────────────────────────────────── */
+    var _expSug=[];
+    var exp=expDaOperacao();
+
+    // 1. Queda de faixa é o aviso mais barato que existe: chegou antes do corte.
+    var trocaram=exp.quedas.filter(function(i){return i.mudouDeFaixa;});
+    if(trocaram.length) jobs.push(registrarObservacao('sac',{
+      severidade:'urgente',
+      titulo:'Experiência de compra caiu de faixa em '+trocaram.length+' anúncio'+(trocaram.length>1?'s':''),
+      corpo:trocaram.slice(0,5).map(function(i){
+        return i.sku+': '+i.valorAntes+' → '+i.valor+' ('+i.faixaNome+')'+(i.motivo?' — '+lbxPrimeiraFrase(i.motivo):'');
+      }).join('\n')+'\n\nComparado com o snapshot de '+(trocaram[0].dataAntes||'7 dias atrás')+'.',
+      sku:trocaram[0].sku, chave:'exp_caiu_faixa',
+      dados:{itens:trocaram.slice(0,8).map(function(i){return {sku:i.sku, de:i.valorAntes, para:i.valor};})}
+    }));
+    var caiuSemTrocar=exp.quedas.filter(function(i){return !i.mudouDeFaixa && i.quedaPontos>=10;});
+    if(caiuSemTrocar.length) jobs.push(registrarObservacao('sac',{
+      severidade:'atencao',
+      titulo:'Experiência perdeu pontos em '+caiuSemTrocar.length+' anúncio'+(caiuSemTrocar.length>1?'s':'')+' sem mudar de faixa',
+      corpo:caiuSemTrocar.slice(0,5).map(function(i){return i.sku+': '+i.valorAntes+' → '+i.valor;}).join(' · ')
+           +'\n\nAinda está na faixa, mas a direção é de queda.',
+      sku:caiuSemTrocar[0].sku, chave:'exp_perdeu_pontos'
+    }));
+
+    // 2. Fora da faixa Boa — com o texto do ML e dizendo se a nota é própria
+    //    ou herdada, porque a ação muda: própria se conserta no anúncio,
+    //    herdada só melhora consertando a categoria.
+    if(exp.foraDaFaixaBoa.length){
+      var pior=exp.foraDaFaixaBoa[0];
+      jobs.push(registrarObservacao('sac',{
+        severidade:'urgente',
+        titulo:exp.foraDaFaixaBoa.length+' anúncio'+(exp.foraDaFaixaBoa.length>1?'s':'')+' fora da faixa Boa de experiência',
+        corpo:exp.foraDaFaixaBoa.slice(0,5).map(function(i){
+          return i.sku+' — '+i.valor+' ('+i.faixaNome+', '+i.origemNome+')'
+               +(i.taxaRecl!==null?' · '+i.taxaRecl+'% de reclamação em '+i.unidades60+' un':'')
+               +(i.motivo?'\n   ML: "'+lbxPrimeiraFrase(i.motivo)+'"':'');
+        }).join('\n')+'\n\nAbaixo de 75 o ML já classifica como Média ou Ruim e corta exposição.',
+        sku:pior.sku, chave:'exp_fora_da_faixa',
+        dados:{itens:exp.foraDaFaixaBoa.slice(0,10).map(function(i){
+          return {sku:i.sku, valor:i.valor, origem:i.origem, categoria:i.categoria};
+        })}
+      }));
+      // Quem age no anúncio é o Anúncios — mas só faz sentido quando a nota
+      // é do próprio item. Herança não se resolve mexendo no anúncio herdeiro.
+      var proprias=exp.foraDaFaixaBoa.filter(function(i){return i.origem==='proprio';});
+      if(proprias.length) jobs.push(abrirTarefa('sac','anuncios',{
+        titulo:'Revisar '+proprias.length+' anúncio'+(proprias.length>1?'s':'')+' com experiência de compra abaixo de 75',
+        descricao:proprias.slice(0,4).map(function(i){
+          return i.sku+' ('+i.valor+'): '+(i.recomendacao||i.motivo||'sem texto do ML');
+        }).join(' | ')+' — nota própria do item, dá pra atacar direto no anúncio: descrição, fotos, ficha técnica e embalagem.',
+        sku:proprias[0].sku, prioridade:'alta', chave:'exp_revisar_anuncio|'+hojeISO()
+      }));
+    }
+
+    // 3. Herança em risco: a nota ruim de um anúncio contamina os vizinhos
+    //    de categoria que ainda não têm cálculo próprio.
+    var catRisco=exp.categorias.filter(function(c){return c.herancaEmRisco;});
+    catRisco.slice(0,3).forEach(function(c){
+      jobs.push(registrarObservacao('sac',{
+        severidade:'urgente',
+        titulo:'Categoria '+c.categoria+': '+c.dependem+' anúncio'+(c.dependem>1?'s herdam':' herda')+' uma nota de '+c.piorValor,
+        corpo:'A pior experiência da categoria é '+c.piorValor+' ('+expFaixaNome(c.piorFaixa)+'). '
+             +'Enquanto não fizerem 100 vendas em 60 dias, '+c.dependem+' anúncio'+(c.dependem>1?'s dessa categoria carregam':' dessa categoria carrega')+' essa nota. '
+             +'A categoria girou '+c.unidades60+' un e '+c.reclamacoes+' reclamação'+(c.reclamacoes===1?'':'ões')+' em 60 dias'
+             +(c.taxaRecl!==null?' ('+c.taxaRecl+'%)':'')+'.',
+        chave:'exp_heranca|'+c.categoria,
+        dados:{categoria:c.categoria, pior:c.piorValor, dependem:c.dependem, unidades60:c.unidades60}
+      }));
+    });
+
+    // 4. Top ofensoras: é o ranking que o ML passou a mostrar no assistente
+    //    dele. Aqui ele sai do nosso próprio dado de reclamação por anúncio.
+    if(exp.temDadoDeReclamacao && exp.ofensoras.length){
+      var top=exp.ofensoras.slice(0,5);
+      var pdd=exp.ofensoras.reduce(function(s,i){return s+i.reclamacoes.produto;},0);
+      var pnr=exp.ofensoras.reduce(function(s,i){return s+i.reclamacoes.nao_recebido;},0);
+      _expSug.push({ag:'sac',
+        titulo:'Vale olhar: as '+top.length+' anúncios que mais geram reclamação',
+        corpo:top.map(function(i){
+          return i.sku+' — '+i.reclamacoes.total+' reclamação'+(i.reclamacoes.total===1?'':'ões')
+               +' em '+i.unidades60+' un'+(i.taxaRecl!==null?' ('+i.taxaRecl+'%)':'')
+               +(i.reclamacoes.produto?' · '+i.reclamacoes.produto+' de produto':'');
+        }).join('\n')+'\n\nNo período: '+pdd+' de produto (PDD) e '+pnr+' de não recebido. '
+             +'PDD é exatamente o que o ML usa pra calcular a experiência de compra.',
+        chave:'exp_top_ofensoras'});
+
+      // Problema de produto concentrado num anúncio é assunto do Anúncios.
+      var produtoForte=exp.ofensoras.filter(function(i){
+        return i.reclamacoes.produto>=3 && i.taxaRecl!==null && i.taxaRecl>=0.5;
+      });
+      if(produtoForte.length) jobs.push(abrirTarefa('sac','anuncios',{
+        titulo:'Reclamação de produto concentrada em '+produtoForte.length+' anúncio'+(produtoForte.length>1?'s':''),
+        descricao:produtoForte.slice(0,4).map(function(i){
+          return i.sku+': '+i.reclamacoes.produto+' PDD em '+i.unidades60+' un ('+i.taxaRecl+'%)';
+        }).join(' | ')+'. Taxa acima de 0,5% com volume. Vale conferir se a descrição promete o que a caixa entrega.',
+        sku:produtoForte[0].sku, prioridade:'alta', chave:'exp_pdd_concentrado|'+hojeISO()
+      }));
+    }
+
+    // 5. Reclamação em disputa já saiu da nossa mão e vai pro ML decidir.
+    var emDisputa=(dados.reclamacoes||[]).filter(function(r){return r.stage==='dispute'&&r.status==='opened';});
+    if(emDisputa.length) jobs.push(registrarObservacao('sac',{
+      severidade:'urgente',
+      titulo:emDisputa.length+' reclamação'+(emDisputa.length===1?'':'ões')+' em mediação do Mercado Livre',
+      corpo:'Em disputa o ML decide, e decisão contra o vendedor pesa na experiência de compra. '
+           +'Motivos: '+Object.entries(emDisputa.reduce(function(a,r){
+               var g=expGrupoReclamacao(r.motivo); a[g]=(a[g]||0)+1; return a;},{}))
+             .map(function(e){return e[1]+' '+(e[0]==='produto'?'de produto':e[0]==='nao_recebido'?'de não recebido':'outros');}).join(' · ')+'.',
+      chave:'exp_em_disputa'
+    }));
+
+    // 6. Prestes a virar nota própria: hoje se esconde atrás da categoria.
+    if(exp.prestesANotaPropria.length) _expSug.push({ag:'sac',
+      titulo:'Vale olhar: '+exp.prestesANotaPropria.length+' anúncio'+(exp.prestesANotaPropria.length>1?'s estão':' está')+' perto de ter nota própria',
+      corpo:exp.prestesANotaPropria.slice(0,5).map(function(i){
+        return i.sku+' — '+i.unidades60+' un em 60 dias, faltam '+i.faltamParaNotaPropria+' pra 100';
+      }).join('\n')+'\n\nPassando de 100 vendas o anúncio deixa de herdar a nota da categoria e passa a ser julgado sozinho. '
+           +'Se ele reclama menos que a categoria, é bom; se reclama mais, a nota cai.',
+      chave:'exp_perto_nota_propria'});
+
+    if(!exp.temDadoDeReclamacao) jobs.push(registrarObservacao('sac',{
+      severidade:'atencao', titulo:'Sem dado de reclamação para checar experiência de compra',
+      corpo:'A tabela de reclamações não trouxe nada nos últimos 60 dias. Não dá pra montar as top ofensoras nem calcular taxa por anúncio — não é que não haja reclamação, é que o dado não chegou.',
+      chave:'exp_sem_dado_recl'
+    }));
+
     // ── GESTOR: o resultado do mês ──
     if(fd){
       if(fd.recHub>0 && fd.mpaPct<0.05) jobs.push(registrarObservacao('gestor',{
@@ -10922,7 +11651,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     });
 
     /* ── O que vale a pena o Ale olhar, mesmo sem ser urgente ────────────── */
-    var sugestoes=[];
+    var sugestoes=_expSug.slice();
     if(fd && fd.skus){
       // Faturam bem mas entregam pouca margem — não é urgência, é oportunidade
       var linkados=fd.skus.filter(function(o){return o.linkado && o.rec>0;});
@@ -10960,6 +11689,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       jobs.push(registrarObservacao(s.ag,{
         tipo:'sugestao', severidade:'sugestao',
         titulo:s.titulo, corpo:s.corpo, chave:s.chave
+      }));
+      jobs.push(notificarNoCelular(s.ag,{
+        severidade:'sugestao', titulo:s.titulo, corpo:s.corpo, chave:s.chave
       }));
     });
 
@@ -11204,7 +11936,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   function resumoDasAcoes(feitos){
     if(!feitos.length) return '';
     var linhas=feitos.map(function(f){
-      var rot = f.tipo==='criar_evento' ? ('📅 '+f.params[0]+' — '+f.params[1]+(f.params[2]?' às '+f.params[2]:''))
+      var lemF = (f.params[4]!==undefined && f.params[4]!=='') ? parseInt(f.params[4],10) : 15;
+      if(isNaN(lemF)||lemF<0) lemF=15;
+      var rot = f.tipo==='criar_evento' ? ('📅 '+f.params[0]+' — '+f.params[1]+(f.params[2]?' às '+f.params[2]+' (alarme '+lemF+' min antes)':''))
               : f.tipo==='criar_nota'   ? ('📝 Nota: '+f.params[0])
               : f.tipo==='criar_ideia'  ? ('💡 Ideia: '+f.params[0])
               : f.tipo==='abrir_tarefa' ? ('📤 Tarefa para '+agenteNome(f.params[0])+': '+f.params[1])
@@ -11437,7 +12171,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     /* ── Ações: o que este agente pode fazer sozinho no SellerHub ────────── */
     ctx._acoes_disponiveis=[
       'criar_nota(titulo, texto) — salva uma anotação',
-      'criar_evento(titulo, data YYYY-MM-DD, hora HH:MM, categoria) — adiciona na agenda. '
+      'criar_evento(titulo, data YYYY-MM-DD, hora HH:MM, categoria, lembrete_min) — adiciona na agenda e programa o alarme no celular do Ale. '
+        +'lembrete_min é opcional: sem ele o alarme toca 15 minutos antes. Use outro valor quando o compromisso exigir '
+        +'deslocamento ou preparo (ex: 60 para uma viagem). '
         +'O título é lido pelo Ale no celular meses depois: escreva em português claro, dizendo o que ele vai FAZER '
         +'("Revisar anúncios com o agente Anúncios"), não em jargão ("Sync Anúncios", "Briefing", "Daily", "Check-in"). '
         +'Sem emoji, sem sigla, sem palavra em inglês. Antes de marcar, veja agenda_proxima: não repita algo que já está lá '
@@ -11525,7 +12261,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       }).sort(function(a,b){return b.gasto-a.gasto;}).slice(0,20);
 
     } else if(agId==='anuncios'){
-      ctx._como_ler='experiencia_motivo e recomendacao_do_ml são texto do próprio Mercado Livre — cite o que está escrito, não parafraseie por cima. Buy Box perdido e preço acima do concorrente derrubam venda sem aparecer no ADS.';
+      ctx._como_ler='experiencia_motivo e recomendacao_do_ml são texto do próprio Mercado Livre — cite o que está escrito, não parafraseie por cima. '
+        +'Buy Box perdido e preço acima do concorrente derrubam venda sem aparecer no ADS. '
+        +'Sobre experiência de compra você AGE no anúncio, mas o diagnóstico (nota própria x herdada, reclamação por categoria) é do SAC — mande o Ale falar com ele quando a pergunta for por que a nota está assim.';
       ctx.anuncios_com_problema=an.filter(function(a){
         return (a.saude&&a.saude!=='healthy') || (a.experiencia_valor||100)<=75 || a.status==='paused' || a.buybox_status==='losing' || a.buybox_status==='not_listed';
       }).slice(0,20).map(function(a){
@@ -11550,14 +12288,60 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       });
 
     } else if(agId==='sac'){
-      ctx._como_ler='O que o cliente escreveu na nota baixa vale mais que a média. Cite o comentário. Se o problema for do produto ou do anúncio, abra tarefa para o Anúncios.';
+      ctx._como_ler='O que o cliente escreveu na nota baixa vale mais que a média. Cite o comentário. '
+        +'Você é o dono da experiência de compra: antes de responder qualquer coisa sobre exposição caindo, '
+        +'olhe se a nota do anúncio é própria ou herdada — a ação muda completamente. '
+        +'Nunca afirme o benchmark da categoria: o ML não expõe esse número, só a nota final e o texto dele. '
+        +'Se o problema for do produto ou do anúncio, abra tarefa para o Anúncios.';
+      var _exp=expDaOperacao();
+      ctx.regra_experiencia_de_compra={
+        fonte:'Fluxograma oficial do Mercado Livre (set/2026)',
+        nota_propria:'Anúncio com 100+ vendas nos últimos 60 dias é julgado pela reclamação dele mesmo.',
+        heranca:'Com menos de 100 vendas, o anúncio HERDA a nota do vendedor naquela categoria — desde que a categoria tenha 200+ vendas.',
+        sem_experiencia:'Categoria com menos de 200 vendas: o anúncio fica sem experiência calculada.',
+        faixas:{boa:'75 a 100 — ao menos 1,9x MENOS reclamação que a média da categoria',
+                media:'50 a 74 — 2x a 2,9x MAIS reclamação que a média',
+                ruim:'até 30 — ao menos 3x MAIS reclamação que a média'},
+        pdd:'PDD = reclamação do produto reportada pelo comprador. É o que alimenta o cálculo.',
+        limite_do_dado:'O benchmark da categoria NÃO vem na API pública. Temos a nota final e o texto do ML, mais a nossa própria contagem de reclamação por anúncio.'
+      };
+      ctx.experiencia_por_anuncio=_exp.itens.filter(function(i){
+        return i.faixa!=='boa' || i.reclamacoes.total>0 || i.caiu;
+      }).slice(0,25).map(function(i){
+        return {sku:i.sku, categoria:i.categoria, nota:i.valor, faixa:i.faixaNome,
+                origem_da_nota:i.origemNome, unidades_60d:i.unidades60,
+                faltam_para_nota_propria:i.faltamParaNotaPropria,
+                reclamacoes_60d:i.reclamacoes.total, reclamacoes_de_produto:i.reclamacoes.produto,
+                taxa_reclamacao_pct:i.taxaRecl, nota_7_dias_atras:i.valorAntes,
+                motivo_do_ml:i.motivo, recomendacao_do_ml:i.recomendacao};
+      });
+      ctx.experiencia_por_categoria=_exp.categorias.slice(0,15).map(function(c){
+        return {categoria:c.categoria, anuncios:c.qtd, unidades_60d:c.unidades60,
+                receita_60d:c.receita60, pior_nota:c.piorValor,
+                anuncios_que_herdam:c.dependem, heranca_em_risco:c.herancaEmRisco,
+                categoria_tem_200_vendas:c.temBaseDeCategoria,
+                reclamacoes_60d:c.reclamacoes, taxa_reclamacao_pct:c.taxaRecl};
+      });
+      ctx.top_ofensoras=_exp.ofensoras.slice(0,10).map(function(i){
+        return {sku:i.sku, titulo:i.titulo, reclamacoes_60d:i.reclamacoes.total,
+                de_produto:i.reclamacoes.produto, nao_recebido:i.reclamacoes.nao_recebido,
+                abertas:i.reclamacoes.abertas, em_disputa:i.reclamacoes.disputa,
+                unidades_60d:i.unidades60, taxa_pct:i.taxaRecl, nota:i.valor};
+      });
+      ctx.experiencia_resumo={
+        fora_da_faixa_boa:_exp.foraDaFaixaBoa.length,
+        sem_experiencia:_exp.semExperiencia.length,
+        cairam_na_ultima_semana:_exp.quedas.length,
+        categorias_com_heranca_em_risco:_exp.categorias.filter(function(c){return c.herancaEmRisco;}).map(function(c){return c.categoria;}),
+        reclamacoes_sem_anuncio_identificado:_exp.reclamacoesSemItem
+      };
+      if(!_exp.temHistorico) ctx._aviso_historico='Não há snapshot de 7 dias atrás — não dá pra afirmar se alguma nota caiu.';
+      if(_exp.reclamacoesSemItem) ctx._aviso_reclamacoes_orfas=_exp.reclamacoesSemItem+' reclamações não têm anúncio identificado (o ML não devolveu o pedido). Elas contam no total mas ficam de fora do ranking por anúncio.';
       ctx.avaliacoes_ruins=(rev||[]).slice(0,20).map(function(r){
         var a=an.find(function(x){return x.item_id===r.item_id;});
         return {sku:(a&&a.sku)||r.item_id, nota:r.nota, comentario:(r.comentario||'').slice(0,250), data:r.data};
       });
       ctx.reputacao=rep;
-      ctx.experiencia_de_compra=an.filter(function(a){return a.experiencia_motivo && (a.experiencia_valor||100)<=85;})
-        .slice(0,12).map(function(a){return {sku:a.sku||a.item_id, experiencia_pct:a.experiencia_valor, motivo_do_ml:a.experiencia_motivo};});
       ctx.pedidos_com_problema=pedidos.filter(function(p){return p.status==='cancelled'||p.status_envio==='late';})
         .slice(0,20).map(function(p){return {order_id:p.order_id, sku:p.sku, status:p.status, envio:p.status_envio, data:p.data_compra, valor:p.valor_total};});
       ctx.pedidos_resumo={total_30d:pedidos.length, por_status:pedidos.reduce(function(acc,p){acc[p.status||'?']=(acc[p.status||'?']||0)+1;return acc;},{})};
@@ -11589,6 +12373,10 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   // Serve pra conferir se um número que ele citou estava mesmo no contexto.
   window._escGetContext=function(agId){ return buildContextForAgent(agId||'gestor'); };
   window._escRonda=function(){ return rondaDosAgentes(); };
+  // _escExperiencia() no console: a leitura crua do fluxograma do ML sobre o
+  // catálogo de hoje. É a mesma conta que alimenta o SAC — se ela estiver
+  // errada, o agente está errado junto.
+  window._escExperiencia=function(){ return expDaOperacao(); };
   // Abre o painel de um agente por id — usado por links internos e para diagnóstico
   window._escAbrirAgente=function(agId){
     var a=agentePorId(agId);
