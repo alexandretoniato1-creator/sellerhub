@@ -1086,6 +1086,8 @@ body.sidebar-collapsed .hamburger { display: none; }
 .sala-bg.open { display:flex; }
 .sala-box { background:#0D1018; border:1px solid rgba(255,255,255,.09); border-radius:16px; width:760px; max-width:96vw;
   max-height:88vh; display:flex; flex-direction:column; box-shadow:0 24px 70px rgba(0,0,0,.55); }
+/* Só a sala em andamento cresce — o setup e o diário continuam estreitos. */
+#sala-bg .sala-box.com-painel { width:1040px; }
 .sala-cab { display:flex; align-items:flex-start; justify-content:space-between; padding:20px 24px 14px; border-bottom:1px solid rgba(255,255,255,.07); }
 .sala-tit { font-size:16px; font-weight:600; color:#D8D5CC; }
 .sala-sub { font-size:12px; color:#5A6478; margin-top:3px; }
@@ -1124,6 +1126,15 @@ body.sidebar-collapsed .hamburger { display: none; }
 .sala-turno .t-passo.feito { color:#4ADE9A; }
 .sala-turno .t-passo.fila { opacity:.55; }
 .sala-turno .t-livre { color:#5E6675; }
+/* Fim de rodada: o Ale precisa ver que ACABOU, não deduzir pelo silêncio. */
+.sala-turno .t-vez { display:inline-flex; align-items:center; gap:5px; border-radius:11px; padding:2px 10px;
+  background:rgba(0,216,122,.12); border:1px solid rgba(0,216,122,.38); color:#4ADE9A; }
+.sala-turno .t-erro { display:inline-flex; align-items:center; gap:5px; border-radius:11px; padding:2px 10px;
+  background:rgba(255,90,90,.1); border:1px solid rgba(255,90,90,.4); color:#FF8A8A; }
+.sala-turno .t-relogio { color:#9DAAFF; }
+.sala-fecho { align-self:center; font-size:11px; font-family:var(--mono); color:#4ADE9A;
+  background:rgba(0,216,122,.08); border:1px solid rgba(0,216,122,.25); border-radius:10px; padding:4px 12px; }
+.sala-fecho.erro { color:#FF8A8A; background:rgba(255,90,90,.08); border-color:rgba(255,90,90,.28); }
 @keyframes tPulso { 0%,100%{opacity:1} 50%{opacity:.55} }
 
 /* Faixa de pulso e diário do escritório */
@@ -1158,7 +1169,7 @@ body.sidebar-collapsed .hamburger { display: none; }
   color:#6E7788; margin-bottom:4px; }
 .esc-agora-txt { font-size:12.5px; color:#C8CEDC; line-height:1.45; }
 .esc-agora-quando { font-size:11px; color:#6E7788; margin-top:3px; font-family:var(--mono); }
-.sala-fio { display:flex; flex-direction:column; gap:12px; max-height:44vh; overflow-y:auto; padding-right:4px; }
+.sala-fio { display:flex; flex-direction:column; gap:12px; flex:1; min-height:160px; max-height:44vh; overflow-y:auto; padding-right:4px; }
 .sala-fala { display:flex; gap:10px; }
 .sala-fala.eu { flex-direction:row-reverse; }
 .sala-avatar { width:30px; height:30px; border-radius:9px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:14px; }
@@ -1173,7 +1184,47 @@ body.sidebar-collapsed .hamburger { display: none; }
 .sala-rodape { display:flex; gap:8px; margin-top:12px; justify-content:flex-end; }
 .sala-rodape .ap-mini { border-color:rgba(255,255,255,.12); color:#8A94A8; }
 .sala-rodape .ap-mini:hover { color:#B8C0FF; border-color:#6B7CFF; }
-.sala-pensando { font-size:11.5px; color:#5A6478; font-style:italic; padding-left:40px; }
+/* "Está pensando" com pulso e cronômetro: 3s de tela imóvel já lê como travado. */
+.sala-pensando { font-size:11.5px; color:#7B8496; padding-left:40px; display:flex; align-items:center; gap:8px; }
+.sala-pensando.demora { color:#E8B45A; }
+.sala-pensando .p-dots { display:inline-flex; gap:3px; }
+.sala-pensando .p-dots span { width:5px; height:5px; border-radius:50%; background:currentColor; opacity:.3;
+  animation:pDot 1.1s ease-in-out infinite; }
+.sala-pensando .p-dots span:nth-child(2){ animation-delay:.18s; }
+.sala-pensando .p-dots span:nth-child(3){ animation-delay:.36s; }
+@keyframes pDot { 0%,100%{opacity:.25;transform:translateY(0)} 50%{opacity:1;transform:translateY(-3px)} }
+
+/* Duas colunas: conversa à esquerda, vida do escritório à direita. */
+.sala-corpo { display:flex; gap:16px; align-items:stretch; }
+.sala-col-fio { flex:1; min-width:0; display:flex; flex-direction:column; }
+.sala-lateral { width:228px; flex-shrink:0; border-left:1px solid rgba(255,255,255,.07); padding-left:14px;
+  max-height:56vh; overflow-y:auto; }
+.lat-tit { font-size:10px; font-family:var(--mono); text-transform:uppercase; letter-spacing:.07em;
+  color:#5E6675; margin:14px 0 7px; }
+.lat-tit:first-child { margin-top:0; }
+.lat-ag { display:flex; flex-direction:column; gap:1px; padding:6px 8px; border-radius:8px; margin-bottom:3px;
+  background:rgba(255,255,255,.03); border:1px solid transparent; }
+.lat-ag.ativo { border-color:rgba(0,216,122,.35); background:rgba(0,216,122,.06); }
+.lat-ag.falando { border-color:rgba(107,124,255,.5); background:rgba(107,124,255,.12);
+  animation:tPulso 1.3s ease-in-out infinite; }
+.lat-ag-n { font-size:11.5px; color:#C8CEDC; }
+.lat-ag-n i { font-style:normal; font-size:9.5px; font-family:var(--mono); color:#6B7CFF; }
+.lat-ag-e { font-size:10.5px; font-family:var(--mono); color:#6E7788; }
+.lat-ag.ativo .lat-ag-e { color:#4ADE9A; }
+.lat-ag.falando .lat-ag-e { color:#9DAAFF; }
+.lat-reg { display:grid; grid-template-columns:38px 1fr; gap:6px; font-size:10.5px; line-height:1.45;
+  color:#8A94A8; padding:4px 0; }
+.lat-reg-h { font-family:var(--mono); color:#5A6478; }
+.lat-vazio, .lat-pe { font-size:10.5px; font-family:var(--mono); color:#5E6675; padding:6px 0; }
+.lat-pe { border-top:1px solid rgba(255,255,255,.06); margin-top:12px; padding-top:10px; }
+.lat-ronda { font-size:10.5px; font-family:var(--mono); color:#9DAAFF; background:rgba(107,124,255,.1);
+  border:1px solid rgba(107,124,255,.3); border-radius:9px; padding:7px 10px; margin-bottom:12px;
+  animation:tPulso 1.8s ease-in-out infinite; }
+@media (max-width:900px){
+  .sala-corpo { flex-direction:column; }
+  .sala-lateral { width:auto; border-left:none; padding-left:0; max-height:none;
+    border-top:1px solid rgba(255,255,255,.07); padding-top:12px; }
+}
 
 /* Aprendizado: o que o Ale ensinou ao agente */
 .esc-conhec { margin-top:18px; border-top:1px solid rgba(255,255,255,0.07); padding-top:14px; }
@@ -2312,10 +2363,17 @@ body.sidebar-collapsed .hamburger { display: none; }
             <div class="sala-pauta-fixa" id="sala-pauta-fixa"></div>
             <div class="sala-participantes" id="sala-participantes"></div>
             <div class="sala-turno" id="sala-turno"></div>
-            <div class="sala-fio" id="sala-fio"></div>
-            <div class="sala-entrada">
-              <textarea id="sala-input" placeholder="Fale com a mesa… (Enter envia)" rows="1"></textarea>
-              <button class="btn btn-primary" id="sala-enviar" onclick="escFalarNaSala()">→</button>
+            <div class="sala-corpo">
+              <div class="sala-col-fio">
+                <div class="sala-fio" id="sala-fio"></div>
+                <div class="sala-entrada">
+                  <textarea id="sala-input" placeholder="Fale com a mesa… (Enter envia)" rows="1"></textarea>
+                  <button class="btn btn-primary" id="sala-enviar" onclick="escFalarNaSala()">→</button>
+                </div>
+              </div>
+              <!-- De dentro da sala dava pra ver só a sala. Aqui entra o resto do
+                   escritório: quem está trabalhando, o que acabou de ser registrado. -->
+              <aside class="sala-lateral" id="sala-lateral"></aside>
             </div>
             <div class="sala-rodape">
               <button class="ap-mini" onclick="escEncerrarSala()">Encerrar e gerar ata</button>
@@ -11657,7 +11715,20 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   }
 
   /* ── As rondas: o que cada agente procura sozinho ───────────────────── */
+  /* De dentro da sala de reunião não dava para saber que a ronda estava
+     rodando lá fora — a mesa parecia morta enquanto os cinco varriam a área.
+     A flag existe só para o painel lateral da sala poder dizer isso. */
+  var _rondaAtiva=false;
   async function rondaDosAgentes(){
+    _rondaAtiva=true;
+    if(typeof escPintarLateral==='function') escPintarLateral();
+    try{ return await _rondaVarrer(); }
+    finally{
+      _rondaAtiva=false;
+      if(typeof escPintarLateral==='function') escPintarLateral();
+    }
+  }
+  async function _rondaVarrer(){
     // Acende o balão de todo mundo antes de começar: é o que o Ale vê no
     // escritório enquanto a ronda roda.
     AGENTS.forEach(function(a){
@@ -12088,7 +12159,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
      ═══════════════════════════════════════════════════════════════════════ */
 
   var _sala = { id:null, participantes:[], pauta:'', falas:[], ocupada:false, forcarTodos:false,
-                turno:null };   // turno = {fila, atual, feitos} — quem fala nesta rodada
+                turno:null,           // turno = {fila, atual, feitos, inicio} — quem fala nesta rodada
+                ultimaRodada:null };  // recibo da rodada anterior: hora, nº de falas, segundos, erro
 
   /* A reunião vive no Supabase, não na memória da aba. Fechar o app, atualizar
      a página ou trocar de aparelho não encerra nada — mas até aqui a tela não
@@ -12107,7 +12179,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       _sala.pauta=reu.pauta||'';
       _sala.participantes=Array.isArray(reu.participantes)?reu.participantes.slice():[];
       _sala.falas=(m.data||[]).map(function(f){ return {autor:f.autor, conteudo:f.conteudo}; });
-      _sala.ocupada=false; _sala.forcarTodos=false; _sala.turno=null;
+      _sala.ocupada=false; _sala.forcarTodos=false; _sala.turno=null; _sala.ultimaRodada=null;
       if(typeof window.escMapaConvocar==='function') window.escMapaConvocar(_sala.participantes);
       return true;
     }catch(e){ console.warn('[Escritório] não consegui retomar a reunião',e); return false; }
@@ -12122,11 +12194,17 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     if(tinha){ escSalaModoAtivo(); return; }
     escSalaModoSetup();
   };
-  window.escFecharSala=function(){ document.getElementById('sala-bg').classList.remove('open'); };
+  window.escFecharSala=function(){
+    document.getElementById('sala-bg').classList.remove('open');
+    escLateralDesligar();
+  };
 
   function escSalaModoSetup(){
     document.getElementById('sala-setup').style.display='';
     document.getElementById('sala-ativa').style.display='none';
+    var box=document.querySelector('#sala-bg .sala-box');
+    if(box) box.classList.remove('com-painel');
+    escLateralDesligar();
     document.getElementById('sala-sub').textContent='Chame quem precisa estar e diga o assunto.';
 
     var cad=document.getElementById('sala-cadeiras');
@@ -12175,13 +12253,14 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   function escSalaModoAtivo(){
     document.getElementById('sala-setup').style.display='none';
     document.getElementById('sala-ativa').style.display='';
-    document.getElementById('sala-sub').textContent='Reunião em andamento · '
-      +_sala.falas.length+' fala'+(_sala.falas.length===1?'':'s')
-      +' · continua salva mesmo se você fechar o app';
+    var box=document.querySelector('#sala-bg .sala-box');
+    if(box) box.classList.add('com-painel');
+    escPintarSub();
     document.getElementById('sala-pauta-fixa').innerHTML='<strong>Pauta:</strong> '+escHtml(_sala.pauta);
     escPintarControles();
     escPintarTurno();
     escPintarFio();
+    escLateralLigar();
     var ta=document.getElementById('sala-input');
     if(ta && !ta._ligado){
       ta._ligado=true;
@@ -12231,10 +12310,26 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   function escPintarTurno(){
     var el=document.getElementById('sala-turno'); if(!el) return;
     var t=_sala.turno;
+
+    // Mesa parada. Aqui estava o buraco: "Mesa livre" em cinza não distingue
+    // "a rodada terminou, é sua vez" de "travou e ninguém vai falar". Agora o
+    // fim de rodada é um recibo com hora, número de falas e tempo.
     if(!t || !t.fila || !t.fila.length){
-      el.innerHTML='<span class="t-livre">Mesa livre — escreva e a rodada começa.</span>';
+      var u=_sala.ultimaRodada;
+      if(u && u.erro){
+        el.innerHTML='<span class="t-erro">⚠️ '+escHtml(u.erro)+'</span>'
+          +'<span class="t-livre">A mesa está livre — pode mandar de novo.</span>';
+      }else if(u){
+        el.innerHTML='<span class="t-vez">✓ Sua vez</span>'
+          +'<span class="t-livre">Rodada encerrada '+u.hora+' · '+u.falas+' fala'+(u.falas===1?'':'s')
+          +' em '+u.seg+'s</span>';
+      }else{
+        el.innerHTML='<span class="t-vez">✓ Sua vez</span>'
+          +'<span class="t-livre">Mesa livre — escreva e a rodada começa.</span>';
+      }
       return;
     }
+
     var passos=t.fila.map(function(id){
       var a=agentePorId(id); if(!a) return '';
       var estado = t.feitos.indexOf(id)>=0 ? 'feito' : (id===t.atual ? 'agora' : 'fila');
@@ -12243,11 +12338,124 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       return '<span class="t-passo '+estado+'">'+marca+' '+a.nome+sufixo+'</span>';
     }).join('');
     var pos=t.feitos.length+(t.atual?1:0);
-    el.innerHTML=passos+'<span class="t-livre">· '+pos+' de '+t.fila.length+'</span>';
+    // Relógio da rodada inteira: prova de que o tempo está correndo, não parado.
+    var seg=t.inicio ? Math.floor((Date.now()-t.inicio)/1000) : 0;
+    el.innerHTML=passos+'<span class="t-livre">· '+pos+' de '+t.fila.length+'</span>'
+      +'<span class="t-relogio">'+seg+'s</span>';
+  }
+
+  /* ── Painel lateral da sala: o escritório visto de dentro da reunião ────
+     A reclamação era "não sei se tem alguém trabalhando". A sala mostrava só
+     a sala. Isto mostra os cinco, o que cada um fez por último e se a ronda
+     está rodando agora — atualizando sozinho enquanto a sala estiver aberta. */
+  var _salaLatTimer=null;
+  function escPintarLateral(){
+    var el=document.getElementById('sala-lateral'); if(!el) return;
+
+    var ags=AGENTS.map(function(a){
+      var at=atividadeDe(a.id);
+      var ult=ultimoFeito(a.id);
+      var trabalhando = at && at.estado!=='feito';
+      var falando = _sala.turno && _sala.turno.atual===a.id;
+      var estado = falando ? '💬 falando agora'
+                 : trabalhando ? (ESTADOS[at.estado]||{emoji:'💭',label:'Trabalhando'}).emoji+' '
+                                 +(ESTADOS[at.estado]||{label:'trabalhando'}).label.toLowerCase()
+                 : ult ? 'último registro '+haQuantoTempo(ult.criado_em)
+                 : 'sem registro ainda';
+      var naMesa=_sala.participantes.indexOf(a.id)>=0;
+      return '<div class="lat-ag'+(trabalhando?' ativo':'')+(falando?' falando':'')+'"'
+        +' title="'+escHtml(at&&at.texto?at.texto:(ult?ult.titulo:''))+'">'
+        +'<span class="lat-ag-n">'+a.emoji+' '+a.nome+(naMesa?' <i>na mesa</i>':'')+'</span>'
+        +'<span class="lat-ag-e">'+escHtml(estado)+'</span></div>';
+    }).join('');
+
+    var itens=[];
+    AGENTS.forEach(function(a){
+      (memoria[a.id]||[]).forEach(function(m){ itens.push({ag:a, m:m}); });
+    });
+    itens.sort(function(x,y){ return String(y.m.criado_em||'').localeCompare(String(x.m.criado_em||'')); });
+    var regs=itens.slice(0,6).map(function(o){
+      return '<div class="lat-reg"><span class="lat-reg-h">'+horaCurta(o.m.criado_em)+'</span>'
+        +'<span><b style="color:'+o.ag.cor+'">'+escHtml(o.ag.nome)+'</b> '
+        +escHtml(String(o.m.titulo||'').slice(0,70))+'</span></div>';
+    }).join('');
+    if(!regs) regs='<div class="lat-vazio">Nada registrado ainda.</div>';
+
+    var ab=(tarefas||[]).filter(function(t){ return t.status==='aberta'; }).length;
+
+    el.innerHTML=(_rondaAtiva
+        ? '<div class="lat-ronda">⟳ Ronda em andamento — os cinco estão varrendo a área agora</div>' : '')
+      +'<div class="lat-tit">Os cinco agora</div>'+ags
+      +'<div class="lat-tit">Últimos registros</div>'+regs
+      +'<div class="lat-pe">'+(ab? ab+' tarefa'+(ab>1?'s':'')+' aberta'+(ab>1?'s':'')
+                                 : 'Nenhuma tarefa aberta')+'</div>';
+  }
+
+  /* Um tique por segundo enquanto a sala estiver aberta. É o que faz o
+     cronômetro andar e o painel mudar sem precisar fechar e abrir. */
+  function escLateralLigar(){
+    if(_salaLatTimer) return;
+    escPintarLateral();
+    _salaLatTimer=setInterval(function(){
+      escPensandoTick();
+      if(_sala.turno) escPintarTurno();
+      escPintarLateral();
+    },1000);
+  }
+  function escLateralDesligar(){
+    if(_salaLatTimer){ clearInterval(_salaLatTimer); _salaLatTimer=null; }
+  }
+
+  /* ── "Está pensando" com cronômetro ──────────────────────────────────
+     Mediana real de resposta do ai-agent: 3s; p95 quase 9s. Nesses segundos
+     a tela não se mexia, e parado demais lê como quebrado. */
+  var SALA_TIMEOUT_S=45;
+  function escPensandoMostrar(nome){
+    var fio=document.getElementById('sala-fio'); if(!fio) return;
+    var p=document.createElement('div');
+    p.className='sala-pensando'; p.id='sala-pensando';
+    p.setAttribute('data-nome', nome);
+    p.setAttribute('data-t0', String(Date.now()));
+    fio.appendChild(p);
+    escPensandoTick();
+    fio.scrollTop=fio.scrollHeight;
+  }
+  function escPensandoTick(){
+    var p=document.getElementById('sala-pensando'); if(!p) return;
+    var s=Math.floor((Date.now()-Number(p.getAttribute('data-t0')||Date.now()))/1000);
+    var extra = s>=25 ? ' — sem resposta; corto em '+Math.max(0,SALA_TIMEOUT_S-s)+'s'
+              : s>=12 ? ' — demorando mais que o normal'
+              : '';
+    p.className='sala-pensando'+(s>=12?' demora':'');
+    p.innerHTML='<span class="p-dots"><span></span><span></span><span></span></span>'
+      +'<span>'+escHtml(p.getAttribute('data-nome')||'')+' está pensando… '+s+'s'+extra+'</span>';
+  }
+  function escPensandoRemover(){
+    var p=document.getElementById('sala-pensando'); if(p) p.remove();
+  }
+  // Recibo efêmero no fim da rodada. Não vai pro banco: não é fala, é sinal de
+  // vida — e não deve sujar a ata que o Ale leva pros sócios.
+  function escFechoNoFio(txt, erro){
+    var fio=document.getElementById('sala-fio'); if(!fio) return;
+    var d=document.createElement('div');
+    d.className='sala-fecho'+(erro?' erro':'');
+    d.textContent=txt;
+    fio.appendChild(d);
+    fio.scrollTop=fio.scrollHeight;
+  }
+
+  /* O subtítulo dizia "0 falas" com a conversa cheia na tela: era pintado uma
+     vez na abertura e nunca mais. Agora acompanha o fio. */
+  function escPintarSub(){
+    var el=document.getElementById('sala-sub'); if(!el || !_sala.id) return;
+    var n=_sala.falas.filter(function(f){ return f.autor!=='sistema'; }).length;
+    el.textContent='Reunião em andamento · '+n+' fala'+(n===1?'':'s')
+      +' · continua salva mesmo se você fechar o app';
   }
 
   function escPintarFio(){
     var fio=document.getElementById('sala-fio'); if(!fio) return;
+    escPintarSub();
     fio.innerHTML=_sala.falas.map(function(f){
       if(f.autor==='ale'){
         return '<div class="sala-fala eu"><div class="sala-avatar" style="background:rgba(255,255,255,.08)">🧑</div>'
@@ -12332,8 +12540,12 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
 
     var fila = Array.isArray(quem) ? quem.slice() : (quem ? [quem] : _sala.participantes.slice());
     var jaFalou={}, repasses=0;
-    _sala.turno={fila:fila, atual:null, feitos:[]};
+    var t0=Date.now(), falaram=[], falhas=0;
+    _sala.ultimaRodada=null;
+    _sala.turno={fila:fila, atual:null, feitos:[], inicio:t0};
     escPintarTurno();
+    escLateralLigar();
+    try{
     for(var i=0;i<fila.length;i++){
       var agId=fila[i];
       if(jaFalou[agId]) continue;
@@ -12341,12 +12553,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var a=agentePorId(agId); if(!a) continue;
       _sala.turno.atual=agId; escPintarTurno();
       escAtividade(agId,'falando','Na reunião: '+(_sala.pauta||'').slice(0,60));
-      if(fio){
-        var p=document.createElement('div');
-        p.className='sala-pensando'; p.id='sala-pensando';
-        p.textContent=a.nome+' está pensando…';
-        fio.appendChild(p); fio.scrollTop=fio.scrollHeight;
-      }
+      escPensandoMostrar(a.nome);
+      escPintarLateral();
       try{
         var ctx=buildContextForAgent(agId);
         ctx.reuniao={
@@ -12374,18 +12582,25 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           'Nunca diga que fez algo sem emitir a ação. Se não emitiu, não aconteceu.',
         ];
 
+        // Sem teto de tempo, uma chamada pendurada deixava a sala em "está
+        // pensando…" para sempre, com o botão desabilitado e nenhum aviso.
+        var ctrl=(typeof AbortController!=='undefined') ? new AbortController() : null;
+        var tmr=ctrl ? setTimeout(function(){ try{ ctrl.abort(); }catch(e){} }, SALA_TIMEOUT_S*1000) : null;
         var res=await fetch(_aiUrl+'/functions/v1/ai-agent',{
           method:'POST',
+          signal: ctrl ? ctrl.signal : undefined,
           headers:{'Content-Type':'application/json','apikey':_aiAnonKey,'Authorization':'Bearer '+_aiAnonKey},
           body:JSON.stringify({agentId:agId, mode:'chat', question:mensagem, context:ctx,
             history:_sala.falas.filter(function(f){return f.autor!=='sistema';}).slice(-10).map(function(f){
               return {role: f.autor==='ale'?'user':'assistant', content:(f.autor==='ale'?'':agenteNome(f.autor)+': ')+f.conteudo};
             })})
         });
-        var pend=document.getElementById('sala-pensando'); if(pend) pend.remove();
+        if(tmr) clearTimeout(tmr);
+        escPensandoRemover();
         if(!res.ok) throw new Error('HTTP '+res.status);
         var data=await res.json();
         var txt=data.response||'(sem resposta)';
+        falaram.push(a.nome);
 
         // O passe não é uma ação executável — é quem fala em seguida.
         var passes=escParseAcoes(txt).filter(function(x){return x.tipo==='passar';});
@@ -12411,19 +12626,46 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           break;   // um passe por fala
         }
       }catch(e){
-        var pend2=document.getElementById('sala-pensando'); if(pend2) pend2.remove();
-        await escSalvarFala(agId,'⚠️ Não consegui participar agora ('+(e.message||e)+').');
+        if(typeof tmr!=='undefined' && tmr) clearTimeout(tmr);
+        escPensandoRemover();
+        falhas++;
+        // O abort é o caso que mais confundia: a tela ficava viva, o agente não.
+        var abortou=(e && (e.name==='AbortError' || /abort/i.test(String(e.message||e))));
+        await escSalvarFala(agId, abortou
+          ? '⚠️ Não respondi em '+SALA_TIMEOUT_S+'s e a rodada seguiu sem mim. Pergunte de novo.'
+          : '⚠️ Não consegui participar agora ('+(e.message||e)+').');
         escPintarFio();
       }
       escAtividade(agId,'ocioso',null);
       _sala.turno.feitos.push(agId);
       _sala.turno.atual=null;
       escPintarTurno();
+      escPintarLateral();
     }
-    _sala.ocupada=false;
-    _sala.turno=null;
-    escPintarTurno();
-    if(btn) btn.disabled=false;
+    }finally{
+      // Fecho da rodada. Antes daqui, o fim de uma rodada era indistinguível de
+      // um travamento: a barra voltava para o cinza e pronto.
+      var seg=Math.max(1, Math.round((Date.now()-t0)/1000));
+      var qtd=falaram.length;
+      _sala.ultimaRodada={
+        hora:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),
+        falas:qtd, seg:seg,
+        erro: qtd ? null : (falhas ? 'Ninguém da mesa conseguiu responder' : null)
+      };
+      _sala.ocupada=false;
+      _sala.turno=null;
+      escPensandoRemover();
+      escFechoNoFio(
+        qtd ? '✓ Rodada encerrada · '+falaram.join(' e ')+' · '+seg+'s'
+                +(falhas? ' · '+falhas+' falhou' : '')+' — sua vez'
+            : '⚠️ Rodada encerrada sem resposta · '+seg+'s — pode mandar de novo',
+        !qtd);
+      escPintarTurno();
+      escPintarLateral();
+      if(btn) btn.disabled=false;
+      var taFoco=document.getElementById('sala-input');
+      if(taFoco){ try{ taFoco.focus(); }catch(e){} }
+    }
   }
 
   // Executa TODAS as ações que o agente propôs na fala e devolve o que
@@ -12503,7 +12745,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }catch(e){}
     alert('Reunião encerrada. A ata foi salva nas suas Anotações.');
     if(typeof window.escMapaDispensar==='function') window.escMapaDispensar();
-    _sala={id:null,participantes:[],pauta:'',falas:[],ocupada:false,forcarTodos:false,turno:null};
+    _sala={id:null,participantes:[],pauta:'',falas:[],ocupada:false,forcarTodos:false,turno:null,ultimaRodada:null};
+    escLateralDesligar();
     escFecharSala();
   };
 
