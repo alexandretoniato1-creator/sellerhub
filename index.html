@@ -4376,6 +4376,12 @@ async function renderProdutos(){
 
     const sku = g.sku;
     const skuInfo = sku ? skuMap[sku] : null;
+    /* CUIDADO: existem DOIS alvos de ADS no sistema e eles não conversam.
+       - metaTacos (skus.tacos_alvo, aqui): só liga alerta. Não entra em conta nenhuma.
+       - hubAdsAlvo (marketplace_dados.ads, no Hub do sócio): é o que cMarg desconta
+         e o que hubMcPre soma de volta. Esse move a M.C. que vai para os sócios.
+       Mudar um achando que mexeu no outro produz divergência silenciosa entre a
+       tela e o cálculo. Por isso os rótulos são diferentes de propósito. */
     const metaTacos = skuInfo?.tacos_alvo ?? LBX_TACOS_ALVO_PADRAO;
     const estoqueMin = skuInfo?.estoque_minimo ?? LBX_ESTOQUE_MIN_PADRAO;
     const custo = skuInfo?.custo || 0;
@@ -4892,7 +4898,7 @@ async function prodAbrirDrawer(chave){
     <div class="skup-margem-row">
       <div class="skup-margem-card"><div class="skup-kpi-label">M.C. — HUB</div>
         <div class="skup-margem-val ${l.mc<10?'ruim':l.mc>=15?'bom':''}">${l.mc.toFixed(1)}%</div>
-        <div class="skup-kpi-sub">${l.mcAtualizadaEm?'atualizada '+new Date(l.mcAtualizadaEm).toLocaleDateString('pt-BR'):'Hub de Precificação'} · ADS alvo ${( l.hubAdsAlvo||0).toFixed(1)}%</div></div>
+        <div class="skup-kpi-sub">${l.mcAtualizadaEm?'atualizada '+new Date(l.mcAtualizadaEm).toLocaleDateString('pt-BR'):'Hub de Precificação'} · ADS alvo do Hub ${( l.hubAdsAlvo||0).toFixed(1)}%</div></div>
       <div class="skup-margem-card"><div class="skup-kpi-label">MPA — PÓS-ADS (30D)</div>
         <div class="skup-margem-val ${mpa30!==null&&mpa30<0?'ruim':mpa30!==null&&mpa30>=15?'bom':''}">${mpa30!==null?mpa30.toFixed(1)+'%':'—'}</div>
         <div class="skup-kpi-sub">M.C. − TACOS real (${tacos30!==null?tacos30.toFixed(1)+'%':'—'})</div></div>
@@ -5118,7 +5124,10 @@ async function prodAbrirDrawer(chave){
 
     <div class="perf-section-label" style="margin-top:22px">Configuração</div>
     <div class="m-field"><label>Custo do produto (R$)</label><input type="number" step="0.01" id="pd-custo" value="${l.custo?(+l.custo).toFixed(2):''}"></div>
-    <div class="m-field"><label>Meta de TACOS (%)</label><input type="number" step="0.1" id="pd-tacos-alvo" value="${l.metaTacos}"></div>
+    <div class="m-field"><label>Alvo de alerta — TACOS (%)</label><input type="number" step="0.1" id="pd-tacos-alvo" value="${l.metaTacos}">
+      <div style="font-size:10.5px;color:var(--slate-400);margin-top:4px;line-height:1.4">
+        Só liga o alerta aqui no SellerHub. <strong>Não</strong> altera a margem:
+        o ADS alvo que o Hub desconta da M.C. mora no Hub de Precificação e é editado lá.</div></div>
     <div class="m-field"><label>Estoque mínimo (unidades)</label><input type="number" step="1" id="pd-estoque-min" value="${l.estoqueMin}"></div>
     <button class="btn btn-primary" style="margin-top:8px" onclick="prodSalvarDrawer('${l.sku||''}')">Salvar</button>
     <div id="pd-save-msg" style="font-size:12px;color:var(--green-600);margin-top:6px"></div>
@@ -11133,6 +11142,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       if(isNaN(lem)||lem<0) lem=15;
       return '📅 Agendar: "'+p[0]+'" em '+p[1]+(p[2]?' às '+p[2]:'')+(p[2]?' · alarme '+lem+' min antes':'');
     }
+    if(t==='ajustar_sku') return '🎚 Ajustar '+p[0]+': '+(p[1]||'')+' = '+(p[2]||'');
     if(t==='remover_evento') return '🗑 Remover da agenda: '+(/^\d+$/.test(p[0]||'')?'evento #'+p[0]:'"'+p[0]+'"');
     if(t==='editar_evento') return '✏️ Reescrever evento #'+p[0]+(p[1]?': "'+p[1]+'"':'')+(p[2]?' → '+p[2]:'')+(p[3]?' às '+p[3]:'');
     if(t==='criar_ideia') return '💡 Adicionar ideia: "'+p[0]+'"';
@@ -11330,6 +11340,58 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         return k+': '+(antes[k]||'—')+' → '+mud[k];
       }).join(' · ');
       return {ok:true, aviso:'editado #'+idEd+' · '+descr};
+    }
+
+    /* ── Ajustar configuração de SKU ─────────────────────────────────────
+       Autonomia de escrita nos campos que pertencem ao SellerHub. Fica de
+       fora, de propósito, tudo que mora no Hub de Precificação do sócio:
+       custo, preço planejado e o ADS alvo que entra no cálculo da margem.
+       Escrever aqui o que é de lá criaria dois números com o mesmo nome — um
+       na tela, outro na conta — e o que vai para os sócios seria o que
+       ninguém mudou. */
+    if(tipo==='ajustar_sku'){
+      var skuAj=(params[0]||'').trim();
+      var campoAj=(params[1]||'').trim();
+      var valorAj=(params[2]||'').trim().replace(',','.');
+      if(!skuAj) throw new Error('ajustar_sku precisa do SKU.');
+
+      var PERMITIDOS={
+        tacos_alvo:{rotulo:'alvo de alerta de TACOS', min:0, max:100, sufixo:'%'},
+        estoque_minimo:{rotulo:'estoque mínimo', min:0, max:100000, sufixo:' un'}
+      };
+      var DO_HUB={custo:1, preco:1, preco_planejado:1, mc:1, mc_planejada:1, rebait:1};
+
+      if(DO_HUB[campoAj]){
+        throw new Error('"'+campoAj+'" é do Hub de Precificação, não do SellerHub. '
+          +'Mudar aqui não muda a margem: o hub sobrescreve e a tela passa a discordar da conta. '
+          +'Esse ajuste é feito no hub. Abra uma tarefa ou registre uma nota, e avise o Ale disso.');
+      }
+      var regra=PERMITIDOS[campoAj];
+      if(!regra){
+        throw new Error('campo "'+campoAj+'" não pode ser ajustado. Disponíveis: '
+          +Object.keys(PERMITIDOS).join(', ')+'.');
+      }
+      var n=parseFloat(valorAj);
+      if(isNaN(n)) throw new Error('valor "'+params[2]+'" não é número.');
+      if(n<regra.min || n>regra.max)
+        throw new Error(regra.rotulo+' precisa estar entre '+regra.min+' e '+regra.max+'.');
+
+      var {data:skuAtual}=await sb.from('skus').select('sku,'+campoAj)
+        .eq('conta','Logbox').eq('sku',skuAj).limit(1);
+      if(!skuAtual || !skuAtual.length)
+        throw new Error('SKU "'+skuAj+'" não existe na tabela skus. Confira o código.');
+      var valorAntes=skuAtual[0][campoAj];
+
+      var patch={conta:'Logbox', sku:skuAj}; patch[campoAj]=n;
+      var {error:errAj}=await sb.from('skus').upsert(patch,{onConflict:'conta,sku'});
+      if(errAj) throw errAj;
+
+      return {ok:true,
+        aviso:skuAj+' · '+regra.rotulo+': '
+          +(valorAntes===null||valorAntes===undefined?'—':valorAntes+regra.sufixo)
+          +' → '+n+regra.sufixo
+          +(campoAj==='tacos_alvo'?' (só alerta; não muda a M.C.)':''),
+        desfazer:{sku:skuAj, campo:campoAj, valor_anterior:valorAntes}};
     }
 
     if(tipo==='criar_ideia'){
@@ -12693,7 +12755,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           'Não repita o que outro já disse. Concordar em silêncio é melhor que concordar em voz alta.',
           'Se o assunto é de outro agente, passe: <<ACAO:passar|id_do_agente|motivo em 5 palavras>>. '
             +'Ids válidos: gestor, ads, anuncios, sac, assistente. Passe no máximo uma vez por fala, e não passe de volta pra quem acabou de falar.',
-          'Você PODE agir na reunião: criar_evento, editar_evento, remover_evento, criar_nota, criar_ideia, abrir_tarefa, criar_slide e editar_slide.',
+          'Você PODE agir na reunião: criar_evento, editar_evento, remover_evento, ajustar_sku, criar_nota, criar_ideia, abrir_tarefa, criar_slide e editar_slide.',
           'Agendar exige <<ACAO:criar_evento|titulo|AAAA-MM-DD|HH:MM|categoria>>. Data sai de calendario, não da sua cabeça. '
             +'Anuncie em uma linha; o comprovante o sistema põe embaixo.',
           'Se o pedido foi endereçado a outro agente, não execute a ação: ele está cuidando disso.',
@@ -12836,6 +12898,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       if(isNaN(lemF)||lemF<0) lemF=15;
       var rot = f.tipo==='criar_evento' ? ('📅 '+f.params[0]+' — '+f.params[1]+(f.params[2]?' às '+f.params[2]+' (alarme '+lemF+' min antes)':''))
               : f.tipo==='criar_nota'   ? ('📝 Nota: '+f.params[0])
+              : f.tipo==='ajustar_sku'    ? ('🎚 '+f.params[0]+' · '+f.params[1]+' = '+f.params[2])
               : f.tipo==='remover_evento' ? ('🗑 Removido da agenda: '+f.params[0])
               : f.tipo==='editar_evento'  ? ('✏️ Evento #'+f.params[0]+' alterado')
               : f.tipo==='criar_ideia'  ? ('💡 Ideia: '+f.params[0])
@@ -13124,6 +13187,10 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       'editar_evento(id, titulo, data, hora, categoria) — muda um compromisso já marcado. '
         +'Só o id é obrigatório; campo deixado em branco fica como está. Use para remarcar em vez de '
         +'apagar e criar de novo, assim o Ale não perde o histórico.',
+      'ajustar_sku(sku, campo, valor) — muda configuração do SKU aqui no SellerHub. '
+        +'Campos: tacos_alvo (o alvo de ALERTA de TACOS — liga o aviso, NÃO altera a M.C.) e estoque_minimo. '
+        +'Custo, preço e o ADS alvo que entra no cálculo da margem moram no Hub de Precificação e não se mexe daqui: '
+        +'se pedirem isso, diga que é no hub e ofereça abrir tarefa. O valor anterior fica no recibo.',
       'criar_ideia(titulo, descricao, prioridade: alta|media|baixa) — adiciona no kanban de ideias',
       'abrir_tarefa(para, titulo, descricao, sku, prioridade) — passa um problema para outro agente. '
         +'"para" deve ser um destes: ' + AGENTS.filter(function(a){return a.id!==agId;}).map(function(a){return a.id;}).join(', '),
@@ -13141,8 +13208,14 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           +'nunca em adjetivo solto. Se o mês não estiver fechado (mes_fechado=false), avise que o número ainda pode mudar.';
       }
     }
-    ctx._limite_de_acao = 'Você pode criar nota, evento, ideia e tarefa sozinho — tudo reversível. '
-      +'Nada que altere o Mercado Livre (preço, pausar anúncio, responder cliente) pode ser feito por você: nesses casos, descreva o passo e deixe a decisão com o Ale.';
+    ctx._limite_de_acao = 'Dentro do SellerHub você age sozinho: agenda (criar, editar e apagar qualquer evento, '
+      +'inclusive os que o Ale marcou), notas, ideias, tarefas, slides e configuração de SKU. '
+      +'Toda mudança guarda o valor anterior no recibo, então errar é reversível — mas confira antes, é o painel dele. '
+      +'Duas coisas ficam fora e não é falta de permissão, é que não funcionaria: '
+      +'(1) o Mercado Livre — preço, pausar anúncio, responder cliente — que não tem escrita pela nossa API; '
+      +'(2) o Hub de Precificação do sócio — custo, preço planejado e o ADS alvo que entra na margem — '
+      +'porque o hub sobrescreve no próximo sync e a tela passaria a discordar do cálculo. '
+      +'Nesses dois casos: diga em uma linha onde se faz, e ofereça abrir tarefa ou registrar nota.';
 
     // Comprovante do que este agente realmente executou. Sem isto ele inventa
     // explicações de sistemas que não existem quando algo não aparece.
