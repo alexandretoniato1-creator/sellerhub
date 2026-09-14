@@ -1136,6 +1136,13 @@ body.sidebar-collapsed .hamburger { display: none; }
 .sala-fecho { align-self:center; font-size:11px; font-family:var(--mono); color:#4ADE9A;
   background:rgba(0,216,122,.08); border:1px solid rgba(0,216,122,.25); border-radius:10px; padding:4px 12px; }
 .sala-fecho.erro { color:#FF8A8A; background:rgba(255,90,90,.08); border-color:rgba(255,90,90,.28); }
+.sala-propostas { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+.sala-proposta-btn { background:rgba(0,216,122,.12); border:1px solid rgba(0,216,122,.4); color:#4ADE9A;
+  border-radius:9px; padding:6px 12px; font-size:11.5px; font-weight:600; font-family:var(--font);
+  cursor:pointer; transition:background .15s; }
+.sala-proposta-btn:hover:not(:disabled) { background:rgba(0,216,122,.22); }
+.sala-proposta-btn:disabled { cursor:default; opacity:.85; }
+.sala-proposta-btn.feita { background:rgba(0,216,122,.06); border-color:rgba(0,216,122,.2); color:#3AA97C; }
 @keyframes tPulso { 0%,100%{opacity:1} 50%{opacity:.55} }
 
 /* Faixa de pulso e diário do escritório */
@@ -11185,8 +11192,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }catch(e){ return false; }
   }
 
-  // Ponte só para teste automatizado: expõe o executor sem mudar o fluxo do app.
+  // Pontes só para teste automatizado: expõem executor e fala sem mudar o fluxo.
   window.__execAcao = function(tipo, params){ return escAcaoExecutar(tipo, params); };
+  window.__salaFalaTeste = function(autor, conteudo){ _sala.falas.push({autor:autor, conteudo:conteudo}); escPintarFio(); };
 
   async function escAcaoExecutar(tipo, params){
     var quem=agenteNome(activeAgentId)||'Agente';
@@ -11440,7 +11448,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var acoesHtml='';
       if(!isUser){
         var acoes=escParseAcoes(content);
-        content=escTextSemAcoes(content);
+        var propostasHtml=escPropostasHtml(content,'painel');
+        content=limparMarkdown(escTextSemPropostas(escTextSemAcoes(content)));
         if(acoes.length>0){
           acoesHtml='<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">'
             +acoes.map(function(a){
@@ -11458,7 +11467,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           +'onclick="escGuardarTrecho('+i+')">💾 Guardar isso</button>';
       }
       return '<div class="esc-chat-msg '+(isUser?'user':'agent')+'">'
-        +'<div class="esc-chat-bubble">'+escHtml(content)+acoesHtml+'</div>'
+        +'<div class="esc-chat-bubble">'+escHtml(content)+acoesHtml+(isUser?'':propostasHtml)+'</div>'
         +(isUser?'':'<span class="esc-chat-time">'+time+guardar+'</span>')
         +'</div>';
     }).join('');
@@ -12633,6 +12642,82 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       +' · continua salva mesmo se você fechar o app';
   }
 
+  /* ── Markdown fora das falas ─────────────────────────────────────────
+     O Sonnet formata por hábito: título, negrito, lista. As regras de tom
+     mandam não fazer e ele faz mesmo assim — prompt não segura formatação.
+     Então a limpeza é no código, na hora de mostrar: o texto chega como
+     vier e sai como conversa. Os blocos <<...>> passam intactos. */
+  function limparMarkdown(t){
+    return String(t||'')
+      .replace(/^#{1,6}\s+/gm,'')          // "# Título" → "Título"
+      .replace(/\*\*([^*]+)\*\*/g,'$1')    // **negrito**
+      .replace(/__([^_]+)__/g,'$1')
+      .replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,;:!?]|$)/g,'$1$2')  // *itálico*
+      .replace(/`([^`\n]+)`/g,'$1')        // `código`
+      .replace(/^\s*[-*]\s+/gm,'– ')       // marcador de lista vira travessão
+      .replace(/\n{3,}/g,'\n\n')
+      .trim();
+  }
+
+  /* ── Propostas: o agente recomenda, o botão é do Ale ─────────────────
+     <<ACAO:...>> é o agente decidindo e fazendo (autonomia dele).
+     <<PROPOR:tipo|p1|...|rótulo>> é ele recomendando: vira botão na fala,
+     nas duas telas, e o toque executa a MESMA escAcaoExecutar — mesmas
+     travas, mesmo recibo. Não existe caminho paralelo de escrita. */
+  function escParsePropostas(text){
+    var out=[]; var m;
+    var re=/<<PROPOR:([\w]+)\|([^>]*)>>/g;
+    while((m=re.exec(text))!==null){
+      var partes=m[2].split('|').map(function(s){return s.trim();});
+      var rotulo=partes.length>1 ? partes.pop() : '';
+      out.push({tipo:m[1], params:partes, rotulo:rotulo||escAcaoLabel({tipo:m[1],params:partes}), raw:m[0]});
+    }
+    return out;
+  }
+  function escTextSemPropostas(text){
+    return String(text||'').replace(/<<PROPOR:[\w]+\|[^>]*>>/g,'').trim();
+  }
+  /* O fio é repintado inteiro a cada fala nova, e o botão renasce da fala
+     salva. Sem memória do que já foi aprovado, o "✓ feito" durava até a
+     próxima repintura e o botão voltava clicável. O estado vive na sessão,
+     por assinatura da proposta. (Após reload os botões voltam ativos; as
+     ações têm guarda de duplicidade, então reaprovar não duplica.) */
+  var _propFeitas={};
+  function _propChave(tipo, params){ return tipo+'|'+params.join('|'); }
+  function escPropostasHtml(texto, origem){
+    var props=escParsePropostas(texto);
+    if(!props.length) return '';
+    return '<div class="sala-propostas">'+props.map(function(p){
+      var enc=encodeURIComponent(JSON.stringify(p.params));
+      var feita=_propFeitas[_propChave(p.tipo,p.params)];
+      if(feita){
+        return '<button class="sala-proposta-btn feita" disabled>✓ '+escHtml(p.rotulo)+'</button>';
+      }
+      return '<button class="sala-proposta-btn" '
+        +'onclick="escProporExecutar(this,\''+p.tipo+'\',\''+enc+'\',\''+origem+'\')">'
+        +escHtml(p.rotulo)+'</button>';
+    }).join('')+'</div>';
+  }
+  window.escProporExecutar=async function(btn, tipo, paramsEnc, origem){
+    var params=[];
+    try{ params=JSON.parse(decodeURIComponent(paramsEnc)); }catch(e){}
+    btn.disabled=true; var rotulo=btn.textContent; btn.textContent='…';
+    try{
+      var r=await escAcaoExecutar(tipo, params);
+      _propFeitas[_propChave(tipo, params)]=true;
+      btn.classList.add('feita'); btn.textContent='✓ '+rotulo;
+      var recibo='⚡ Você aprovou: '+escAcaoLabel({tipo:tipo,params:params})
+        +(r && r.aviso ? ' — '+r.aviso : '');
+      if(origem==='sala' && _sala.id){ await escSalvarFala('sistema', recibo); escPintarFio(); }
+      if(typeof carregarMemoriaETarefas==='function') carregarMemoriaETarefas();
+    }catch(e){
+      btn.disabled=false; btn.textContent=rotulo;
+      var motivo='🚫 Recusado: '+(e && e.message || e);
+      if(origem==='sala' && _sala.id){ await escSalvarFala('sistema', motivo); escPintarFio(); }
+      else alert(motivo);
+    }
+  };
+
   function escPintarFio(){
     var fio=document.getElementById('sala-fio'); if(!fio) return;
     escPintarSub();
@@ -12646,8 +12731,12 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         return '<div class="sala-sistema">'+escHtml(f.conteudo)+'</div>';
       }
       var a=agentePorId(f.autor)||{emoji:'🤖',nome:f.autor,cor:'#6B7CFF'};
+      // A fala é salva com os <<PROPOR:>> dentro, de propósito: assim os
+      // botões sobrevivem ao reload e à retomada da reunião.
+      var visivel=limparMarkdown(escTextSemPropostas(f.conteudo));
       return '<div class="sala-fala"><div class="sala-avatar" style="background:'+a.cor+'22">'+a.emoji+'</div>'
-        +'<div><div class="sala-quem">'+escHtml(a.nome)+'</div><div class="sala-balao">'+escHtml(f.conteudo)+'</div></div></div>';
+        +'<div><div class="sala-quem">'+escHtml(a.nome)+'</div><div class="sala-balao">'+escHtml(visivel)
+        +escPropostasHtml(f.conteudo,'sala')+'</div></div></div>';
     }).join('');
     fio.scrollTop=fio.scrollHeight;
   }
@@ -13197,6 +13286,13 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       'criar_slide(titulo, corpo) — adiciona um slide na apresentação do mês',
       'editar_slide(id, titulo, corpo) — reescreve um slide existente (use o id que aparece em apresentacao_do_mes)'
     ];
+    ctx._como_propor = 'Além de AGIR (<<ACAO:...>>), você pode PROPOR: a recomendação vira um botão na sua fala '
+      +'e o Ale executa com um toque. Formato: <<PROPOR:tipo|parametros...|rótulo do botão>>, no fim da resposta, '
+      +'com os mesmos tipos e parâmetros das ações; o último campo é o texto do botão, curto e no imperativo '
+      +'(ex.: <<PROPOR:ajustar_sku|VA-AE11-220|tacos_alvo|6|Subir alerta para 6%>>). '
+      +'Use ACAO para o que é claramente seu (registrar, agendar rotina sua, abrir tarefa). '
+      +'Use PROPOR quando a decisão é do Ale: mexer em configuração de SKU, remarcar compromisso dele, ou qualquer '
+      +'coisa que ele possa querer recusar. No máximo 2 propostas por fala. Nunca proponha e execute a mesma coisa.';
 
     // A apresentação aos sócios: quem escreve sobre resultado e sobre ADS precisa vê-la
     if((agId==='gestor'||agId==='ads') && typeof window.apContexto==='function'){
