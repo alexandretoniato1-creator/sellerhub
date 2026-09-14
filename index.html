@@ -11133,6 +11133,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       if(isNaN(lem)||lem<0) lem=15;
       return '📅 Agendar: "'+p[0]+'" em '+p[1]+(p[2]?' às '+p[2]:'')+(p[2]?' · alarme '+lem+' min antes':'');
     }
+    if(t==='remover_evento') return '🗑 Remover da agenda: '+(/^\d+$/.test(p[0]||'')?'evento #'+p[0]:'"'+p[0]+'"');
+    if(t==='editar_evento') return '✏️ Reescrever evento #'+p[0]+(p[1]?': "'+p[1]+'"':'')+(p[2]?' → '+p[2]:'')+(p[3]?' às '+p[3]:'');
     if(t==='criar_ideia') return '💡 Adicionar ideia: "'+p[0]+'"';
     if(t==='abrir_tarefa') return '📤 Passar para o '+agenteNome(p[0])+': "'+p[1]+'"';
     if(t==='criar_slide') return '🖼 Criar slide: "'+p[0]+'"';
@@ -11172,6 +11174,9 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       return !!(data && data.length);
     }catch(e){ return false; }
   }
+
+  // Ponte só para teste automatizado: expõe o executor sem mudar o fluxo do app.
+  window.__execAcao = function(tipo, params){ return escAcaoExecutar(tipo, params); };
 
   async function escAcaoExecutar(tipo, params){
     var quem=agenteNome(activeAgentId)||'Agente';
@@ -11234,6 +11239,99 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       if(error) throw error;
       return choque ? {ok:true, aviso:'choca com "'+choque+'" no mesmo horário'} : true;
     }
+    /* ── Remover e editar evento ─────────────────────────────────────────
+       O Ale pediu autonomia total: a Assistente apaga e edita qualquer
+       compromisso, inclusive os que ele mesmo marcou. Não há filtro de quem
+       criou — de propósito.
+
+       O que existe é rastro. A remoção grava o evento INTEIRO no recibo, então
+       qualquer erro dela é desfazível: os campos estão todos lá para recriar.
+       Sem isso, "autonomia total" viraria "perda silenciosa".
+
+       Cuidado com a redação do recibo: seis registros de "Executei criar_evento"
+       de eventos já apagados foram lidos meses depois como compromisso ativo, e
+       o Gestor montou um cronograma inteiro em cima de compromisso que não
+       existia. Por isso o recibo de remoção começa com "Removi" e diz na cara
+       que o evento não existe mais. */
+    if(tipo==='remover_evento'){
+      var alvoRem=(params[0]||'').trim();
+      if(!alvoRem) throw new Error('remover_evento precisa do id do evento ou do título exato.');
+
+      var achados=[];
+      if(/^\d+$/.test(alvoRem)){
+        var {data:porId}=await sb.from('agenda').select('*').eq('id',Number(alvoRem)).limit(1);
+        achados=porId||[];
+      }else{
+        var q=sb.from('agenda').select('*').eq('titulo',alvoRem);
+        if(params[1]) q=q.eq('data',params[1]);
+        var {data:porTit}=await q.limit(5);
+        achados=porTit||[];
+      }
+
+      if(!achados.length){
+        throw new Error('não achei evento "'+alvoRem+'"'+(params[1]?' em '+params[1]:'')
+          +'. Consulte a agenda e reemita com o id.');
+      }
+      // Título repetido em datas diferentes: exigir o id em vez de chutar qual.
+      if(achados.length>1){
+        throw new Error(achados.length+' eventos com esse título ('
+          +achados.map(function(e){return '#'+e.id+' em '+e.data;}).join(', ')
+          +'). Reemita com o id de qual remover.');
+      }
+
+      var ev=achados[0];
+      var {error:errRem}=await sb.from('agenda').delete().eq('id',ev.id);
+      if(errRem) throw errRem;
+
+      // Recibo com o evento inteiro: é o que permite recriar se ela errar.
+      return {ok:true,
+        aviso:'removido #'+ev.id+' · '+ev.titulo+' · '+ev.data+(ev.horario?' '+String(ev.horario).slice(0,5):''),
+        desfazer:{titulo:ev.titulo, data:ev.data, horario:ev.horario,
+                  categoria:ev.categoria, lembrete_min:ev.lembrete_min, obs:ev.obs}};
+    }
+
+    if(tipo==='editar_evento'){
+      var idEd=(params[0]||'').trim();
+      if(!/^\d+$/.test(idEd)) throw new Error('editar_evento precisa do id numérico do evento.');
+
+      var {data:atualArr}=await sb.from('agenda').select('*').eq('id',Number(idEd)).limit(1);
+      if(!atualArr || !atualArr.length) throw new Error('não existe evento #'+idEd+'.');
+      // Cópia congelada: o recibo é montado depois do update e precisa do valor
+      // velho. Depender de o cliente devolver objeto novo é suposição frágil.
+      var antes=JSON.parse(JSON.stringify(atualArr[0]));
+
+      // Campo vazio significa "não mexe neste", não "apaga este".
+      var mud={};
+      if(params[1]) mud.titulo=params[1];
+      if(params[2]) mud.data=params[2];
+      if(params[3]) mud.horario=params[3];
+      if(params[4]) mud.categoria=params[4];
+      if(!Object.keys(mud).length) throw new Error('editar_evento sem nada para mudar.');
+
+      // A mesma trava de data do criar_evento: senão a edição vira a porta
+      // dos fundos para o compromisso voltar a cair em 2025.
+      if(mud.data){
+        if(!/^\d{4}-\d{2}-\d{2}$/.test(mud.data))
+          throw new Error('data "'+mud.data+'" não está no formato AAAA-MM-DD.');
+        var _hojeE=hojeISO();
+        var _limE=new Date(); _limE.setFullYear(_limE.getFullYear()+1);
+        if(mud.data < _hojeE)
+          throw new Error('data '+mud.data+' está no passado (hoje é '+_hojeE+').');
+        if(mud.data > _limE.toISOString().slice(0,10))
+          throw new Error('data '+mud.data+' está a mais de um ano daqui.');
+      }
+      if(mud.horario && !/^\d{2}:\d{2}(:\d{2})?$/.test(mud.horario))
+        throw new Error('horário "'+mud.horario+'" não está no formato HH:MM.');
+
+      var {error:errEd}=await sb.from('agenda').update(mud).eq('id',Number(idEd));
+      if(errEd) throw errEd;
+
+      var descr=Object.keys(mud).map(function(k){
+        return k+': '+(antes[k]||'—')+' → '+mud[k];
+      }).join(' · ');
+      return {ok:true, aviso:'editado #'+idEd+' · '+descr};
+    }
+
     if(tipo==='criar_ideia'){
       var nomeIdeia=params[0]||'Ideia';
       if(await jaExiste('ideias',{nome:nomeIdeia})) return true;
@@ -12595,7 +12693,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           'Não repita o que outro já disse. Concordar em silêncio é melhor que concordar em voz alta.',
           'Se o assunto é de outro agente, passe: <<ACAO:passar|id_do_agente|motivo em 5 palavras>>. '
             +'Ids válidos: gestor, ads, anuncios, sac, assistente. Passe no máximo uma vez por fala, e não passe de volta pra quem acabou de falar.',
-          'Você PODE agir na reunião: criar_evento, criar_nota, criar_ideia, abrir_tarefa, criar_slide e editar_slide.',
+          'Você PODE agir na reunião: criar_evento, editar_evento, remover_evento, criar_nota, criar_ideia, abrir_tarefa, criar_slide e editar_slide.',
           'Agendar exige <<ACAO:criar_evento|titulo|AAAA-MM-DD|HH:MM|categoria>>. Data sai de calendario, não da sua cabeça. '
             +'Anuncie em uma linha; o comprovante o sistema põe embaixo.',
           'Se o pedido foi endereçado a outro agente, não execute a ação: ele está cuidando disso.',
@@ -12738,6 +12836,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       if(isNaN(lemF)||lemF<0) lemF=15;
       var rot = f.tipo==='criar_evento' ? ('📅 '+f.params[0]+' — '+f.params[1]+(f.params[2]?' às '+f.params[2]+' (alarme '+lemF+' min antes)':''))
               : f.tipo==='criar_nota'   ? ('📝 Nota: '+f.params[0])
+              : f.tipo==='remover_evento' ? ('🗑 Removido da agenda: '+f.params[0])
+              : f.tipo==='editar_evento'  ? ('✏️ Evento #'+f.params[0]+' alterado')
               : f.tipo==='criar_ideia'  ? ('💡 Ideia: '+f.params[0])
               : f.tipo==='abrir_tarefa' ? ('📤 Tarefa para '+agenteNome(f.params[0])+': '+f.params[1])
               : f.tipo==='criar_slide'  ? ('🖼 Slide: '+f.params[0])
@@ -13016,6 +13116,14 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         +'("Revisar anúncios com o agente Anúncios"), não em jargão ("Sync Anúncios", "Briefing", "Daily", "Check-in"). '
         +'Sem emoji, sem sigla, sem palavra em inglês. Antes de marcar, veja agenda_proxima: não repita algo que já está lá '
         +'nem marque dois compromissos no mesmo horário.',
+      'remover_evento(id_ou_titulo, data opcional) — APAGA um compromisso da agenda. '
+        +'Você pode remover qualquer evento, inclusive os que o Ale marcou: ele te deu autonomia total. '
+        +'Prefira o id, que aparece na consulta da agenda. Se o título se repetir em datas diferentes, '
+        +'a ação é recusada e você reemite com o id. O evento removido fica guardado no recibo, '
+        +'então dá para recriar se você errar — mas confira antes, é a agenda dele.',
+      'editar_evento(id, titulo, data, hora, categoria) — muda um compromisso já marcado. '
+        +'Só o id é obrigatório; campo deixado em branco fica como está. Use para remarcar em vez de '
+        +'apagar e criar de novo, assim o Ale não perde o histórico.',
       'criar_ideia(titulo, descricao, prioridade: alta|media|baixa) — adiciona no kanban de ideias',
       'abrir_tarefa(para, titulo, descricao, sku, prioridade) — passa um problema para outro agente. '
         +'"para" deve ser um destes: ' + AGENTS.filter(function(a){return a.id!==agId;}).map(function(a){return a.id;}).join(', '),
