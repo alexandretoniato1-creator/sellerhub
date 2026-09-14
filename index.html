@@ -11102,6 +11102,11 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           mode:'chat',
           question:txt,
           context:ctxData,
+          // O front nunca mandava teto, então o chat ficava no padrão 1500 do
+          // ai-agent. Resposta com consulta de ferramenta encostava no teto e
+          // era cortada no meio — às vezes no meio de um <<ACAO:>>, que então
+          // se perdia sem aviso porque o parser exige o >> de fechamento.
+          maxTokensHint:2500,
           history:_chatHistory[agId].slice(-10)
         })
       });
@@ -11137,8 +11142,15 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     return acoes;
   }
 
+  /* Quando a resposta encosta no teto de tokens, ela é cortada onde estiver —
+     inclusive no meio de um <<ACAO:. O parser exige o >> de fechamento, então
+     o fragmento não executa (que é o certo), mas ficava aparecendo cru na
+     fala. A segunda regra varre o fragmento pendurado no FIM do texto. */
   function escTextSemAcoes(text){
-    return text.replace(/<<ACAO:[\w]+\|[^>]*>>/g,'').trim();
+    return String(text||'')
+      .replace(/<<ACAO:[\w]+\|[^>]*>>/g,'')
+      .replace(/<<ACAO:[^>]*$/,'')
+      .trim();
   }
 
   function escAcaoLabel(acao){
@@ -11526,7 +11538,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var res=await fetch(_aiUrl+'/functions/v1/ai-agent',{
         method:'POST',
         headers:{'Content-Type':'application/json','apikey':_aiAnonKey,'Authorization':'Bearer '+_aiAnonKey},
-        body:JSON.stringify({agentId:agId,mode:'meeting',context:ctxData})
+        body:JSON.stringify({agentId:agId,mode:'meeting',context:ctxData,maxTokensHint:3000})
       });
       if(!res.ok) throw new Error('HTTP '+res.status);
       var data=await res.json();
@@ -12675,7 +12687,10 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     return out;
   }
   function escTextSemPropostas(text){
-    return String(text||'').replace(/<<PROPOR:[\w]+\|[^>]*>>/g,'').trim();
+    return String(text||'')
+      .replace(/<<PROPOR:[\w]+\|[^>]*>>/g,'')
+      .replace(/<<PROPOR:[^>]*$/,'')
+      .trim();
   }
   /* O fio é repintado inteiro a cada fala nova, e o botão renasce da fala
      salva. Sem memória do que já foi aprovado, o "✓ feito" durava até a
@@ -12860,6 +12875,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           signal: ctrl ? ctrl.signal : undefined,
           headers:{'Content-Type':'application/json','apikey':_aiAnonKey,'Authorization':'Bearer '+_aiAnonKey},
           body:JSON.stringify({agentId:agId, mode:'chat', question:mensagem, context:ctx,
+            maxTokensHint:2500,
             history:_sala.falas.filter(function(f){return f.autor!=='sistema';}).slice(-10).map(function(f){
               return {role: f.autor==='ale'?'user':'assistant', content:(f.autor==='ale'?'':agenteNome(f.autor)+': ')+f.conteudo};
             })})
