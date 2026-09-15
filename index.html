@@ -9,11 +9,11 @@
 <meta name="theme-color" content="#2C2C2A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="SellerHub">
+<meta name="apple-mobile-web-app-title" content="OfficeLed">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32.png">
 <link rel="shortcut icon" href="./favicon-32.png">
-<title>SellerHub</title>
+<title>OfficeLed</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -1648,6 +1648,58 @@ body.sidebar-collapsed .hamburger { display: none; }
   #dash-produtos tbody tr.dash-card-row td{ padding:0; }
   #dash-kpis > div{ grid-template-columns:repeat(auto-fit,minmax(140px,1fr)) !important; }
 }
+
+/* ═══ DIREÇÃO C — painel com voz ══════════════════════════════════════════
+   Escolhida em 15/09. Três regras que valem para o app inteiro:
+
+   1. UMA ESCALA DE TEXTO. Título de página 17px, título de seção 10px em caixa
+      alta, corpo 12.5px, número 19px monoespaçado. Nada de sete tamanhos.
+   2. CADA COR TEM UM SIGNIFICADO SÓ. Coral é ALERTA — nunca destaque. Verde é
+      margem. Âmbar é atenção. Azul é link. Antes o coral era borda de cartão
+      importante e fundo de alerta na mesma tela, e isso ensina o olho errado.
+   3. DESTAQUE SEM COR. Cartão importante ganha peso pela barra superior escura,
+      não por borda colorida — assim o coral fica livre para alertar.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Seções da barra lateral */
+.nav-sec { font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
+  color: var(--slate-500); padding: 15px 12px 6px; }
+.nav-sec:first-of-type { padding-top: 4px; }
+
+/* LED: o ponto que acende na aba com algo pedindo atenção.
+   A cor segue a severidade — coral para o que sangra, âmbar para o que espera. */
+.nav-led { width: 6px; height: 6px; border-radius: 50%; margin-left: auto; flex: none;
+  background: transparent; transition: background .2s, box-shadow .2s; }
+.nav-led.on { background: var(--coral-500); box-shadow: 0 0 8px var(--coral-500); }
+.nav-led.warn { background: #D2A44E; box-shadow: 0 0 8px rgba(210,164,78,.7); }
+.nav-item.active .nav-led.on { background: var(--white); box-shadow: 0 0 8px rgba(255,255,255,.8); }
+.sidebar-logo span { color: var(--coral-500); }
+/* O ponto da marca acende junto com qualquer LED aceso: o resumo de tudo. */
+.sidebar-logo::after { content: ''; display: inline-block; width: 6px; height: 6px;
+  border-radius: 50%; margin-left: 7px; vertical-align: middle; background: var(--slate-700);
+  transition: background .2s, box-shadow .2s; }
+.sidebar-logo.led-on::after { background: var(--coral-500); box-shadow: 0 0 9px var(--coral-500); }
+
+/* Cabeçalho fixo: o período some da rolagem hoje, e ele é o que dá sentido a
+   todo número da tela. */
+.pg-head { position: sticky; top: 0; z-index: 20; background: var(--white);
+  border-bottom: 1px solid var(--slate-100); margin: -24px -28px 20px; padding: 15px 28px;
+  display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.pg-head .page-title { margin: 0; }
+.pg-head .page-subtitle { margin: 2px 0 0; }
+@media (max-width: 768px){ .pg-head { margin: -16px -16px 16px; padding: 12px 16px; } }
+
+/* Cartão de indicador, um padrão só para o app inteiro */
+.kpi { background: var(--white); border: 1px solid var(--slate-100);
+  border-radius: var(--radius); padding: 13px 15px; position: relative; }
+.kpi.destaque { border-color: var(--slate-200); }
+.kpi.destaque::before { content: ''; position: absolute; left: -1px; right: -1px; top: -1px;
+  height: 3px; border-radius: var(--radius) var(--radius) 0 0; background: var(--slate-900); }
+.kpi-l { font-size: 9.5px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--slate-400); margin-bottom: 5px; }
+.kpi-v { font-family: var(--mono); font-size: 19px; letter-spacing: -.02em; color: var(--slate-900); }
+.kpi-d { font-size: 11px; margin-top: 3px; min-height: 14px; color: var(--slate-400); }
+.kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; }
 </style>
 </head>
 <body>
@@ -1680,47 +1732,47 @@ body.sidebar-collapsed .hamburger { display: none; }
 
 <div id="app">
   <nav class="sidebar" id="sidebar">
-    <div class="sidebar-logo">Seller<span>Hub</span></div>
+    <div class="sidebar-logo">Office<span>Led</span></div>
     <div class="sidebar-nav">
-      <!-- Central -->
+      <!-- A ordem segue o RITMO DE USO, não o tipo de conteúdo: o que abre todo
+           dia em cima, o que abre no fechamento no meio, o trabalho próprio embaixo.
+           O ponto à direita de cada item é o LED: acende quando aquela aba tem
+           algo pedindo atenção, para não ser preciso abrir para descobrir. -->
+      <div class="nav-sec">Operação</div>
       <button class="nav-item active" id="nav-home" data-nav-key="home" data-nav-label="Dashboard" onclick="go('home',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
         Dashboard
-      </button>
-      <!-- Ads -->
-      <button class="nav-item" data-nav-key="ads" onclick="go('ads',this);initAdsOnce()" data-nav-label="Ads">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-8v18L3 13z"/><path d="M11.6 16.8a3 3 0 11-5.8-1.6"/></svg>
-        Ads
-      </button>
-      <!-- Escritorio (2a posição — hub de inteligência) -->
+      <span class="nav-led" data-led="home"></span></button>
       <button class="nav-item" data-nav-key="escritorio" data-nav-label="Escritorio" onclick="go('escritorio',this);initEscritorioOnce()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/></svg>
         Escritório
         <span class="nav-badge" id="badge-escritorio" style="display:none">0</span>
-      </button>
-      <!-- Financeiro -->
+      <span class="nav-led" data-led="escritorio"></span></button>
+      <div class="nav-sec">Análise</div>
       <button class="nav-item" data-nav-key="financeiro" data-nav-label="Analise" onclick="go('financeiro',this);initFinanceiroOnce()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
         Análise
-      </button>
-      <!-- Apresentacao -->
-      <button class="nav-item" data-nav-key="apresentacao" data-nav-label="Apresentacao" onclick="go('apresentacao',this);initApresentacaoOnce()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-        Apresentação
-      </button>
-      <!-- Operacao -->
+      <span class="nav-led" data-led="financeiro"></span></button>
+      <button class="nav-item" data-nav-key="ads" onclick="go('ads',this);initAdsOnce()" data-nav-label="Ads">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-8v18L3 13z"/><path d="M11.6 16.8a3 3 0 11-5.8-1.6"/></svg>
+        Ads
+      <span class="nav-led" data-led="ads"></span></button>
       <button class="nav-item" data-nav-key="performance" data-nav-label="Catalogo" onclick="goOperacao()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         Catálogo
-      </button>
-      <!-- Agenda hub -->
+      <span class="nav-led" data-led="performance"></span></button>
+      <div class="nav-sec">Trabalho</div>
+      <button class="nav-item" data-nav-key="apresentacao" data-nav-label="Apresentacao" onclick="go('apresentacao',this);initApresentacaoOnce()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Apresentação
+      <span class="nav-led" data-led="apresentacao"></span></button>
       <button class="nav-item" data-nav-key="agenda" data-nav-label="Agenda" onclick="goAgendaHub()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         Agenda
         <span class="nav-badge" id="badge" style="display:none">0</span>
-      </button>
-      <!-- Usuarios (admin oculto) -->
+      <span class="nav-led" data-led="agenda"></span></button>
     </div>
+
     <!-- User badge -->
     <div class="sidebar-user-badge" id="sidebar-user-badge">
       <span class="sidebar-user-role" id="sidebar-user-role">Admin</span>
@@ -1752,12 +1804,12 @@ body.sidebar-collapsed .hamburger { display: none; }
          não estimativa) e a M.C. planejada do Hub, para comparar previsto com
          realizado.                                                          -->
     <div class="page active" id="page-home">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div class="pg-head">
         <div>
           <div class="page-title">Dashboard</div>
           <div class="page-subtitle" id="home-subtitle">Resumo da operação</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select class="perf-select" id="dash-periodo" onchange="dashTrocarPeriodo(this.value)">
             <option value="hoje">Hoje</option>
             <option value="ontem">Ontem</option>
@@ -1832,12 +1884,12 @@ body.sidebar-collapsed .hamburger { display: none; }
          unidades_organicas, cliques e impressoes. Só o agente de ADS lia.
          ACOS, ROAS e conversão do anúncio saem daí sem backend novo.       -->
     <div class="page" id="page-ads">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div class="pg-head">
         <div>
           <div class="page-title">Ads</div>
           <div class="page-subtitle" id="ads-subtitle">Gasto, retorno e quanto da venda é empurrada</div>
         </div>
-        <div style="display:flex;gap:8px;align-items:center">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
           <select class="perf-select" id="ads-periodo" onchange="adsTrocarPeriodo(this.value)">
             <option value="hoje">Hoje</option>
             <option value="ontem">Ontem</option>
@@ -2537,7 +2589,7 @@ async function hubMcCarregar() {
       _hubMcCache = map;
       return map;
     } catch (e) {
-      console.warn('[SellerHub] Hub MC: falha ao carregar do hub de precificação', e);
+      console.warn('[OfficeLed] Hub MC: falha ao carregar do hub de precificação', e);
       _hubMcCache = {};
       return {};
     }
@@ -2569,7 +2621,7 @@ async function hubLinksCarregar() {
       _hubLinksCache = map;
       return map;
     } catch (e) {
-      console.warn('[SellerHub] hub_links: falha ao carregar', e);
+      console.warn('[OfficeLed] hub_links: falha ao carregar', e);
       _hubLinksCache = {};
       return {};
     } finally { _hubLinksPromise = null; }
@@ -2696,6 +2748,7 @@ function enterApp(){
   document.getElementById('pw-screen').classList.add('hidden');
   document.getElementById('app').classList.add('active');
   applyUserRole();
+  if(typeof ledsLeves==='function') setTimeout(ledsLeves, 400);
   initApp();
 }
 
@@ -14155,17 +14208,20 @@ window.apGarantirMes=async function(mes){
     return '<span style="font-size:11px;color:'+(bom?'var(--green-600)':'var(--coral-500)')+'">'+txt+'</span>';
   }
 
+  /* Um padrão de cartão para o app inteiro. O destaque vem da barra escura no
+     topo (.destaque), não de borda coral — coral ficou reservado para ALERTA.
+     Antes o mesmo coral era borda de cartão importante e fundo de alerta na
+     mesma tela, o que ensina o olho a ignorar os dois. */
   function cartao(rotulo, valor, sub, destaque){
-    return '<div style="background:var(--white);border:1px solid '
-      +(destaque?'var(--coral-200)':'var(--slate-100)')+';border-radius:var(--radius);padding:12px 14px">'
-      +'<div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400);margin-bottom:4px">'+rotulo+'</div>'
-      +'<div style="font-family:var(--mono);font-size:17px;font-weight:500;color:var(--slate-900)">'+valor+'</div>'
-      +'<div style="margin-top:2px;min-height:14px">'+(sub||'')+'</div></div>';
+    return '<div class="kpi'+(destaque?' destaque':'')+'">'
+      +'<div class="kpi-l">'+rotulo+'</div>'
+      +'<div class="kpi-v">'+valor+'</div>'
+      +'<div class="kpi-d">'+(sub||'')+'</div></div>';
   }
 
   function dashRenderKpis(c){
     var t=c.tot, a=c.totA;
-    var g='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px">';
+    var g='<div class="kpi-grid">';
     g+=cartao('Faturamento', dfmtR(t.fat), delta(t.fat,a.fat));
     g+=cartao('M.C. — Hub', dpct(t.mcPct,1), delta(t.mcPct,a.mcPct,'pp'), true);
     g+=cartao('M.C. em R$', dfmtR(t.mcVal), delta(t.mcVal,a.mcVal));
@@ -14735,6 +14791,7 @@ window.apGarantirMes=async function(mes){
       _dash.dados=c; _dash.dia=null;
       dashRenderAvisos(c); dashRenderKpis(c); dashRenderSaude(c);
       dashRenderAtencao(c); dashRenderGrafico(c); dashRenderProdutos(c);
+      if(typeof ledsDoDashboard==='function') ledsDoDashboard(c);
       var sub=document.getElementById('home-subtitle');
       if(sub) sub.textContent=j.rotulo+(j.rotulo==='Personalizado'?' ('+j.dias+' dias)':'')
         +' · '+j.ini.split('-').reverse().join('/')
@@ -14934,15 +14991,14 @@ window.apGarantirMes=async function(mes){
   }
 
   function cartao(rot, val, sub, cor){
-    return '<div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:12px 14px">'
-      +'<div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400);margin-bottom:4px">'+rot+'</div>'
-      +'<div style="font-family:var(--mono);font-size:17px;color:'+(cor||'var(--slate-900)')+'">'+val+'</div>'
-      +'<div style="margin-top:2px;min-height:14px;font-size:10.5px;color:var(--slate-400)">'+(sub||'')+'</div></div>';
+    return '<div class="kpi"><div class="kpi-l">'+rot+'</div>'
+      +'<div class="kpi-v"'+(cor?' style="color:'+cor+'"':'')+'>'+val+'</div>'
+      +'<div class="kpi-d">'+(sub||'')+'</div></div>';
   }
 
   function adsRenderKpis(c){
     var t=c.tot;
-    var g='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px">';
+    var g='<div class="kpi-grid">';
     g+=cartao('Gasto em Ads', fR(t.gasto), fN(t.clq)+' cliques'+(t.cpc?' · CPC '+fR(t.cpc):''));
     g+=cartao('Faturamento Ads', fR(t.fatAds), 'atribuído ao anúncio');
     g+=cartao('Faturamento total', fR(t.fat), 'pago + orgânico');
@@ -15625,13 +15681,12 @@ window.apGarantirMes=async function(mes){
   function estRenderKpis(c){
     var t=c.tot;
     function cart(rot,val,sub,cor){
-      return '<div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:12px 14px">'
-        +'<div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400);margin-bottom:4px">'+rot+'</div>'
-        +'<div style="font-family:var(--mono);font-size:17px;color:'+(cor||'var(--slate-900)')+'">'+val+'</div>'
-        +'<div style="margin-top:2px;min-height:14px;font-size:10.5px;color:var(--slate-400)">'+(sub||'')+'</div></div>';
+      return '<div class="kpi"><div class="kpi-l">'+rot+'</div>'
+        +'<div class="kpi-v"'+(cor?' style="color:'+cor+'"':'')+'>'+val+'</div>'
+        +'<div class="kpi-d">'+(sub||'')+'</div></div>';
     }
     document.getElementById('est-kpis').innerHTML=
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:10px">'
+      '<div class="kpi-grid">'
       +cart('Unidades em estoque', fN(t.unidades), c.linhas.length+' SKUs com posição')
       +cart('No Full', fN(t.full), t.unidades>0?fP(t.full/t.unidades,0)+' do total':'')
       +cart('Valor previsto de venda', fR(t.previsto), 'estoque × preço do anúncio')
@@ -15967,6 +16022,115 @@ window.apGarantirMes=async function(mes){
       window._marcaCache=m;
       return m;
     }catch(e){ console.warn('[Marcas] mapa', e); window._marcaCache={}; return {}; }
+  };
+})();
+</script>
+
+
+<script>
+/* ═════════════════════════════════════════════════════════════════════════════
+   LEDS — a ideia central do OfficeLed
+
+   Cada aba tem um ponto que acende quando ali dentro existe algo pedindo o Ale.
+   O ponto da marca acende se qualquer um dos outros estiver aceso, então a
+   barra lateral inteira vira um resumo: bate o olho e sabe onde ir.
+
+   Duas regras de desenho:
+
+   • O LED não inventa alerta. Ele reflete o que a tela responsável JÁ calculou
+     — quem acende o LED do Ads é o módulo de Ads, com o mesmo número que ele
+     mostraria se aberto. Um segundo cálculo "só para o LED" produziria a
+     divergência clássica: badge dizendo 3 e a tela mostrando 5.
+   • Severidade tem duas cores só: coral para o que sangra dinheiro agora,
+     âmbar para o que espera. Nada mais acende.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function(){
+  var _leds={};
+
+  window.ledSet=function(chave, nivel, motivo){
+    _leds[chave]={nivel:nivel||null, motivo:motivo||''};
+    var el=document.querySelector('.nav-led[data-led="'+chave+'"]');
+    if(el){
+      el.classList.remove('on','warn');
+      if(nivel==='alerta') el.classList.add('on');
+      else if(nivel==='atencao') el.classList.add('warn');
+      var btn=el.closest('.nav-item');
+      if(btn){
+        if(motivo) btn.setAttribute('title', motivo);
+        else btn.removeAttribute('title');
+      }
+    }
+    var algum=Object.keys(_leds).some(function(k){ return _leds[k].nivel; });
+    var logo=document.querySelector('.sidebar-logo');
+    if(logo) logo.classList.toggle('led-on', algum);
+  };
+
+  window.ledLer=function(){ return JSON.parse(JSON.stringify(_leds)); };
+
+  /* Chamado pelo Dashboard depois de calcular — reaproveita os mesmos
+     critérios dos Pontos de Atenção, sem recontar nada. */
+  window.ledsDoDashboard=function(c){
+    try{
+      if(!c || !c.linhas) return;
+      var sangria=c.linhas.filter(function(o){ return o.desvio!==null && o.desvio>0.02 && o.ads>0; });
+      var negativos=c.linhas.filter(function(o){ return o.mpaPct!==null && o.mpaPct<0; });
+      var caros=c.linhas.filter(function(o){ return o.custoMLPct!==null && o.custoMLPct>0.30; });
+      var semHub=c.linhas.filter(function(o){ return o.mcPct===null; });
+      var estoque=c.linhas.filter(function(o){
+        return o.snap && o.snap.temEstoque && o.estoqueMin!==null && o.snap.estoque<=o.estoqueMin; });
+      var buybox=c.linhas.filter(function(o){
+        return o.snap && o.snap.catalogo && ['not_listed','losing','sharing_first_place'].indexOf(o.snap.buybox)>=0; });
+
+      // Ads: sangria de verba é dinheiro saindo agora.
+      if(sangria.length){
+        var perdido=sangria.reduce(function(s,o){ return s+o.desvio*o.receita; },0);
+        ledSet('ads','alerta', sangria.length+' SKU(s) com ADS acima do alvo · R$ '
+          +perdido.toLocaleString('pt-BR',{maximumFractionDigits:0})+' de M.C. além do plano');
+      } else ledSet('ads',null);
+
+      // Dashboard: MPA negativa é o pior caso — vende e perde.
+      if(negativos.length) ledSet('home','alerta', negativos.length+' SKU(s) com MPA negativa');
+      else if(caros.length) ledSet('home','atencao', caros.length+' SKU(s) entregando mais de 30% ao ML');
+      else ledSet('home',null);
+
+      // Catálogo: estoque e Buy Box são decisão de hoje.
+      if(estoque.length) ledSet('performance','alerta', estoque.length+' SKU(s) no estoque mínimo');
+      else if(buybox.length) ledSet('performance','atencao', buybox.length+' SKU(s) com Buy Box em risco');
+      else ledSet('performance',null);
+
+      // Análise: cobertura do Hub furada compromete M.C. e MPA de tudo.
+      if(semHub.length) ledSet('financeiro','atencao', semHub.length+' SKU(s) com venda e sem plano no Hub');
+      else if(c.diasSemFin && c.diasSemFin.length)
+        ledSet('financeiro','atencao', c.diasSemFin.length+' dia(s) sem custo do ML registrado');
+      else ledSet('financeiro',null);
+    }catch(e){ console.warn('[LEDs] dashboard', e); }
+  };
+
+  /* Agenda e Escritório: leitura leve e própria, porque não dependem do
+     Dashboard e o Ale costuma abrir o app já com pendência desses dois. */
+  window.ledsLeves=async function(){
+    // `agenda` não tem coluna `conta` e `data` é do dia — conferido no schema
+    // antes de escrever, em vez de assumir pelo nome.
+    try{
+      var hoje=new Date();
+      var iso=hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
+      var r=await sb.from('agenda').select('id,data,titulo')
+        .gte('data', iso).lte('data', iso+'T23:59:59').limit(20);
+      var n=(r.data||[]).length;
+      if(n) ledSet('agenda','atencao', n+' compromisso(s) hoje');
+      else ledSet('agenda',null);
+    }catch(e){ /* agenda sem LED é melhor que LED errado */ }
+
+    // A fila de tarefas dos agentes é `agente_tarefas`, com `status`.
+    try{
+      var t=await sb.from('agente_tarefas').select('id,status,prioridade').eq('conta','Logbox')
+        .neq('status','concluida').limit(100);
+      var abertas=(t.data||[]);
+      var altas=abertas.filter(function(x){ return String(x.prioridade||'').toLowerCase()==='alta'; });
+      if(altas.length) ledSet('escritorio','alerta', altas.length+' tarefa(s) de prioridade alta na fila');
+      else if(abertas.length>=5) ledSet('escritorio','atencao', abertas.length+' tarefas abertas');
+      else ledSet('escritorio',null);
+    }catch(e){ /* idem */ }
   };
 })();
 </script>
