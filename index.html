@@ -1038,7 +1038,7 @@ body.sidebar-collapsed .hamburger { display: none; }
 
 /* Cabeçalho de seção com respiro maior que o das tabelas internas */
 .sec-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--slate-700); margin: 28px 0 10px; }
-.sec-title:first-of-type { margin-top: 0; }
+.sec-title:first-of-type { margin-top: 4px; }
 .sec-hint { font-size: 11px; color: var(--slate-400); margin: -4px 0 10px; }
 
 @media (max-width: 900px) {
@@ -1683,11 +1683,22 @@ body.sidebar-collapsed .hamburger { display: none; }
 /* Cabeçalho fixo: o período some da rolagem hoje, e ele é o que dá sentido a
    todo número da tela. */
 .pg-head { position: sticky; top: 0; z-index: 20; background: var(--white);
-  border-bottom: 1px solid var(--slate-100); margin: -24px -28px 20px; padding: 15px 28px;
+  border-bottom: 1px solid var(--slate-100); margin: -24px -32px 20px; padding: 15px 32px;
   display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
-.pg-head .page-title { margin: 0; }
-.pg-head .page-subtitle { margin: 2px 0 0; }
+.pg-head .page-title { margin: 0; font-size: 17px; letter-spacing: -.01em; }
+.pg-head .page-subtitle { margin: 2px 0 0; font-size: 12px; }
 @media (max-width: 768px){ .pg-head { margin: -16px -16px 16px; padding: 12px 16px; } }
+
+/* ESCALA ÚNICA — a página tinha sete tamanhos de texto convivendo; ficaram
+   quatro. Título de página vive no .pg-head; o resto é seção, corpo e número. */
+.page-title { font-size: 17px; }
+.page-subtitle { font-size: 12.5px; margin-bottom: 18px; }
+.sec-title { font-size: 10px; font-weight: 700; letter-spacing: .13em;
+  text-transform: uppercase; color: var(--slate-400); margin: 26px 0 11px; }
+
+/* Sub-abas alinhadas ao cabeçalho fixo, sem emoji e sem competir com ele. */
+.hub-secondary-nav { margin-top: -4px; margin-bottom: 18px; }
+.hub-secondary-btn { font-size: 12.5px; }
 
 /* Cartão de indicador, um padrão só para o app inteiro */
 .kpi { background: var(--white); border: 1px solid var(--slate-100);
@@ -1700,6 +1711,29 @@ body.sidebar-collapsed .hamburger { display: none; }
 .kpi-v { font-family: var(--mono); font-size: 19px; letter-spacing: -.02em; color: var(--slate-900); }
 .kpi-d { font-size: 11px; margin-top: 3px; min-height: 14px; color: var(--slate-400); }
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; }
+
+/* ═══ CORAL É ALERTA, E SÓ ═══════════════════════════════════════════════
+   A regra 2 da direção C não se cumpre só nas telas novas: a casca usava
+   coral como cor de SELEÇÃO (aba ativa, foco de campo, botão primário). Com
+   coral permanentemente aceso na barra lateral, o LED perde força — o olho
+   para de associar coral a "tem coisa aqui".
+
+   Seleção passa a ser neutra (superfície escura / grafite). Coral fica livre
+   para o que sangra.                                                      */
+.nav-item.active { background: #2B2924; color: var(--white); font-weight: 500; }
+.nav-item.active:hover { background: #33302A; }
+.nav-badge { background: #3A3730; color: var(--slate-200); }
+.nav-item.active .nav-badge { background: var(--slate-700); color: var(--white); }
+.sidebar-user-role.admin { color: var(--slate-400); }
+.tab.active { color: var(--slate-900); border-bottom-color: var(--slate-900); }
+.btn-primary { background: var(--slate-900); color: var(--white); }
+.btn-primary:hover { background: #33302A; }
+.notes-search:focus { border-color: var(--slate-400); background: var(--white); }
+/* A sub-aba já era sublinhado — mantive o formato e troquei só o acento, que
+   era verde (#22c55e). Verde ficou reservado para margem. */
+.hub-secondary-btn.active { color: var(--slate-900); border-bottom-color: var(--slate-900); font-weight: 500; }
+/* Onde coral CONTINUA valendo, porque é alerta de verdade: */
+.dash-value.neg, td.neg, .btn-danger { color: var(--coral-500); }
 </style>
 </head>
 <body>
@@ -1927,11 +1961,17 @@ body.sidebar-collapsed .hamburger { display: none; }
 
     <!-- OPERACAO hub (Vendas + Produtos) -->
     <div class="page" id="page-performance">
+      <div class="pg-head">
+        <div>
+          <div class="page-title">Catálogo</div>
+          <div class="page-subtitle">Seus anúncios: preço, margem, experiência e estoque</div>
+        </div>
+      </div>
       <div class="hub-secondary-nav" id="operacao-tabs">
-        <button class="hub-secondary-btn active" id="op-tab-produtos" onclick="opGoTab('produtos',this)">📦 Produtos</button>
-        <button class="hub-secondary-btn" id="op-tab-experiencia" onclick="opGoTab('experiencia',this)">⭐ Experiência</button>
-        <button class="hub-secondary-btn" id="op-tab-estoque" onclick="opGoTab('estoque',this)">📥 Estoque</button>
-        <button class="hub-secondary-btn" id="op-tab-marcas" onclick="opGoTab('marcas',this)">🏷 Marcas</button>
+        <button class="hub-secondary-btn active" id="op-tab-produtos" onclick="opGoTab('produtos',this)">Produtos</button>
+        <button class="hub-secondary-btn" id="op-tab-experiencia" onclick="opGoTab('experiencia',this)">Experiência</button>
+        <button class="hub-secondary-btn" id="op-tab-estoque" onclick="opGoTab('estoque',this)">Estoque</button>
+        <button class="hub-secondary-btn" id="op-tab-marcas" onclick="opGoTab('marcas',this)">Marcas</button>
       </div>
 
       <!-- Secao Experiencia de compra -->
@@ -1942,8 +1982,7 @@ body.sidebar-collapsed .hamburger { display: none; }
            em 15/09; preenchimento é manual de propósito, para agrupar como a
            operação pensa e não como o ML cataloga. -->
       <div id="op-section-marcas" style="display:none">
-        <div class="page-title">Marcas</div>
-        <div class="page-subtitle" id="mrc-subtitle">Uma marca por SKU. Salva ao sair do campo.</div>
+        <div class="page-subtitle" id="mrc-subtitle" style="margin-top:0">Uma marca por SKU. Salva ao sair do campo.</div>
         <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
           <input class="notes-search" id="mrc-busca" placeholder="SKU ou descrição"
                  style="width:220px;padding:6px 10px;font-size:12px" oninput="mrcFiltrar()">
@@ -1963,8 +2002,7 @@ body.sidebar-collapsed .hamburger { display: none; }
       </div>
 
       <div id="op-section-estoque" style="display:none">
-        <div class="page-title">Estoque</div>
-        <div class="page-subtitle" id="est-subtitle">Posição de hoje, valorizada a preço de venda</div>
+        <div class="page-subtitle" id="est-subtitle" style="margin-top:0">Posição de hoje, valorizada a preço de venda. Sem custo de mercadoria.</div>
         <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
           <input class="notes-search" id="est-busca" placeholder="SKU ou título"
                  style="width:220px;padding:6px 10px;font-size:12px" oninput="estFiltrar()">
@@ -1998,8 +2036,6 @@ body.sidebar-collapsed .hamburger { display: none; }
       <!-- Secao Vendas -->
       <!-- Secao Produtos -->
       <div id="op-section-produtos">
-        <div class="page-title">Operação — Produtos</div>
-        <div class="page-subtitle">Catálogo de SKUs, custos e gestão</div>
         <div id="op-prod-mount"></div>
       </div><!-- /op-section-produtos -->
     </div><!-- /page-performance -->
@@ -2007,8 +2043,6 @@ body.sidebar-collapsed .hamburger { display: none; }
 
     <!-- PRODUTOS -->
     <div class="page" id="page-produtos">
-      <div class="page-title">Produtos — Logbox</div>
-      <div class="page-subtitle">Precificação e performance real por SKU, direto da API</div>
 
       <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
         <select class="perf-select" id="prod-periodo-sel" onchange="prodPeriodoMudou(this.value)">
@@ -2074,12 +2108,18 @@ body.sidebar-collapsed .hamburger { display: none; }
     </div>
     <!-- AGENDA HUB -->
     <div class="page" id="page-agenda">
+      <div class="pg-head">
+        <div>
+          <div class="page-title">Agenda</div>
+          <div class="page-subtitle">Compromissos, anotações e ideias</div>
+        </div>
+      </div>
       <div class="hub-secondary-nav" id="agenda-tabs">
-        <button class="hub-secondary-btn active" id="ag-tab-agenda" onclick="agGoTab('agenda',this)">📅 Agenda</button>
-        <button class="hub-secondary-btn" id="ag-tab-anotacoes" onclick="agGoTab('anotacoes',this)">📝 Anotações
+        <button class="hub-secondary-btn active" id="ag-tab-agenda" onclick="agGoTab('agenda',this)">Agenda</button>
+        <button class="hub-secondary-btn" id="ag-tab-anotacoes" onclick="agGoTab('anotacoes',this)">Anotações
           <span class="nav-badge" id="badge-ag" style="display:none;margin-left:4px">0</span>
         </button>
-        <button class="hub-secondary-btn" id="ag-tab-ideias" onclick="agGoTab('ideias',this)">💡 Ideias</button>
+        <button class="hub-secondary-btn" id="ag-tab-ideias" onclick="agGoTab('ideias',this)">Ideias</button>
       </div>
       <!-- Secao Agenda Calendario -->
       <div id="ag-section-agenda">
@@ -2378,23 +2418,24 @@ body.sidebar-collapsed .hamburger { display: none; }
 <div class="page" id="page-financeiro">
 
       <div id="fin-section-mes">
-  <div class="page-title">Análise</div>
-  <div class="page-subtitle">Como cada mês fechou. A M.C. vem do Hub de Precificação; comissão e frete são os que o ML cobrou.</div>
-
-  <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
-    <select class="fin-select" id="fin-mes-select" onchange="finChangeMes(this.value)"></select>
-    <div style="font-size:12px;color:var(--slate-400);display:flex;align-items:center;gap:10px">
+  <div class="pg-head">
+    <div>
+      <div class="page-title">Análise</div>
+      <div class="page-subtitle">Como cada mês fechou. M.C. do Hub; comissão e frete são os que o ML cobrou.</div>
+    </div>
+    <div style="font-size:12px;color:var(--slate-400);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <span id="fin-cobertura-hint"></span>
+      <select class="fin-select" id="fin-mes-select" onchange="finChangeMes(this.value)"></select>
       <select class="perf-select" id="dre-janela" onchange="dreTrocarJanela(this.value)">
         <option value="6">6 meses</option>
         <option value="8" selected>8 meses</option>
         <option value="12">12 meses</option>
       </select>
-      <button class="perf-select" style="cursor:pointer;padding:6px 12px" onclick="dreRecarregar()">↻ Atualizar</button>
+      <button class="perf-select" style="cursor:pointer;padding:6px 12px" onclick="dreRecarregar()">↻</button>
     </div>
   </div>
 
-  <div id="dre-avisos" style="margin-top:14px"></div>
+  <div id="dre-avisos" style="margin-top:4px"></div>
 
   <div class="sec-title">DRE mensal</div>
   <div id="dre-tabela"><div class="fin-loading"><div class="fin-spinner"></div> Montando os meses…</div></div>
@@ -2415,7 +2456,7 @@ body.sidebar-collapsed .hamburger { display: none; }
 </div><!-- /page-financeiro -->
 
 <div class="page" id="page-apresentacao">
-  <div class="ap-topo">
+  <div class="ap-topo pg-head">
     <div>
       <div class="page-title">Apresentação de desempenho</div>
       <div class="page-subtitle" id="ap-sub">Os números do mês, prontos para levar aos sócios.</div>
