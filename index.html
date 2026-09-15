@@ -70,7 +70,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--slate-900);
   font-size: 32px; font-weight: 700; color: var(--white);
   letter-spacing: -1px; margin-bottom: 8px; text-align: center;
 }
-.pw-logo span { color: #2D9596; }
+.pw-logo span { color: #F2F0EA; }
 .pw-tagline-top {
   font-size: 13px; color: var(--slate-400); margin-bottom: 32px;
   text-align: center; letter-spacing: 0.3px;
@@ -1661,6 +1661,15 @@ body.sidebar-collapsed .hamburger { display: none; }
       não por borda colorida — assim o coral fica livre para alertar.
    ═══════════════════════════════════════════════════════════════════════ */
 
+/* ═══ MARCA NA LATERAL ═══════════════════════════════════════════════════
+   Mesma construção da tela de entrada: o nome neutro e o LED como único
+   ponto aceso. O ::after do .sidebar-logo já acende quando qualquer aba tem
+   algo pedindo — aqui ele fica ao lado do nome em vez de colorir a palavra. */
+.sidebar-logo { display: flex; align-items: center; gap: 9px; font-size: 17px;
+  font-weight: 600; letter-spacing: -.01em; }
+.sidebar-logo span { color: rgba(255,255,255,.55) !important; font-weight: 300; }
+.sidebar-logo::after { margin-left: 0; }
+
 /* Seções da barra lateral */
 .nav-sec { font-size: 9px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase;
   color: var(--slate-500); padding: 15px 12px 6px; }
@@ -1734,6 +1743,66 @@ body.sidebar-collapsed .hamburger { display: none; }
 .hub-secondary-btn.active { color: var(--slate-900); border-bottom-color: var(--slate-900); font-weight: 500; }
 /* Onde coral CONTINUA valendo, porque é alerta de verdade: */
 .dash-value.neg, td.neg, .btn-danger { color: var(--coral-500); }
+
+/* ═══ ENTRADA ════════════════════════════════════════════════════════════
+   Era a única tela que ainda dizia SellerHub, em teal. É a primeira coisa
+   que se vê, então é onde a ideia precisa estar mais clara: sala escura, um
+   LED aceso, e mais nada brilhando.                                       */
+#pw-screen {
+  background: radial-gradient(ellipse at 50% 0%, #232320 0%, #121211 60%, #0D0D0C 100%) !important;
+}
+#pw-screen::before {
+  width: 780px !important; height: 780px !important;
+  background: radial-gradient(circle, rgba(216,90,48,.10) 0%, transparent 65%) !important;
+  top: -320px !important; left: 50% !important; transform: translateX(-50%) !important;
+}
+#pw-screen::after { display: none !important; }
+
+.pw-logo {
+  font-size: 30px !important; font-weight: 600 !important; letter-spacing: -.02em !important;
+  color: #F2F0EA !important; display: flex; align-items: center; justify-content: center; gap: 11px;
+}
+.pw-logo .pw-hub { color: #F2F0EA !important; font-weight: 300; }
+.pw-led {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--coral-500);
+  box-shadow: 0 0 14px var(--coral-500), 0 0 34px rgba(216,90,48,.55);
+  animation: pwPulse 2.6s ease-in-out infinite;
+}
+@keyframes pwPulse {
+  0%,100% { opacity: 1;   box-shadow: 0 0 14px var(--coral-500), 0 0 34px rgba(216,90,48,.55); }
+  50%     { opacity: .55; box-shadow: 0 0 7px var(--coral-500),  0 0 16px rgba(216,90,48,.28); }
+}
+@media (prefers-reduced-motion: reduce){ .pw-led { animation: none; } }
+
+.pw-tagline-top {
+  color: rgba(255,255,255,.38) !important; font-size: 12.5px !important;
+  letter-spacing: .01em !important; margin-top: 10px !important;
+}
+.pw-wrap {
+  background: rgba(255,255,255,.028) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  border-radius: 14px !important; padding: 30px 26px !important;
+}
+.pw-label {
+  font-family: var(--mono) !important; font-size: 9px !important;
+  letter-spacing: .16em !important; color: rgba(255,255,255,.34) !important;
+}
+.pw-input {
+  border-radius: 9px !important; font-size: 14.5px !important;
+  background: rgba(255,255,255,.05) !important; border: 1px solid rgba(255,255,255,.09) !important;
+}
+.pw-input:focus {
+  border-color: rgba(216,90,48,.5) !important;
+  box-shadow: 0 0 0 3px rgba(216,90,48,.10) !important;
+}
+/* O botão é o único elemento aceso da tela — é o que você veio fazer aqui. */
+.pw-btn {
+  background: var(--coral-500) !important; border-radius: 9px !important;
+  font-weight: 600 !important; letter-spacing: .01em !important;
+  box-shadow: 0 4px 22px rgba(216,90,48,.28) !important;
+}
+.pw-btn:hover { background: #C24E27 !important; box-shadow: 0 6px 26px rgba(216,90,48,.36) !important; }
+.pw-error { color: var(--coral-400) !important; }
 </style>
 </head>
 <body>
@@ -1749,7 +1818,7 @@ body.sidebar-collapsed .hamburger { display: none; }
 </div>
 
 <div id="pw-screen">
-  <div class="pw-logo">Seller<span>Hub</span></div>
+  <div class="pw-logo"><span class="pw-led"></span>Office<span class="pw-hub">Led</span></div>
   <div class="pw-wrap">
     <span class="pw-label">Usuário</span>
     <input type="text" class="pw-input" id="pw-user" placeholder="seu usuário" autocomplete="username" autocapitalize="none">
@@ -1913,7 +1982,7 @@ body.sidebar-collapsed .hamburger { display: none; }
       </div>
     </div>
 
-    <!-- ═══ ADS — o que o SellerHub tinha no banco e não mostrava ═══════════
+    <!-- ═══ ADS — o que o OfficeLed tinha no banco e não mostrava ═══════════
          `ml_ads_reports` já guardava vendas_atribuidas, unidades_ads,
          unidades_organicas, cliques e impressoes. Só o agente de ADS lia.
          ACOS, ROAS e conversão do anúncio saem daí sem backend novo.       -->
@@ -4324,7 +4393,7 @@ async function renderExperiencia(){
 
   /* ── 6. O que a ferramenta não sabe ── */
   document.getElementById('exp-rodape').innerHTML = `
-    Boa 75–100 · Média 50–74 · Ruim até 30. O corte é contra a <strong>média da categoria</strong>, e esse número de referência não vem na API pública do Mercado Livre — o SellerHub não o estima.
+    Boa 75–100 · Média 50–74 · Ruim até 30. O corte é contra a <strong>média da categoria</strong>, e esse número de referência não vem na API pública do Mercado Livre — o OfficeLed não o estima.
     ${exp.reclamacoesSemItem?`<br>${exp.reclamacoesSemItem} reclamação${exp.reclamacoesSemItem>1?'ões ficaram':' ficou'} sem anúncio identificado (o ML não devolveu o pedido). Cont${exp.reclamacoesSemItem>1?'am':'a'} no total do topo, mas fica${exp.reclamacoesSemItem>1?'m':''} fora do ranking por anúncio.`:''}`;
 }
 
@@ -4575,7 +4644,7 @@ async function prodAbrirDrawer(chave){
             : ''}
         </div>`;
       }).join('')}
-      <div class="skup-exp-rodape">Boa 75–100 · Média 50–74 · Ruim até 30. O ML compara com a média da categoria — esse número de referência não vem na API, então o SellerHub não o estima.</div>
+      <div class="skup-exp-rodape">Boa 75–100 · Média 50–74 · Ruim até 30. O ML compara com a média da categoria — esse número de referência não vem na API, então o OfficeLed não o estima.</div>
     </div>`;
 
   /* diagnóstico do ML — motivo real da exposição, recomendação e pendências de qualidade.
@@ -4714,7 +4783,7 @@ async function prodAbrirDrawer(chave){
     <div class="m-field"><label>Custo do produto (R$)</label><input type="number" step="0.01" id="pd-custo" value="${l.custo?(+l.custo).toFixed(2):''}"></div>
     <div class="m-field"><label>Alvo de alerta — TACOS (%)</label><input type="number" step="0.1" id="pd-tacos-alvo" value="${l.metaTacos}">
       <div style="font-size:10.5px;color:var(--slate-400);margin-top:4px;line-height:1.4">
-        Só liga o alerta aqui no SellerHub. <strong>Não</strong> altera a margem:
+        Só liga o alerta aqui no OfficeLed. <strong>Não</strong> altera a margem:
         o ADS alvo que o Hub desconta da M.C. mora no Hub de Precificação e é editado lá.</div></div>
     <div class="m-field"><label>Estoque mínimo (unidades)</label><input type="number" step="1" id="pd-estoque-min" value="${l.estoqueMin}"></div>
     <button class="btn btn-primary" style="margin-top:8px" onclick="prodSalvarDrawer('${l.sku||''}')">Salvar</button>
@@ -5072,7 +5141,7 @@ function renderSkuHubCoverage() {
 
   if (!impsDoMes.length) {
     list.innerHTML = `<div style="font-size:13px;color:var(--slate-400);padding:8px 0">
-      Nenhuma importação SellerHub registrada para ${perfMonthFull[mesIdx]}.
+      Nenhuma importação registrada para ${perfMonthFull[mesIdx]}.
     </div>`;
     return;
   }
@@ -5380,7 +5449,7 @@ async function deleteSkuMes(contaKey, sku, month) {
 function openSkuDrawer(sku) {
   const precRow = D[conta].find(r => r.sku === sku);
   const desc = precRow?.desc || '';
-  // A tabela local `skus` guarda mc/tacos de quando o SellerHub calculava
+  // A tabela local `skus` guarda mc/tacos de quando o OfficeLed calculava
   // margem sozinho. Hoje esses campos estão zerados, e este painel mostrava
   // "M.C. —" com "MPA 0,0%" em verde — pior do que não mostrar nada.
   // Passa a ler o hub, igual ao resto do app.
@@ -5961,7 +6030,7 @@ async function desfazerHubImportacao(id, contaKey, mes) {
   const imp = hubImportacoesList[contaKey]?.[mes]?.find(i => i.id === id);
   if (!imp) return;
   const dtStr = imp.created_at ? new Date(imp.created_at).toLocaleString('pt-BR') : '';
-  if (!confirm(`Desfazer importação SellerHub de ${imp.count} SKU(s) realizada em ${dtStr}?\n\nIsso vai zerar Preço, Investimento ADS, TACOS e Rebait de todos os SKUs dessa importação em ${perfMonthFull[perfMonths.indexOf(mes)]}.\n\nOs dados de faturamento/pedidos (Relatório ML) NÃO serão afetados.`)) return;
+  if (!confirm(`Desfazer importação de ${imp.count} SKU(s) realizada em ${dtStr}?\n\nIsso vai zerar Preço, Investimento ADS, TACOS e Rebait de todos os SKUs dessa importação em ${perfMonthFull[perfMonths.indexOf(mes)]}.\n\nOs dados de faturamento/pedidos (Relatório ML) NÃO serão afetados.`)) return;
 
   showSync('Desfazendo…');
   for (const item of imp.itens) {
@@ -6310,7 +6379,7 @@ function exportPrecXLSX() {
   // Instrução no topo
   const instrucoes = [
     ['PRECIFICAÇÃO — ' + conta.toUpperCase()],
-    ['Exportado em ' + new Date().toLocaleDateString('pt-BR') + ' | SellerHub'],
+    ['Exportado em ' + new Date().toLocaleDateString('pt-BR') + ' | OfficeLed'],
     [],
     ['Conta', 'SKU', 'Descrição', 'Custo (R$)', 'Preço Venda (R$)', 'Rebait (%)', 'M.C. (%)', 'TACOS (%)', 'MPA (%)']
   ];
@@ -6361,7 +6430,7 @@ function exportBaseXLSX() {
     ['IMPORTANTE'],
     ['Decimais', 'Use PONTO como separador decimal (9.5, não 9,5)'],
     ['Linha exemplo', 'A linha 5 é um EXEMPLO — pode apagar ou substituir'],
-    ['Exportado em', stamp + ' via SellerHub'],
+    ['Exportado em', stamp + ' via OfficeLed'],
   ];
   const wsInstr = XLSX.utils.aoa_to_sheet(instrRows);
   wsInstr['!cols'] = [{wch:22},{wch:55}];
@@ -6392,8 +6461,8 @@ function exportBaseXLSX() {
   wsSKU['!cols'] = [{wch:10},{wch:18},{wch:10},{wch:16},{wch:20},{wch:12},{wch:12}];
   XLSX.utils.book_append_sheet(wb, wsSKU, 'Performance SKU');
 
-  XLSX.writeFile(wb, `SellerHub_Planilha_Base_${stamp}.xlsx`);
-  alert('✓ Planilha base exportada!\n\nArquivo: SellerHub_Planilha_Base_' + stamp + '.xlsx\n\nEnvie para a empresa preencher:\n• Preço de Venda\n• Investimento ADS\n• TACOS (%)\n• Rebait (%)\n\n(Os SKUs já cadastrados foram incluídos como referência.)');
+  XLSX.writeFile(wb, `OfficeLed_Planilha_Base_${stamp}.xlsx`);
+  alert('✓ Planilha base exportada!\n\nArquivo: OfficeLed_Planilha_Base_' + stamp + '.xlsx\n\nEnvie para a empresa preencher:\n• Preço de Venda\n• Investimento ADS\n• TACOS (%)\n• Rebait (%)\n\n(Os SKUs já cadastrados foram incluídos como referência.)');
 }
 
 function closeHubModal() {
@@ -8767,96 +8836,76 @@ body.theme-teal   .coral-500, body.theme-teal   .dash-value.neg { color: #2D9596
   .perf-vg-controls { flex-wrap: wrap !important; }
 }
 
-/* ── TEAL BAKED IN — padronizar coral → teal ── */
+/* ═══ IDENTIDADE OFFICELED ═══════════════════════════════════════════════
+   Este bloco substituiu o "TEAL BAKED IN", que era a razão real de a
+   reestruturação não aparecer: ele redefinia `--coral-*` para teal e forçava
+   com `!important` a aba ativa, o botão primário, o foco de campo e o valor
+   negativo. Tudo que eu havia mudado antes estava sendo desfeito aqui.
+
+   A ideia do OfficeLed levada ao limite: **a sala é escura e neutra; a única
+   luz acesa é a que está avisando alguma coisa.**
+
+   Não existe cor decorativa. Seleção, botão primário e foco são GRAFITE.
+   Cor só aparece com significado:
+       coral  = alerta, o que sangra agora
+       âmbar  = atenção, o que espera
+       verde  = margem
+       azul   = link
+   ═════════════════════════════════════════════════════════════════════ */
 :root {
-  --accent:      #2D9596;
-  --accent-dark: #1E6B6C;
-  --accent-soft: rgba(45,149,150,.08);
-  --accent-pale: #E6F6F6;
-  --accent-mid:  #6CC2C3;
-  --coral-500: #2D9596;
-  --coral-600: #1E6B6C;
-  --coral-400: #6CC2C3;
-  --coral-200: #A8DCDC;
-  --coral-50:  #E6F6F6;
-  --coral-900: #0D3E3E;
-  --coral-700: #1A5C5C;
+  --accent:      #2C2C2A;
+  --accent-dark: #171716;
+  --accent-soft: rgba(44,44,42,.06);
+  --accent-pale: #F1EFE8;
+  --accent-mid:  #888780;
+  /* coral volta a ser coral — era teal desde o bloco antigo */
+  --coral-900: #4A1B0C; --coral-700: #712B13; --coral-600: #993C1D;
+  --coral-500: #D85A30; --coral-400: #F0997B; --coral-200: #F5C4B3; --coral-50: #FAECE7;
+  --grafite:   #2C2C2A;
+  --grafite-2: #3A3934;
+  --bg: #F4F2ED;
+  --radius: 12px;
+  --radius-sm: 8px;
 }
-/* Botão e estados primários */
-.btn-primary { background: #2D9596 !important; }
-.btn-primary:hover { background: #1E6B6C !important; }
-.pw-btn { background: #2D9596 !important; box-shadow: 0 4px 16px rgba(45,149,150,.35) !important; }
-.pw-btn:hover { background: #1E6B6C !important; }
-/* Tabs */
-.tab.active, .perf-subtab.active { color: #2D9596 !important; border-bottom-color: #2D9596 !important; }
-/* Nav ativo */
-.nav-item.active { background: #2D9596 !important; box-shadow: 0 2px 12px rgba(45,149,150,.35) !important; }
-/* Links */
-.home-section-link { color: #2D9596 !important; }
-.home-section-link:hover { color: #1E6B6C !important; }
-.kc-link { color: #2D9596 !important; }
-/* Valores negativos / destaques */
-td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
-/* Barras */
-.bar-fill.coral { background: #2D9596 !important; }
-.conv-fill { background: #2D9596 !important; }
-.todos-part-fill { background: #6CC2C3 !important; }
-.vg-contrib-fill { background: #6CC2C3 !important; }
-/* Calendário */
-.cal-pill.contrato { background: #E6F6F6 !important; color: #1A5C5C !important; }
-.bar-contrato, .dot-contrato, .home-evt-dot.contrato { background: #2D9596 !important; }
-.badge-contrato { background: #E6F6F6 !important; color: #1A5C5C !important; }
-.cal-sidebar-add-btn { background: #2D9596 !important; }
-.cal-sidebar-add-btn:hover { background: #1E6B6C !important; }
-.cal-today-btn:hover { background: #E6F6F6 !important; border-color: #6CC2C3 !important; color: #1A5C5C !important; }
-.cal-day.today { background: #E6F6F6 !important; }
-.cal-day.today .cal-day-num { background: #2D9596 !important; color: #fff !important; }
-/* Botões de ação em tabelas */
-.btn-hub-edit { color: #2D9596 !important; border-color: #A8DCDC !important; }
-.btn-hub-edit:hover { background: #E6F6F6 !important; }
-/* Chips editor */
-.ed-chip:hover { border-color: #2D9596 !important; color: #2D9596 !important; }
-.ed-chip.active-pendente { background: #E6F6F6 !important; border-color: #A8DCDC !important; color: #1E6B6C !important; }
-/* Notas */
-.note-card.active { background: #E6F6F6 !important; }
-.note-card::before, .note-card.active::before { background: #2D9596 !important; }
-.note-card:hover::after { border-color: #2D9596 !important; }
-.note-card.active::after { border-color: #2D9596 !important; background: #E6F6F6 !important; }
-.note-card.concluida::after { background: #2D9596 !important; border-color: #2D9596 !important; }
-.note-date-badge.overdue { color: #2D9596 !important; }
-.notes-list-count strong { color: #2D9596 !important; }
-.notes-search:focus { border-color: #2D9596 !important; }
-.notes-filter-pill.active { background: #2D9596 !important; border-color: #2D9596 !important; }
-.status-pill.active { background: #1A1A18 !important; border-color: #1A1A18 !important; }
-.tag-row.active .tag-row-name { color: #1E6B6C !important; }
-.tag-row.active { background: #E6F6F6 !important; }
-/* Modal / Inputs focus */
-.m-field input:focus, .m-field textarea:focus, .m-field select:focus { border-color: #2D9596 !important; box-shadow: 0 0 0 3px rgba(45,149,150,.10) !important; }
-.pw-input:focus { border-color: #2D9596 !important; box-shadow: 0 0 0 3px rgba(45,149,150,.15) !important; }
-.perf-select:focus { border-color: #2D9596 !important; box-shadow: 0 0 0 3px rgba(45,149,150,.10) !important; }
-/* Home */
-.home-fat-card.total { background: linear-gradient(135deg, #2D9596 0%, #1E6B6C 100%) !important; box-shadow: 0 4px 16px rgba(45,149,150,.3) !important; }
-.home-evt-row:hover { background: #E6F6F6 !important; border-color: #6CC2C3 !important; }
-.home-evt-today { color: #2D9596 !important; background: #E6F6F6 !important; border-color: #A8DCDC !important; }
-.home-note-date { color: #2D9596 !important; }
-.home-note-row:hover { background: #E6F6F6 !important; }
-/* Sync */
-#ptr-indicator { background: #2D9596 !important; }
-/* Performance champion */
-.perf-champion { background: #E6F6F6 !important; border-color: #A8DCDC !important; color: #1E6B6C !important; }
-/* Comp picker */
-.comp-month-btn.active { background: #2D9596 !important; border-color: #2D9596 !important; }
-.comp-month-btn:hover { border-color: #6CC2C3 !important; color: #1E6B6C !important; }
-/* Kanban */
-.kanban-add-col:hover { border-color: #2D9596 !important; color: #2D9596 !important; }
-/* Cal manage cats btn */
-.cal-manage-cats-btn:hover { color: #2D9596 !important; background: #E6F6F6 !important; }
-/* Tag add btn */
-.tag-add-btn:hover { color: #2D9596 !important; background: #E6F6F6 !important; }
-/* todos row */
-.todos-row:hover .todos-sku { color: #1E6B6C !important; }
-.todos-row:hover { background: #E6F6F6 !important; }
-/* Delta negativo não deve ser teal — mantém vermelho */
+
+/* Seleção e ação: grafite, nunca cor */
+.btn-primary { background: var(--grafite) !important; color: #fff !important; box-shadow: none !important; }
+.btn-primary:hover { background: var(--grafite-2) !important; }
+.nav-item.active { background: var(--grafite-2) !important; box-shadow: none !important; color: #fff !important; }
+.tab.active, .perf-subtab.active { color: var(--grafite) !important; border-bottom-color: var(--grafite) !important; }
+.hub-secondary-btn.active { color: var(--grafite) !important; border-bottom-color: var(--grafite) !important; }
+.notes-search:focus, .pw-input:focus { border-color: var(--slate-400) !important; }
+.notes-filter-pill.active { background: var(--grafite) !important; border-color: var(--grafite) !important; }
+.comp-month-btn.active { background: var(--grafite) !important; border-color: var(--grafite) !important; }
+.cal-sidebar-add-btn { background: var(--grafite) !important; }
+.cal-sidebar-add-btn:hover { background: var(--grafite-2) !important; }
+.cal-day.today { background: var(--slate-50) !important; }
+.cal-day.today .cal-day-num { background: var(--grafite) !important; color: #fff !important; }
+.home-section-link, .kc-link, .btn-hub-edit { color: var(--blue-600) !important; border-color: var(--blue-100) !important; }
+.home-section-link:hover, .kc-link:hover { color: #163C6B !important; }
+#ptr-indicator { background: var(--grafite) !important; }
+
+/* Cor com significado */
+td.neg, .dash-value.neg, .vg-kpi-value.neg, .delta-down { color: var(--coral-500) !important; }
+.delta-up { color: var(--green-600) !important; }
+.note-date-badge.overdue { color: var(--coral-500) !important; }
+
+/* Superfícies mais planas: a sombra sumiu e a linha ficou mais fina.
+   O contorno passa a vir do contraste entre fundo e superfície. */
+.table-wrap, .card, .fin-cascata, .kpi {
+  box-shadow: none !important;
+  border-color: var(--slate-100) !important;
+}
+.hub-thead th {
+  background: transparent !important;
+  border-bottom: 1px solid var(--slate-200) !important;
+  font-family: var(--mono) !important; font-size: 9.5px !important;
+  letter-spacing: .1em !important; text-transform: uppercase !important;
+  color: var(--slate-400) !important; padding: 9px 12px !important;
+}
+th { background: transparent !important; }
+.hub-tbody tr:hover { background: var(--slate-50) !important; }
+.hub-tbody td { border-bottom: 1px solid var(--slate-50) !important; }
 .delta-down { color: #C0392B !important; }
 
 </style>
@@ -8976,7 +9025,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     if (logo && pwWrap && !pwScreen.querySelector('.pw-tagline-top')) {
       const tag = document.createElement('div');
       tag.className = 'pw-tagline-top';
-      tag.textContent = 'gestão de vendas';
+      tag.textContent = 'sua operação, com a luz acesa no que precisa de você';
       logo.after(tag);
     }
   }
@@ -10417,7 +10466,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
     }
 
     /* ── Ajustar configuração de SKU ─────────────────────────────────────
-       Autonomia de escrita nos campos que pertencem ao SellerHub. Fica de
+       Autonomia de escrita nos campos que pertencem ao OfficeLed. Fica de
        fora, de propósito, tudo que mora no Hub de Precificação do sócio:
        custo, preço planejado e o ADS alvo que entra no cálculo da margem.
        Escrever aqui o que é de lá criaria dois números com o mesmo nome — um
@@ -10436,7 +10485,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var DO_HUB={custo:1, preco:1, preco_planejado:1, mc:1, mc_planejada:1, rebait:1};
 
       if(DO_HUB[campoAj]){
-        throw new Error('"'+campoAj+'" é do Hub de Precificação, não do SellerHub. '
+        throw new Error('"'+campoAj+'" é do Hub de Precificação, não do OfficeLed. '
           +'Mudar aqui não muda a margem: o hub sobrescreve e a tela passa a discordar da conta. '
           +'Esse ajuste é feito no hub. Abra uma tarefa ou registre uma nota, e avise o Ale disso.');
       }
@@ -12069,7 +12118,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       return (f.aviso?'⚠ ':'✓ ')+rot+(f.aviso?' — '+f.aviso:'');
     });
     var houveErro=feitos.some(function(f){return !f.ok;});
-    return '\n\n'+(houveErro?'⚠️ Nem tudo deu certo:':'Registrado no SellerHub:')+'\n'+linhas.join('\n');
+    return '\n\n'+(houveErro?'⚠️ Nem tudo deu certo:':'Registrado no OfficeLed:')+'\n'+linhas.join('\n');
   }
 
   window.escEncerrarSala=async function(){
@@ -12252,7 +12301,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           +' com dado. Se perguntarem de um SKU que não está na lista, diga que ele ficou fora do recorte — não diga que o dado não existe. '
         : '')
       +'MPA = M.C. − TACOS real da janela. A M.C. aqui é ANTES do ADS: o hub entrega ela já com o alvo '
-      +'descontado e o SellerHub soma o alvo de volta, então o ADS sai uma vez só, pelo que foi gasto de verdade. '
+      +'descontado e o OfficeLed soma o alvo de volta, então o ADS sai uma vez só, pelo que foi gasto de verdade. '
       +'Está calculado em % e em reais '
       +'para hoje, 3, 7 e 30 dias em margem_por_sku — nunca responda que falta dado por SKU ou por dia. '
       +'A janela "hoje" é o dia de data_referencia e é volátil: um dia com pouco ADS infla o MPA e um dia '
@@ -12294,7 +12343,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       _obs:'Datas para usar em criar_evento. Nunca escreva uma data que não esteja aqui. '
           +'"Segunda" significa proxima_segunda; confira o dia da semana antes de marcar. '
           +'O ano é '+_h.getFullYear()+' — conferir o ano ANTES de escrever a data. '
-          +'O SellerHub recusa qualquer evento anterior a '+_h.toISOString().slice(0,10)
+          +'O OfficeLed recusa qualquer evento anterior a '+_h.toISOString().slice(0,10)
           +' ou posterior a um ano daqui, e a recusa aparece para o Ale como falha sua.'
     };
 
@@ -12328,7 +12377,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         +'se um dado parecer contradizer uma lição, é porque falta contexto — cite a lição e pergunte, não conclua por cima dela.';
     }
 
-    /* ── Ações: o que este agente pode fazer sozinho no SellerHub ────────── */
+    /* ── Ações: o que este agente pode fazer sozinho no OfficeLed ────────── */
     ctx._acoes_disponiveis=[
       'criar_nota(titulo, texto) — salva uma anotação',
       'criar_evento(titulo, data YYYY-MM-DD, hora HH:MM, categoria, lembrete_min) — adiciona na agenda e programa o alarme no celular do Ale. '
@@ -12346,7 +12395,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       'editar_evento(id, titulo, data, hora, categoria) — muda um compromisso já marcado. '
         +'Só o id é obrigatório; campo deixado em branco fica como está. Use para remarcar em vez de '
         +'apagar e criar de novo, assim o Ale não perde o histórico.',
-      'ajustar_sku(sku, campo, valor) — muda configuração do SKU aqui no SellerHub. '
+      'ajustar_sku(sku, campo, valor) — muda configuração do SKU aqui no OfficeLed. '
         +'Campos: tacos_alvo (o alvo de ALERTA de TACOS — liga o aviso, NÃO altera a M.C.) e estoque_minimo. '
         +'Custo, preço e o ADS alvo que entra no cálculo da margem moram no Hub de Precificação e não se mexe daqui: '
         +'se pedirem isso, diga que é no hub e ofereça abrir tarefa. O valor anterior fica no recibo.',
@@ -12374,7 +12423,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           +'nunca em adjetivo solto. Se o mês não estiver fechado (mes_fechado=false), avise que o número ainda pode mudar.';
       }
     }
-    ctx._limite_de_acao = 'Dentro do SellerHub você age sozinho: agenda (criar, editar e apagar qualquer evento, '
+    ctx._limite_de_acao = 'Dentro do OfficeLed você age sozinho: agenda (criar, editar e apagar qualquer evento, '
       +'inclusive os que o Ale marcou), notas, ideias, tarefas, slides e configuração de SKU. '
       +'Toda mudança guarda o valor anterior no recibo, então errar é reversível — mas confira antes, é o painel dele. '
       +'Duas coisas ficam fora e não é falta de permissão, é que não funcionaria: '
@@ -12397,7 +12446,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       'Quando o Ale disser que algo não apareceu, NÃO liste causas genéricas de sistema. Olhe minhas_acoes_recentes: '
         +'se a ação não está lá, você não a executou — assuma isso e execute agora. Se está lá e falhou, diga o erro que aparece no detalhe.',
       'agenda_proxima e agenda_completa mostram o que está gravado de verdade. Consulte antes de responder sobre a agenda.',
-      'Você não tem acesso a nada fora do SellerHub e das APIs do Mercado Livre. Nunca sugira conferir configurações, '
+      'Você não tem acesso a nada fora do OfficeLed e das APIs do Mercado Livre. Nunca sugira conferir configurações, '
         +'dar refresh no app ou verificar outro calendário: isso não existe aqui.'
     ];
 
