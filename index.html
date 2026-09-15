@@ -1803,6 +1803,7 @@ body.sidebar-collapsed .hamburger { display: none; }
 }
 .pw-btn:hover { background: #C24E27 !important; box-shadow: 0 6px 26px rgba(216,90,48,.36) !important; }
 .pw-error { color: var(--coral-400) !important; }
+
 </style>
 </head>
 <body>
@@ -2247,7 +2248,7 @@ body.sidebar-collapsed .hamburger { display: none; }
         </div>
 
         <!-- Vista Lista -->
-        <div id="cal-list-view" style="display:none;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);overflow:hidden;flex:1;min-height:0">
+        <div id="cal-list-view" class="surface" style="display:none;overflow:hidden;flex:1;min-height:0">
           <div class="cal-list-view" id="cal-list-content"></div>
         </div>
 
@@ -8906,7 +8907,8 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg, .delta-down { color: var(--coral-500
 th { background: transparent !important; }
 .hub-tbody tr:hover { background: var(--slate-50) !important; }
 .hub-tbody td { border-bottom: 1px solid var(--slate-50) !important; }
-.delta-down { color: #C0392B !important; }
+/* havia dois vermelhos para a mesma ideia — ficou o coral */
+.delta-down { color: var(--coral-500) !important; }
 
 </style>
 
@@ -8914,6 +8916,81 @@ th { background: transparent !important; }
 <style id="density-style">
   .hub-tbody td { padding: 7px 14px !important; font-size: 11.5px !important; }
   .hub-tbody td:first-child { padding-left: 20px !important; }
+/* ═══ PADRONIZAÇÃO FINAL ═════════════════════════════════════════════════
+   O que ainda destoava, sobretudo na Análise:
+
+   • DOIS estilos de controle convivendo — `.fin-select` (monoespaçado 12px) e
+     `.perf-select` (sans 13px), lado a lado no mesmo cabeçalho.
+   • `.fin-cascata`, `.fin-conc`, `.table-wrap` e `.kpi` eram quatro
+     implementações do mesmo retângulo, com paddings e raios diferentes.
+   • A tabela da DRE usava estilo inline e não herdava o cabeçalho monoespaçado
+     das outras.
+   • O foco de campo ainda apontava para `--coral-500` em várias regras
+     antigas, contra a regra de que coral é alerta.
+
+   Daqui em diante: UMA superfície (.surface), UM controle (.control), UMA
+   tabela. Os nomes antigos viram apelidos disso.
+   ═════════════════════════════════════════════════════════════════════ */
+
+/* Superfície única */
+.surface, .fin-cascata, .fin-conc, .table-wrap, .kpi, .metric-strip {
+  background: var(--white);
+  border: 1px solid var(--slate-100);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+.fin-cascata, .fin-conc { padding: 15px 17px; }
+.metric-strip { padding: 4px 6px; }
+
+/* Controle único */
+.perf-select, .fin-select, .notes-search,
+input[type="date"], input[type="text"].notes-search, select.perf-select {
+  font-family: var(--font); font-size: 12.5px;
+  padding: 7px 11px; border-radius: var(--radius-sm);
+  border: 1px solid var(--slate-100); background: var(--white);
+  color: var(--slate-700); outline: none;
+  transition: border-color var(--transition);
+}
+.perf-select:focus, .fin-select:focus, .notes-search:focus,
+input[type="date"]:focus { border-color: var(--slate-400) !important; }
+.perf-select:hover, .fin-select:hover { border-color: var(--slate-200); }
+input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--slate-700); }
+
+/* Tabela única — inclusive a da DRE, que vinha com estilo inline */
+#dre-tabela th, .table-wrap th {
+  background: transparent; border-bottom: 1px solid var(--slate-200);
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--slate-400); font-weight: 500;
+  padding: 9px 12px; white-space: nowrap;
+}
+#dre-tabela td { border-bottom: 1px solid var(--slate-50); padding: 9px 12px; font-size: 12.5px; }
+#dre-tabela tr:hover td { background: var(--slate-50); }
+#dre-tabela td:first-child, #dre-tabela th:first-child { background: var(--white); }
+#dre-tabela tr:hover td:first-child { background: var(--slate-50); }
+
+/* Nota de rodapé de bloco, igual em toda tela */
+.fin-note { font-size: 11.5px; color: var(--slate-400); line-height: 1.6; margin: 11px 0 0; }
+.fin-note strong { color: var(--slate-600); font-weight: 600; }
+
+/* Barra de controles acima do conteúdo */
+.perf-vg-controls { gap: 8px; margin-bottom: 14px; }
+
+/* Faixa de indicadores (Saúde da conta) na mesma linguagem dos cartões */
+.metric-cell-label { font-size: 9.5px; font-weight: 600; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--slate-400); }
+.metric-cell-value { font-family: var(--mono); font-size: 15px; color: var(--slate-900); }
+
+/* Spinner e estado de carregamento */
+/* DRE: linha, rótulo fixo e hierarquia por classe, não por estilo inline */
+#dre-tabela .dre-rot { position: sticky; left: 0; z-index: 1; background: var(--white);
+  text-align: left; white-space: nowrap; font-family: var(--font); color: var(--slate-700); }
+#dre-tabela td { text-align: right; font-family: var(--mono); }
+#dre-tabela tr.forte td { font-weight: 700; color: var(--slate-900); }
+#dre-tabela tr.forte .dre-rot { font-weight: 700; color: var(--slate-900); }
+#dre-tabela tr.topo td { border-top: 1px solid var(--slate-200); }
+#dre-tabela tr.recuo .dre-rot { padding-left: 26px; color: var(--slate-600); }
+#dre-tabela tr:hover .dre-rot { background: var(--slate-50); }
+.fin-loading { font-size: 12.5px; color: var(--slate-400); }
 </style>
 
 <script>
@@ -14334,7 +14411,7 @@ window.apGarantirMes=async function(mes){
       '<span style="font-size:10.5px;color:var(--slate-400)">'+dfmtR(t.custoML)+'</span>');
     g+='</div>';
 
-    g+='<div style="margin-top:10px;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:12px 14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">'
+    g+='<div class="surface" style="margin-top:10px;padding:12px 14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">'
       +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Comissão cobrada</div>'
       +'<div style="font-family:var(--mono);font-size:15px;color:var(--slate-700)">'+dfmtR(t.comTotal)+'</div></div>'
       +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Frete pago por você</div>'
@@ -14695,7 +14772,7 @@ window.apGarantirMes=async function(mes){
     if(d.vazio) return '<div style="padding:16px"><p class="fin-note">Sem anúncio no snapshot de hoje.</p></div>';
     var an=d.anuncio||{};
     function bloco(rot, val, sub, cor){
-      return '<div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:11px 13px">'
+      return '<div class="surface" style="padding:11px 13px">'
         +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400);margin-bottom:3px">'+rot+'</div>'
         +'<div style="font-family:var(--mono);font-size:16px;color:'+(cor||'var(--slate-900)')+'">'+val+'</div>'
         +(sub?'<div style="font-size:10.5px;color:var(--slate-400);margin-top:3px;line-height:1.45">'+sub+'</div>':'')
@@ -14761,7 +14838,7 @@ window.apGarantirMes=async function(mes){
       +'</div>';
 
     if(an.experiencia_motivo || an.experiencia_recomendacao){
-      h+='<div style="margin-top:10px;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:11px 13px">'
+      h+='<div class="surface" style="margin-top:10px;padding:11px 13px">'
         +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400);margin-bottom:4px">Experiência de compra — o que o ML diz</div>'
         +'<div style="font-size:11.5px;color:var(--slate-700);line-height:1.6">'
         +desc(an.experiencia_motivo||'')+(an.experiencia_recomendacao?' <strong>'+desc(an.experiencia_recomendacao)+'</strong>':'')
@@ -15436,20 +15513,18 @@ window.apGarantirMes=async function(mes){
     }
     function linha(rot, fn, opts){
       opts=opts||{};
-      var estilo = opts.forte ? 'font-weight:700;color:var(--slate-900)' : 'color:var(--slate-700)';
-      var borda  = opts.topo ? 'border-top:1.5px solid var(--slate-200)' : '';
-      return '<tr style="'+borda+'">'
-        +'<td style="position:sticky;left:0;background:var(--white);white-space:nowrap;'+estilo+'">'
-        +(opts.recuo?'<span style="color:var(--slate-300)">&nbsp;&nbsp;</span>':'')+rot+'</td>'
+      // Classes em vez de estilo inline: a tabela da DRE passa a herdar a
+      // mesma aparência das outras em vez de ter a sua.
+      var cls = 'dre-l' + (opts.forte?' forte':'') + (opts.topo?' topo':'') + (opts.recuo?' recuo':'');
+      return '<tr class="'+cls+'">'
+        +'<td class="dre-rot">'+rot+'</td>'
         +L.map(function(o){
-            var v=fn(o);
-            return '<td style="text-align:right;font-family:var(--mono);'+estilo
-              +(opts.cor?';color:'+opts.cor:'')+'">'+v+'</td>';
+            return '<td'+(opts.cor?' style="color:'+opts.cor+'"':'')+'>'+fn(o)+'</td>';
           }).join('')
         +'</tr>';
     }
-    var cab='<tr><th style="position:sticky;left:0;background:var(--white)"></th>'
-      +L.map(function(o){ return '<th style="text-align:right;white-space:nowrap">'+rotuloMes(o.mes)+'</th>'; }).join('')
+    var cab='<tr><th class="dre-rot"></th>'
+      +L.map(function(o){ return '<th>'+rotuloMes(o.mes)+'</th>'; }).join('')
       +'</tr>';
 
     el.innerHTML='<div class="table-wrap" style="overflow-x:auto"><table><thead class="hub-thead">'+cab+'</thead>'
@@ -15960,7 +16035,7 @@ window.apGarantirMes=async function(mes){
     var lista=Object.keys(porMarca).sort(function(a,b){ return porMarca[b].rec-porMarca[a].rec; });
 
     var el=document.getElementById('mrc-resumo');
-    el.innerHTML='<div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:12px 14px">'
+    el.innerHTML='<div class="surface" style="padding:12px 14px">'
       +'<div style="font-size:12px;color:var(--slate-700);margin-bottom:'+(lista.length?'8px':'0')+'">'
       +'<strong>'+fN(com.length)+' de '+fN(L.length)+' SKUs com marca</strong>'
       +(recT>0 ? ' · cobrindo '+(recC/recT*100).toFixed(0)+'% da receita de 30 dias' : '')
