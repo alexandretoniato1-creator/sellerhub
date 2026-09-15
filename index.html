@@ -2537,6 +2537,105 @@ const SUPA_URL = 'https://dtvnoqmavqoftqyurtyv.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0dm5vcW1hdnFvZnRxeXVydHl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNzkxNzMsImV4cCI6MjA5MTk1NTE3M30.-u_di6GZcn9B2jCMzN59fVEvGFmlQ5lU5AVvck3xRc4';
 const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   PAGINAÇÃO OBRIGATÓRIA — o PostgREST corta em 1.000 linhas e NÃO avisa.
+   Status 200, array menor, silêncio. Pedir .limit(5000) não muda nada: o teto
+   é do servidor (max-rows), não do cliente. Foi assim que `vendas_por_sku` e
+   `custo_real_por_sku` passaram a informar 1,6% de comissão onde o real era
+   8,4%. O `ai-agent` v16 corrigiu isso do lado da Edge Function; o front
+   continuava lendo truncado — inclusive o contexto que ELE monta e manda pro
+   agente.
+
+   Regra: toda leitura que possa passar de 1.000 linhas vai por `sbTodas`.
+   Nunca usar o tamanho do array como prova de que veio tudo.
+
+   Como usar — a query é uma FÁBRICA que recebe a faixa:
+     var r = await sbTodas(function(de,ate){
+       return sbP('ml_vendas','*').eq('conta','Logbox')
+              .order('data',{ascending:false}).order('item_id',{ascending:true})
+              .range(de,ate);
+     }, 'ml_vendas/30d');
+     r.data  → todas as linhas
+     r.error → mesma forma de erro do supabase-js (quem chama não muda nada)
+     r.linhas / r.total → quanto leu e quanto existe
+
+   ORDEM ESTÁVEL: paginar por offset com ORDER BY não-único pode repetir ou
+   pular linha entre páginas. Por isso todo call-site abaixo ordena por
+   (data, item_id) — que é único nas tabelas diárias — ou pela chave natural
+   da tabela (claim_id, movement_id).
+   ───────────────────────────────────────────────────────────────────────── */
+const SB_PASSO = 1000;   // teto do PostgREST; não adianta aumentar
+
+// Atalho: select já pedindo a contagem exata, que é o que revela o truncamento.
+function sbP(tabela, cols){
+  return sb.from(tabela).select(cols || '*', { count: 'exact' });
+}
+
+async function sbTodas(fabrica, rotulo){
+  rotulo = rotulo || 'consulta';
+  var primeira = await fabrica(0, SB_PASSO - 1);
+  if (primeira.error) {
+    return { data: null, error: primeira.error, linhas: 0, total: null };
+  }
+  var lote0 = primeira.data || [];
+  var total = (typeof primeira.count === 'number') ? primeira.count : null;
+
+  // Sem count (ou já veio tudo): devolve o que tem.
+  if (total === null || total <= lote0.length) {
+    if (total === null && lote0.length === SB_PASSO) {
+      console.warn('[sbTodas] ' + rotulo + ': vieram exatamente ' + SB_PASSO +
+                   ' linhas e o servidor não mandou contagem. Pode estar truncado.');
+    }
+    return { data: lote0, error: null, linhas: lote0.length, total: total };
+  }
+
+  // Resto em paralelo: latência de ~2 idas, não de N.
+  var pedidos = [];
+  for (var off = SB_PASSO; off < total; off += SB_PASSO) {
+    pedidos.push(fabrica(off, off + SB_PASSO - 1));
+  }
+  var resto = await Promise.all(pedidos);
+  var todas = lote0.slice();
+  for (var i = 0; i < resto.length; i++) {
+    if (resto[i].error) {
+      console.error('[sbTodas] ' + rotulo + ': página ' + (i + 1) + ' falhou', resto[i].error);
+      return { data: todas, error: resto[i].error, linhas: todas.length, total: total };
+    }
+    todas = todas.concat(resto[i].data || []);
+  }
+  if (todas.length !== total) {
+    console.warn('[sbTodas] ' + rotulo + ': esperava ' + total +
+                 ' linhas e montei ' + todas.length + '. Conferir ordem estável.');
+  }
+  return { data: todas, error: null, linhas: todas.length, total: total };
+}
+
+/* Auditoria de truncamento — rodar no console quando desconfiar de um número.
+   Compara o total real da tabela com o que uma leitura sem paginação traria. */
+window.sbAuditar = async function(tabelas){
+  var lista = tabelas || ['ml_vendas','ml_anuncios','ml_ads_reports','ml_visitas',
+                          'ml_reviews','ml_pedidos','ml_reclamacoes','ml_financeiro',
+                          'ml_perguntas','ml_promocoes','ml_promocao_itens',
+                          'ml_sugestao_preco','ml_mensagens'];
+  var saida = [];
+  for (var i = 0; i < lista.length; i++) {
+    try {
+      var c = await sb.from(lista[i]).select('*', { count: 'exact', head: true });
+      var u = await sb.from(lista[i]).select('*');
+      saida.push({
+        tabela: lista[i],
+        total_real: c.count,
+        leitura_sem_paginar: (u.data || []).length,
+        trunca: (c.count || 0) > (u.data || []).length
+      });
+    } catch (e) {
+      saida.push({ tabela: lista[i], erro: String(e && e.message || e) });
+    }
+  }
+  console.table(saida);
+  return saida;
+};
+
 // ── HUB DE PRECIFICAÇÃO (Supabase externo — leitura via anon key público) ──
 // MC é calculada lá com fórmula completa: Preço − Custo − Frete − Tarifa − Rebate − ADS alvo.
 // A chave anon é pública (está no HTML do hub em logbox-fin.github.io/hubprecificacao/).
@@ -3775,15 +3874,24 @@ async function lbxCarregarTudo(){
   // 60 dias é a janela da experiência de compra do ML. As reclamações entram
   // aqui porque é delas que sai a taxa por anúncio e o ranking de ofensoras.
   const d60 = new Date(); d60.setDate(d60.getDate()-60);
+  // TODAS as tabelas diárias aqui passam de 1.000 linhas com folga
+  // (ml_vendas sozinha tem ~3.700 em 30 dias). Sem `sbTodas` a aba Performance
+  // — a que vai pra apresentação — calculava 30/60/90 dias em cima dos ~8 dias
+  // mais recentes e apresentava como período inteiro.
   const [anunciosRes, adsRes, vendasRes, repRes, skusRes, visitasRes, reclamacoesRes] = await Promise.all([
-    sb.from('ml_anuncios').select('*').eq('conta','Logbox').order('data',{ascending:false}),
-    sb.from('ml_ads_reports').select('*').eq('conta','Logbox').order('data',{ascending:false}),
-    sb.from('ml_vendas').select('*').eq('conta','Logbox').order('data',{ascending:false}),
+    sbTodas(function(de,ate){ return sbP('ml_anuncios','*').eq('conta','Logbox')
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_anuncios/lbx'),
+    sbTodas(function(de,ate){ return sbP('ml_ads_reports','*').eq('conta','Logbox')
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_ads_reports/lbx'),
+    sbTodas(function(de,ate){ return sbP('ml_vendas','*').eq('conta','Logbox')
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_vendas/lbx'),
     sb.from('ml_reputacao').select('*').eq('conta','Logbox').order('data',{ascending:false}).limit(1),
     sb.from('skus').select('*').eq('conta','Logbox'),
-    sb.from('ml_visitas').select('*').eq('conta','Logbox').order('data',{ascending:false}),
-    sb.from('ml_reclamacoes').select('claim_id,item_id,status,stage,motivo,data_abertura')
-      .eq('conta','Logbox').gte('data_abertura',d60.toISOString()).limit(1000),
+    sbTodas(function(de,ate){ return sbP('ml_visitas','*').eq('conta','Logbox')
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_visitas/lbx'),
+    sbTodas(function(de,ate){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,motivo,data_abertura')
+      .eq('conta','Logbox').gte('data_abertura',d60.toISOString())
+      .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(de,ate); }, 'ml_reclamacoes/lbx'),
   ]);
   return {anunciosRes, adsRes, vendasRes, repRes, skusRes, visitasRes, reclamacoesRes};
 }
@@ -4817,12 +4925,19 @@ async function prodAbrirDrawer(chave){
   document.getElementById('prod-drawer-overlay').classList.add('active');
 
   const idsFiltro = l.itemIds;
+  // Um SKU com vários anúncios e histórico longo passa de 1.000 linhas sem
+  // aviso — o gráfico do drawer mostrava série curta achando que era tudo.
   const [vendasRes, adsRes, anunciosRes, visitasRes, reviewsRes] = await Promise.all([
-    sb.from('ml_vendas').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
-    sb.from('ml_ads_reports').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
-    sb.from('ml_anuncios').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
-    sb.from('ml_visitas').select('*').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
-    sb.from('ml_reviews').select('nota,comentario,data').eq('conta','Logbox').in('item_id', idsFiltro).order('data',{ascending:false}),
+    sbTodas(function(de,ate){ return sbP('ml_vendas','*').eq('conta','Logbox').in('item_id', idsFiltro)
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_vendas/drawer'),
+    sbTodas(function(de,ate){ return sbP('ml_ads_reports','*').eq('conta','Logbox').in('item_id', idsFiltro)
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_ads_reports/drawer'),
+    sbTodas(function(de,ate){ return sbP('ml_anuncios','*').eq('conta','Logbox').in('item_id', idsFiltro)
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_anuncios/drawer'),
+    sbTodas(function(de,ate){ return sbP('ml_visitas','*').eq('conta','Logbox').in('item_id', idsFiltro)
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_visitas/drawer'),
+    sbTodas(function(de,ate){ return sbP('ml_reviews','item_id,nota,comentario,data').eq('conta','Logbox').in('item_id', idsFiltro)
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_reviews/drawer'),
   ]);
 
   /* avaliações do SKU — nota média, distribuição e as notas baixas com o texto */
@@ -7581,7 +7696,10 @@ async function loadSkus(){
 }
 
 async function loadSkuHistorico(){
-  const {data,error} = await sb.from('sku_historico').select('*');
+  // Cresce por SKU x mês: 60 SKUs em 2 anos já encostam no teto de 1.000.
+  const {data,error} = await sbTodas(function(de,ate){
+    return sbP('sku_historico','*').order('mes',{ascending:false}).order('sku',{ascending:true}).range(de,ate);
+  }, 'sku_historico/load');
   if(error){ console.error('sku_historico',error); return; }
   data.forEach(r=>{
     if(!skuPerfData[r.conta]) skuPerfData[r.conta]={};
@@ -10090,7 +10208,74 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
   // ── Estado ─────────────────────────────────────────────────────────────────
   var canvas, ctx;
   var TW=50, TH=25, TZ=48, OX=362, OY=55; // tile+origin, recalculated on resize
-  var dados={anuncios:[],ads:[],vendas:[],visitas:[],reviews:[],reputacao:null,skus:[],agenda:[],anotacoes:[],ideias:[],skusCompleto:[],perguntas:[],pedidos:[],reclamacoes:[],financeiro:[],vendas60:[],anunciosAntes:[],desde:null};
+  var dados={anuncios:[],ads:[],vendas:[],visitas:[],reviews:[],reputacao:null,skus:[],agenda:[],anotacoes:[],ideias:[],skusCompleto:[],perguntas:[],pedidos:[],reclamacoes:[],financeiro:[],custoML:null,vendas60:[],anunciosAntes:[],desde:null};
+
+  /* ── CUSTO REAL DO ML: comissão + frete, por dia e por SKU ──────────────────
+     O que a operação passou a enxergar em 01–13/09: frete a 11,86% da receita,
+     41% MAIOR que a comissão, e o custo ML total em 20,24%. Isso estava no
+     banco e não chegava a nenhum agente — o contexto carregava 200 linhas soltas
+     de `ml_financeiro` e não usava nenhuma.
+
+     Duas armadilhas respeitadas aqui:
+     • FATURA MENSAL NÃO É CUSTO DO MÊS (§5.6). Os períodos se sobrepõem e o
+       valor arrasta dívida. Só entram linhas de comissão e frete, por pedido.
+     • A porcentagem é calculada SÓ sobre os dias que têm linha financeira.
+       Hoje o `ml_financeiro` começa em 01/09; dividir 13 dias de custo por 30
+       dias de receita daria metade do custo real. O campo `dias_cobertos` diz
+       exatamente qual janela foi medida.                                      */
+  function custoMLResumo(fin, vendas){
+    fin = fin || []; vendas = vendas || [];
+    var ehFrete = function(t){ return /frete|shipment|envio/i.test(String(t||'')); };
+    var ehComissao = function(t){ return /comiss|sale_fee|tarifa/i.test(String(t||'')); };
+    var ehFatura = function(t){ return /fatura|billing|bill/i.test(String(t||'')); };
+
+    var diasComDado={}, comissao=0, frete=0, porSku={}, ignoradas=0;
+    fin.forEach(function(r){
+      var tipo=r.tipo, v=Math.abs(Number(r.valor)||0);
+      if(ehFatura(tipo)){ ignoradas++; return; }          // §5.6 — nunca somar
+      var dia=String(r.data||'').slice(0,10);
+      if(dia) diasComDado[dia]=1;
+      var sku=r.sku||'(sem sku)';
+      if(!porSku[sku]) porSku[sku]={sku:sku, comissao:0, frete:0};
+      if(ehFrete(tipo)){ frete+=v; porSku[sku].frete+=v; }
+      else if(ehComissao(tipo)){ comissao+=v; porSku[sku].comissao+=v; }
+      else ignoradas++;
+    });
+
+    var dias=Object.keys(diasComDado).sort();
+    if(!dias.length) return null;
+    var de=dias[0], ate=dias[dias.length-1];
+
+    // Receita só dos dias medidos — e só dos SKUs, via item_id do snapshot.
+    var receita=0;
+    vendas.forEach(function(r){
+      var dia=String(r.data||'').slice(0,10);
+      if(!diasComDado[dia]) return;
+      receita += Number(r.receita)||0;
+    });
+
+    var pc=function(x){ return receita>0 ? +(x/receita*100).toFixed(2) : null; };
+    var lista=Object.keys(porSku).map(function(k){
+      var o=porSku[k]; o.total=+(o.comissao+o.frete).toFixed(2);
+      o.comissao=+o.comissao.toFixed(2); o.frete=+o.frete.toFixed(2);
+      return o;
+    }).sort(function(a,b){ return b.total-a.total; }).slice(0,25);
+
+    return {
+      janela_medida: de+' a '+ate,
+      dias_cobertos: dias.length,
+      aviso: 'Percentuais calculados só sobre os dias com linha em ml_financeiro. '
+           + 'Fatura mensal do ML foi EXCLUÍDA de propósito: os períodos se sobrepõem '
+           + 'e o valor arrasta dívida, então ela não é o custo do mês.',
+      receita_no_periodo: +receita.toFixed(2),
+      comissao_ml: +comissao.toFixed(2), comissao_pct: pc(comissao),
+      frete_pago_pelo_seller: +frete.toFixed(2), frete_pct: pc(frete),
+      custo_ml_total: +(comissao+frete).toFixed(2), custo_ml_pct: pc(comissao+frete),
+      frete_vs_comissao: comissao>0 ? +((frete/comissao-1)*100).toFixed(1)+'% maior que a comissão' : null,
+      linhas_lidas: fin.length, linhas_ignoradas: ignoradas,
+      top_skus_por_custo: lista
+    };
+  }
   var sugestoes={}, alertCounts={}, doneMap={};
   var memoria={};       // {agente_id: [registros do diário de bordo]}
   var urgenciasPorAgente={};  // quantos papéis empilhar na mesa de cada um
@@ -10827,7 +11012,12 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       var colsAnuncio='item_id,sku,titulo,categoria,preco,preco_concorrente,buybox_status,saude,'
         +'experiencia_valor,experiencia_texto,experiencia_cor,experiencia_motivo,experiencia_recomendacao,'
         +'estoque,estoque_full,catalog_listing,status,visit_share';
-      var anRes=await sb.from('ml_anuncios').select(colsAnuncio).eq('data',snapDate||'2099-01-01');
+      // Um snapshot cabe hoje em uma página, mas se o catálogo passar de 1.000
+      // anúncios o corte seria silencioso e o agente perderia parte da conta.
+      var anRes=await sbTodas(function(de,ate){
+        return sbP('ml_anuncios',colsAnuncio).eq('data',snapDate||'2099-01-01')
+          .order('item_id',{ascending:true}).range(de,ate);
+      }, 'ml_anuncios/ctxSnapshot');
 
       // Snapshot de 7 dias atrás: é com ele que enxergamos QUEDA de experiência.
       // Uma nota que cai de 100 para 75 hoje é o aviso mais barato que existe.
@@ -10841,24 +11031,38 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       // Sem ela o agente não consegue responder nada por dia/janela.
       var d30=new Date(); d30.setDate(d30.getDate()-30);
       var d30s=d30.toISOString().slice(0,10);
-      var adsRes=await sb.from('ml_ads_reports')
-        .select('item_id,data,gasto,vendas_atribuidas,impressoes,cliques,ctr,unidades_ads')
-        .gte('data',d30s).neq('preliminar',true).order('data',{ascending:false});
+      // ATENÇÃO: estas duas são a base da série diária por SKU, do TACOS de
+      // conta e de tudo que o Gestor fala sobre receita. Sem paginar, o agente
+      // recebia ~1.000 das ~3.700 linhas de vendas e ~1.000 das de ADS —
+      // truncadas em PROPORÇÕES DIFERENTES, o que estraga também a razão entre
+      // elas. Não era o agente alucinando: o dado chegava errado.
+      var adsRes=await sbTodas(function(de,ate){
+        return sbP('ml_ads_reports','item_id,data,gasto,vendas_atribuidas,impressoes,cliques,ctr,unidades_ads')
+          .gte('data',d30s).neq('preliminar',true)
+          .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate);
+      }, 'ml_ads_reports/ctx30');
 
-      var venRes=await sb.from('ml_vendas')
-        .select('item_id,data,receita,pedidos,unidades,comissao')
-        .gte('data',d30s).order('data',{ascending:false});
+      var venRes=await sbTodas(function(de,ate){
+        return sbP('ml_vendas','item_id,data,receita,pedidos,unidades,comissao')
+          .gte('data',d30s)
+          .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate);
+      }, 'ml_vendas/ctx30');
 
       // 60 dias é a janela que o Mercado Livre usa para a experiência de compra.
       // 30 não serve aqui: o corte de 100 vendas do item é medido em 60.
       var d60=new Date(); d60.setDate(d60.getDate()-60);
-      var ven60Res=await sb.from('ml_vendas')
-        .select('item_id,unidades,receita').gte('data',d60.toISOString().slice(0,10));
+      var ven60Res=await sbTodas(function(de,ate){
+        return sbP('ml_vendas','item_id,data,unidades,receita')
+          .gte('data',d60.toISOString().slice(0,10))
+          .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate);
+      }, 'ml_vendas/ctx60');
 
       // Visitas — sem isso não há conversão por dia
-      var visRes=await sb.from('ml_visitas')
-        .select('item_id,data,visitas').eq('conta','Logbox')
-        .gte('data',d30s).order('data',{ascending:false});
+      var visRes=await sbTodas(function(de,ate){
+        return sbP('ml_visitas','item_id,data,visitas').eq('conta','Logbox')
+          .gte('data',d30s)
+          .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate);
+      }, 'ml_visitas/ctx30');
 
       // Bad reviews
       var revRes=await sb.from('ml_reviews')
@@ -10884,7 +11088,16 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         sb.from('ml_perguntas').select('question_id,item_id,texto,status,data_pergunta,resposta').eq('conta','Logbox').order('data_pergunta',{ascending:false}).limit(100),
         sb.from('ml_pedidos').select('order_id,status,status_envio,data_compra,valor_total,item_id,sku').eq('conta','Logbox').gte('data_compra',d30str+'T00:00:00').order('data_compra',{ascending:false}).limit(200),
         sb.from('ml_reclamacoes').select('claim_id,order_id,item_id,status,stage,motivo,data_abertura').eq('conta','Logbox').gte('data_abertura',d60.toISOString()).order('data_abertura',{ascending:false}).limit(500),
-        sb.from('ml_financeiro').select('movement_id,tipo,valor,data,descricao,order_id').eq('conta','Logbox').gte('data',d30str).order('data',{ascending:false}).limit(200)
+        // `ml_financeiro` tem ~2 linhas por pedido (comissão + frete): com 5.379
+        // pedidos em 13 dias são ~10.700 linhas em 30 dias. O `.limit(200)`
+        // antigo era uma AMOSTRA que o contexto carregava e ninguém usava —
+        // pior cenário possível, porque somar 200 linhas daria um custo que não
+        // existe. Agora lê tudo e vira agregado (ver `custoMLResumo`).
+        sbTodas(function(de,ate){
+          return sbP('ml_financeiro','movement_id,tipo,valor,data,descricao,order_id,sku')
+            .eq('conta','Logbox').gte('data',d30str)
+            .order('data',{ascending:false}).order('movement_id',{ascending:true}).range(de,ate);
+        }, 'ml_financeiro/ctx30')
       ]);
 
       dados={
@@ -10896,6 +11109,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
         ideias:ideiasRes.data||[], skusCompleto:skusCompletoRes.data||[],
         perguntas:perguntasRes.data||[], pedidos:pedidosRes.data||[],
         reclamacoes:reclamacoesRes.data||[], financeiro:financeiroRes.data||[],
+        custoML:custoMLResumo(financeiroRes.data||[], venRes.data||[]),
         vendas60:ven60Res.data||[], anunciosAntes:anAntesRes.data||[],
         snapDate:snapDate
       };
@@ -11106,7 +11320,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           // ai-agent. Resposta com consulta de ferramenta encostava no teto e
           // era cortada no meio — às vezes no meio de um <<ACAO:>>, que então
           // se perdia sem aviso porque o parser exige o >> de fechamento.
-          maxTokensHint:2500,
+          maxTokensHint:3000,
           history:_chatHistory[agId].slice(-10)
         })
       });
@@ -12875,7 +13089,7 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
           signal: ctrl ? ctrl.signal : undefined,
           headers:{'Content-Type':'application/json','apikey':_aiAnonKey,'Authorization':'Bearer '+_aiAnonKey},
           body:JSON.stringify({agentId:agId, mode:'chat', question:mensagem, context:ctx,
-            maxTokensHint:2500,
+            maxTokensHint:3000,
             history:_sala.falas.filter(function(f){return f.autor!=='sistema';}).slice(-10).map(function(f){
               return {role: f.autor==='ale'?'user':'assistant', content:(f.autor==='ale'?'':agenteNome(f.autor)+': ')+f.conteudo};
             })})
@@ -13365,6 +13579,18 @@ td.neg, .dash-value.neg, .vg-kpi-value.neg { color: #2D9596 !important; }
       // tinha o número: o dado existia, eu é que não entregava pra ele.
       ctx.margem_por_sku=_perfSku;
       ctx._como_ler_margem_por_sku=_comoLerMpaSku;
+      /* Custo cobrado de verdade pelo ML. Até aqui o Gestor falava de margem
+         vendo a comissão e NÃO vendo o frete — que é o maior dos dois. */
+      if(dados.custoML){
+        ctx.custo_ml_real=dados.custoML;
+        ctx._como_ler_custo_ml='Comissão e frete são cobrados POR PEDIDO e já estão realizados — '
+          +'não é estimativa. O frete costuma ser MAIOR que a comissão e é mais estável, '
+          +'porque tem componente fixo: quanto menor o ticket, maior o peso dele. '
+          +'Nunca somar desconto de campanha com este custo: as bases são diferentes '
+          +'(desconto é sobre preço de referência, custo é sobre receita realizada). '
+          +'Se a janela medida for menor que o período do resto do contexto, diga isso ao Ale '
+          +'em vez de extrapolar.';
+      }
       ctx.serie_diaria=_serieDiaria;
       if(fd && fd.skus){
         var link=fd.skus.filter(function(o){return o.linkado && o.rec>0;});
@@ -13685,11 +13911,24 @@ async function loadFin(){
     try{ if(typeof hubLinksCarregar==='function') hubLinks=await hubLinksCarregar(); }catch(e){}
 
     var [vR,aR,anR,vAR,aAR]=await Promise.all([
-      sb.from('ml_vendas').select('item_id,unidades,receita,comissao,pedidos').gte('data',ini).lte('data',fim),
-      sb.from('ml_ads_reports').select('item_id,gasto,vendas_atribuidas,impressoes,cliques,unidades_ads').gte('data',ini).lte('data',fim).neq('preliminar',true),
-      sb.from('ml_anuncios').select('item_id,sku,titulo').order('data',{ascending:false}).limit(1000),
-      sb.from('ml_vendas').select('item_id,receita').gte('data',iniA).lte('data',fimA),
-      sb.from('ml_ads_reports').select('item_id,gasto').gte('data',iniA).lte('data',fimA).neq('preliminar',true)
+      // Um mês fechado de ml_vendas passa de 3.500 linhas: sem paginar, o
+      // Financeiro fechava o mês com pouco mais de uma semana de receita.
+      sbTodas(function(de,ate){ return sbP('ml_vendas','item_id,data,unidades,receita,comissao,pedidos')
+        .gte('data',ini).lte('data',fim)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_vendas/fin'),
+      sbTodas(function(de,ate){ return sbP('ml_ads_reports','item_id,data,gasto,vendas_atribuidas,impressoes,cliques,unidades_ads')
+        .gte('data',ini).lte('data',fim).neq('preliminar',true)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_ads_reports/fin'),
+      // Mapa item_id → sku/título: `.limit(1000)` aqui era exatamente o teto,
+      // ou seja, já estava no fio. Paginado, todo anúncio recebe nome.
+      sbTodas(function(de,ate){ return sbP('ml_anuncios','item_id,data,sku,titulo')
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_anuncios/fin'),
+      sbTodas(function(de,ate){ return sbP('ml_vendas','item_id,data,receita')
+        .gte('data',iniA).lte('data',fimA)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_vendas/finAnterior'),
+      sbTodas(function(de,ate){ return sbP('ml_ads_reports','item_id,data,gasto')
+        .gte('data',iniA).lte('data',fimA).neq('preliminar',true)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_ads_reports/finAnterior')
     ]);
 
     var v=vR.data||[], a=aR.data||[], an=anR.data||[];
@@ -13840,7 +14079,13 @@ window.finFecharMes = async function(mes){
   var visitasMes = 0;
   try{
     var p=mes.split('-'), ini=mes+'-01', fim=mes+'-'+String(lastDay(+p[0],+p[1])).padStart(2,'0');
-    var vr=await sb.from('ml_visitas').select('visitas').eq('conta','Logbox').gte('data',ini).lte('data',fim);
+    // Visitas do mês somadas: sem paginar, a conversão do KPI saía inflada
+    // (poucas visitas contra o total de pedidos do mês inteiro).
+    var vr=await sbTodas(function(de,ate){
+      return sbP('ml_visitas','item_id,data,visitas').eq('conta','Logbox')
+        .gte('data',ini).lte('data',fim)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate);
+    }, 'ml_visitas/kpiMes');
     (vr.data||[]).forEach(function(x){ visitasMes += Number(x.visitas)||0; });
   }catch(e){}
 
@@ -13898,9 +14143,12 @@ window.finHistorico = async function(){
 };
 window.finHistoricoSku = async function(mes){
   try{
-    var q=sb.from('sku_historico').select('*').eq('conta','Logbox');
-    if(mes) q=q.eq('mes',mes);
-    var {data,error}=await q.order('fat',{ascending:false});
+    var {data,error}=await sbTodas(function(de,ate){
+      var q=sbP('sku_historico','*').eq('conta','Logbox');
+      if(mes) q=q.eq('mes',mes);
+      return q.order('mes',{ascending:false}).order('sku',{ascending:true}).range(de,ate);
+    }, 'sku_historico/fin');
+    if(!error && data) data.sort(function(a,b){ return (Number(b.fat)||0)-(Number(a.fat)||0); });
     if(error) throw error;
     return data||[];
   }catch(e){ return []; }
