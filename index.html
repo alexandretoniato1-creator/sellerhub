@@ -1614,6 +1614,40 @@ body.sidebar-collapsed .hamburger { display: none; }
 .skup-rev-nota { font-size:12px; color:var(--coral-600); letter-spacing:1px; }
 .skup-rev-data { font-size:10px; color:var(--slate-400); font-family:var(--mono); }
 .skup-rev-txt { font-size:12.5px; line-height:1.5; color:var(--slate-700); margin:0; }
+
+/* ── Dashboard: bandas de hover no gráfico ───────────────────────────────── */
+.dash-banda{ position:absolute; top:0; bottom:26px; cursor:pointer; }
+.dash-banda:hover{ background:rgba(0,0,0,.035); }
+
+/* ── Dashboard: tabela de produtos empilhada no celular ──────────────────────
+   Onze colunas não cabem em 380px. Em vez de um segundo render (duas fontes
+   da verdade), a mesma tabela vira lista: cada td mostra seu rótulo a partir
+   de data-rot. Um render só, dois formatos.                                */
+@media (max-width: 768px){
+  #dash-produtos .table-wrap{ overflow-x:visible; }
+  #dash-produtos table, #dash-produtos thead, #dash-produtos tbody,
+  #dash-produtos tr, #dash-produtos td{ display:block; width:100%; }
+  #dash-produtos thead{ display:none; }
+  #dash-produtos tbody tr.dash-linha{
+    border:1px solid var(--slate-100); border-radius:var(--radius);
+    background:var(--white); margin-bottom:10px; padding:10px 12px;
+  }
+  #dash-produtos tbody tr.dash-linha td{
+    border:none; padding:3px 0; text-align:right;
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  }
+  #dash-produtos tbody tr.dash-linha td:first-child{
+    text-align:left; display:block; margin-bottom:6px;
+    padding-bottom:6px; border-bottom:1px solid var(--slate-50);
+  }
+  #dash-produtos tbody tr.dash-linha td[data-rot]:not(:first-child)::before{
+    content:attr(data-rot);
+    font-size:10px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--slate-400);
+  }
+  #dash-produtos tbody tr.dash-card-row td{ padding:0; }
+  #dash-kpis > div{ grid-template-columns:repeat(auto-fit,minmax(140px,1fr)) !important; }
+}
 </style>
 </head>
 <body>
@@ -1649,9 +1683,9 @@ body.sidebar-collapsed .hamburger { display: none; }
     <div class="sidebar-logo">Seller<span>Hub</span></div>
     <div class="sidebar-nav">
       <!-- Central -->
-      <button class="nav-item active" id="nav-home" data-nav-key="home" data-nav-label="Central" onclick="go('home',this)">
+      <button class="nav-item active" id="nav-home" data-nav-key="home" data-nav-label="Dashboard" onclick="go('home',this)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
-        Central
+        Dashboard
       </button>
       <!-- Escritorio (2a posição — hub de inteligência) -->
       <button class="nav-item" data-nav-key="escritorio" data-nav-label="Escritorio" onclick="go('escritorio',this);initEscritorioOnce()">
@@ -1715,7 +1749,7 @@ body.sidebar-collapsed .hamburger { display: none; }
     <div class="page active" id="page-home">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
         <div>
-          <div class="page-title">Central</div>
+          <div class="page-title">Dashboard</div>
           <div class="page-subtitle" id="home-subtitle">Resumo da operação</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
@@ -1728,10 +1762,17 @@ body.sidebar-collapsed .hamburger { display: none; }
             <option value="mes">Esse mês</option>
             <option value="mes_passado">Mês passado</option>
             <option value="ano">Esse ano</option>
+            <option value="custom">Personalizado</option>
           </select>
-          <button class="perf-select" style="cursor:pointer" onclick="dashCarregar(true)">&#8635;</button>
+          <div id="dash-custom" style="display:none;align-items:center;gap:6px">
+            <input type="date" id="dash-de" onchange="dashCustomAplicar()">
+            <span style="color:var(--slate-400);font-size:12px">até</span>
+            <input type="date" id="dash-ate" onchange="dashCustomAplicar()">
+          </div>
+          <button class="perf-select" style="cursor:pointer" title="Reler do banco" onclick="dashRecarregar()">&#8635;</button>
         </div>
       </div>
+      <div id="dash-custom-erro" style="margin-top:8px"></div>
 
       <!-- Avisos de confiabilidade do número: cobertura do Hub e do ml_financeiro -->
       <div id="dash-avisos" style="margin-top:14px"></div>
@@ -13906,7 +13947,13 @@ window.apGarantirMes=async function(mes){
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
 
-  var _dash = { chave:'7d', dados:null, carregando:false, aberta:null, cacheCard:{} };
+  var _dash = { chave:'7d', dados:null, carregando:false, aberta:null,
+                cacheCard:{}, custom:null, cachePeriodo:{}, dia:null };
+
+  /* Cada troca de período refazia oito consultas paginadas, inclusive para
+     voltar a um período já visto. Agora o resultado calculado fica guardado
+     por janela; o ↻ força releitura. */
+  function chaveCache(j){ return j.ini+'_'+j.fim; }
   var MKT = 'meli';   // chave do marketplace no Hub. NÃO é 'Mercado Livre'.
 
   function dfmtR(v){
@@ -13932,7 +13979,7 @@ window.apGarantirMes=async function(mes){
     return Math.round((new Date(fim+'T12:00:00') - new Date(ini+'T12:00:00'))/86400000) + 1;
   }
 
-  function dashJanela(chave){
+  function dashJanela(chave, custom){
     var hoje=diaISO(new Date()), ini, fim, rotulo;
     if(chave==='hoje'){        ini=fim=hoje; rotulo='Hoje'; }
     else if(chave==='ontem'){  ini=fim=somaDias(hoje,-1); rotulo='Ontem'; }
@@ -13946,6 +13993,9 @@ window.apGarantirMes=async function(mes){
       rotulo='Mês passado';
     }
     else if(chave==='ano'){    fim=hoje; ini=hoje.slice(0,4)+'-01-01'; rotulo='Esse ano'; }
+    else if(chave==='custom' && custom && custom.ini && custom.ate){
+      ini=custom.ini; fim=custom.ate; rotulo='Personalizado';
+    }
     else { fim=hoje; ini=somaDias(hoje,-6); rotulo='Últimos 7 dias'; }
     var n=contaDias(ini,fim);
     return { ini:ini, fim:fim, rotulo:rotulo, dias:n,
@@ -13960,6 +14010,10 @@ window.apGarantirMes=async function(mes){
   function qAds(de,ate){ return function(a,b){
     return sbP('ml_ads_reports','item_id,data,gasto,impressoes,cliques,unidades_ads,unidades_organicas')
       .eq('conta','Logbox').gte('data',de).lte('data',ate).neq('preliminar',true)
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }; }
+  function qVis(de,ate){ return function(a,b){
+    return sbP('ml_visitas','item_id,data,visitas')
+      .eq('conta','Logbox').gte('data',de).lte('data',ate)
       .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }; }
   function qFin(de,ate){ return function(a,b){
     return sbP('ml_financeiro','movement_id,tipo,valor,data,sku')
@@ -13985,7 +14039,9 @@ window.apGarantirMes=async function(mes){
       sb.from('ml_reputacao').select('*').eq('conta','Logbox')
         .order('data',{ascending:false}).limit(1),
       sbTodas(function(a,b){ return sbP('skus','sku,estoque_minimo')
-        .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'dash/skus')
+        .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'dash/skus'),
+      sbTodas(qVis(j.ini,j.fim),   'dash/visitas'),
+      sbTodas(qVis(j.iniA,j.fimA), 'dash/visitasAnt')
     ]);
     var erro = r.find(function(x){ return x.error; });
     if(erro) throw erro.error;
@@ -13998,7 +14054,8 @@ window.apGarantirMes=async function(mes){
       vendas:r[0].data||[], ads:r[1].data||[], fin:r[2].data||[],
       vendasA:r[3].data||[], adsA:r[4].data||[], finA:r[5].data||[],
       anuncios:r[6].data||[], reputacao:(r[7].data&&r[7].data[0])||null,
-      skus:r[8].data||[], hubMap:hubMap, hubLinks:hubLinks };
+      skus:r[8].data||[], visitas:r[9].data||[], visitasA:r[10].data||[],
+      hubMap:hubMap, hubLinks:hubLinks };
   }
 
   /* ── Cálculo ─────────────────────────────────────────────────────────────── */
@@ -14006,20 +14063,33 @@ window.apGarantirMes=async function(mes){
   function ehComissao(t){return /comiss|sale_fee|tarifa/i.test(String(t||'')); }
   function ehFatura(t){  return /fatura|billing|bill/i.test(String(t||'')); }
 
-  function dashAgregar(vendas, ads, fin, i2sku){
+  function dashAgregar(vendas, ads, fin, i2sku, visitas, hubDe){
     var porSku={}, dia={}, diasFin={};
     function sl(sku){
       if(!porSku[sku]) porSku[sku]={sku:sku, receita:0, unidades:0, pedidos:0,
-        comissaoVenda:0, comissaoML:0, frete:0, ads:0, imp:0, clq:0, unAds:0, unOrg:0};
+        comissaoVenda:0, comissaoML:0, frete:0, ads:0, imp:0, clq:0, unAds:0, unOrg:0, visitas:0};
       return porSku[sku];
     }
-    function sd(d){ if(!dia[d]) dia[d]={fat:0, com:0, fre:0, ads:0}; return dia[d]; }
+    function sd(d){ if(!dia[d]) dia[d]={fat:0, com:0, fre:0, ads:0, vis:0, ped:0, mc:0}; return dia[d]; }
 
     vendas.forEach(function(r){
       var sku=i2sku[r.item_id]||('item:'+r.item_id), d=String(r.data||'').slice(0,10), o=sl(sku);
       o.receita+=Number(r.receita)||0; o.unidades+=Number(r.unidades)||0;
       o.pedidos+=Number(r.pedidos)||0; o.comissaoVenda+=Number(r.comissao)||0;
-      if(d) sd(d).fat+=Number(r.receita)||0;
+      if(d){
+        var s1=sd(d);
+        s1.fat+=Number(r.receita)||0;
+        s1.ped+=Number(r.pedidos)||0;
+        // M.C. do dia, para o detalhe ao clicar no gráfico. Só para SKU com
+        // plano — o mesmo critério do bloco de margem.
+        var h1 = hubDe ? hubDe(sku) : null;
+        if(h1) s1.mc += (Number(r.receita)||0)*h1.mcPct;
+      }
+    });
+    (visitas||[]).forEach(function(r){
+      var sku=i2sku[r.item_id]||('item:'+r.item_id), d=String(r.data||'').slice(0,10);
+      sl(sku).visitas+=Number(r.visitas)||0;
+      if(d) sd(d).vis+=Number(r.visitas)||0;
     });
     ads.forEach(function(r){
       var sku=i2sku[r.item_id]||('item:'+r.item_id), d=String(r.data||'').slice(0,10), o=sl(sku);
@@ -14041,11 +14111,12 @@ window.apGarantirMes=async function(mes){
      não há M.C., e inventar uma seria pior do que a lacuna. Faturamento,
      unidades, ticket e TACOS continuam sobre tudo. */
   function dashTotais(ag, hubDe){
-    var t={ fat:0, vendas:0, unidades:0, ads:0, comTotal:0, freTotal:0,
+    var t={ fat:0, vendas:0, unidades:0, ads:0, comTotal:0, freTotal:0, visitas:0,
             recHub:0, mcVal:0, adsHub:0, alvoVal:0, semHub:0, receitaSemHub:0 };
     Object.keys(ag.porSku).forEach(function(k){
       var o=ag.porSku[k], h=hubDe(k);
       t.fat+=o.receita; t.vendas+=o.pedidos; t.unidades+=o.unidades; t.ads+=o.ads;
+      t.visitas+=o.visitas||0;
       t.comTotal += (o.comissaoML>0 ? o.comissaoML : o.comissaoVenda);
       t.freTotal += o.frete;
       if(h){
@@ -14064,6 +14135,7 @@ window.apGarantirMes=async function(mes){
     t.desvioAds   = (t.tacosHub!==null && t.alvoPct!==null) ? t.tacosHub-t.alvoPct : null;
     t.ticket      = t.vendas>0 ? t.fat/t.vendas : null;
     t.cobertura   = t.fat>0 ? t.recHub/t.fat : null;
+    t.conversao   = t.visitas>0 ? t.vendas/t.visitas : null;
     t.custoML     = t.comTotal + t.freTotal;
     t.custoMLPct  = t.fat>0 ? t.custoML/t.fat : null;
     return t;
@@ -14106,8 +14178,8 @@ window.apGarantirMes=async function(mes){
       return cacheHub[chave];
     }
 
-    var ag  = dashAgregar(d.vendas,  d.ads,  d.fin,  i2sku);
-    var agA = dashAgregar(d.vendasA, d.adsA, d.finA, i2sku);
+    var ag  = dashAgregar(d.vendas,  d.ads,  d.fin,  i2sku, d.visitas,  hubDe);
+    var agA = dashAgregar(d.vendasA, d.adsA, d.finA, i2sku, d.visitasA, hubDe);
     var tot = dashTotais(ag,  hubDe);
     var totA= dashTotais(agA, hubDe);
 
@@ -14119,10 +14191,12 @@ window.apGarantirMes=async function(mes){
 
     var serie=[];
     for(var i=0;i<j.dias;i++){
-      var dd=somaDias(j.ini,i), s=ag.dia[dd]||{fat:0,com:0,fre:0,ads:0};
+      var dd=somaDias(j.ini,i), s=ag.dia[dd]||{fat:0,com:0,fre:0,ads:0,vis:0,ped:0,mc:0};
       serie.push({ data:dd, fat:s.fat,
                    liquido: s.fat - s.com - s.fre,
-                   posAds:  s.fat - s.com - s.fre - s.ads });
+                   posAds:  s.fat - s.com - s.fre - s.ads,
+                   com:s.com, fre:s.fre, ads:s.ads, vis:s.vis, ped:s.ped,
+                   mc:s.mc, mpa:s.mc - s.ads });
     }
 
     var linhas=Object.keys(ag.porSku).map(function(k){
@@ -14135,6 +14209,7 @@ window.apGarantirMes=async function(mes){
       return {
         sku:k, titulo:titDe[k]||k, itemIds:skuItens[k]||[],
         receita:o.receita, unidades:o.unidades, pedidos:o.pedidos, ads:o.ads,
+        visitas:o.visitas||0, conversao: o.visitas>0 ? o.pedidos/o.visitas : null,
         precoMedio: o.unidades>0 ? o.receita/o.unidades : null,
         comissao:com, frete:o.frete,
         custoML:custoML, custoMLPct: o.receita>0 ? custoML/o.receita : null,
@@ -14197,6 +14272,10 @@ window.apGarantirMes=async function(mes){
     g+=cartao('Nº de Vendas', dfmtN(t.vendas), delta(t.vendas,a.vendas));
     g+=cartao('Unidades', dfmtN(t.unidades), delta(t.unidades,a.unidades));
     g+=cartao('Ticket Médio', dfmtR(t.ticket), delta(t.ticket,a.ticket));
+    g+=cartao('Conversão', dpct(t.conversao,2),
+      t.visitas ? delta(t.conversao,a.conversao,'pp')+' <span style="font-size:10.5px;color:var(--slate-400)">'
+                  +dfmtN(t.visitas)+' visitas</span>'
+                : '<span style="font-size:10.5px;color:var(--slate-400)">sem visita sincada</span>');
     g+=cartao('Custo real do ML', dpct(t.custoMLPct,2),
       '<span style="font-size:10.5px;color:var(--slate-400)">'+dfmtR(t.custoML)+'</span>');
     g+='</div>';
@@ -14353,17 +14432,81 @@ window.apGarantirMes=async function(mes){
       rot+='<text x="'+px(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
         +x.data.slice(8)+'/'+x.data.slice(5,7)+'</text>'; });
 
-    el.innerHTML='<div class="fin-cascata"><svg width="100%" height="240" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+    /* Faixas invisíveis por cima do SVG: o gráfico usa
+       preserveAspectRatio="none", então converter posição do mouse em índice
+       daria errado. Uma coluna HTML por dia resolve sem matemática. */
+    var largura = 100/s.length;
+    var bandas = s.map(function(x,i){
+      return '<div class="dash-banda" style="left:'+(i*largura)+'%;width:'+largura+'%" '
+        +'data-i="'+i+'" onmouseenter="dashTip('+i+',this)" onmouseleave="dashTip(-1)" '
+        +'onclick="dashVerDia(\''+x.data+'\')"></div>';
+    }).join('');
+
+    el.innerHTML='<div class="fin-cascata">'
+      +'<div style="position:relative">'
+      +'<svg width="100%" height="240" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
       +grid+area('fat','var(--slate-200)',0.45)+area('liquido','var(--blue-100)',0.55)
       +area('posAds','var(--green-100)',0.75)+rot+'</svg>'
+      +bandas
+      +'<div id="dash-tip" style="display:none;position:absolute;z-index:5;pointer-events:none;'
+      +'background:var(--slate-900);color:var(--white);border-radius:6px;padding:8px 10px;'
+      +'font-size:11px;font-family:var(--mono);line-height:1.65;white-space:nowrap"></div>'
+      +'</div>'
       +'<div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--slate-400);flex-wrap:wrap">'
       +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--slate-200);border-radius:2px;margin-right:4px"></span>Faturamento</span>'
       +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--blue-100);border-radius:2px;margin-right:4px"></span>Depois do ML</span>'
       +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--green-100);border-radius:2px;margin-right:4px"></span>Depois do ML e do ADS</span>'
       +'</div>'
       +'<p class="fin-note">A distância entre as faixas é o que sai da sua conta: a primeira é o Mercado Livre, a segunda é o ADS. '
-      +'A mercadoria não está aqui — ela já está dentro da M.C. do Hub.</p></div>';
+      +'A mercadoria não está aqui — ela já está dentro da M.C. do Hub. '
+      +'Passe o mouse para ver o dia; clique para abrir o detalhe.</p>'
+      +'<div id="dash-detalhe-dia"></div></div>';
   }
+
+  window.dashTip=function(i, el){
+    var tip=document.getElementById('dash-tip'); if(!tip) return;
+    var c=_dash.dados;
+    if(i<0 || !c){ tip.style.display='none'; return; }
+    var x=c.serie[i]; if(!x){ tip.style.display='none'; return; }
+    tip.innerHTML='<strong>'+x.data.slice(8)+'/'+x.data.slice(5,7)+'</strong><br>'
+      +'Faturamento '+dfmtR(x.fat)+'<br>'
+      +'Custo ML '+dfmtR(x.com+x.fre)+'<br>'
+      +'ADS '+dfmtR(x.ads)+'<br>'
+      +(x.mc>0 ? 'MPA '+dfmtR(x.mpa)+'<br>' : '')
+      +dfmtN(x.ped)+' pedidos'+(x.vis? ' · '+dfmtN(x.vis)+' visitas':'');
+    tip.style.display='block';
+    // Perto da borda direita o balão vira para a esquerda, senão sai da tela.
+    var frac = el ? (parseFloat(el.style.left)/100) : 0.5;
+    tip.style.left = (frac>0.6 ? 'auto' : (frac*100)+'%');
+    tip.style.right = (frac>0.6 ? ((1-frac)*100)+'%' : 'auto');
+    tip.style.top='8px';
+  };
+
+  window.dashVerDia=function(data){
+    var c=_dash.dados, el=document.getElementById('dash-detalhe-dia');
+    if(!c||!el) return;
+    if(_dash.dia===data){ _dash.dia=null; el.innerHTML=''; return; }
+    _dash.dia=data;
+    var x=c.serie.find(function(y){ return y.data===data; });
+    if(!x){ el.innerHTML=''; return; }
+    var custo=x.com+x.fre;
+    function par(r,v,cor){ return '<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;'
+      +'letter-spacing:.6px;color:var(--slate-400)">'+r+'</div>'
+      +'<div style="font-family:var(--mono);font-size:14px;color:'+(cor||'var(--slate-900)')+'">'+v+'</div></div>'; }
+    el.innerHTML='<div style="margin-top:12px;background:var(--white);border:1px solid var(--slate-100);'
+      +'border-radius:var(--radius);padding:12px 14px;display:flex;gap:22px;flex-wrap:wrap;align-items:center">'
+      +par('Dia', data.split('-').reverse().join('/'))
+      +par('Faturamento', dfmtR(x.fat))
+      +par('Comissão', dfmtR(x.com))
+      +par('Frete', dfmtR(x.fre), 'var(--coral-500)')
+      +par('Custo ML', dfmtR(custo)+(x.fat>0?' · '+dpct(custo/x.fat,1):''))
+      +par('ADS', dfmtR(x.ads)+(x.fat>0?' · TACOS '+dpct(x.ads/x.fat,2):''))
+      +(x.mc>0 ? par('MPA', dfmtR(x.mpa)) : '')
+      +par('Pedidos', dfmtN(x.ped))
+      +par('Conversão', x.vis>0?dpct(x.ped/x.vis,2):'—')
+      +'<button class="perf-select" style="cursor:pointer;margin-left:auto" onclick="dashVerDia(\''+data+'\')">Fechar</button>'
+      +'</div>';
+  };
 
   /* ── Tabela com card expandindo DENTRO da linha ──────────────────────────────
      A gaveta lateral tirava o SKU da lista e, com ele, o ranking — que é o que
@@ -14385,25 +14528,26 @@ window.apGarantirMes=async function(mes){
           +'<div style="font-size:12.5px;color:var(--slate-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+desc(o.titulo)+'</div>'
           +'<div style="font-size:11px;color:var(--slate-400);font-family:var(--mono)">'+desc(o.sku)
           +(o.viaLink?' <span title="linkado manualmente ao Hub" style="color:var(--blue-600)">↔ '+desc(o.skuHub)+'</span>':'')+'</div></td>'
-        +'<td>'+dfmtR(o.receita)+'</td>'
-        +'<td>'+dpct(rep,1)+'</td>'
-        +'<td>'+dfmtN(o.unidades)+'</td>'
-        +'<td>'+dfmtR(o.precoMedio)+'</td>'
-        +'<td>'+(o.mcPct===null?'<span style="color:var(--slate-200)">sem plano</span>':dpct(o.mcPct,1))+'</td>'
-        +'<td style="color:'+corMpa+'">'+dpct(o.mpaPct,1)+'</td>'
-        +'<td>'+dfmtR(o.mpaVal)+'</td>'
-        +'<td>'+dpct(o.tacos,2)+'</td>'
-        +'<td style="color:'+corDesv+'">'+dpp(o.desvio)+'</td>'
-        +'<td style="color:'+corCusto+'">'+dpct(o.custoMLPct,1)+'</td>'
+        +'<td data-rot="Faturado">'+dfmtR(o.receita)+'</td>'
+        +'<td data-rot="Repres.">'+dpct(rep,1)+'</td>'
+        +'<td data-rot="Unidades">'+dfmtN(o.unidades)+'</td>'
+        +'<td data-rot="Preço médio">'+dfmtR(o.precoMedio)+'</td>'
+        +'<td data-rot="M.C.">'+(o.mcPct===null?'<span style="color:var(--slate-200)">sem plano</span>':dpct(o.mcPct,1))+'</td>'
+        +'<td data-rot="MPA" style="color:'+corMpa+'">'+dpct(o.mpaPct,1)+'</td>'
+        +'<td data-rot="MPA R$">'+dfmtR(o.mpaVal)+'</td>'
+        +'<td data-rot="TACOS">'+dpct(o.tacos,2)+'</td>'
+        +'<td data-rot="Desvio ADS" style="color:'+corDesv+'">'+dpp(o.desvio)+'</td>'
+        +'<td data-rot="Conversão">'+dpct(o.conversao,2)+'</td>'
+        +'<td data-rot="Custo ML" style="color:'+corCusto+'">'+dpct(o.custoMLPct,1)+'</td>'
         +'</tr>'
         +'<tr class="dash-card-row" id="dash-card-'+btoa(unescape(encodeURIComponent(o.sku))).replace(/[^A-Za-z0-9]/g,'')+'" style="display:none">'
-        +'<td colspan="11" style="padding:0;background:var(--bg)"></td></tr>';
+        +'<td colspan="12" style="padding:0;background:var(--bg)"></td></tr>';
     }).join('');
 
     el.innerHTML='<div class="table-wrap"><table>'
       +'<thead class="hub-thead"><tr>'
       +'<th>Produto</th><th>Faturado</th><th>Repres.</th><th>Unid.</th><th>Preço médio</th>'
-      +'<th>M.C.</th><th>MPA</th><th>MPA R$</th><th>TACOS</th><th>Desvio ADS</th><th>Custo ML</th>'
+      +'<th>M.C.</th><th>MPA</th><th>MPA R$</th><th>TACOS</th><th>Desvio ADS</th><th>Conversão</th><th>Custo ML</th>'
       +'</tr></thead><tbody class="hub-tbody">'+linhas+'</tbody></table></div>'
       +'<p class="fin-note"><strong>Desvio ADS</strong> é o TACOS real menos o alvo do Hub: positivo quer dizer '
       +'que o ADS está comendo M.C. além do planejado. <strong>Custo ML</strong> é comissão + frete cobrados '
@@ -14465,13 +14609,20 @@ window.apGarantirMes=async function(mes){
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'card/ads'),
       sbTodas(function(a,b){ return sbP('ml_reviews','item_id,nota,comentario,data')
         .eq('conta','Logbox').in('item_id',ids)
-        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'card/reviews')
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'card/reviews'),
+      sbTodas(function(a,b){ return sbP('ml_perguntas','question_id,item_id,texto,status,data_pergunta,resposta')
+        .eq('conta','Logbox').in('item_id',ids)
+        .order('data_pergunta',{ascending:false}).order('question_id',{ascending:true}).range(a,b); }, 'card/perguntas'),
+      sbTodas(function(a,b){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,motivo,data_abertura')
+        .eq('conta','Logbox').in('item_id',ids)
+        .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(a,b); }, 'card/reclamacoes')
     ]);
     var err=r.find(function(x){ return x.error; });
     if(err) throw err.error;
 
     var an=(r[0].data||[])[0]||null;
     var vendas=r[1].data||[], visitas=r[2].data||[], ads=r[3].data||[], reviews=r[4].data||[];
+    var perguntas=r[5].data||[], reclamacoes=r[6].data||[];
     var soma=function(arr,campo,desde){
       return arr.reduce(function(s,x){ return (!desde||x.data>=desde) ? s+(Number(x[campo])||0) : s; },0);
     };
@@ -14482,7 +14633,7 @@ window.apGarantirMes=async function(mes){
       vis30:soma(visitas,'visitas'),
       ads30:soma(ads,'gasto'), imp30:soma(ads,'impressoes'),
       clq30:soma(ads,'cliques'), unAds30:soma(ads,'unidades_ads'),
-      reviews:reviews
+      reviews:reviews, perguntas:perguntas, reclamacoes:reclamacoes
     };
   }
 
@@ -14563,6 +14714,43 @@ window.apGarantirMes=async function(mes){
         +'</div></div>';
     }
 
+    // Perguntas sem resposta e reclamações: o que o SAC precisa ver junto do
+    // número. Uma pergunta parada é venda que não aconteceu.
+    var semResposta=(d.perguntas||[]).filter(function(q){
+      return !q.resposta && String(q.status||'').toUpperCase()!=='ANSWERED';
+    });
+    var abertas=(d.reclamacoes||[]).filter(function(x){
+      return String(x.status||'').toLowerCase()!=='closed';
+    });
+    if(semResposta.length || (d.reclamacoes||[]).length){
+      h+='<div style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:9px">';
+      if(semResposta.length){
+        h+='<div style="background:var(--amber-50);border:1px solid var(--amber-100);border-radius:var(--radius);padding:11px 13px">'
+          +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--amber-600);margin-bottom:5px">'
+          +semResposta.length+' pergunta'+(semResposta.length>1?'s':'')+' sem resposta</div>'
+          +semResposta.slice(0,3).map(function(q){
+            return '<div style="font-size:11.5px;color:var(--slate-700);line-height:1.5;margin-bottom:4px">'
+              +'<span style="font-family:var(--mono);color:var(--slate-400)">'
+              +String(q.data_pergunta||'').slice(0,10).split('-').reverse().join('/')+'</span> '
+              +desc(q.texto||'').slice(0,160)+'</div>'; }).join('')
+          +'</div>';
+      }
+      if((d.reclamacoes||[]).length){
+        var motivos={};
+        d.reclamacoes.forEach(function(x){ var m=x.motivo||'sem motivo'; motivos[m]=(motivos[m]||0)+1; });
+        var lista=Object.keys(motivos).sort(function(a,b){ return motivos[b]-motivos[a]; }).slice(0,4);
+        h+='<div style="background:var(--coral-50);border:1px solid var(--coral-200);border-radius:var(--radius);padding:11px 13px">'
+          +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--coral-600);margin-bottom:5px">'
+          +d.reclamacoes.length+' reclamaç'+(d.reclamacoes.length>1?'ões':'ão')
+          +(abertas.length?' · '+abertas.length+' em aberto':'')+'</div>'
+          +lista.map(function(m){
+            return '<div style="font-size:11.5px;color:var(--slate-700);line-height:1.5">'
+              +'<span style="font-family:var(--mono);color:var(--coral-600)">'+motivos[m]+'×</span> '+desc(m)+'</div>'; }).join('')
+          +'</div>';
+      }
+      h+='</div>';
+    }
+
     var ruins=d.reviews.filter(function(r){ return Number(r.nota)<=2 && r.comentario; }).slice(0,3);
     if(ruins.length){
       h+='<div style="margin-top:10px;background:var(--coral-50);border:1px solid var(--coral-200);border-radius:var(--radius);padding:11px 13px">'
@@ -14577,26 +14765,71 @@ window.apGarantirMes=async function(mes){
   }
 
   /* ── Orquestração ────────────────────────────────────────────────────────── */
+  /* Período personalizado. As travas ficam no código, não no aviso de tela:
+     data invertida, futuro e janela absurda são recusados antes de virar
+     consulta — um range de dois anos puxaria dezenas de milhares de linhas
+     paginadas e travaria o navegador sem explicar por quê. */
+  function dashCustomErro(msg){
+    var el=document.getElementById('dash-custom-erro');
+    if(!el) return;
+    el.innerHTML = msg
+      ? '<div style="background:var(--coral-50);border:1px solid var(--coral-200);border-radius:var(--radius);'
+        +'padding:9px 12px;font-size:12px;color:var(--coral-600)">'+msg+'</div>'
+      : '';
+  }
+
+  window.dashCustomAplicar=function(){
+    var de=document.getElementById('dash-de'), ate=document.getElementById('dash-ate');
+    if(!de||!ate||!de.value||!ate.value) return;
+    var hoje=diaISO(new Date());
+    if(de.value>ate.value){ dashCustomErro('A data inicial é depois da final.'); return; }
+    if(de.value>hoje || ate.value>hoje){ dashCustomErro('Não dá para olhar para o futuro — o sync só tem até hoje.'); return; }
+    var n=contaDias(de.value, ate.value);
+    if(n>366){ dashCustomErro('Janela de '+n+' dias. O máximo é 366 — acima disso a leitura fica pesada demais para o navegador.'); return; }
+    dashCustomErro('');
+    _dash.chave='custom'; _dash.custom={ini:de.value, ate:ate.value};
+    _dash.dados=null; _dash.aberta=null; _dash.cacheCard={};
+    dashCarregar(true);
+  };
+
+  window.dashRecarregar=function(){ _dash.cachePeriodo={}; _dash.cacheCard={}; dashCarregar(true); };
+
   window.dashTrocarPeriodo=function(v){
+    var cx=document.getElementById('dash-custom');
+    if(cx) cx.style.display = v==='custom' ? 'flex' : 'none';
+    if(v==='custom'){
+      // Já abre preenchido com a janela que estava na tela, para o Ale só
+      // ajustar uma ponta em vez de digitar as duas.
+      var j=dashJanela(_dash.chave, _dash.custom);
+      var de=document.getElementById('dash-de'), ate=document.getElementById('dash-ate');
+      if(de && !de.value) de.value=j.ini;
+      if(ate && !ate.value) ate.value=j.fim;
+      if(de&&ate&&de.value&&ate.value) dashCustomAplicar();
+      return;
+    }
+    dashCustomErro('');
     _dash.chave=v; _dash.dados=null; _dash.aberta=null; _dash.cacheCard={};
     dashCarregar(true);
   };
 
   window.dashCarregar=async function(forcar){
     if(_dash.carregando) return;
-    if(_dash.dados && !forcar) return;
     var kpis=document.getElementById('dash-kpis');
     if(!kpis) return;
     _dash.carregando=true;
     kpis.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Montando a operação…</div>';
     try{
-      var j=dashJanela(_dash.chave);
-      var c=dashCalcular(await dashLer(j), j);
-      _dash.dados=c;
+      var j=dashJanela(_dash.chave, _dash.custom);
+      var ck=chaveCache(j);
+      var c = (!forcar && _dash.cachePeriodo[ck]) ? _dash.cachePeriodo[ck]
+                                                 : dashCalcular(await dashLer(j), j);
+      _dash.cachePeriodo[ck]=c;
+      _dash.dados=c; _dash.dia=null;
       dashRenderAvisos(c); dashRenderKpis(c); dashRenderSaude(c);
       dashRenderAtencao(c); dashRenderGrafico(c); dashRenderProdutos(c);
       var sub=document.getElementById('home-subtitle');
-      if(sub) sub.textContent=j.rotulo+' · '+j.ini.split('-').reverse().join('/')
+      if(sub) sub.textContent=j.rotulo+(j.rotulo==='Personalizado'?' ('+j.dias+' dias)':'')
+        +' · '+j.ini.split('-').reverse().join('/')
         +(j.ini!==j.fim?' a '+j.fim.split('-').reverse().join('/'):'')
         +' · comparado com os '+j.dias+' dia'+(j.dias>1?'s':'')+' anteriores';
     }catch(err){
