@@ -1670,9 +1670,9 @@ body.sidebar-collapsed .hamburger { display: none; }
         Apresentação
       </button>
       <!-- Operacao -->
-      <button class="nav-item" data-nav-key="performance" data-nav-label="Operacao" onclick="goOperacao()">
+      <button class="nav-item" data-nav-key="performance" data-nav-label="Catalogo" onclick="goOperacao()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-        Operação
+        Catálogo
       </button>
       <!-- Agenda hub -->
       <button class="nav-item" data-nav-key="agenda" data-nav-label="Agenda" onclick="goAgendaHub()">
@@ -1741,6 +1741,12 @@ body.sidebar-collapsed .hamburger { display: none; }
         <div class="fin-loading"><div class="fin-spinner"></div> Montando a operação…</div>
       </div>
 
+      <div class="sec-title">Saúde da conta</div>
+      <div id="dash-saude"></div>
+
+      <div class="sec-title">Pontos de atenção</div>
+      <div id="dash-atencao"></div>
+
       <div class="sec-title">Evolução no período</div>
       <div id="dash-grafico"></div>
 
@@ -1778,8 +1784,7 @@ body.sidebar-collapsed .hamburger { display: none; }
     <!-- OPERACAO hub (Vendas + Produtos) -->
     <div class="page" id="page-performance">
       <div class="hub-secondary-nav" id="operacao-tabs">
-        <button class="hub-secondary-btn active" id="op-tab-vendas" onclick="opGoTab('vendas',this)">📈 Vendas</button>
-        <button class="hub-secondary-btn" id="op-tab-produtos" onclick="opGoTab('produtos',this)">📦 Produtos</button>
+        <button class="hub-secondary-btn active" id="op-tab-produtos" onclick="opGoTab('produtos',this)">📦 Produtos</button>
         <button class="hub-secondary-btn" id="op-tab-experiencia" onclick="opGoTab('experiencia',this)">⭐ Experiência</button>
       </div>
 
@@ -1795,94 +1800,8 @@ body.sidebar-collapsed .hamburger { display: none; }
         <div id="exp-rodape" class="exp-rodape"></div>
       </div>
       <!-- Secao Vendas -->
-      <div id="op-section-vendas">
-      <div class="page-title">Operação — Vendas</div>
-      <div class="page-subtitle">Direto da API do Mercado Livre — histórico salvo via sync diário</div>
-
-      <div class="perf-subtabs" id="perf-subtabs">
-        <button class="perf-subtab active" onclick="perfGoTab2('visao-geral',this)">Visão Geral</button>
-        <button class="perf-subtab" onclick="perfGoTab2('historico-mensal',this)">Histórico Mensal</button>
-        <button class="perf-subtab" onclick="perfGoTab2('comparativo',this)">Comparativo</button>
-      </div>
-
-      <!-- VISÃO GERAL -->
-      <div class="perf-subpage active" id="perf2-visao-geral">
-        <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <select class="perf-select" id="perf-periodo-sel" onchange="perfPeriodo=Number(this.value);renderPerformance()">
-            <option value="7">Últimos 7 dias</option>
-            <option value="14">Últimos 14 dias</option>
-            <option value="30" selected>Últimos 30 dias</option>
-            <option value="90">Últimos 90 dias</option>
-          </select>
-          <div style="font-size:12px;color:var(--slate-400);display:flex;align-items:center;gap:10px">
-            <span>Última atualização: <b id="perf-updated-at" style="color:var(--slate-700)">—</b></span>
-            <button class="perf-select" style="cursor:pointer;padding:6px 12px" onclick="renderPerformance()">↻ Atualizar</button>
-          </div>
-        </div>
-
-        <!-- Nível 1: os 3 números que importam, com comparação vs período anterior -->
-        <div class="hero-stats" id="perf-hero" style="margin-top:18px"></div>
-
-        <!-- Nível 2: evolução -->
-        <div class="sec-title">Evolução no período</div>
-        <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
-          <svg id="perf-chart" width="100%" height="240" viewBox="0 0 800 240" preserveAspectRatio="none"></svg>
-        </div>
-
-        <!-- Nível 3: apoio, em faixa compacta -->
-        <div class="sec-title">Detalhamento</div>
-        <div class="metric-strip" id="perf-strip"></div>
-
-        <div class="sec-title">Saúde da conta</div>
-        <div class="metric-strip" id="perf-saude-strip"></div>
-
-        <div class="sec-title">Pontos de atenção</div>
-        <div id="perf-anomalias"></div>
-
-        <div class="sec-title">Top 10 anúncios por faturamento</div>
-        <div class="table-wrap"><table>
-          <thead class="hub-thead"><tr>
-            <th>Anúncio</th>
-            <th style="text-align:right">Receita</th>
-            <th style="text-align:right">Unidades</th>
-            <th style="text-align:right">Gasto ADS</th>
-            <th style="text-align:right">TACOS</th>
-          </tr></thead>
-          <tbody class="hub-tbody" id="perf-top-tbody"></tbody>
-        </table></div>
-      </div>
-
-      <!-- HISTÓRICO MENSAL -->
-      <div class="perf-subpage" id="perf2-historico-mensal">
-        <div class="perf-section-label">Consolidado mês a mês, desde que o sync começou a rodar</div>
-        <div class="table-wrap" style="overflow-x:auto">
-          <table>
-            <thead class="hub-thead"><tr>
-              <th>Mês</th>
-              <th style="text-align:right">Faturamento</th>
-              <th style="text-align:right">Unidades</th>
-              <th style="text-align:right">Ticket Médio</th>
-              <th style="text-align:right">Gasto ADS</th>
-              <th style="text-align:right">TACOS (%)</th>
-            </tr></thead>
-            <tbody class="hub-tbody" id="hm-tbody"></tbody>
-          </table>
-        </div>
-        <div class="perf-section-label" style="margin-top:28px">Gráfico — Faturamento vs TACOS por mês</div>
-        <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
-          <svg id="hm-chart" width="100%" height="260" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
-        </div>
-      </div>
-
-      <!-- COMPARATIVO -->
-      <div class="perf-subpage" id="perf2-comparativo">
-        <div class="perf-section-label" style="margin-bottom:8px">Selecione os meses para comparar</div>
-        <div class="comp-month-picker" id="hm-comp-picker"></div>
-        <div id="hm-comp-cards" style="margin-top:16px"></div>
-      </div>
-    </div>
       <!-- Secao Produtos -->
-      <div id="op-section-produtos" style="display:none">
+      <div id="op-section-produtos">
         <div class="page-title">Operação — Produtos</div>
         <div class="page-subtitle">Catálogo de SKUs, custos e gestão</div>
         <div id="op-prod-mount"></div>
@@ -1919,7 +1838,6 @@ body.sidebar-collapsed .hamburger { display: none; }
       </div>
 
       <!-- Nível 1: o que precisa de ação agora -->
-      <div id="prod-atencao" style="margin-top:16px"></div>
       <div id="prod-aviso-preliminar" style="margin:10px 0 0"></div>
 
       <!-- Nível 2: tabela única por SKU, com Buy Box integrado -->
@@ -1943,8 +1861,6 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div class="sec-hint" style="margin-top:8px">M.C. vem sempre do Hub de Precificação, já líquida de frete, tarifa, rebate e impostos — e ANTES do ADS. MPA = margem pós-ADS: M.C. − TACOS real do período. SKU "não linkado" = sem correspondência no hub; clique nele para linkar. Estoque mostra depósito + Full. Exp. = experiência de compra.</div>
 
       <!-- Nível 3: contexto de margem -->
-      <div class="sec-title">Margem por SKU — melhores e piores</div>
-      <div class="charts-row" id="prod-top5-charts" style="display:grid;grid-template-columns:1fr 1fr;gap:16px"></div>
     </div>
 
 
@@ -2264,6 +2180,16 @@ body.sidebar-collapsed .hamburger { display: none; }
 
 
 <div class="page" id="page-financeiro">
+      <!-- Histórico mensal e Comparativo vieram de Operação → Vendas em 15/09.
+           Eles falavam de faturamento e TACOS sem margem; ao lado do fechamento
+           do mês, que tem M.C. e MPA, param de ser uma segunda versão da
+           mesma pergunta. -->
+      <div class="hub-secondary-nav" id="financeiro-tabs">
+        <button class="hub-secondary-btn active" id="fin-tab-mes" onclick="finGoTab('mes',this)">📊 Mês</button>
+        <button class="hub-secondary-btn" id="fin-tab-historico" onclick="finGoTab('historico',this)">📅 Histórico mensal</button>
+        <button class="hub-secondary-btn" id="fin-tab-comparativo" onclick="finGoTab('comparativo',this)">⚖ Comparativo</button>
+      </div>
+      <div id="fin-section-mes">
   <div class="page-title">Financeiro — Logbox</div>
   <div class="page-subtitle">M.C., TACOS e MPA do mês. A margem vem sempre do Hub de Precificação; o ADS vem da API do Mercado Livre.</div>
 
@@ -2304,6 +2230,36 @@ body.sidebar-collapsed .hamburger { display: none; }
   <!-- Custo cobrado de verdade pelo ML: comissão + frete, por pedido -->
   <div class="sec-title">Custo real do Mercado Livre</div>
   <div id="fin-custoreal"><div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div></div>
+      </div><!-- /fin-section-mes -->
+      <div id="fin-section-historico" style="display:none">
+      <div class="perf-subpage" id="perf2-historico-mensal">
+        <div class="perf-section-label">Consolidado mês a mês, desde que o sync começou a rodar</div>
+        <div class="table-wrap" style="overflow-x:auto">
+          <table>
+            <thead class="hub-thead"><tr>
+              <th>Mês</th>
+              <th style="text-align:right">Faturamento</th>
+              <th style="text-align:right">Unidades</th>
+              <th style="text-align:right">Ticket Médio</th>
+              <th style="text-align:right">Gasto ADS</th>
+              <th style="text-align:right">TACOS (%)</th>
+            </tr></thead>
+            <tbody class="hub-tbody" id="hm-tbody"></tbody>
+          </table>
+        </div>
+        <div class="perf-section-label" style="margin-top:28px">Gráfico — Faturamento vs TACOS por mês</div>
+        <div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:20px 16px;overflow-x:auto">
+          <svg id="hm-chart" width="100%" height="260" viewBox="0 0 800 260" preserveAspectRatio="none"></svg>
+        </div>
+      </div>
+
+      <!-- COMPARATIVO -->
+      <div class="perf-subpage" id="perf2-comparativo">
+        <div class="perf-section-label" style="margin-bottom:8px">Selecione os meses para comparar</div>
+        <div class="comp-month-picker" id="hm-comp-picker"></div>
+        <div id="hm-comp-cards" style="margin-top:16px"></div>
+      </div>
+      </div>
 </div><!-- /page-financeiro -->
 
 <div class="page" id="page-apresentacao">
@@ -2817,7 +2773,6 @@ function go(id,btn){
   // Reseta scroll ao topo ao trocar de página
   window.scrollTo(0,0);
   if(id==='home') renderHome();
-  if(id==='performance') refreshActivePerfSubtab();
   if(id==='escritorio'){var ep=document.getElementById('page-escritorio');if(ep)ep.style.display='flex';}
 }
 
@@ -2826,28 +2781,26 @@ function goOperacao(){
   go('performance',null);
   var navEl=document.querySelector('[data-nav-key="performance"]');
   if(navEl) navEl.classList.add('active');
-  opGoTab(_hubTab.operacao||'vendas',document.getElementById('op-tab-'+(_hubTab.operacao||'vendas')));
+  opGoTab(_hubTab.operacao||'produtos',document.getElementById('op-tab-'+(_hubTab.operacao||'produtos')));
 }
+/* A sub-aba Vendas saiu em 15/09: a Visão Geral virou a Central, e Histórico
+   Mensal e Comparativo foram para o Financeiro, onde já existe o fechamento do
+   mês com margem. Sobraram as duas coisas que são sobre ANÚNCIO — por isso a
+   aba passou a se chamar Catálogo. */
 function opGoTab(tab,btn){
+  if(tab==='vendas') tab='produtos';
   _hubTab.operacao=tab;
   document.querySelectorAll('#operacao-tabs .hub-secondary-btn').forEach(function(b){b.classList.remove('active');});
   if(btn) btn.classList.add('active');
-  var sv=document.getElementById('op-section-vendas');
   var sp=document.getElementById('op-section-produtos');
   var se=document.getElementById('op-section-experiencia');
   if(se) se.style.display = tab==='experiencia' ? '' : 'none';
   if(tab==='experiencia'){
-    if(sv) sv.style.display='none';
     if(sp) sp.style.display='none';
     renderExperiencia();
     return;
   }
-  if(tab==='vendas'){
-    if(sv) sv.style.display='';
-    if(sp) sp.style.display='none';
-    refreshActivePerfSubtab();
-  } else {
-    if(sv) sv.style.display='none';
+  {
     if(sp){
       sp.style.display='';
       // Montar produtos no container se vazio
@@ -2962,19 +2915,6 @@ function renderHome(){
     }
   }
   document.getElementById('home-notes').innerHTML = notesHtml;
-}
-
-function goPerf(month){
-  const btn = document.querySelectorAll('.nav-item')[1];
-  go('performance', btn);
-  renderPerformance();
-}
-
-function goPerfConta(month, contaAlvo){
-  // A Performance agora é só Logbox — mantido só pra não quebrar o link do Home.
-  const btn = document.querySelectorAll('.nav-item')[1];
-  go('performance', btn);
-  renderPerformance();
 }
 
 function goNoteFromHome(noteId){
@@ -3701,236 +3641,7 @@ function lbxTotaisJanela(vendas, ads, de, ate){
   return t;
 }
 
-async function renderPerformance(){
-  const heroEl = document.getElementById('perf-hero');
-  const stripEl = document.getElementById('perf-strip');
-  const saudeEl = document.getElementById('perf-saude-strip');
-  const anomEl = document.getElementById('perf-anomalias');
-  const topBody = document.getElementById('perf-top-tbody');
-  heroEl.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Carregando...</div>';
-  stripEl.innerHTML = ''; saudeEl.innerHTML = ''; anomEl.innerHTML = ''; topBody.innerHTML = '';
-
-  const [{anunciosRes, adsRes, vendasRes, repRes, skusRes, visitasRes}, hubMcMap, hubLinks] = await Promise.all([
-    lbxCarregarTudo(), hubMcCarregar(), hubLinksCarregar(),
-  ]);
-  if(anunciosRes.error||adsRes.error||vendasRes.error||repRes.error||skusRes.error||visitasRes.error){
-    heroEl.innerHTML = '<div style="color:var(--coral-500);font-size:13px">Não foi possível carregar os dados. Confira se o sync já rodou pelo menos uma vez.</div>';
-    return;
-  }
-
-  const ultimaData = (vendasRes.data&&vendasRes.data[0]) ? vendasRes.data[0].data : ((adsRes.data&&adsRes.data[0])?adsRes.data[0].data:null);
-  const fimStr = ultimaData || new Date().toISOString().slice(0,10);
-
-  // janela atual
-  const ini = new Date(fimStr+'T00:00:00'); ini.setDate(ini.getDate() - (perfPeriodo-1));
-  const iniStr = ini.toISOString().slice(0,10);
-  // janela anterior, do mesmo tamanho, imediatamente antes
-  const antFim = new Date(iniStr+'T00:00:00'); antFim.setDate(antFim.getDate() - 1);
-  const antFimStr = antFim.toISOString().slice(0,10);
-  const antIni = new Date(antFimStr+'T00:00:00'); antIni.setDate(antIni.getDate() - (perfPeriodo-1));
-  const antIniStr = antIni.toISOString().slice(0,10);
-
-  const vendasPeriodo = (vendasRes.data||[]).filter(v=>v.data>=iniStr && v.data<=fimStr);
-  const adsPeriodo = (adsRes.data||[]).filter(a=>a.data>=iniStr && a.data<=fimStr);
-  const visitasPeriodo = (visitasRes.data||[]).filter(v=>v.data>=iniStr && v.data<=fimStr);
-
-  const atual = lbxTotaisJanela(vendasRes.data||[], adsRes.data||[], iniStr, fimStr);
-  const anterior = lbxTotaisJanela(vendasRes.data||[], adsRes.data||[], antIniStr, antFimStr);
-  const teveAnterior = anterior.receita > 0;
-
-  // agregados por dia (gráfico)
-  const porDia = {};
-  vendasPeriodo.forEach(v=>{ (porDia[v.data]=porDia[v.data]||{receita:0,gasto:0,unidades:0}).receita += Number(v.receita); porDia[v.data].unidades += Number(v.unidades); });
-  adsPeriodo.forEach(a=>{ (porDia[a.data]=porDia[a.data]||{receita:0,gasto:0,unidades:0}).gasto += Number(a.gasto); });
-  const dias = Object.keys(porDia).sort();
-
-  // agregados por item (top 10 e anomalias)
-  const porItem = {};
-  vendasPeriodo.forEach(v=>{ const o=(porItem[v.item_id]=porItem[v.item_id]||{receita:0,unidades:0,gasto:0,pedidos:0,comissao:0}); o.receita+=Number(v.receita); o.unidades+=Number(v.unidades); o.pedidos+=Number(v.pedidos||0); o.comissao+=Number(v.comissao||0); });
-  adsPeriodo.forEach(a=>{ const o=(porItem[a.item_id]=porItem[a.item_id]||{receita:0,unidades:0,gasto:0,pedidos:0,comissao:0}); o.gasto+=Number(a.gasto); });
-
-  const anuncioPorItem = {};
-  (anunciosRes.data||[]).forEach(a=>{ if(!anuncioPorItem[a.item_id]) anuncioPorItem[a.item_id]=a; });
-
-  // M.C. e MPA do período — sempre do Hub de Precificação (itens linkados)
-  let perfRecHub=0, perfMcHub=0, perfGasAdsHub=0;
-  Object.entries(porItem).forEach(([itemId,o])=>{
-    const sku = anuncioPorItem[itemId]?.sku || null;
-    const chave = sku || `item:${itemId}`;
-    const hr = hubResolver(hubMcMap, hubLinks, sku, chave, 'meli');
-    if(!hr) return;
-    perfRecHub += o.receita;
-    perfMcHub += o.receita*(hubMcPre(hr.entry)/100);   // M.C. antes do ADS
-    perfGasAdsHub += o.gasto;
-  });
-  const perfMpa = perfMcHub - perfGasAdsHub;   // MPA = M.C. − ADS real
-  const perfMcPct = perfRecHub>0 ? perfMcHub/perfRecHub*100 : null;
-  const perfMpaPct = perfRecHub>0 ? perfMpa/perfRecHub*100 : null;
-  const perfCobHub = atual.receita>0 ? perfRecHub/atual.receita*100 : 0;
-
-  const tacosAtual = atual.receita>0 ? (atual.gasto/atual.receita*100) : 0;
-  const tacosAnterior = anterior.receita>0 ? (anterior.gasto/anterior.receita*100) : null;
-  const ticketMedio = atual.unidades>0 ? atual.receita/atual.unidades : 0;
-  const ticketAnterior = anterior.unidades>0 ? anterior.receita/anterior.unidades : null;
-  const visitasTotal = visitasPeriodo.reduce((s,v)=>s+Number(v.visitas),0);
-  const conversaoMedia = visitasTotal>0 ? (atual.pedidos/visitasTotal*100) : null;
-  const rep = (repRes.data && repRes.data[0]) || null;
-  const temPreliminar = vendasPeriodo.some(v=>v.preliminar) || adsPeriodo.some(a=>a.preliminar);
-  const unidadesAdsTotal = adsPeriodo.reduce((s,a)=>s+Number(a.unidades_ads||0),0);
-  const unidadesOrganicasTotal = adsPeriodo.reduce((s,a)=>s+Number(a.unidades_organicas||0),0);
-  const totalAtribuido = unidadesAdsTotal + unidadesOrganicasTotal;
-
-  document.getElementById('perf-updated-at').innerHTML = lbxDataBR(ultimaData) + (temPreliminar ? ' <span style="color:var(--coral-500);font-weight:600">· hoje é preliminar, atualiza a cada 5 min</span>' : '');
-
-  const refAnterior = teveAnterior
-    ? `<span class="hero-stat-ref">vs. ${perfPeriodo} dias anteriores</span>`
-    : '<span class="hero-stat-ref">sem período anterior completo</span>';
-
-  // Nível 1 — os três números que decidem a conversa
-  heroEl.innerHTML = `
-    <div class="hero-stat is-primary">
-      <div class="hero-stat-label">Faturamento bruto</div>
-      <div class="hero-stat-value">${lbxFmtMoeda(atual.receita)}</div>
-      <div class="hero-stat-foot">${lbxDelta(atual.receita, teveAnterior?anterior.receita:null, false)} ${refAnterior}</div>
-    </div>
-    <div class="hero-stat ${tacosAtual>LBX_TACOS_ALVO_PADRAO?'is-bad':'is-good'}">
-      <div class="hero-stat-label">TACOS do período</div>
-      <div class="hero-stat-value">${tacosAtual.toFixed(2)}%</div>
-      <div class="hero-stat-foot">${lbxDelta(tacosAtual, tacosAnterior, true)} <span class="hero-stat-ref">meta ${LBX_TACOS_ALVO_PADRAO}%</span></div>
-    </div>
-    <div class="hero-stat ${perfMpaPct===null?'':(perfMpaPct>=12?'is-good':'is-bad')}">
-      <div class="hero-stat-label">MPA — margem pós-ADS <span style="font-size:9px;color:var(--slate-400)">hub</span></div>
-      <div class="hero-stat-value">${perfMpaPct!==null?perfMpaPct.toFixed(1)+'%':'—'}</div>
-      <div class="hero-stat-foot"><span class="hero-stat-ref">${perfMpaPct!==null?lbxFmtMoeda(perfMpa)+' · M.C. hub '+perfMcPct.toFixed(1)+'% · cobertura '+perfCobHub.toFixed(0)+'%':'nenhum SKU linkado ao hub'}</span></div>
-    </div>`;
-
-  // Nível 3 — apoio, em faixa densa
-  const adsPct = totalAtribuido>0 ? (unidadesAdsTotal/totalAtribuido*100) : null;
-  stripEl.innerHTML = `
-    <div class="metric-cell"><div class="metric-cell-label">Pedidos</div><div class="metric-cell-value">${atual.pedidos.toLocaleString('pt-BR')}</div></div>
-    <div class="metric-cell"><div class="metric-cell-label">Unidades</div><div class="metric-cell-value">${atual.unidades.toLocaleString('pt-BR')}</div></div>
-    <div class="metric-cell"><div class="metric-cell-label">Ticket médio</div><div class="metric-cell-value">${lbxFmtMoeda(ticketMedio)}</div><div style="margin-top:3px">${lbxDelta(ticketMedio, ticketAnterior, false)}</div></div>
-    <div class="metric-cell"><div class="metric-cell-label">Conversão</div><div class="metric-cell-value">${conversaoMedia!==null?conversaoMedia.toFixed(1)+'%':'—'}</div></div>
-    <div class="metric-cell"><div class="metric-cell-label">Gasto ADS</div><div class="metric-cell-value">${lbxFmtMoeda(atual.gasto)}</div><div style="margin-top:3px">${lbxDelta(atual.gasto, teveAnterior?anterior.gasto:null, true)}</div></div>
-    <div class="metric-cell"><div class="metric-cell-label">Venda via ADS</div><div class="metric-cell-value">${adsPct!==null?adsPct.toFixed(0)+'%':'—'}</div><div style="font-size:10px;color:var(--slate-400);margin-top:3px">${adsPct!==null?(100-adsPct).toFixed(0)+'% orgânica':'itens em campanha'}</div></div>`;
-
-  saudeEl.innerHTML = rep ? `
-    <div class="metric-cell"><div class="metric-cell-label">Nível do vendedor</div><div class="metric-cell-value">${rep.nivel||'—'}</div></div>
-    <div class="metric-cell"><div class="metric-cell-label">Reclamações</div><div class="metric-cell-value">${(Number(rep.reclamacoes)*100).toFixed(2)}%</div></div>
-    <div class="metric-cell"><div class="metric-cell-label">Cancelamentos</div><div class="metric-cell-value">${(Number(rep.cancelamentos)*100).toFixed(2)}%</div></div>
-    <div class="metric-cell"><div class="metric-cell-label">Atraso de envio</div><div class="metric-cell-value">${(Number(rep.tempo_envio)*100).toFixed(2)}%</div></div>
-    <div class="metric-cell"><div class="metric-cell-label">Vendas completas</div><div class="metric-cell-value">${Number(rep.vendas_completas).toLocaleString('pt-BR')}</div></div>`
-    : '<div class="metric-cell"><div class="metric-cell-label">Reputação</div><div class="metric-cell-value">—</div></div>';
-
-  // Pontos de atenção — dias com TACOS fora da meta + anúncios perdendo exposição
-  const anomalias = [];
-  // TACOS diário: um alerta por dia vira ruído. Consolida em uma linha só,
-  // com quantos dias estouraram e qual foi o pior.
-  const diasTacos = dias.map(d=>{
-    const o = porDia[d];
-    return {d, t: o.receita>0 ? (o.gasto/o.receita*100) : null};
-  }).filter(x=>x.t!==null);
-  const diasEstourados = diasTacos.filter(x=>x.t>LBX_TACOS_ALVO_PADRAO);
-  if(diasEstourados.length){
-    const pior = diasEstourados.slice().sort((a,b)=>b.t-a.t)[0];
-    anomalias.push({
-      sku: 'TACOS',
-      why: `Acima da meta de ${LBX_TACOS_ALVO_PADRAO}% em ${diasEstourados.length} de ${diasTacos.length} dias — pior foi ${lbxDataBR(pior.d)} com ${pior.t.toFixed(1)}%`,
-      num: `${lbxFmtMoeda(atual.gasto)} no período`,
-    });
-  }
-  Object.values(anuncioPorItem).forEach(a=>{
-    if(a.saude !== 'unhealthy' && a.saude !== 'warning') return;
-    // Mostra o motivo que o próprio ML informou; genérico só quando ele não mandou nada.
-    const motivo = a.experiencia_motivo || null;
-    anomalias.push({
-      sku: a.sku||a.item_id,
-      why: motivo ? lbxPrimeiraFrase(motivo) : (a.saude==='unhealthy'?'Perdendo exposição — o ML ainda não informou o motivo':'Risco de perder exposição — o ML ainda não informou o motivo'),
-      num: a.saude==='unhealthy'?'perdendo exposição':'risco de exposição',
-      detalhe: motivo,
-    });
-  });
-  anomEl.innerHTML = anomalias.length
-    ? `<div class="attention"><div class="attention-head">${anomalias.length} ponto${anomalias.length>1?'s':''} pra revisar</div>${anomalias.slice(0,12).map(a=>`
-        <div class="attention-row"><span class="attention-sku">${lbxEsc(a.sku)}</span><span class="attention-why"${a.detalhe?` title="${lbxEsc(a.detalhe)}"`:''}>${lbxEsc(a.why)}</span><span class="attention-num">${lbxEsc(a.num)}</span></div>
-      `).join('')}${anomalias.length>12?`<div class="attention-row"><span class="attention-why">+${anomalias.length-12} outros</span></div>`:''}</div>`
-    : '<div class="attention is-clear"><div class="attention-head">Nada fora do previsto no período</div></div>';
-
-  // top anúncios por receita no período
-  const top = Object.entries(porItem).map(([itemId,o])=>({
-    itemId, titulo: anuncioPorItem[itemId]?.titulo || itemId, permalink: anuncioPorItem[itemId]?.permalink || null,
-    receita:o.receita, unidades:o.unidades, gasto:o.gasto,
-    tacos: o.receita>0 ? (o.gasto/o.receita*100) : null,
-  })).sort((a,b)=>b.receita-a.receita).slice(0,10);
-
-  topBody.innerHTML = top.map(t=>`
-    <tr>
-      <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.titulo}">${t.permalink?`<a href="${t.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none">${t.titulo} ↗</a>`:t.titulo}</td>
-      <td style="text-align:right">${lbxFmtMoeda(t.receita)}</td>
-      <td style="text-align:right">${t.unidades}</td>
-      <td style="text-align:right">${lbxFmtMoeda(t.gasto)}</td>
-      <td style="text-align:right" class="${t.tacos!==null && t.tacos>LBX_TACOS_ALVO_PADRAO?'neg':''}">${t.tacos!==null?t.tacos.toFixed(2)+'%':'—'}</td>
-    </tr>
-  `).join('') || '<tr><td colspan="5" style="text-align:center;color:var(--slate-400)">Sem dados no período.</td></tr>';
-
-  renderPerfChart(dias, porDia);
-}
-
-function renderPerfChart(dias, porDia){
-  const svg = document.getElementById('perf-chart');
-  if(!dias.length){ svg.innerHTML = '<text x="20" y="120" font-size="12" fill="#888780">Sem dados suficientes ainda.</text>'; return; }
-  const W=800, H=240, padL=60, padR=20, padT=20, padB=40;
-  const chartW = W-padL-padR, chartH = H-padT-padB;
-  const n = dias.length;
-  const colW = chartW/n;
-  const barW = Math.max(Math.min(colW-6, 26), 3);
-  const receitas = dias.map(d=>porDia[d].receita);
-  const gastos = dias.map(d=>porDia[d].gasto);
-  const maxVal = Math.max(...receitas, ...gastos, 1);
-  let bars='', line='', dots='', xLabels='', yLabels='';
-  [0,0.25,0.5,0.75,1].forEach(pct=>{
-    const y = padT + chartH*(1-pct);
-    const val = maxVal*pct;
-    yLabels += `<text x="${padL-6}" y="${y+4}" text-anchor="end" font-size="9" fill="#888780">${val>=1000?(val/1000).toFixed(0)+'k':val.toFixed(0)}</text>`;
-    yLabels += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#F1EFE8" stroke-width="1"/>`;
-  });
-  dias.forEach((d,i)=>{
-    const x = padL + i*colW + (colW-barW)/2;
-    const barH = (porDia[d].receita/maxVal)*chartH;
-    const barY = padT + chartH - barH;
-    bars += `<rect x="${x}" y="${barY}" width="${barW}" height="${barH}" rx="2" fill="var(--coral-400)"/>`;
-    const cx = padL + i*colW + colW/2;
-    const cy = padT + chartH - (porDia[d].gasto/maxVal)*chartH;
-    if(i>0){
-      const px = padL + (i-1)*colW + colW/2;
-      const py = padT + chartH - (porDia[dias[i-1]].gasto/maxVal)*chartH;
-      line += `<line x1="${px}" y1="${py}" x2="${cx}" y2="${cy}" stroke="var(--green-600)" stroke-width="2"/>`;
-    }
-    dots += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="var(--green-600)"/>`;
-    if(n<=15 || i%Math.ceil(n/15)===0) xLabels += `<text x="${cx}" y="${H-padB+16}" text-anchor="middle" font-size="9" fill="#888780">${d.slice(8,10)}/${d.slice(5,7)}</text>`;
-  });
-  const legend = `<rect x="${padL}" y="4" width="10" height="10" rx="2" fill="var(--coral-400)"/><text x="${padL+14}" y="13" font-size="10" fill="#5F5E5A">Faturamento</text><line x1="${padL+100}" y1="9" x2="${padL+114}" y2="9" stroke="var(--green-600)" stroke-width="2"/><circle cx="${padL+107}" cy="9" r="3" fill="var(--green-600)"/><text x="${padL+118}" y="13" font-size="10" fill="#5F5E5A">Gasto ADS</text>`;
-  svg.innerHTML = yLabels+bars+line+dots+xLabels+legend;
-}
-
-// ===== SUB-ABAS DE PERFORMANCE (Visão Geral / Histórico Mensal / Comparativo) =====
-function perfGoTab2(id, btn){
-  document.querySelectorAll('#page-performance .perf-subpage').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('#perf-subtabs .perf-subtab').forEach(b=>b.classList.remove('active'));
-  document.getElementById('perf2-'+id).classList.add('active');
-  btn.classList.add('active');
-  if(id==='historico-mensal') renderHistoricoMensal();
-  else if(id==='comparativo') renderComparativo2();
-  else renderPerformance();
-}
-function refreshActivePerfSubtab(){
-  const ativo = document.querySelector('#page-performance .perf-subpage.active');
-  const id = ativo ? ativo.id.replace('perf2-','') : 'visao-geral';
-  if(id==='historico-mensal') renderHistoricoMensal();
-  else if(id==='comparativo') renderComparativo2();
-  else renderPerformance();
-}
-
+// ===== HISTÓRICO MENSAL E COMPARATIVO (vivem no Financeiro desde 15/09) =====
 let hmMesesCache = null; // {meses:[...], porMes:{...}}
 let hmMesesSelecionados = [];
 
@@ -4334,45 +4045,14 @@ async function renderProdutos(){
   });
 
   prodDadosCache = linhas;
-  desenharAtencao();
+  // `desenharAtencao` e `desenharTop5MC` saíram em 15/09: pontos de atenção
+  // agora vivem na Central (que abre primeiro) e o ranking de margem é a
+  // própria ordenação da tabela de lá. O Catálogo ficou sendo catálogo.
   desenharProdutosTabela();
-  desenharTop5MC();
 }
 
 // Bloco "precisa de atenção" — o que a operação tem que resolver hoje, em ordem de gravidade.
 // Margem negativa vem primeiro porque sangra dinheiro; Buy Box depois porque derruba receita.
-function desenharAtencao(){
-  const el = document.getElementById('prod-atencao');
-  if(!el || !prodDadosCache) return;
-
-  const itens = [];
-  prodDadosCache.forEach(l=>{
-    l.alertas.forEach(a=>itens.push({
-      sku: l.sku || l.itemId, chave: l.chave, receita: l.receita,
-      txt: a.txt, num: a.num, peso: a.peso, detalhe: a.detalhe || null,
-    }));
-  });
-  // mais grave primeiro; empate resolve por quem fatura mais (dói mais no caixa)
-  itens.sort((a,b)=> a.peso - b.peso || b.receita - a.receita);
-
-  if(!itens.length){
-    el.innerHTML = '<div class="attention is-clear"><div class="attention-head">Nenhum SKU precisa de atenção no período</div></div>';
-    return;
-  }
-  const mostrar = itens.slice(0, 8);
-  el.innerHTML = `<div class="attention">
-    <div class="attention-head">${itens.length} ponto${itens.length>1?'s':''} pra resolver</div>
-    ${mostrar.map(i=>`
-      <div class="attention-row">
-        <span class="attention-sku">${i.sku}</span>
-        <span class="attention-why"${i.detalhe?` title="${lbxEsc(i.detalhe)}"`:''}>${lbxEsc(i.txt)}</span>
-        <span class="attention-num">${lbxEsc(i.num||'')}</span>
-        <a class="attention-link" href="#" onclick="event.preventDefault();prodAbrirDrawer('${i.chave}')">abrir</a>
-      </div>`).join('')}
-    ${itens.length>mostrar.length?`<div class="attention-row"><span class="attention-why">+${itens.length-mostrar.length} outros pontos — use o filtro "só com alerta" pra ver todos</span></div>`:''}
-  </div>`;
-}
-
 function desenharProdutosTabela(){
   const tbody = document.getElementById('prod-tbody');
   if(!prodDadosCache){ return; }
@@ -4420,31 +4100,7 @@ function desenharProdutosTabela(){
   }).join('') || '<tr><td colspan="11" style="text-align:center;color:var(--slate-400)">Nenhum SKU com venda no período.</td></tr>';
 }
 
-function desenharTop5MC(){
-  const el = document.getElementById('prod-top5-charts');
-  if(!el || !prodDadosCache) return;
-  const comMc = prodDadosCache.filter(l=>l.mc!==null);
-  const semLink = prodDadosCache.filter(l=>l.receita>0 && !l.hubLinked).length;
-  if(!comMc.length){ el.innerHTML = '<div style="color:var(--slate-400);font-size:13px">Nenhum SKU linkado ao Hub de Precificação ainda — abra um produto e linke o SKU.</div>'; return; }
-  const hubBadge = semLink>0 ? `<span style="font-size:11px;color:#B45309;margin-left:6px">${semLink} sem link</span>` : '';
 
-  const top5MC = [...comMc].sort((a,b)=>b.mc-a.mc).slice(0,5);
-  const bottom5MC = [...comMc].sort((a,b)=>a.mc-b.mc).slice(0,5);
-  const maxMC = Math.max(...top5MC.map(l=>l.mc), 1);
-
-  function nomeCurto(t){ return t.length>28 ? t.slice(0,28)+'…' : t; }
-
-  el.innerHTML = `
-    <div class="chart-box">
-      <div class="chart-title">Top 5 — Melhor M.C. (%)${hubBadge}</div>
-      ${top5MC.map(l=>`<div class="bar-row"><div class="bar-label" title="${l.titulo}">${nomeCurto(l.titulo)}</div><div class="bar-track"><div class="bar-fill green" style="width:${Math.max(l.mc/maxMC*100,2).toFixed(0)}%"></div></div><div class="bar-val">${l.mc.toFixed(1)}%</div></div>`).join('')}
-    </div>
-    <div class="chart-box">
-      <div class="chart-title">Top 5 — Pior M.C. (%) — atenção aqui</div>
-      ${bottom5MC.map(l=>`<div class="bar-row"><div class="bar-label" title="${l.titulo}">${nomeCurto(l.titulo)}</div><div class="bar-track"><div class="bar-fill coral" style="width:${Math.max(l.mc/maxMC*100,2).toFixed(0)}%"></div></div><div class="bar-val">${l.mc.toFixed(1)}%</div></div>`).join('')}
-    </div>
-  `;
-}
 
 async function prodUpsertSku(sku, campos){
   if(!sku){ alert('Esse anúncio ainda não tem SKU vinculado (seller_custom_field) — associe um SKU no próprio anúncio do Mercado Livre antes de editar aqui.'); return false; }
@@ -13186,6 +12842,29 @@ async function loadFin(){
 
 window.finRecarregar=function(){ _st.dados=null; loadFin(); custoRealCarregar(); };
 
+/* Sub-abas do Financeiro. Histórico e Comparativo mantêm os mesmos ids de
+   elemento de quando viviam em Operação, então os renderizadores continuam
+   valendo sem tocar em nada — só mudou onde o nó mora no documento. */
+window.finGoTab=function(tab, btn){
+  document.querySelectorAll('#financeiro-tabs .hub-secondary-btn').forEach(function(b){ b.classList.remove('active'); });
+  if(btn) btn.classList.add('active');
+  var mes=document.getElementById('fin-section-mes');
+  var hist=document.getElementById('fin-section-historico');
+  var hm=document.getElementById('perf2-historico-mensal');
+  var cp=document.getElementById('perf2-comparativo');
+  if(tab==='mes'){
+    if(mes) mes.style.display='';
+    if(hist) hist.style.display='none';
+    return;
+  }
+  if(mes) mes.style.display='none';
+  if(hist) hist.style.display='';
+  if(hm) hm.classList.toggle('active', tab==='historico');
+  if(cp) cp.classList.toggle('active', tab==='comparativo');
+  if(tab==='historico' && typeof renderHistoricoMensal==='function') renderHistoricoMensal();
+  if(tab==='comparativo' && typeof renderComparativo2==='function') renderComparativo2();
+};
+
 /* ═══ CUSTO REAL DO ML + BACKFILL DO ml_financeiro ════════════════════════════
    O que o Financeiro mostrava até aqui vinha da M.C. do Hub, que usa frete e
    tarifa PLANEJADOS. Este painel mostra o que o Mercado Livre cobrou de fato:
@@ -13789,11 +13468,11 @@ function renderNaoLinkados(d){
     +'</div>';
 }
 
-/* Abre o painel do SKU na aba Produtos a partir do Financeiro */
+/* Abre o painel do SKU no Catálogo a partir do Financeiro */
 window.finAbrirSku=function(chave){
   try{
     if(typeof goOperacao==='function') goOperacao();
-    if(typeof opGoTab==='function') opGoTab('vendas',document.getElementById('op-tab-vendas'));
+    if(typeof opGoTab==='function') opGoTab('produtos',document.getElementById('op-tab-produtos'));
     setTimeout(function(){
       if(typeof prodAbrirDrawer==='function') prodAbrirDrawer(chave);
     }, 250);
@@ -14207,45 +13886,52 @@ window.apGarantirMes=async function(mes){
 /* ═════════════════════════════════════════════════════════════════════════════
    CENTRAL — dashboard da operação (Mercado Livre)
 
-   A cadeia é a mesma que qualquer ferramenta de seller usa:
-       faturamento → líquido do marketplace → lucro bruto → lucro pós ADS
-   O que muda aqui é a origem de dois números que as outras estimam:
+   A cadeia NÃO é a das ferramentas de mercado (faturamento → lucro bruto →
+   ROI). Aquela reconstrói a margem a partir do custo bruto porque a ferramenta
+   não tem o planejamento do vendedor. Aqui tem:
 
-   • CUSTO DO ML: comissão e frete vêm do `ml_financeiro`, que é o que o ML
-     COBROU por pedido. Não é percentual de tabela. O frete costuma ser maior
-     que a comissão e tem componente fixo — por isso ticket baixo sangra.
-   • CUSTO DO PRODUTO: vem de `skus.custo`. SKU sem custo cadastrado não tem
-     lucro calculável, e a dashboard DIZ isso em vez de fingir que o lucro é
-     da operação inteira.
+       M.C. (%)  = hubMcPre(entry)          ← Hub de Precificação, antes do ADS
+       M.C. (R$) = receita × M.C.%
+       MPA (R$)  = M.C. (R$) − ADS real
+       MPA (%)   = MPA ÷ receita linkada
 
-   Regra que vale para toda a tela: número parcial é declarado como parcial.
-   Uma dashboard que arredonda cobertura para "100%" faz o Ale decidir errado
-   com confiança — que é pior do que não ter dashboard.
+   Nenhum `skus.custo` participa disso. A regra de ouro §7 do mapa manda usar
+   `hubMcPre`/`hubResolver` e nunca reimplementar — uma primeira versão desta
+   tela reconstruiu a margem a partir do custo e foi jogada fora por isso.
+
+   O custo real do ML (comissão + frete do `ml_financeiro`) continua na tela,
+   mas FORA da cadeia de margem. Ele responde outra pergunta: o frete que o
+   Hub planejou está certo? Quando o ML come 41% de um SKU de ticket baixo, a
+   M.C. planejada está mentindo, e não há outro lugar onde isso apareça.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
 
-  var _dash = { chave:'7d', dados:null, carregando:false };
+  var _dash = { chave:'7d', dados:null, carregando:false, aberta:null, cacheCard:{} };
+  var MKT = 'meli';   // chave do marketplace no Hub. NÃO é 'Mercado Livre'.
 
   function dfmtR(v){
-    return 'R$ ' + (Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(v===null||v===undefined||!isFinite(v)) return '—';
+    return 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   }
   function dfmtN(v){ return (Number(v)||0).toLocaleString('pt-BR'); }
-  function dpct(v){ return (v===null||v===undefined||!isFinite(v)) ? '—' : (v*100).toFixed(2).replace('.',',')+'%'; }
+  function dpct(v, casas){
+    if(v===null||v===undefined||!isFinite(v)) return '—';
+    return (v*100).toFixed(casas===undefined?2:casas).replace('.',',')+'%';
+  }
+  function dpp(v){
+    if(v===null||v===undefined||!isFinite(v)) return '—';
+    return (v>0?'+':'')+(v*100).toFixed(1).replace('.',',')+' p.p.';
+  }
   function desc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function diaISO(d){
     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   }
-  function somaDias(iso, n){
-    var d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return diaISO(d);
-  }
+  function somaDias(iso, n){ var d=new Date(iso+'T12:00:00'); d.setDate(d.getDate()+n); return diaISO(d); }
   function contaDias(ini, fim){
     return Math.round((new Date(fim+'T12:00:00') - new Date(ini+'T12:00:00'))/86400000) + 1;
   }
 
-  /* Janela do período + a janela ANTERIOR de mesmo tamanho, que é o que dá
-     sentido a qualquer indicador. Margem de 49% não diz nada sozinha; 49%
-     vindo de 44% diz. */
   function dashJanela(chave){
     var hoje=diaISO(new Date()), ini, fim, rotulo;
     if(chave==='hoje'){        ini=fim=hoje; rotulo='Hoje'; }
@@ -14256,417 +13942,644 @@ window.apGarantirMes=async function(mes){
     else if(chave==='mes'){    fim=hoje; ini=hoje.slice(0,8)+'01'; rotulo='Esse mês'; }
     else if(chave==='mes_passado'){
       var pd=new Date(hoje+'T12:00:00'); pd.setDate(1); pd.setMonth(pd.getMonth()-1);
-      ini=diaISO(pd);
-      var ud=new Date(pd.getFullYear(), pd.getMonth()+1, 0); fim=diaISO(ud);
+      ini=diaISO(pd); fim=diaISO(new Date(pd.getFullYear(), pd.getMonth()+1, 0));
       rotulo='Mês passado';
     }
     else if(chave==='ano'){    fim=hoje; ini=hoje.slice(0,4)+'-01-01'; rotulo='Esse ano'; }
     else { fim=hoje; ini=somaDias(hoje,-6); rotulo='Últimos 7 dias'; }
-
     var n=contaDias(ini,fim);
     return { ini:ini, fim:fim, rotulo:rotulo, dias:n,
              iniA:somaDias(ini,-n), fimA:somaDias(ini,-1) };
   }
 
   /* ── Leitura ─────────────────────────────────────────────────────────────── */
-  async function dashLer(j){
-    var vendas = function(de,ate){ return function(a,b){
-      return sbP('ml_vendas','item_id,data,receita,pedidos,unidades,comissao')
-        .eq('conta','Logbox').gte('data',de).lte('data',ate)
-        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }; };
-    var ads = function(de,ate){ return function(a,b){
-      return sbP('ml_ads_reports','item_id,data,gasto')
-        .eq('conta','Logbox').gte('data',de).lte('data',ate).neq('preliminar',true)
-        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }; };
-    var fin = function(de,ate){ return function(a,b){
-      return sbP('ml_financeiro','movement_id,tipo,valor,data,sku,order_id')
-        .eq('conta','Logbox').gte('data',de).lte('data',ate)
-        .order('data',{ascending:false}).order('movement_id',{ascending:true}).range(a,b); }; };
+  function qVendas(de,ate){ return function(a,b){
+    return sbP('ml_vendas','item_id,data,receita,pedidos,unidades,comissao')
+      .eq('conta','Logbox').gte('data',de).lte('data',ate)
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }; }
+  function qAds(de,ate){ return function(a,b){
+    return sbP('ml_ads_reports','item_id,data,gasto,impressoes,cliques,unidades_ads,unidades_organicas')
+      .eq('conta','Logbox').gte('data',de).lte('data',ate).neq('preliminar',true)
+      .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }; }
+  function qFin(de,ate){ return function(a,b){
+    return sbP('ml_financeiro','movement_id,tipo,valor,data,sku')
+      .eq('conta','Logbox').gte('data',de).lte('data',ate)
+      .order('data',{ascending:false}).order('movement_id',{ascending:true}).range(a,b); }; }
 
+  async function dashLer(j){
     var snap = await sb.from('ml_anuncios').select('data')
                  .eq('conta','Logbox').order('data',{ascending:false}).limit(1).single();
     var snapDate = snap.data && snap.data.data;
 
     var r = await Promise.all([
-      sbTodas(vendas(j.ini,j.fim),  'dash/vendas'),
-      sbTodas(ads(j.ini,j.fim),     'dash/ads'),
-      sbTodas(fin(j.ini,j.fim),     'dash/fin'),
-      sbTodas(vendas(j.iniA,j.fimA),'dash/vendasAnt'),
-      sbTodas(ads(j.iniA,j.fimA),   'dash/adsAnt'),
-      sbTodas(fin(j.iniA,j.fimA),   'dash/finAnt'),
-      sbTodas(function(a,b){ return sbP('ml_anuncios','item_id,sku,titulo')
+      sbTodas(qVendas(j.ini,j.fim),  'dash/vendas'),
+      sbTodas(qAds(j.ini,j.fim),     'dash/ads'),
+      sbTodas(qFin(j.ini,j.fim),     'dash/fin'),
+      sbTodas(qVendas(j.iniA,j.fimA),'dash/vendasAnt'),
+      sbTodas(qAds(j.iniA,j.fimA),   'dash/adsAnt'),
+      sbTodas(qFin(j.iniA,j.fimA),   'dash/finAnt'),
+      sbTodas(function(a,b){ return sbP('ml_anuncios',
+        'item_id,sku,titulo,estoque,estoque_full,buybox_status,catalog_listing,preco,preco_concorrente,status')
         .eq('conta','Logbox').eq('data', snapDate||'2099-01-01')
         .order('item_id',{ascending:true}).range(a,b); }, 'dash/anuncios'),
-      sbTodas(function(a,b){ return sbP('skus','sku,custo,descricao')
+      sb.from('ml_reputacao').select('*').eq('conta','Logbox')
+        .order('data',{ascending:false}).limit(1),
+      sbTodas(function(a,b){ return sbP('skus','sku,estoque_minimo')
         .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'dash/skus')
     ]);
     var erro = r.find(function(x){ return x.error; });
     if(erro) throw erro.error;
 
-    var hub = {};
-    try{ if(typeof hubMcCarregar==='function') hub = await hubMcCarregar() || {}; }catch(e){}
+    var hubMap={}, hubLinks={};
+    try{ if(typeof hubMcCarregar==='function')   hubMap  = await hubMcCarregar()   || {}; }catch(e){}
+    try{ if(typeof hubLinksCarregar==='function')hubLinks= await hubLinksCarregar()|| {}; }catch(e){}
 
-    return {
+    return { snapDate:snapDate,
       vendas:r[0].data||[], ads:r[1].data||[], fin:r[2].data||[],
       vendasA:r[3].data||[], adsA:r[4].data||[], finA:r[5].data||[],
-      anuncios:r[6].data||[], skus:r[7].data||[], hub:hub
-    };
+      anuncios:r[6].data||[], reputacao:(r[7].data&&r[7].data[0])||null,
+      skus:r[8].data||[], hubMap:hubMap, hubLinks:hubLinks };
   }
 
-  /* ── Cálculo ──────────────────────────────────────────────────────────────
-     Dois blocos de propósito:
-     • VOLUME (faturamento, vendas, unidades, ticket, ADS, TACOS) sobre TUDO.
-     • MARGEM (líquido, lucro, margem, ROI, pós ADS, MPA) só sobre os SKUs que
-       têm custo cadastrado — senão o lucro de 80% da receita seria comparado
-       com 100% dela, e a margem sairia menor do que é.                     */
+  /* ── Cálculo ─────────────────────────────────────────────────────────────── */
   function ehFrete(t){   return /frete|shipment|envio/i.test(String(t||'')); }
   function ehComissao(t){return /comiss|sale_fee|tarifa/i.test(String(t||'')); }
   function ehFatura(t){  return /fatura|billing|bill/i.test(String(t||'')); }
 
-  function dashAgregar(vendas, ads, fin, i2sku, custoDe){
+  function dashAgregar(vendas, ads, fin, i2sku){
     var porSku={}, dia={}, diasFin={};
-
-    function slotSku(sku){
+    function sl(sku){
       if(!porSku[sku]) porSku[sku]={sku:sku, receita:0, unidades:0, pedidos:0,
-        comissaoVenda:0, comissaoML:0, frete:0, ads:0};
+        comissaoVenda:0, comissaoML:0, frete:0, ads:0, imp:0, clq:0, unAds:0, unOrg:0};
       return porSku[sku];
     }
-    function slotDia(d){
-      if(!dia[d]) dia[d]={fat:0, com:0, fre:0, ads:0, custoProd:0, fatCob:0};
-      return dia[d];
-    }
+    function sd(d){ if(!dia[d]) dia[d]={fat:0, com:0, fre:0, ads:0}; return dia[d]; }
 
     vendas.forEach(function(r){
-      var sku=i2sku[r.item_id]||('item:'+r.item_id), d=String(r.data||'').slice(0,10);
-      var o=slotSku(sku);
+      var sku=i2sku[r.item_id]||('item:'+r.item_id), d=String(r.data||'').slice(0,10), o=sl(sku);
       o.receita+=Number(r.receita)||0; o.unidades+=Number(r.unidades)||0;
       o.pedidos+=Number(r.pedidos)||0; o.comissaoVenda+=Number(r.comissao)||0;
-      if(d){ var s=slotDia(d); s.fat+=Number(r.receita)||0;
-        var c=custoDe(sku);
-        if(c!==null){ s.fatCob+=Number(r.receita)||0; s.custoProd+=(Number(r.unidades)||0)*c; }
-      }
+      if(d) sd(d).fat+=Number(r.receita)||0;
     });
     ads.forEach(function(r){
-      var sku=i2sku[r.item_id]||('item:'+r.item_id), d=String(r.data||'').slice(0,10);
-      slotSku(sku).ads+=Number(r.gasto)||0;
-      if(d) slotDia(d).ads+=Number(r.gasto)||0;
+      var sku=i2sku[r.item_id]||('item:'+r.item_id), d=String(r.data||'').slice(0,10), o=sl(sku);
+      o.ads+=Number(r.gasto)||0; o.imp+=Number(r.impressoes)||0; o.clq+=Number(r.cliques)||0;
+      o.unAds+=Number(r.unidades_ads)||0; o.unOrg+=Number(r.unidades_organicas)||0;
+      if(d) sd(d).ads+=Number(r.gasto)||0;
     });
     fin.forEach(function(r){
-      if(ehFatura(r.tipo)) return;                    // fatura mensal nunca entra
-      var v=Math.abs(Number(r.valor)||0), d=String(r.data||'').slice(0,10);
-      var sku=r.sku||null;
+      if(ehFatura(r.tipo)) return;                       // §5.6 — fatura nunca entra
+      var v=Math.abs(Number(r.valor)||0), d=String(r.data||'').slice(0,10), sku=r.sku||null;
       if(d) diasFin[d]=1;
-      if(ehFrete(r.tipo)){
-        if(sku) slotSku(sku).frete+=v;
-        if(d) slotDia(d).fre+=v;
-      } else if(ehComissao(r.tipo)){
-        if(sku) slotSku(sku).comissaoML+=v;
-        if(d) slotDia(d).com+=v;
-      }
+      if(ehFrete(r.tipo)){ if(sku) sl(sku).frete+=v; if(d) sd(d).fre+=v; }
+      else if(ehComissao(r.tipo)){ if(sku) sl(sku).comissaoML+=v; if(d) sd(d).com+=v; }
     });
-
     return {porSku:porSku, dia:dia, diasFin:diasFin};
   }
 
-  function dashTotais(ag, custoDe){
-    var t={ fat:0, vendas:0, unidades:0, ads:0,
-            fatCob:0, comCob:0, freCob:0, custoProd:0, adsCob:0,
-            comTotal:0, freTotal:0, skusSemCusto:0, receitaSemCusto:0 };
-
+  /* Totais. O bloco de margem só existe para SKU LINKADO ao Hub — sem plano
+     não há M.C., e inventar uma seria pior do que a lacuna. Faturamento,
+     unidades, ticket e TACOS continuam sobre tudo. */
+  function dashTotais(ag, hubDe){
+    var t={ fat:0, vendas:0, unidades:0, ads:0, comTotal:0, freTotal:0,
+            recHub:0, mcVal:0, adsHub:0, alvoVal:0, semHub:0, receitaSemHub:0 };
     Object.keys(ag.porSku).forEach(function(k){
-      var o=ag.porSku[k], c=custoDe(k);
+      var o=ag.porSku[k], h=hubDe(k);
       t.fat+=o.receita; t.vendas+=o.pedidos; t.unidades+=o.unidades; t.ads+=o.ads;
-      // Comissão real quando existe; senão a que o ml_vendas já trazia.
-      var com = o.comissaoML>0 ? o.comissaoML : o.comissaoVenda;
-      t.comTotal+=com; t.freTotal+=o.frete;
-      if(c!==null){
-        t.fatCob+=o.receita; t.comCob+=com; t.freCob+=o.frete;
-        t.custoProd+=o.unidades*c; t.adsCob+=o.ads;
-      } else if(o.receita>0){
-        t.skusSemCusto++; t.receitaSemCusto+=o.receita;
-      }
+      t.comTotal += (o.comissaoML>0 ? o.comissaoML : o.comissaoVenda);
+      t.freTotal += o.frete;
+      if(h){
+        t.recHub+=o.receita;
+        t.mcVal += o.receita*h.mcPct;
+        t.alvoVal += o.receita*h.adsAlvo;
+        t.adsHub+=o.ads;
+      } else if(o.receita>0){ t.semHub++; t.receitaSemHub+=o.receita; }
     });
-
-    t.liquido      = t.fatCob - t.comCob - t.freCob;
-    t.lucro        = t.liquido - t.custoProd;
-    t.margem       = t.fatCob>0 ? t.lucro/t.fatCob : null;
-    t.ticket       = t.vendas>0 ? t.fat/t.vendas : null;
-    t.roi          = t.custoProd>0 ? t.lucro/t.custoProd : null;
-    t.tacos        = t.fat>0 ? t.ads/t.fat : null;
-    t.lucroPosAds  = t.lucro - t.adsCob;
-    t.mpa          = t.fatCob>0 ? t.lucroPosAds/t.fatCob : null;
-    t.coberturaCusto = t.fat>0 ? t.fatCob/t.fat : null;
-    t.custoML      = t.comTotal + t.freTotal;
-    t.custoMLPct   = t.fat>0 ? t.custoML/t.fat : null;
+    t.mpaVal      = t.mcVal - t.adsHub;                  // M.C. − ADS real
+    t.mcPct       = t.recHub>0 ? t.mcVal/t.recHub : null;
+    t.mpaPct      = t.recHub>0 ? t.mpaVal/t.recHub : null;
+    t.tacos       = t.fat>0 ? t.ads/t.fat : null;
+    t.tacosHub    = t.recHub>0 ? t.adsHub/t.recHub : null;
+    t.alvoPct     = t.recHub>0 ? t.alvoVal/t.recHub : null;
+    t.desvioAds   = (t.tacosHub!==null && t.alvoPct!==null) ? t.tacosHub-t.alvoPct : null;
+    t.ticket      = t.vendas>0 ? t.fat/t.vendas : null;
+    t.cobertura   = t.fat>0 ? t.recHub/t.fat : null;
+    t.custoML     = t.comTotal + t.freTotal;
+    t.custoMLPct  = t.fat>0 ? t.custoML/t.fat : null;
     return t;
   }
 
   function dashCalcular(d, j){
-    var i2sku={}, i2tit={};
-    d.anuncios.forEach(function(a){ if(a.sku) i2sku[a.item_id]=a.sku; i2tit[a.item_id]=a.titulo||a.item_id; });
-
-    var custoMap={};
-    d.skus.forEach(function(x){
-      var c=Number(x.custo);
-      if(isFinite(c) && c>0) custoMap[x.sku]=c;
+    var i2sku={}, skuItens={}, titDe={}, snapSku={};
+    d.anuncios.forEach(function(a){
+      var chave = a.sku || ('item:'+a.item_id);
+      i2sku[a.item_id]=chave;
+      (skuItens[chave]=skuItens[chave]||[]).push(a.item_id);
+      if(!titDe[chave]) titDe[chave]=a.titulo||chave;
+      // Estoque soma entre anúncios do mesmo SKU; o status de Buy Box guarda o
+      // PIOR encontrado — se um anúncio está perdendo, o SKU está perdendo.
+      var o = snapSku[chave] = snapSku[chave] || {estoque:0, temEstoque:false, buybox:null, catalogo:false};
+      if(a.estoque!==null && a.estoque!==undefined){ o.estoque+=Number(a.estoque)||0; o.temEstoque=true; }
+      if(a.catalog_listing) o.catalogo=true;
+      var ruim={not_listed:3, losing:2, sharing_first_place:1};
+      if(a.buybox_status && (o.buybox===null || (ruim[a.buybox_status]||0) > (ruim[o.buybox]||0)))
+        o.buybox=a.buybox_status;
     });
-    var custoDe=function(sku){ return custoMap[sku]!==undefined ? custoMap[sku] : null; };
+    var estoqueMin={};
+    (d.skus||[]).forEach(function(x){
+      var m=Number(x.estoque_minimo);
+      if(isFinite(m) && m>0) estoqueMin[x.sku]=m;
+    });
 
-    // título por SKU (o primeiro anúncio que carregar o SKU serve de nome)
-    var titDe={};
-    d.anuncios.forEach(function(a){ if(a.sku && !titDe[a.sku]) titDe[a.sku]=a.titulo||a.sku; });
+    // Lookup do Hub pela função canônica — inclui o vínculo manual de hub_links.
+    var cacheHub={};
+    function hubDe(chave){
+      if(cacheHub[chave]!==undefined) return cacheHub[chave];
+      var sku = chave.indexOf('item:')===0 ? null : chave;
+      var r = (typeof hubResolver==='function')
+        ? hubResolver(d.hubMap, d.hubLinks, sku, chave, MKT) : null;
+      cacheHub[chave] = r ? {
+        mcPct:   hubMcPre(r.entry)/100,
+        adsAlvo: hubAdsAlvo(r.entry)/100,
+        viaLink: r.viaLink, skuHub: r.skuHub
+      } : null;
+      return cacheHub[chave];
+    }
 
-    var ag  = dashAgregar(d.vendas,  d.ads,  d.fin,  i2sku, custoDe);
-    var agA = dashAgregar(d.vendasA, d.adsA, d.finA, i2sku, custoDe);
-    var tot = dashTotais(ag,  custoDe);
-    var totA= dashTotais(agA, custoDe);
+    var ag  = dashAgregar(d.vendas,  d.ads,  d.fin,  i2sku);
+    var agA = dashAgregar(d.vendasA, d.adsA, d.finA, i2sku);
+    var tot = dashTotais(ag,  hubDe);
+    var totA= dashTotais(agA, hubDe);
 
-    // Cobertura do custo do ML: dias do período que têm linha financeira.
     var diasComVenda={};
     d.vendas.forEach(function(r){ var x=String(r.data||'').slice(0,10);
       if(x && Number(r.receita)>0) diasComVenda[x]=1; });
     var diasVenda=Object.keys(diasComVenda);
     var diasSemFin=diasVenda.filter(function(x){ return !ag.diasFin[x]; }).sort();
 
-    // Série diária, na ordem do calendário
     var serie=[];
     for(var i=0;i<j.dias;i++){
-      var dd=somaDias(j.ini,i), s=ag.dia[dd]||{fat:0,com:0,fre:0,ads:0,custoProd:0,fatCob:0};
-      serie.push({
-        data:dd, fat:s.fat,
-        liquido: s.fatCob - s.com - s.fre,
-        lucro:   s.fatCob - s.com - s.fre - s.custoProd - s.ads
-      });
+      var dd=somaDias(j.ini,i), s=ag.dia[dd]||{fat:0,com:0,fre:0,ads:0};
+      serie.push({ data:dd, fat:s.fat,
+                   liquido: s.fat - s.com - s.fre,
+                   posAds:  s.fat - s.com - s.fre - s.ads });
     }
 
-    // Linhas por SKU
     var linhas=Object.keys(ag.porSku).map(function(k){
-      var o=ag.porSku[k], c=custoDe(k);
+      var o=ag.porSku[k], h=hubDe(k);
       var com = o.comissaoML>0 ? o.comissaoML : o.comissaoVenda;
       var custoML = com + o.frete;
-      var custoProd = c!==null ? o.unidades*c : null;
-      var liq = o.receita - custoML;
-      var lucro = custoProd!==null ? liq - custoProd : null;
-      var hubEntry = (d.hub && d.hub[k] && (d.hub[k]['Mercado Livre'] || d.hub[k]['mercado livre'])) || null;
+      var mcVal = h ? o.receita*h.mcPct : null;
+      var mpaVal = mcVal!==null ? mcVal-o.ads : null;
+      var tacos = o.receita>0 ? o.ads/o.receita : null;
       return {
-        sku:k, titulo: titDe[k] || k,
-        receita:o.receita, unidades:o.unidades, pedidos:o.pedidos,
+        sku:k, titulo:titDe[k]||k, itemIds:skuItens[k]||[],
+        receita:o.receita, unidades:o.unidades, pedidos:o.pedidos, ads:o.ads,
         precoMedio: o.unidades>0 ? o.receita/o.unidades : null,
-        custoUnit: c,
-        custoML: custoML, custoMLPct: o.receita>0 ? custoML/o.receita : null,
-        frete:o.frete, comissao:com,
-        lucro: lucro, margem: (lucro!==null && o.receita>0) ? lucro/o.receita : null,
-        ads:o.ads,
-        lucroPosAds: lucro!==null ? lucro-o.ads : null,
-        mpa: (lucro!==null && o.receita>0) ? (lucro-o.ads)/o.receita : null,
-        mcPlano: hubEntry && hubEntry.mc!==null && hubEntry.mc!==undefined ? Number(hubEntry.mc)/100 : null
+        comissao:com, frete:o.frete,
+        custoML:custoML, custoMLPct: o.receita>0 ? custoML/o.receita : null,
+        mcPct: h?h.mcPct:null, mcVal:mcVal,
+        mpaVal:mpaVal, mpaPct: (mpaVal!==null && o.receita>0) ? mpaVal/o.receita : null,
+        tacos:tacos, adsAlvo: h?h.adsAlvo:null,
+        desvio: (tacos!==null && h) ? tacos-h.adsAlvo : null,
+        viaLink: h?h.viaLink:false, skuHub: h?h.skuHub:null,
+        snap: snapSku[k]||null, estoqueMin: estoqueMin[k]!==undefined?estoqueMin[k]:null
       };
     }).filter(function(o){ return o.receita>0; })
       .sort(function(a,b){ return b.receita-a.receita; });
 
     return { j:j, tot:tot, totA:totA, serie:serie, linhas:linhas,
-             diasSemFin:diasSemFin, diasVenda:diasVenda.length,
-             skusSemCusto:tot.skusSemCusto, receitaSemCusto:tot.receitaSemCusto };
+             reputacao:d.reputacao, snapDate:d.snapDate,
+             diasSemFin:diasSemFin, diasVenda:diasVenda.length };
   }
 
   /* ── Render ──────────────────────────────────────────────────────────────── */
-  function delta(atual, anterior, tipo){
-    if(atual===null||anterior===null||atual===undefined||anterior===undefined) return '';
+  function delta(atual, anterior, tipo, inverso){
+    if(atual==null||anterior==null||!isFinite(atual)||!isFinite(anterior)) return '';
+    var bom, txt;
     if(tipo==='pp'){
-      var dpp=(atual-anterior)*100;
-      if(!isFinite(dpp)) return '';
-      var cor1 = dpp>=0 ? 'var(--green-600)' : 'var(--coral-500)';
-      return '<span style="font-size:11px;color:'+cor1+'">'+(dpp>=0?'▲':'▼')+' '+Math.abs(dpp).toFixed(1).replace('.',',')+' p.p.</span>';
+      var v=(atual-anterior)*100;
+      if(!isFinite(v)) return '';
+      bom = inverso ? v<=0 : v>=0;
+      txt = (v>=0?'▲':'▼')+' '+Math.abs(v).toFixed(1).replace('.',',')+' p.p.';
+    } else {
+      if(!anterior) return '';
+      var p=(atual-anterior)/Math.abs(anterior)*100;
+      if(!isFinite(p)) return '';
+      bom = inverso ? p<=0 : p>=0;
+      txt = (p>=0?'▲':'▼')+' '+Math.abs(p).toFixed(1).replace('.',',')+'%';
     }
-    if(!anterior) return '';
-    var v=(atual-anterior)/Math.abs(anterior)*100;
-    if(!isFinite(v)) return '';
-    var cor = v>=0 ? 'var(--green-600)' : 'var(--coral-500)';
-    return '<span style="font-size:11px;color:'+cor+'">'+(v>=0?'▲':'▼')+' '+Math.abs(v).toFixed(1).replace('.',',')+'%</span>';
+    return '<span style="font-size:11px;color:'+(bom?'var(--green-600)':'var(--coral-500)')+'">'+txt+'</span>';
   }
 
   function cartao(rotulo, valor, sub, destaque){
     return '<div style="background:var(--white);border:1px solid '
-      +(destaque?'var(--coral-200)':'var(--slate-100)')
-      +';border-radius:var(--radius);padding:12px 14px">'
+      +(destaque?'var(--coral-200)':'var(--slate-100)')+';border-radius:var(--radius);padding:12px 14px">'
       +'<div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400);margin-bottom:4px">'+rotulo+'</div>'
       +'<div style="font-family:var(--mono);font-size:17px;font-weight:500;color:var(--slate-900)">'+valor+'</div>'
-      +'<div style="margin-top:2px;min-height:14px">'+(sub||'')+'</div>'
-      +'</div>';
+      +'<div style="margin-top:2px;min-height:14px">'+(sub||'')+'</div></div>';
   }
 
   function dashRenderKpis(c){
     var t=c.tot, a=c.totA;
     var g='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px">';
     g+=cartao('Faturamento', dfmtR(t.fat), delta(t.fat,a.fat));
-    g+=cartao('Líq. do Marketplace', dfmtR(t.liquido), delta(t.liquido,a.liquido));
-    g+=cartao('Lucro Bruto', dfmtR(t.lucro), delta(t.lucro,a.lucro));
-    g+=cartao('Margem', dpct(t.margem), delta(t.margem,a.margem,'pp'), true);
+    g+=cartao('M.C. — Hub', dpct(t.mcPct,1), delta(t.mcPct,a.mcPct,'pp'), true);
+    g+=cartao('M.C. em R$', dfmtR(t.mcVal), delta(t.mcVal,a.mcVal));
+    g+=cartao('MPA — pós-ADS', dpct(t.mpaPct,1), delta(t.mpaPct,a.mpaPct,'pp'), true);
+    g+=cartao('MPA em R$', dfmtR(t.mpaVal), delta(t.mpaVal,a.mpaVal));
+    g+=cartao('TACOS real', dpct(t.tacos,2), delta(t.tacos,a.tacos,'pp',true));
+    g+=cartao('ADS alvo do Hub', dpct(t.alvoPct,2),
+      t.desvioAds===null ? '' :
+      '<span style="font-size:11px;color:'+(t.desvioAds>0?'var(--coral-500)':'var(--green-600)')+'">'
+      +'desvio '+dpp(t.desvioAds)+'</span>');
+    g+=cartao('Valor em ADS', dfmtR(t.ads), delta(t.ads,a.ads,null,true));
     g+=cartao('Nº de Vendas', dfmtN(t.vendas), delta(t.vendas,a.vendas));
-    g+=cartao('Unidades Vendidas', dfmtN(t.unidades), delta(t.unidades,a.unidades));
+    g+=cartao('Unidades', dfmtN(t.unidades), delta(t.unidades,a.unidades));
     g+=cartao('Ticket Médio', dfmtR(t.ticket), delta(t.ticket,a.ticket));
-    g+=cartao('Retorno s/ Investimento', dpct(t.roi),
-      '<span style="font-size:10.5px;color:var(--slate-400)">lucro ÷ custo da mercadoria</span>');
-    g+=cartao('Valor em Ads', dfmtR(t.ads), delta(t.ads,a.ads));
-    g+=cartao('TACOS', dpct(t.tacos), delta(t.tacos,a.tacos,'pp'));
-    g+=cartao('Lucro pós ADS', dfmtR(t.lucroPosAds), delta(t.lucroPosAds,a.lucroPosAds));
-    g+=cartao('MPA', dpct(t.mpa), delta(t.mpa,a.mpa,'pp'), true);
+    g+=cartao('Custo real do ML', dpct(t.custoMLPct,2),
+      '<span style="font-size:10.5px;color:var(--slate-400)">'+dfmtR(t.custoML)+'</span>');
     g+='</div>';
 
-    // O cartão que nenhuma ferramenta de mercado consegue montar
-    g+='<div style="margin-top:10px;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:12px 14px;display:flex;gap:24px;flex-wrap:wrap;align-items:center">'
-      +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Custo do Mercado Livre</div>'
-      +'<div style="font-family:var(--mono);font-size:17px;color:var(--slate-900)">'+dfmtR(t.custoML)+' · '+dpct(t.custoMLPct)+'</div></div>'
-      +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Comissão</div>'
-      +'<div style="font-family:var(--mono);font-size:14px;color:var(--slate-600)">'+dfmtR(t.comTotal)+'</div></div>'
-      +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Frete</div>'
-      +'<div style="font-family:var(--mono);font-size:14px;color:var(--coral-500)">'+dfmtR(t.freTotal)
-      + (t.comTotal>0 ? ' <span style="font-size:11px;color:var(--slate-400)">('
-          + (t.freTotal>t.comTotal ? Math.round((t.freTotal/t.comTotal-1)*100)+'% acima da comissão' : 'abaixo da comissão')
-          + ')</span>' : '')
+    g+='<div style="margin-top:10px;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:12px 14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">'
+      +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Comissão cobrada</div>'
+      +'<div style="font-family:var(--mono);font-size:15px;color:var(--slate-700)">'+dfmtR(t.comTotal)+'</div></div>'
+      +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Frete pago por você</div>'
+      +'<div style="font-family:var(--mono);font-size:15px;color:var(--coral-500)">'+dfmtR(t.freTotal)
+      +(t.comTotal>0 && t.freTotal>t.comTotal
+         ? ' <span style="font-size:11px;color:var(--slate-400)">('+Math.round((t.freTotal/t.comTotal-1)*100)+'% acima da comissão)</span>' : '')
       +'</div></div>'
+      +'<div style="font-size:11px;color:var(--slate-400);max-width:340px;line-height:1.5">'
+      +'Custo cobrado, não planejado. Ele não entra na M.C. — serve para saber se o frete que o Hub planejou ainda vale.</div>'
       +'</div>';
-
     document.getElementById('dash-kpis').innerHTML=g;
   }
 
   function dashRenderAvisos(c){
-    var el=document.getElementById('dash-avisos'), avisos=[];
-
-    if(c.tot.coberturaCusto!==null && c.tot.coberturaCusto < 0.995){
-      avisos.push('<strong>Lucro e margem cobrem '+dpct(c.tot.coberturaCusto)+' do faturamento.</strong> '
-        +c.skusSemCusto+' SKU'+(c.skusSemCusto>1?'s':'')+' com venda ('+dfmtR(c.receitaSemCusto)
-        +') não tem custo cadastrado em <code>skus.custo</code>, então ficam fora da conta de lucro — '
-        +'mas continuam no faturamento, nas unidades e no TACOS.');
+    var el=document.getElementById('dash-avisos'), av=[];
+    if(c.tot.cobertura!==null && c.tot.cobertura<0.995){
+      av.push('<strong>M.C. e MPA cobrem '+dpct(c.tot.cobertura,0)+' do faturamento.</strong> '
+        +c.tot.semHub+' SKU'+(c.tot.semHub>1?'s':'')+' com venda ('+dfmtR(c.tot.receitaSemHub)
+        +') não está linkado ao Hub de Precificação. Continua no faturamento e no TACOS, fora da margem.');
     }
     if(c.diasSemFin.length){
-      avisos.push('<strong>'+c.diasSemFin.length+' de '+c.diasVenda+' dias sem custo do ML registrado.</strong> '
-        +'Nesses dias falta comissão e frete cobrados, então o líquido e o lucro estão '
-        +'<em>otimistas</em>. Preencher em Financeiro → Custo real do Mercado Livre.');
+      av.push('<strong>'+c.diasSemFin.length+' de '+c.diasVenda+' dias sem custo do ML registrado.</strong> '
+        +'Isso afeta só o cartão de custo real — M.C. e MPA vêm do Hub e não dependem dele. '
+        +'Preencher em Financeiro → Custo real do Mercado Livre.');
     }
-    if(!avisos.length){
-      el.innerHTML='';
-      return;
-    }
-    el.innerHTML='<div style="background:var(--amber-50);border:1px solid var(--amber-100);border-radius:var(--radius);padding:12px 14px">'
-      +avisos.map(function(a){ return '<div style="font-size:12px;color:var(--slate-700);line-height:1.6;margin-bottom:4px">'+a+'</div>'; }).join('')
+    el.innerHTML = av.length
+      ? '<div style="background:var(--amber-50);border:1px solid var(--amber-100);border-radius:var(--radius);padding:12px 14px">'
+        +av.map(function(a){ return '<div style="font-size:12px;color:var(--slate-700);line-height:1.6;margin-bottom:4px">'+a+'</div>'; }).join('')
+        +'</div>'
+      : '';
+  }
+
+  function dashRenderSaude(c){
+    var r=c.reputacao, el=document.getElementById('dash-saude');
+    if(!r){ el.innerHTML=''; return; }
+    function cel(l,v){ return '<div class="metric-cell"><div class="metric-cell-label">'+l+'</div>'
+      +'<div class="metric-cell-value">'+v+'</div></div>'; }
+    var p=function(x){ return (Number(x)*100).toFixed(2).replace('.',',')+'%'; };
+    el.innerHTML='<div class="metric-strip">'
+      +cel('Nível do vendedor', desc(r.nivel||'—'))
+      +cel('Reclamações', p(r.reclamacoes))
+      +cel('Cancelamentos', p(r.cancelamentos))
+      +cel('Atraso de envio', p(r.tempo_envio))
+      +(r.vendas_completas!==undefined&&r.vendas_completas!==null
+         ? cel('Vendas completas', dfmtN(r.vendas_completas)) : '')
       +'</div>';
   }
 
-  /* Três áreas aninhadas: faturamento contém o líquido, que contém o lucro.
-     A distância entre as bordas É o custo — é isso que a tela precisa mostrar. */
-  function dashRenderGrafico(c){
-    var el=document.getElementById('dash-grafico');
-    var s=c.serie;
-    if(!s.length || !s.some(function(x){return x.fat>0;})){
-      el.innerHTML='<div class="fin-cascata"><p class="fin-note">Sem venda no período.</p></div>';
+  /* Pontos de atenção montados a partir dos números JÁ calculados na tela —
+     não de uma segunda passada com regra própria, que foi o que produziu duas
+     listas divergentes de alerta no arquivo antes. */
+  function dashRenderAtencao(c){
+    var el=document.getElementById('dash-atencao'), itens=[];
+
+    var sangria=c.linhas.filter(function(o){ return o.desvio!==null && o.desvio>0.02 && o.ads>0; })
+      .sort(function(a,b){ return (b.desvio*b.receita)-(a.desvio*a.receita); }).slice(0,5);
+    if(sangria.length){
+      var perdido=sangria.reduce(function(s,o){ return s+o.desvio*o.receita; },0);
+      itens.push({cor:'coral', t:'ADS acima do alvo do Hub em '+sangria.length+' SKU'+(sangria.length>1?'s':''),
+        d: dfmtR(perdido)+' de M.C. consumidos além do planejado. Piores: '
+           +sangria.map(function(o){ return desc(o.sku)+' ('+dpp(o.desvio)+')'; }).join(' · ')});
+    }
+
+    var negativos=c.linhas.filter(function(o){ return o.mpaPct!==null && o.mpaPct<0; });
+    if(negativos.length){
+      itens.push({cor:'coral', t:negativos.length+' SKU'+(negativos.length>1?'s':'')+' com MPA negativa',
+        d:'Vende e perde dinheiro depois do ADS: '
+          +negativos.slice(0,5).map(function(o){ return desc(o.sku)+' ('+dpct(o.mpaPct,1)+')'; }).join(' · ')});
+    }
+
+    var caros=c.linhas.filter(function(o){ return o.custoMLPct!==null && o.custoMLPct>0.30 && o.receita>0; })
+      .sort(function(a,b){ return b.custoMLPct-a.custoMLPct; }).slice(0,5);
+    if(caros.length){
+      itens.push({cor:'amber', t:caros.length+' SKU'+(caros.length>1?'s':'')+' entregando mais de 30% ao ML',
+        d:'Comissão + frete sobre a receita — ticket baixo pesa mais porque o frete tem parte fixa: '
+          +caros.map(function(o){ return desc(o.sku)+' ('+dpct(o.custoMLPct,1)+')'; }).join(' · ')});
+    }
+
+    var semHub=c.linhas.filter(function(o){ return o.mcPct===null; })
+      .sort(function(a,b){ return b.receita-a.receita; }).slice(0,5);
+    if(semHub.length){
+      itens.push({cor:'amber', t:semHub.length+' SKU'+(semHub.length>1?'s':'')+' sem plano no Hub',
+        d:'Sem M.C. planejada não há margem calculável: '
+          +semHub.map(function(o){ return desc(o.sku)+' ('+dfmtR(o.receita)+')'; }).join(' · ')});
+    }
+
+    // Estoque e Buy Box vieram do bloco de atenção do Catálogo: são decisões de
+    // hoje, e decisão de hoje pertence à tela que abre primeiro.
+    var estoque=c.linhas.filter(function(o){
+      return o.snap && o.snap.temEstoque && o.estoqueMin!==null && o.snap.estoque<=o.estoqueMin;
+    }).sort(function(a,b){ return b.receita-a.receita; }).slice(0,5);
+    if(estoque.length){
+      itens.push({cor:'coral', t:estoque.length+' SKU'+(estoque.length>1?'s':'')+' no estoque mínimo',
+        d:estoque.map(function(o){
+          var dias = o.unidades>0 ? Math.round(o.snap.estoque/(o.unidades/c.j.dias)) : null;
+          return desc(o.sku)+' ('+dfmtN(o.snap.estoque)+' un'+(dias!==null?', ~'+dias+'d':'')+')';
+        }).join(' · ')});
+    }
+
+    var rotulo={not_listed:'fora do catálogo', losing:'perdendo', sharing_first_place:'dividindo o 1º'};
+    var buybox=c.linhas.filter(function(o){
+      return o.snap && o.snap.catalogo && rotulo[o.snap.buybox];
+    }).sort(function(a,b){ return b.receita-a.receita; }).slice(0,5);
+    if(buybox.length){
+      itens.push({cor:'amber', t:buybox.length+' SKU'+(buybox.length>1?'s':'')+' com Buy Box em risco',
+        d:buybox.map(function(o){ return desc(o.sku)+' ('+rotulo[o.snap.buybox]+')'; }).join(' · ')});
+    }
+
+    if(!itens.length){
+      el.innerHTML='<div class="fin-cascata"><p class="fin-note">Nada fora do lugar no período. '
+        +'ADS dentro do alvo, nenhuma MPA negativa e todo SKU com venda tem plano no Hub.</p></div>';
       return;
     }
-    var W=800, H=240, P={t:14,r:14,b:26,l:56};
-    var max=Math.max.apply(null, s.map(function(x){return Math.max(x.fat, x.liquido, x.lucro, 0);}));
-    var min=Math.min.apply(null, s.map(function(x){return Math.min(x.lucro, 0);}));
-    if(max<=0) max=1;
-    var esc=function(v){ return P.t + (H-P.t-P.b) * (1 - (v-min)/(max-min||1)); };
-    var px =function(i){ return s.length<2 ? P.l : P.l + (W-P.l-P.r) * (i/(s.length-1)); };
+    el.innerHTML=itens.map(function(i){
+      var bg = i.cor==='coral' ? 'var(--coral-50)' : 'var(--amber-50)';
+      var bd = i.cor==='coral' ? 'var(--coral-200)' : 'var(--amber-100)';
+      var fg = i.cor==='coral' ? 'var(--coral-600)' : 'var(--amber-600)';
+      return '<div style="background:'+bg+';border:1px solid '+bd+';border-radius:var(--radius);padding:11px 14px;margin-bottom:8px">'
+        +'<div style="font-size:12px;font-weight:700;color:'+fg+';margin-bottom:3px">'+i.t+'</div>'
+        +'<div style="font-size:11.5px;color:var(--slate-700);line-height:1.6;font-family:var(--mono)">'+i.d+'</div></div>';
+    }).join('');
+  }
 
-    function area(campo, cor, op){
+  function dashRenderGrafico(c){
+    var el=document.getElementById('dash-grafico'), s=c.serie;
+    if(!s.length || !s.some(function(x){return x.fat>0;})){
+      el.innerHTML='<div class="fin-cascata"><p class="fin-note">Sem venda no período.</p></div>'; return;
+    }
+    var W=800,H=240,P={t:14,r:14,b:26,l:56};
+    var max=Math.max.apply(null,s.map(function(x){return Math.max(x.fat,0);}))||1;
+    var min=Math.min.apply(null,s.map(function(x){return Math.min(x.posAds,0);}));
+    var esc=function(v){ return P.t+(H-P.t-P.b)*(1-(v-min)/(max-min||1)); };
+    var px=function(i){ return s.length<2?P.l:P.l+(W-P.l-P.r)*(i/(s.length-1)); };
+    function area(campo,cor,op){
       var topo=s.map(function(x,i){ return px(i)+','+esc(x[campo]); }).join(' ');
       var base=esc(Math.max(min,0));
       return '<polygon points="'+P.l+','+base+' '+topo+' '+px(s.length-1)+','+base+'" fill="'+cor+'" opacity="'+op+'"/>'
-           + '<polyline points="'+topo+'" fill="none" stroke="'+cor+'" stroke-width="1.5"/>';
+           +'<polyline points="'+topo+'" fill="none" stroke="'+cor+'" stroke-width="1.5"/>';
     }
-
     var grid='';
     for(var k=0;k<=3;k++){
       var v=min+(max-min)*k/3, y=esc(v);
-      grid+='<line x1="'+P.l+'" y1="'+y+'" x2="'+(W-P.r)+'" y2="'+y+'" stroke="var(--slate-50)" stroke-width="1"/>'
+      grid+='<line x1="'+P.l+'" y1="'+y+'" x2="'+(W-P.r)+'" y2="'+y+'" stroke="var(--slate-50)"/>'
         +'<text x="'+(P.l-8)+'" y="'+(y+3)+'" text-anchor="end" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
-        + (Math.abs(v)>=1000 ? (v/1000).toFixed(0)+'k' : v.toFixed(0)) +'</text>';
+        +(Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0))+'</text>';
     }
-    var rot='';
-    var passo=Math.max(1, Math.ceil(s.length/8));
-    s.forEach(function(x,i){
-      if(i%passo) return;
+    var rot='', passo=Math.max(1,Math.ceil(s.length/8));
+    s.forEach(function(x,i){ if(i%passo) return;
       rot+='<text x="'+px(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
-        +x.data.slice(8)+'/'+x.data.slice(5,7)+'</text>';
-    });
+        +x.data.slice(8)+'/'+x.data.slice(5,7)+'</text>'; });
 
-    el.innerHTML='<div class="fin-cascata">'
-      +'<svg width="100%" height="240" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
-      +grid
-      +area('fat','var(--slate-200)',0.45)
-      +area('liquido','var(--blue-100)',0.55)
-      +area('lucro','var(--green-100)',0.75)
-      +rot
-      +'</svg>'
+    el.innerHTML='<div class="fin-cascata"><svg width="100%" height="240" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+      +grid+area('fat','var(--slate-200)',0.45)+area('liquido','var(--blue-100)',0.55)
+      +area('posAds','var(--green-100)',0.75)+rot+'</svg>'
       +'<div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--slate-400);flex-wrap:wrap">'
       +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--slate-200);border-radius:2px;margin-right:4px"></span>Faturamento</span>'
-      +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--blue-100);border-radius:2px;margin-right:4px"></span>Líquido do marketplace</span>'
-      +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--green-100);border-radius:2px;margin-right:4px"></span>Lucro pós ADS</span>'
+      +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--blue-100);border-radius:2px;margin-right:4px"></span>Depois do ML</span>'
+      +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--green-100);border-radius:2px;margin-right:4px"></span>Depois do ML e do ADS</span>'
       +'</div>'
-      +'<p class="fin-note">A distância entre as faixas é o que sai da sua conta: a primeira é o ML, a segunda é a mercadoria mais o ADS.</p>'
-      +'</div>';
+      +'<p class="fin-note">A distância entre as faixas é o que sai da sua conta: a primeira é o Mercado Livre, a segunda é o ADS. '
+      +'A mercadoria não está aqui — ela já está dentro da M.C. do Hub.</p></div>';
   }
 
+  /* ── Tabela com card expandindo DENTRO da linha ──────────────────────────────
+     A gaveta lateral tirava o SKU da lista e, com ele, o ranking — que é o que
+     dá sentido a 19,6% de M.C. Aqui o card abre embaixo da própria linha, uma
+     de cada vez, e a linha sobe para o topo da tela ao abrir.               */
   function dashRenderProdutos(c){
     var el=document.getElementById('dash-produtos');
     var top=c.linhas.slice(0,15);
     if(!top.length){ el.innerHTML='<div class="fin-cascata"><p class="fin-note">Sem venda no período.</p></div>'; return; }
 
-    var cel=function(v, cor){ return '<td'+(cor?' style="color:'+cor+'"':'')+'>'+v+'</td>'; };
     var linhas=top.map(function(o){
-      var rep = c.tot.fat>0 ? o.receita/c.tot.fat : 0;
-      // Realizado vs planejado: a coluna que só existe porque o Hub guarda o plano.
-      var desvio = (o.margem!==null && o.mcPlano!==null) ? (o.margem-o.mcPlano) : null;
-      var corDesvio = desvio===null ? '' : (desvio < -0.05 ? 'var(--coral-500)' : (desvio>0 ? 'var(--green-600)' : 'var(--slate-600)'));
-      var corCustoML = o.custoMLPct===null ? '' : (o.custoMLPct>0.30 ? 'var(--coral-500)' : (o.custoMLPct>0.22 ? 'var(--amber-600)' : 'var(--slate-600)'));
-      return '<tr style="cursor:pointer" onclick="dashAbrirProduto(\''+desc(o.sku).replace(/'/g,"\\'")+'\')">'
-        +'<td style="font-family:var(--font);max-width:260px">'
+      var rep=c.tot.fat>0?o.receita/c.tot.fat:0;
+      var corCusto = o.custoMLPct===null?'':(o.custoMLPct>0.30?'var(--coral-500)':(o.custoMLPct>0.22?'var(--amber-600)':'var(--slate-600)'));
+      var corDesv  = o.desvio===null?'':(o.desvio>0.02?'var(--coral-500)':(o.desvio>0?'var(--amber-600)':'var(--green-600)'));
+      var corMpa   = o.mpaPct===null?'':(o.mpaPct<0?'var(--coral-500)':'var(--slate-900)');
+      var id=desc(o.sku).replace(/'/g,"\\'");
+      return '<tr class="dash-linha" data-sku="'+desc(o.sku)+'" style="cursor:pointer" onclick="dashToggleLinha(\''+id+'\')">'
+        +'<td style="font-family:var(--font);max-width:250px">'
           +'<div style="font-size:12.5px;color:var(--slate-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+desc(o.titulo)+'</div>'
-          +'<div style="font-size:11px;color:var(--slate-400);font-family:var(--mono)">'+desc(o.sku)+'</div></td>'
-        +cel(dfmtR(o.precoMedio))
-        +cel(o.custoUnit===null ? '<span style="color:var(--amber-600)">sem custo</span>' : dfmtR(o.custoUnit))
-        +cel(dfmtN(o.unidades))
-        +cel(dfmtR(o.receita))
-        +cel(dpct(rep))
-        +cel(dpct(o.custoMLPct), corCustoML)
-        +cel(o.lucro===null?'—':dfmtR(o.lucro))
-        +cel(o.margem===null?'—':dpct(o.margem))
-        +cel(dfmtR(o.ads))
-        +cel(o.mpa===null?'—':dpct(o.mpa))
-        +cel(o.mcPlano===null ? '<span style="color:var(--slate-200)">sem plano</span>' : dpct(o.mcPlano))
-        +cel(desvio===null?'—':((desvio>0?'+':'')+(desvio*100).toFixed(1).replace('.',',')+' p.p.'), corDesvio)
-        +'</tr>';
+          +'<div style="font-size:11px;color:var(--slate-400);font-family:var(--mono)">'+desc(o.sku)
+          +(o.viaLink?' <span title="linkado manualmente ao Hub" style="color:var(--blue-600)">↔ '+desc(o.skuHub)+'</span>':'')+'</div></td>'
+        +'<td>'+dfmtR(o.receita)+'</td>'
+        +'<td>'+dpct(rep,1)+'</td>'
+        +'<td>'+dfmtN(o.unidades)+'</td>'
+        +'<td>'+dfmtR(o.precoMedio)+'</td>'
+        +'<td>'+(o.mcPct===null?'<span style="color:var(--slate-200)">sem plano</span>':dpct(o.mcPct,1))+'</td>'
+        +'<td style="color:'+corMpa+'">'+dpct(o.mpaPct,1)+'</td>'
+        +'<td>'+dfmtR(o.mpaVal)+'</td>'
+        +'<td>'+dpct(o.tacos,2)+'</td>'
+        +'<td style="color:'+corDesv+'">'+dpp(o.desvio)+'</td>'
+        +'<td style="color:'+corCusto+'">'+dpct(o.custoMLPct,1)+'</td>'
+        +'</tr>'
+        +'<tr class="dash-card-row" id="dash-card-'+btoa(unescape(encodeURIComponent(o.sku))).replace(/[^A-Za-z0-9]/g,'')+'" style="display:none">'
+        +'<td colspan="11" style="padding:0;background:var(--bg)"></td></tr>';
     }).join('');
 
     el.innerHTML='<div class="table-wrap"><table>'
       +'<thead class="hub-thead"><tr>'
-      +'<th>Produto</th><th>Preço médio</th><th>Custo unit.</th><th>Unid.</th><th>Faturado</th>'
-      +'<th>Repres.</th><th>Custo ML</th><th>Lucro</th><th>Margem</th><th>ADS</th><th>MPA</th>'
-      +'<th>M.C. plano</th><th>Desvio</th>'
+      +'<th>Produto</th><th>Faturado</th><th>Repres.</th><th>Unid.</th><th>Preço médio</th>'
+      +'<th>M.C.</th><th>MPA</th><th>MPA R$</th><th>TACOS</th><th>Desvio ADS</th><th>Custo ML</th>'
       +'</tr></thead><tbody class="hub-tbody">'+linhas+'</tbody></table></div>'
-      +'<p class="fin-note"><strong>Custo ML</strong> é comissão + frete cobrados, sobre a receita do SKU — '
-      +'ticket baixo aparece alto aqui porque o frete tem componente fixo. '
-      +'<strong>Desvio</strong> é a margem realizada menos a M.C. planejada no Hub: negativo quer dizer que o '
-      +'plano está otimista demais para esse SKU. Clique na linha para abrir o produto.</p>';
+      +'<p class="fin-note"><strong>Desvio ADS</strong> é o TACOS real menos o alvo do Hub: positivo quer dizer '
+      +'que o ADS está comendo M.C. além do planejado. <strong>Custo ML</strong> é comissão + frete cobrados '
+      +'sobre a receita do SKU — não entra na M.C., mas alto demais significa que o frete planejado ficou velho. '
+      +'Clique na linha para abrir o produto aqui mesmo.</p>';
+  }
+
+  function idCard(sku){ return 'dash-card-'+btoa(unescape(encodeURIComponent(sku))).replace(/[^A-Za-z0-9]/g,''); }
+
+  window.dashToggleLinha=async function(sku){
+    var c=_dash.dados; if(!c) return;
+    var tr=document.getElementById(idCard(sku)); if(!tr) return;
+    var abrindo = tr.style.display==='none';
+
+    // Uma por vez: card alto dentro de tabela longa só funciona assim.
+    if(_dash.aberta && _dash.aberta!==sku){
+      var ant=document.getElementById(idCard(_dash.aberta));
+      if(ant) ant.style.display='none';
+    }
+    if(!abrindo){ tr.style.display='none'; _dash.aberta=null; return; }
+
+    tr.style.display='';
+    _dash.aberta=sku;
+    var cel=tr.firstElementChild;
+    cel.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Abrindo o produto…</div>';
+    tr.previousElementSibling.scrollIntoView({behavior:'smooth', block:'start'});
+
+    var linha=c.linhas.find(function(x){ return x.sku===sku; });
+    try{
+      var det=_dash.cacheCard[sku] || await dashCarregarCard(linha, c);
+      _dash.cacheCard[sku]=det;
+      cel.innerHTML=dashCardHtml(linha, det, c);
+    }catch(e){
+      console.error('[Central] card do produto', e);
+      cel.innerHTML='<div style="padding:16px"><p class="fin-note">Não consegui abrir o produto. '+desc(String(e&&e.message||e))+'</p></div>';
+    }
+  };
+
+  /* Carga sob demanda: só os dados DESTE SKU. A dashboard abre rápido e o card
+     vem completo — e nada disso depende do cache do módulo de Produtos, que era
+     o que prendia a gaveta antiga a uma aba específica. */
+  async function dashCarregarCard(linha, c){
+    var ids=linha.itemIds||[];
+    if(!ids.length) return {vazio:true};
+    var hoje=diaISO(new Date()), d30=somaDias(hoje,-29), d7=somaDias(hoje,-6);
+
+    var r=await Promise.all([
+      sbTodas(function(a,b){ return sbP('ml_anuncios','*').eq('conta','Logbox')
+        .eq('data', c.snapDate||'2099-01-01').in('item_id',ids)
+        .order('item_id',{ascending:true}).range(a,b); }, 'card/anuncio'),
+      sbTodas(function(a,b){ return sbP('ml_vendas','item_id,data,receita,pedidos,unidades')
+        .eq('conta','Logbox').in('item_id',ids).gte('data',d30)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'card/vendas'),
+      sbTodas(function(a,b){ return sbP('ml_visitas','item_id,data,visitas')
+        .eq('conta','Logbox').in('item_id',ids).gte('data',d30)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'card/visitas'),
+      sbTodas(function(a,b){ return sbP('ml_ads_reports','item_id,data,gasto,impressoes,cliques,unidades_ads')
+        .eq('conta','Logbox').in('item_id',ids).gte('data',d30).neq('preliminar',true)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'card/ads'),
+      sbTodas(function(a,b){ return sbP('ml_reviews','item_id,nota,comentario,data')
+        .eq('conta','Logbox').in('item_id',ids)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'card/reviews')
+    ]);
+    var err=r.find(function(x){ return x.error; });
+    if(err) throw err.error;
+
+    var an=(r[0].data||[])[0]||null;
+    var vendas=r[1].data||[], visitas=r[2].data||[], ads=r[3].data||[], reviews=r[4].data||[];
+    var soma=function(arr,campo,desde){
+      return arr.reduce(function(s,x){ return (!desde||x.data>=desde) ? s+(Number(x[campo])||0) : s; },0);
+    };
+    return {
+      anuncio:an, nAnuncios:(r[0].data||[]).length,
+      un30:soma(vendas,'unidades'), un7:soma(vendas,'unidades',d7),
+      ped30:soma(vendas,'pedidos'), rec30:soma(vendas,'receita'),
+      vis30:soma(visitas,'visitas'),
+      ads30:soma(ads,'gasto'), imp30:soma(ads,'impressoes'),
+      clq30:soma(ads,'cliques'), unAds30:soma(ads,'unidades_ads'),
+      reviews:reviews
+    };
+  }
+
+  function dashCardHtml(o, d, c){
+    if(d.vazio) return '<div style="padding:16px"><p class="fin-note">Sem anúncio no snapshot de hoje.</p></div>';
+    var an=d.anuncio||{};
+    function bloco(rot, val, sub, cor){
+      return '<div style="background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:11px 13px">'
+        +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400);margin-bottom:3px">'+rot+'</div>'
+        +'<div style="font-family:var(--mono);font-size:16px;color:'+(cor||'var(--slate-900)')+'">'+val+'</div>'
+        +(sub?'<div style="font-size:10.5px;color:var(--slate-400);margin-top:3px;line-height:1.45">'+sub+'</div>':'')
+        +'</div>';
+    }
+    var conv = d.vis30>0 ? d.ped30/d.vis30 : null;
+    var cpc  = d.clq30>0 ? d.ads30/d.clq30 : null;
+    var notas=d.reviews.map(function(r){ return Number(r.nota); }).filter(function(n){ return n>=1&&n<=5; });
+    var media=notas.length? notas.reduce(function(s,n){return s+n;},0)/notas.length : null;
+
+    var h='<div style="padding:16px 18px">';
+    h+='<div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:14px">'
+      +'<div><div style="font-size:14px;font-weight:600;color:var(--slate-900);line-height:1.35">'+desc(o.titulo)+'</div>'
+      +'<div style="font-family:var(--mono);font-size:11px;color:var(--slate-400);margin-top:3px">SKU: '+desc(o.sku)
+      +' · '+d.nAnuncios+' anúncio'+(d.nAnuncios>1?'s':'')
+      +(an.permalink?' · <a href="'+desc(an.permalink)+'" target="_blank" style="color:var(--blue-600)">ver no ML</a>':'')
+      +'</div></div>'
+      +'<button class="perf-select" style="cursor:pointer" onclick="event.stopPropagation();dashToggleLinha(\''+desc(o.sku).replace(/'/g,"\\'")+'\')">Fechar</button>'
+      +'</div>';
+
+    // Linha 1 — margem, que é o que manda
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:9px">'
+      +bloco('M.C. — Hub', dpct(o.mcPct,1),
+             o.mcPct===null?'sem plano no Hub':'ADS alvo do Hub '+dpct(o.adsAlvo,1), 'var(--green-600)')
+      +bloco('MPA — pós-ADS', dpct(o.mpaPct,1), 'M.C. − TACOS real ('+dpct(o.tacos,1)+')')
+      +bloco('MPA em R$', dfmtR(o.mpaVal), 'sobre '+dfmtR(o.receita)+' de receita')
+      +bloco('Desvio do ADS', dpp(o.desvio),
+             o.desvio===null?'':(o.desvio>0
+               ? dfmtR(o.desvio*o.receita)+' de M.C. além do plano'
+               : 'dentro do alvo'),
+             o.desvio!==null&&o.desvio>0.02?'var(--coral-500)':'var(--slate-900)')
+      +bloco('Custo real do ML', dpct(o.custoMLPct,1),
+             'comissão '+dfmtR(o.comissao)+' · frete '+dfmtR(o.frete),
+             o.custoMLPct!==null&&o.custoMLPct>0.30?'var(--coral-500)':'var(--slate-900)')
+      +'</div>';
+
+    // Preço e posição
+    if(an.preco!==undefined && an.preco!==null){
+      h+='<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">'
+        +'<span style="font-family:var(--mono);font-size:19px;color:var(--slate-900)">'+dfmtR(an.preco)+'</span>';
+      if(an.preco_concorrente){
+        var acima=Number(an.preco)>Number(an.preco_concorrente);
+        h+='<span style="font-size:11.5px;color:var(--slate-400)">concorrente '+dfmtR(an.preco_concorrente)
+          +' <span style="color:'+(acima?'var(--coral-500)':'var(--green-600)')+'">'+(acima?'acima':'abaixo')+'</span></span>';
+      }
+      if(an.buybox_status) h+='<span class="cal-pill" style="font-size:11px">Buy Box: '+desc(an.buybox_status)+'</span>';
+      if(an.experiencia_valor!==undefined&&an.experiencia_valor!==null)
+        h+='<span class="cal-pill" style="font-size:11px">Experiência '+desc(an.experiencia_valor)+'</span>';
+      h+='</div>';
+    }
+
+    // Linha 2 — operação
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px">'
+      +bloco('Vendas', '7D '+dfmtN(d.un7)+' · 30D '+dfmtN(d.un30), dfmtR(d.rec30)+' em 30 dias')
+      +bloco('Estoque', an.estoque!==undefined&&an.estoque!==null?dfmtN(an.estoque)+' un':'—',
+             (an.estoque_full!==undefined&&an.estoque_full!==null?'Full '+dfmtN(an.estoque_full):'')
+             + (d.un30>0 && an.estoque ? ' · '+Math.round(an.estoque/(d.un30/30))+'d de cobertura' : ''))
+      +bloco('Conversão', dpct(conv,1), d.vis30?dfmtN(d.vis30)+' visitas em 30d':'sem visita registrada')
+      +bloco('ADS 30D', dfmtR(d.ads30),
+             dfmtN(d.imp30)+' imp · '+dfmtN(d.clq30)+' clq'+(cpc?' · CPC '+dfmtR(cpc):''))
+      +bloco('Avaliações', media!==null?media.toFixed(2).replace('.',',')+' ★':'—',
+             notas.length?notas.length+' avaliações':'sem avaliação')
+      +'</div>';
+
+    if(an.experiencia_motivo || an.experiencia_recomendacao){
+      h+='<div style="margin-top:10px;background:var(--white);border:1px solid var(--slate-100);border-radius:var(--radius);padding:11px 13px">'
+        +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400);margin-bottom:4px">Experiência de compra — o que o ML diz</div>'
+        +'<div style="font-size:11.5px;color:var(--slate-700);line-height:1.6">'
+        +desc(an.experiencia_motivo||'')+(an.experiencia_recomendacao?' <strong>'+desc(an.experiencia_recomendacao)+'</strong>':'')
+        +'</div></div>';
+    }
+
+    var ruins=d.reviews.filter(function(r){ return Number(r.nota)<=2 && r.comentario; }).slice(0,3);
+    if(ruins.length){
+      h+='<div style="margin-top:10px;background:var(--coral-50);border:1px solid var(--coral-200);border-radius:var(--radius);padding:11px 13px">'
+        +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--coral-600);margin-bottom:5px">Notas baixas recentes</div>'
+        +ruins.map(function(r){ return '<div style="font-size:11.5px;color:var(--slate-700);line-height:1.5;margin-bottom:4px">'
+          +'<span style="font-family:var(--mono);color:var(--coral-600)">'+r.nota+'★</span> '+desc(r.comentario).slice(0,220)+'</div>'; }).join('')
+        +'</div>';
+    }
+
+    h+='</div>';
+    return h;
   }
 
   /* ── Orquestração ────────────────────────────────────────────────────────── */
-  window.dashTrocarPeriodo=function(v){ _dash.chave=v; _dash.dados=null; dashCarregar(true); };
-
-  window.dashAbrirProduto=function(sku){
-    go('performance');
-    if(typeof opGoTab==='function') opGoTab('produtos', document.getElementById('op-tab-produtos'));
-    // A gaveta vive do cache do módulo Produtos; se ele ainda não montou, só
-    // navegar já é melhor do que abrir um painel vazio.
-    setTimeout(function(){
-      try{
-        if(typeof prodAbrirDrawer==='function' && typeof prodDadosCache!=='undefined' && prodDadosCache){
-          var l=prodDadosCache.find(function(x){ return x.sku===sku; });
-          if(l) prodAbrirDrawer(l.chave);
-        }
-      }catch(e){ console.warn('[dash] gaveta do produto', e); }
-    }, 350);
+  window.dashTrocarPeriodo=function(v){
+    _dash.chave=v; _dash.dados=null; _dash.aberta=null; _dash.cacheCard={};
+    dashCarregar(true);
   };
 
   window.dashCarregar=async function(forcar){
@@ -14678,16 +14591,13 @@ window.apGarantirMes=async function(mes){
     kpis.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Montando a operação…</div>';
     try{
       var j=dashJanela(_dash.chave);
-      var bruto=await dashLer(j);
-      var c=dashCalcular(bruto, j);
+      var c=dashCalcular(await dashLer(j), j);
       _dash.dados=c;
-      dashRenderAvisos(c);
-      dashRenderKpis(c);
-      dashRenderGrafico(c);
-      dashRenderProdutos(c);
+      dashRenderAvisos(c); dashRenderKpis(c); dashRenderSaude(c);
+      dashRenderAtencao(c); dashRenderGrafico(c); dashRenderProdutos(c);
       var sub=document.getElementById('home-subtitle');
       if(sub) sub.textContent=j.rotulo+' · '+j.ini.split('-').reverse().join('/')
-        +(j.ini!==j.fim ? ' a '+j.fim.split('-').reverse().join('/') : '')
+        +(j.ini!==j.fim?' a '+j.fim.split('-').reverse().join('/'):'')
         +' · comparado com os '+j.dias+' dia'+(j.dias>1?'s':'')+' anteriores';
     }catch(err){
       console.error('[Central]',err);
@@ -14697,7 +14607,6 @@ window.apGarantirMes=async function(mes){
     _dash.carregando=false;
   };
 
-  // Expostos para teste e para o console
   window._dashJanela=dashJanela;
   window._dashTotais=dashTotais;
   window._dashAgregar=dashAgregar;
