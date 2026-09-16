@@ -10004,7 +10004,7 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
       // elas. Não era o agente alucinando: o dado chegava errado.
       var adsRes=await sbTodas(function(de,ate){
         return sbP('ml_ads_reports','item_id,data,gasto,vendas_atribuidas,impressoes,cliques,ctr,unidades_ads')
-          .gte('data',d30s).neq('preliminar',true)
+          .gte('data',d30s)
           .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate);
       }, 'ml_ads_reports/ctx30');
 
@@ -12887,7 +12887,7 @@ async function loadFin(){
         .gte('data',ini).lte('data',fim)
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_vendas/fin'),
       sbTodas(function(de,ate){ return sbP('ml_ads_reports','item_id,data,gasto,vendas_atribuidas,impressoes,cliques,unidades_ads')
-        .gte('data',ini).lte('data',fim).neq('preliminar',true)
+        .gte('data',ini).lte('data',fim)
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_ads_reports/fin'),
       // Mapa item_id → sku/título: `.limit(1000)` aqui era exatamente o teto,
       // ou seja, já estava no fio. Paginado, todo anúncio recebe nome.
@@ -12896,8 +12896,8 @@ async function loadFin(){
       sbTodas(function(de,ate){ return sbP('ml_vendas','item_id,data,receita')
         .gte('data',iniA).lte('data',fimA)
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_vendas/finAnterior'),
-      sbTodas(function(de,ate){ return sbP('ml_ads_reports','item_id,data,gasto')
-        .gte('data',iniA).lte('data',fimA).neq('preliminar',true)
+      sbTodas(function(de,ate){ return sbP('ml_ads_reports','item_id,data,gasto,preliminar')
+        .gte('data',iniA).lte('data',fimA)
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_ads_reports/finAnterior')
     ]);
 
@@ -14136,8 +14136,8 @@ window.apGarantirMes=async function(mes){
       .eq('conta','Logbox').gte('data',de).lte('data',ate)
       .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }; }
   function qAds(de,ate){ return function(a,b){
-    return sbP('ml_ads_reports','item_id,data,gasto,impressoes,cliques,unidades_ads,unidades_organicas')
-      .eq('conta','Logbox').gte('data',de).lte('data',ate).neq('preliminar',true)
+    return sbP('ml_ads_reports','item_id,data,gasto,impressoes,cliques,unidades_ads,unidades_organicas,preliminar')
+      .eq('conta','Logbox').gte('data',de).lte('data',ate)
       .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }; }
   function qVis(de,ate){ return function(a,b){
     return sbP('ml_visitas','item_id,data,visitas')
@@ -14192,7 +14192,7 @@ window.apGarantirMes=async function(mes){
   function ehFatura(t){  return /fatura|billing|bill/i.test(String(t||'')); }
 
   function dashAgregar(vendas, ads, fin, i2sku, visitas, hubDe){
-    var porSku={}, dia={}, diasFin={};
+    var porSku={}, dia={}, diasFin={}, diasPrelim={};
     function sl(sku){
       if(!porSku[sku]) porSku[sku]={sku:sku, receita:0, unidades:0, pedidos:0,
         comissaoVenda:0, comissaoML:0, frete:0, ads:0, imp:0, clq:0, unAds:0, unOrg:0, visitas:0};
@@ -14221,6 +14221,7 @@ window.apGarantirMes=async function(mes){
     });
     ads.forEach(function(r){
       var sku=i2sku[r.item_id]||('item:'+r.item_id), d=String(r.data||'').slice(0,10), o=sl(sku);
+      if(r.preliminar===true && d) diasPrelim[d]=1;
       o.ads+=Number(r.gasto)||0; o.imp+=Number(r.impressoes)||0; o.clq+=Number(r.cliques)||0;
       o.unAds+=Number(r.unidades_ads)||0; o.unOrg+=Number(r.unidades_organicas)||0;
       if(d) sd(d).ads+=Number(r.gasto)||0;
@@ -14232,7 +14233,7 @@ window.apGarantirMes=async function(mes){
       if(ehFrete(r.tipo)){ if(sku) sl(sku).frete+=v; if(d) sd(d).fre+=v; }
       else if(ehComissao(r.tipo)){ if(sku) sl(sku).comissaoML+=v; if(d) sd(d).com+=v; }
     });
-    return {porSku:porSku, dia:dia, diasFin:diasFin};
+    return {porSku:porSku, dia:dia, diasFin:diasFin, diasPrelim:diasPrelim};
   }
 
   /* Totais. O bloco de margem só existe para SKU LINKADO ao Hub — sem plano
@@ -14353,7 +14354,8 @@ window.apGarantirMes=async function(mes){
 
     return { j:j, tot:tot, totA:totA, serie:serie, linhas:linhas,
              reputacao:d.reputacao, snapDate:d.snapDate,
-             diasSemFin:diasSemFin, diasVenda:diasVenda.length };
+             diasSemFin:diasSemFin, diasVenda:diasVenda.length,
+             diasPrelim:Object.keys(ag.diasPrelim).sort() };
   }
 
   /* ── Render ──────────────────────────────────────────────────────────────── */
@@ -14431,6 +14433,12 @@ window.apGarantirMes=async function(mes){
       av.push('<strong>M.C. e MPA cobrem '+dpct(c.tot.cobertura,0)+' do faturamento.</strong> '
         +c.tot.semHub+' SKU'+(c.tot.semHub>1?'s':'')+' com venda ('+dfmtR(c.tot.receitaSemHub)
         +') não está linkado ao Hub de Precificação. Continua no faturamento e no TACOS, fora da margem.');
+    }
+    if(c.diasPrelim && c.diasPrelim.length){
+      av.push('<strong>ADS preliminar em '+c.diasPrelim.length+' dia'
+        +(c.diasPrelim.length>1?'s':'')+' do período.</strong> '
+        +'O ML fecha o relatório de Ads com atraso e revisa esses números, quase sempre para cima. '
+        +'Eles já estão contados no TACOS e na MPA — trate como provisório.');
     }
     if(c.diasSemFin.length){
       av.push('<strong>'+c.diasSemFin.length+' de '+c.diasVenda+' dias sem custo do ML registrado.</strong> '
@@ -14735,8 +14743,8 @@ window.apGarantirMes=async function(mes){
       sbTodas(function(a,b){ return sbP('ml_visitas','item_id,data,visitas')
         .eq('conta','Logbox').in('item_id',ids).gte('data',d30)
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'card/visitas'),
-      sbTodas(function(a,b){ return sbP('ml_ads_reports','item_id,data,gasto,impressoes,cliques,unidades_ads')
-        .eq('conta','Logbox').in('item_id',ids).gte('data',d30).neq('preliminar',true)
+      sbTodas(function(a,b){ return sbP('ml_ads_reports','item_id,data,gasto,impressoes,cliques,unidades_ads,preliminar')
+        .eq('conta','Logbox').in('item_id',ids).gte('data',d30)
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'card/ads'),
       sbTodas(function(a,b){ return sbP('ml_reviews','item_id,nota,comentario,data')
         .eq('conta','Logbox').in('item_id',ids)
@@ -15061,7 +15069,7 @@ window.apGarantirMes=async function(mes){
     var r=await Promise.all([
       sbTodas(function(a,b){ return sbP('ml_ads_reports',
         'item_id,data,gasto,vendas_atribuidas,impressoes,cliques,unidades_ads,unidades_organicas')
-        .eq('conta','Logbox').gte('data',j.ini).lte('data',j.fim).neq('preliminar',true)
+        .eq('conta','Logbox').gte('data',j.ini).lte('data',j.fim)
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'ads/relatorio'),
       sbTodas(function(a,b){ return sbP('ml_vendas','item_id,data,receita,unidades')
         .eq('conta','Logbox').gte('data',j.ini).lte('data',j.fim)
@@ -15099,8 +15107,13 @@ window.apGarantirMes=async function(mes){
     }
     function sd(x){ if(!dia[x]) dia[x]={gasto:0, fatAds:0, fat:0}; return dia[x]; }
 
+    var diasPrelim={};
     d.ads.forEach(function(r){
       var k=i2sku[r.item_id]||('item:'+r.item_id), o=sl(k), x=String(r.data||'').slice(0,10);
+      // O ML entrega os ~2 últimos dias como PRELIMINAR e revisa depois. Antes
+      // a tela filtrava esses dias fora, e "Hoje"/"Ontem" apareciam zerados —
+      // com gasto real no banco. Agora entram, e a tela diz que são provisórios.
+      if(r.preliminar===true && x) diasPrelim[x]=1;
       o.gasto+=Number(r.gasto)||0;
       o.fatAds+=Number(r.vendas_atribuidas)||0;
       o.imp+=Number(r.impressoes)||0; o.clq+=Number(r.cliques)||0;
@@ -15144,7 +15157,7 @@ window.apGarantirMes=async function(mes){
                   tacos: s.fat>0 ? s.gasto/s.fat : 0});
     }
 
-    return { j:j, linhas:linhas, serie:serie, tot:{
+    return { j:j, linhas:linhas, serie:serie, diasPrelim:Object.keys(diasPrelim).sort(), tot:{
       gasto:t.gasto, fatAds:t.fatAds, fat:t.fat, imp:t.imp, clq:t.clq,
       unAds:t.unAds, unOrg:t.unOrg,
       pctAds: atribT>0 ? t.unAds/atribT : null,
@@ -15161,6 +15174,19 @@ window.apGarantirMes=async function(mes){
     return '<div class="kpi"><div class="kpi-l">'+rot+'</div>'
       +'<div class="kpi-v"'+(cor?' style="color:'+cor+'"':'')+'>'+val+'</div>'
       +'<div class="kpi-d">'+(sub||'')+'</div></div>';
+  }
+
+  function adsRenderAviso(c){
+    var el=document.getElementById('ads-erro'); if(!el) return;
+    var dp=c.diasPrelim||[];
+    if(!dp.length){ el.innerHTML=''; return; }
+    var br=function(x){ return x.slice(8)+'/'+x.slice(5,7); };
+    el.innerHTML='<div style="background:var(--amber-50);border:1px solid var(--amber-100);'
+      +'border-radius:var(--radius);padding:11px 14px;font-size:12px;color:var(--slate-700);line-height:1.6">'
+      +'<strong>'+dp.length+' dia'+(dp.length>1?'s':'')+' ainda preliminar'+(dp.length>1?'es':'')+'</strong> '
+      +'no período ('+dp.map(br).join(' · ')+'). O Mercado Livre fecha o relatório de Ads com atraso '
+      +'e revisa esses números nos próximos dias — normalmente para cima. '
+      +'Eles estão contados aqui; trate como provisório.</div>';
   }
 
   function adsRenderKpis(c){
@@ -15333,7 +15359,7 @@ window.apGarantirMes=async function(mes){
       var j=adsJanela(_ads.chave,_ads.custom), ck=j.ini+'_'+j.fim;
       var c=(!forcar && _ads.cache[ck]) ? _ads.cache[ck] : adsCalcular(await adsLer(j), j);
       _ads.cache[ck]=c; _ads.dados=c;
-      adsRenderKpis(c); adsRenderGrafico(c); adsRenderTabela(c);
+      adsRenderAviso(c); adsRenderKpis(c); adsRenderGrafico(c); adsRenderTabela(c);
       var sub=document.getElementById('ads-subtitle');
       if(sub) sub.textContent=j.rotulo+' · '+j.ini.split('-').reverse().join('/')
         +(j.ini!==j.fim?' a '+j.fim.split('-').reverse().join('/'):'');
@@ -15417,8 +15443,8 @@ window.apGarantirMes=async function(mes){
       sbTodas(function(a,b){ return sbP('ml_vendas','item_id,data,receita,pedidos,unidades,comissao')
         .eq('conta','Logbox').gte('data',ini).lte('data',fim)
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'dre/vendas'),
-      sbTodas(function(a,b){ return sbP('ml_ads_reports','item_id,data,gasto')
-        .eq('conta','Logbox').gte('data',ini).lte('data',fim).neq('preliminar',true)
+      sbTodas(function(a,b){ return sbP('ml_ads_reports','item_id,data,gasto,preliminar')
+        .eq('conta','Logbox').gte('data',ini).lte('data',fim)
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'dre/ads'),
       sbTodas(function(a,b){ return sbP('ml_financeiro','movement_id,tipo,valor,data,sku')
         .eq('conta','Logbox').gte('data',ini).lte('data',fim)
