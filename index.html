@@ -9072,6 +9072,16 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
 #dre-tabela tr.recuo .dre-rot { padding-left: 26px; color: var(--slate-600); }
 #dre-tabela tr:hover .dre-rot { background: var(--slate-50); }
 .fin-loading { font-size: 12.5px; color: var(--slate-400); }
+
+/* Cartão que abre série no gráfico */
+.kpi-clicavel { cursor: pointer; transition: border-color .15s, transform .12s; }
+.kpi-clicavel:hover { border-color: var(--slate-400); transform: translateY(-1px); }
+.kpi-clicavel::after { content: '↗'; position: absolute; top: 9px; right: 11px;
+  font-size: 10px; color: var(--slate-200); }
+.kpi-clicavel:hover::after { color: var(--slate-400); }
+.kpi-sel { border-color: var(--slate-900) !important; }
+.kpi-sel::after { content: '●'; color: var(--slate-900); }
+.kpi-sel .kpi-v { color: var(--slate-900); }
 </style>
 
 <script>
@@ -14280,7 +14290,7 @@ window.apGarantirMes=async function(mes){
 (function(){
 
   var _dash = { chave:'7d', dados:null, carregando:false, aberta:null,
-                cacheCard:{}, custom:null, cachePeriodo:{}, dia:null };
+                cacheCard:{}, custom:null, cachePeriodo:{}, dia:null, metrica:null };
 
   /* Cada troca de período refazia oito consultas paginadas, inclusive para
      voltar a um período já visto. Agora o resultado calculado fica guardado
@@ -14448,7 +14458,7 @@ window.apGarantirMes=async function(mes){
         comissaoVenda:0, comissaoML:0, frete:0, ads:0, imp:0, clq:0, unAds:0, unOrg:0, visitas:0};
       return porSku[sku];
     }
-    function sd(d){ if(!dia[d]) dia[d]={fat:0, com:0, fre:0, ads:0, vis:0, ped:0, mc:0}; return dia[d]; }
+    function sd(d){ if(!dia[d]) dia[d]={fat:0, com:0, fre:0, ads:0, vis:0, ped:0, mc:0, uni:0, recHub:0}; return dia[d]; }
 
     vendas.forEach(function(r){
       var sku=i2sku[r.item_id]||('item:'+r.item_id), d=String(r.data||'').slice(0,10), o=sl(sku);
@@ -14460,8 +14470,11 @@ window.apGarantirMes=async function(mes){
         s1.ped+=Number(r.pedidos)||0;
         // M.C. do dia, para o detalhe ao clicar no gráfico. Só para SKU com
         // plano — o mesmo critério do bloco de margem.
+        s1.uni += Number(r.unidades)||0;
+        // recHub: receita COM plano no Hub. Sem ela, M.C.% e MPA% do dia
+        // sairiam divididos pela receita total e viriam menores que a verdade.
         var h1 = hubDe ? hubDe(sku) : null;
-        if(h1) s1.mc += (Number(r.receita)||0)*h1.mcPct;
+        if(h1){ s1.mc += (Number(r.receita)||0)*h1.mcPct; s1.recHub += Number(r.receita)||0; }
       }
     });
     (visitas||[]).forEach(function(r){
@@ -14570,12 +14583,21 @@ window.apGarantirMes=async function(mes){
 
     var serie=[];
     for(var i=0;i<j.dias;i++){
-      var dd=somaDias(j.ini,i), s=ag.dia[dd]||{fat:0,com:0,fre:0,ads:0,vis:0,ped:0,mc:0};
+      var dd=somaDias(j.ini,i), s=ag.dia[dd]||{fat:0,com:0,fre:0,ads:0,vis:0,ped:0,mc:0,uni:0,recHub:0};
       serie.push({ data:dd, fat:s.fat,
                    liquido: s.fat - s.com - s.fre,
                    posAds:  s.fat - s.com - s.fre - s.ads,
                    com:s.com, fre:s.fre, ads:s.ads, vis:s.vis, ped:s.ped,
-                   mc:s.mc, mpa:s.mc - s.ads });
+                   uni:s.uni, recHub:s.recHub,
+                   mc:s.mc, mpa:s.mc - s.ads,
+                   custoML: s.com + s.fre,
+                   // Razões do dia: cada uma sobre a SUA base.
+                   mcPct:    s.recHub>0 ? s.mc/s.recHub : null,
+                   mpaPct:   s.recHub>0 ? (s.mc-s.ads)/s.recHub : null,
+                   tacos:    s.fat>0 ? s.ads/s.fat : null,
+                   custoPct: s.fat>0 ? (s.com+s.fre)/s.fat : null,
+                   conversao:s.vis>0 ? s.ped/s.vis : null,
+                   ticket:   s.ped>0 ? s.fat/s.ped : null });
     }
 
     var linhas=Object.keys(ag.porSku).map(function(k){
@@ -14632,30 +14654,58 @@ window.apGarantirMes=async function(mes){
      topo (.destaque), não de borda coral — coral ficou reservado para ALERTA.
      Antes o mesmo coral era borda de cartão importante e fundo de alerta na
      mesma tela, o que ensina o olho a ignorar os dois. */
-  function cartao(rotulo, valor, sub, destaque){
-    return '<div class="kpi'+(destaque?' destaque':'')+'">'
+  /* As séries que um cartão pode abrir no gráfico. `campo` é a chave da linha
+     do dia (dashAgregar já calcula cada razão sobre a SUA base). */
+  var METRICAS = {
+    fat:      {rot:'Faturamento',   campo:'fat',      tipo:'reais'},
+    mcVal:    {rot:'M.C. em R$',    campo:'mc',       tipo:'reais'},
+    mcPct:    {rot:'M.C. — Hub',    campo:'mcPct',    tipo:'pct', casas:1},
+    mpaVal:   {rot:'MPA em R$',     campo:'mpa',      tipo:'reais'},
+    mpaPct:   {rot:'MPA — pós-ADS', campo:'mpaPct',   tipo:'pct', casas:1},
+    ads:      {rot:'Valor em ADS',  campo:'ads',      tipo:'reais'},
+    tacos:    {rot:'TACOS real',    campo:'tacos',    tipo:'pct', casas:2, ruimSubindo:true},
+    custoML:  {rot:'Custo do ML',   campo:'custoPct', tipo:'pct', casas:1, ruimSubindo:true},
+    vendas:   {rot:'Nº de Vendas',  campo:'ped',      tipo:'num'},
+    unidades: {rot:'Unidades',      campo:'uni',      tipo:'num'},
+    ticket:   {rot:'Ticket Médio',  campo:'ticket',   tipo:'reais'},
+    conversao:{rot:'Conversão',     campo:'conversao',tipo:'pct', casas:2}
+  };
+
+  function cartao(rotulo, valor, sub, destaque, chave){
+    var sel = chave && _dash.metrica===chave;
+    return '<div class="kpi'+(destaque?' destaque':'')+(chave?' kpi-clicavel':'')+(sel?' kpi-sel':'')+'"'
+      +(chave?' onclick="dashVerMetrica(\''+chave+'\')" title="Ver no gráfico de evolução"':'')+'>'
       +'<div class="kpi-l">'+rotulo+'</div>'
       +'<div class="kpi-v">'+valor+'</div>'
       +'<div class="kpi-d">'+(sub||'')+'</div></div>';
   }
 
+  window.dashVerMetrica=function(chave){
+    // clicar no cartão já aberto volta para as três faixas
+    _dash.metrica = (_dash.metrica===chave) ? null : chave;
+    var c=_dash.dados; if(!c) return;
+    try{ dashRenderKpis(c); dashRenderGrafico(c); }catch(e){ console.error('[OfficeLed] métrica', e); }
+    var alvo=document.getElementById('dash-grafico');
+    if(alvo && _dash.metrica) alvo.scrollIntoView({behavior:'smooth', block:'center'});
+  };
+
   function dashRenderKpis(c){
     var t=c.tot, a=c.totA;
     var g='<div class="kpi-grid">';
-    g+=cartao('Faturamento', dfmtR(t.fat), delta(t.fat,a.fat));
-    g+=cartao('M.C. — Hub', dpct(t.mcPct,1), delta(t.mcPct,a.mcPct,'pp'), true);
-    g+=cartao('M.C. em R$', dfmtR(t.mcVal), delta(t.mcVal,a.mcVal));
-    g+=cartao('MPA — pós-ADS', dpct(t.mpaPct,1), delta(t.mpaPct,a.mpaPct,'pp'), true);
-    g+=cartao('MPA em R$', dfmtR(t.mpaVal), delta(t.mpaVal,a.mpaVal));
-    g+=cartao('TACOS real', dpct(t.tacos,2), delta(t.tacos,a.tacos,'pp',true));
+    g+=cartao('Faturamento', dfmtR(t.fat), delta(t.fat,a.fat), false, 'fat');
+    g+=cartao('M.C. — Hub', dpct(t.mcPct,1), delta(t.mcPct,a.mcPct,'pp'), true, 'mcPct');
+    g+=cartao('M.C. em R$', dfmtR(t.mcVal), delta(t.mcVal,a.mcVal), false, 'mcVal');
+    g+=cartao('MPA — pós-ADS', dpct(t.mpaPct,1), delta(t.mpaPct,a.mpaPct,'pp'), true, 'mpaPct');
+    g+=cartao('MPA em R$', dfmtR(t.mpaVal), delta(t.mpaVal,a.mpaVal), false, 'mpaVal');
+    g+=cartao('TACOS real', dpct(t.tacos,2), delta(t.tacos,a.tacos,'pp',true), false, 'tacos');
     g+=cartao('ADS alvo do Hub', dpct(t.alvoPct,2),
       t.desvioAds===null ? '' :
       '<span style="font-size:11px;color:'+(t.desvioAds>0?'var(--coral-500)':'var(--green-600)')+'">'
       +'desvio '+dpp(t.desvioAds)+'</span>');
-    g+=cartao('Valor em ADS', dfmtR(t.ads), delta(t.ads,a.ads,null,true));
-    g+=cartao('Nº de Vendas', dfmtN(t.vendas), delta(t.vendas,a.vendas));
-    g+=cartao('Unidades', dfmtN(t.unidades), delta(t.unidades,a.unidades));
-    g+=cartao('Ticket Médio', dfmtR(t.ticket), delta(t.ticket,a.ticket));
+    g+=cartao('Valor em ADS', dfmtR(t.ads), delta(t.ads,a.ads,null,true), false, 'ads');
+    g+=cartao('Nº de Vendas', dfmtN(t.vendas), delta(t.vendas,a.vendas), false, 'vendas');
+    g+=cartao('Unidades', dfmtN(t.unidades), delta(t.unidades,a.unidades), false, 'unidades');
+    g+=cartao('Ticket Médio', dfmtR(t.ticket), delta(t.ticket,a.ticket), false, 'ticket');
     /* Hoje contra ontem NO MESMO HORÁRIO. Sem isso, às 10h da manhã o dia
        corrente sempre aparece despencando contra um dia inteiro. */
     if(c.parcial){
@@ -14670,9 +14720,11 @@ window.apGarantirMes=async function(mes){
     g+=cartao('Conversão', dpct(t.conversao,2),
       t.visitas ? delta(t.conversao,a.conversao,'pp')+' <span style="font-size:10.5px;color:var(--slate-400)">'
                   +dfmtN(t.visitas)+' visitas</span>'
-                : '<span style="font-size:10.5px;color:var(--slate-400)">sem visita sincada</span>');
+                : '<span style="font-size:10.5px;color:var(--slate-400)">sem visita sincada</span>',
+      false, 'conversao');
     g+=cartao('Custo real do ML', dpct(t.custoMLPct,2),
-      '<span style="font-size:10.5px;color:var(--slate-400)">'+dfmtR(t.custoML)+'</span>');
+      '<span style="font-size:10.5px;color:var(--slate-400)">'+dfmtR(t.custoML)+'</span>',
+      false, 'custoML');
     g+='</div>';
 
     g+='<div class="surface" style="margin-top:10px;padding:12px 14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">'
@@ -14816,6 +14868,7 @@ window.apGarantirMes=async function(mes){
     if(!s.length || !s.some(function(x){return x.fat>0;})){
       el.innerHTML='<div class="fin-cascata"><p class="fin-note">Sem venda no período.</p></div>'; return;
     }
+    if(_dash.metrica && METRICAS[_dash.metrica]) return dashGraficoMetrica(c, METRICAS[_dash.metrica]);
     var W=800,H=240,P={t:14,r:14,b:26,l:56};
     var max=Math.max.apply(null,s.map(function(x){return Math.max(x.fat,0);}))||1;
     var min=Math.min.apply(null,s.map(function(x){return Math.min(x.posAds,0);}));
@@ -14869,6 +14922,118 @@ window.apGarantirMes=async function(mes){
       +'Passe o mouse para ver o dia; clique para abrir o detalhe.</p>'
       +'<div id="dash-detalhe-dia"></div></div>';
   }
+
+  /* Uma métrica só, dia a dia. Linha com área, média do período tracejada e
+     os mesmos rótulos do eixo. O dia sem base (conversão sem visita, M.C. sem
+     plano no Hub) é BURACO na linha, não zero — zero afundaria a média e
+     inventaria uma queda que não houve. */
+  function dashGraficoMetrica(c, m){
+    var el=document.getElementById('dash-grafico'), s=c.serie;
+    var W=800,H=240,P={t:16,r:14,b:26,l:62};
+    var vals=s.map(function(x){ var v=x[m.campo]; return (v===null||v===undefined||!isFinite(v))?null:v; });
+    var validos=vals.filter(function(v){ return v!==null; });
+    if(!validos.length){
+      el.innerHTML='<div class="fin-cascata">'+dashBotaoVoltar(m)
+        +'<p class="fin-note">Sem base para calcular '+m.rot+' neste período.</p></div>'; return;
+    }
+    var fmt=function(v){
+      if(v===null) return '—';
+      if(m.tipo==='reais') return dfmtR(v);
+      if(m.tipo==='pct')   return dpct(v, m.casas||1);
+      return dfmtN(v);
+    };
+    var fmtEixo=function(v){
+      if(m.tipo==='reais') return Math.abs(v)>=1000 ? (v/1000).toFixed(0)+'k' : v.toFixed(0);
+      if(m.tipo==='pct')   return (v*100).toFixed(m.casas===2?1:0)+'%';
+      return v.toFixed(0);
+    };
+    var max=Math.max.apply(null,validos), min=Math.min.apply(null,validos);
+    if(min>0) min=0;                       // barra parte do zero quando tudo é positivo
+    if(max===min) max=min+(Math.abs(min)||1);
+    var media=validos.reduce(function(a,b){return a+b;},0)/validos.length;
+    var y=function(v){ return P.t+(H-P.t-P.b)*(1-(v-min)/(max-min)); };
+    var px=function(i){ return s.length<2?(W/2):P.l+(W-P.l-P.r)*(i/(s.length-1)); };
+    var cor = m.ruimSubindo ? 'var(--coral-500)' : 'var(--green-600)';
+
+    var grid='';
+    for(var k=0;k<=3;k++){
+      var v=min+(max-min)*k/3, yy=y(v);
+      grid+='<line x1="'+P.l+'" y1="'+yy+'" x2="'+(W-P.r)+'" y2="'+yy+'" stroke="var(--slate-50)"/>'
+        +'<text x="'+(P.l-8)+'" y="'+(yy+3)+'" text-anchor="end" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
+        +fmtEixo(v)+'</text>';
+    }
+    // Buraco vira segmento novo: linha não atravessa dia sem base.
+    var segs=[], atual=[];
+    vals.forEach(function(v,i){
+      if(v===null){ if(atual.length){segs.push(atual);atual=[];} return; }
+      atual.push(px(i)+','+y(v));
+    });
+    if(atual.length) segs.push(atual);
+    var linha=segs.map(function(g){
+      var area = g.length>1
+        ? '<polygon points="'+g[0].split(',')[0]+','+y(Math.max(min,0))+' '+g.join(' ')+' '
+          +g[g.length-1].split(',')[0]+','+y(Math.max(min,0))+'" fill="'+cor+'" opacity="0.12"/>' : '';
+      return area+'<polyline points="'+g.join(' ')+'" fill="none" stroke="'+cor+'" stroke-width="2"/>';
+    }).join('');
+    var pontos=vals.map(function(v,i){
+      return v===null ? '' : '<circle cx="'+px(i)+'" cy="'+y(v)+'" r="2.5" fill="'+cor+'"/>';
+    }).join('');
+    var yMedia=y(media);
+    var linhaMedia='<line x1="'+P.l+'" y1="'+yMedia+'" x2="'+(W-P.r)+'" y2="'+yMedia
+      +'" stroke="var(--slate-400)" stroke-width="1" stroke-dasharray="4 4"/>'
+      +'<text x="'+(W-P.r)+'" y="'+(yMedia-5)+'" text-anchor="end" font-size="9" '
+      +'fill="var(--slate-400)" font-family="var(--mono)">média '+fmt(media)+'</text>';
+    var rot='', passo=Math.max(1,Math.ceil(s.length/8));
+    s.forEach(function(x,i){ if(i%passo) return;
+      rot+='<text x="'+px(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
+        +x.data.slice(8)+'/'+x.data.slice(5,7)+'</text>'; });
+
+    var larg=100/s.length;
+    var bandas=s.map(function(x,i){
+      return '<div class="dash-banda" style="left:'+(i*larg)+'%;width:'+larg+'%" '
+        +'onmouseenter="dashTipMetrica('+i+',this)" onmouseleave="dashTipMetrica(-1)" '
+        +'onclick="dashVerDia(\''+x.data+'\')"></div>';
+    }).join('');
+
+    var semBase=vals.filter(function(v){return v===null;}).length;
+    el.innerHTML='<div class="fin-cascata">'+dashBotaoVoltar(m)
+      +'<div style="position:relative">'
+      +'<svg width="100%" height="240" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+      +grid+linha+pontos+linhaMedia+rot+'</svg>'+bandas
+      +'<div id="dash-tip" style="display:none;position:absolute;z-index:5;pointer-events:none;'
+      +'background:var(--slate-900);color:var(--white);border-radius:6px;padding:8px 10px;'
+      +'font-size:11px;font-family:var(--mono);line-height:1.65;white-space:nowrap"></div>'
+      +'</div>'
+      +'<p class="fin-note">'+m.rot+' dia a dia. A tracejada é a média do período'
+      +(semBase? ' · '+semBase+' dia(s) sem base para calcular ficaram como buraco na linha, não como zero':'')
+      +'. Clique num dia para abrir o detalhe.</p>'
+      +'<div id="dash-detalhe-dia"></div></div>';
+    window._dashMetricaAtual=m;
+  }
+
+  function dashBotaoVoltar(m){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap">'
+      +'<div style="font-size:12.5px;color:var(--slate-700)"><strong>'+m.rot+'</strong> no período</div>'
+      +'<button class="perf-select" style="cursor:pointer" onclick="dashVerMetrica(null)">← Voltar às três faixas</button></div>';
+  }
+
+  window.dashTipMetrica=function(i, el){
+    var tip=document.getElementById('dash-tip'); if(!tip) return;
+    var c=_dash.dados, m=window._dashMetricaAtual;
+    if(i<0 || !c || !m){ tip.style.display='none'; return; }
+    var x=c.serie[i]; if(!x){ tip.style.display='none'; return; }
+    var v=x[m.campo];
+    var txt = (v===null||v===undefined||!isFinite(v)) ? 'sem base para calcular'
+      : (m.tipo==='reais'?dfmtR(v):(m.tipo==='pct'?dpct(v,m.casas||1):dfmtN(v)));
+    tip.innerHTML='<strong>'+x.data.slice(8)+'/'+x.data.slice(5,7)+'</strong><br>'
+      +m.rot+' '+txt+'<br>'
+      +dfmtR(x.fat)+' · '+dfmtN(x.ped)+' pedidos';
+    tip.style.display='block';
+    var frac = el ? (parseFloat(el.style.left)/100) : 0.5;
+    tip.style.left = (frac>0.6 ? 'auto' : (frac*100)+'%');
+    tip.style.right = (frac>0.6 ? ((1-frac)*100)+'%' : 'auto');
+    tip.style.top='8px';
+  };
 
   window.dashTip=function(i, el){
     var tip=document.getElementById('dash-tip'); if(!tip) return;
