@@ -10109,7 +10109,21 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
             tipo: t.prioridade==='alta'?'urgente':(t.prioridade==='baixa'?'info':'atencao'),
             origem:'tarefa', tarefaId:t.id,
             titulo:'📥 '+agenteNome(t.de_agente)+' pediu: '+t.titulo,
-            descricao:(t.descricao||'')+(t.sku?'\nSKU: '+t.sku:''),
+            descricao:(t.descricao||'')+(t.sku?'\nSKU: '+t.sku:'')
+              +'\n\n⏳ Na fila — o worker trabalha as tarefas de hora em hora.',
+            impacto:null,
+          });
+        });
+
+      // 1b) O que o worker JÁ respondeu em segundo plano — o retorno de verdade
+      tarefas.filter(function(t){ return t.para_agente===ag.id && (t.status==='respondida'||t.status==='erro_worker'); })
+        .forEach(function(t){
+          itens.push({
+            tipo: t.status==='erro_worker' ? 'atencao' : 'info',
+            origem:'tarefa', tarefaId:t.id,
+            titulo:(t.status==='erro_worker'?'⚠️ Falhou em segundo plano: ':'✅ Respondida em segundo plano: ')+t.titulo,
+            descricao:(t.resultado||'(sem texto)')
+              +(t.respondido_em?'\n\nRespondida em '+dataHora(t.respondido_em):''),
             impacto:null,
           });
         });
@@ -10281,6 +10295,7 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
           agentId:agId,
           mode:'chat',
           question:txt,
+          hub: await hubMapaParaAgente(),
           context:ctxData,
           // O front nunca mandava teto, então o chat ficava no padrão 1500 do
           // ai-agent. Resposta com consulta de ferramenta encostava no teto e
@@ -10718,7 +10733,8 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
       var res=await fetch(_aiUrl+'/functions/v1/ai-agent',{
         method:'POST',
         headers:{'Content-Type':'application/json','apikey':_aiAnonKey,'Authorization':'Bearer '+_aiAnonKey},
-        body:JSON.stringify({agentId:agId,mode:'meeting',context:ctxData,maxTokensHint:3000})
+        body:JSON.stringify({agentId:agId,mode:'meeting',context:ctxData,maxTokensHint:3000,
+          hub: await hubMapaParaAgente()})
       });
       if(!res.ok) throw new Error('HTTP '+res.status);
       var data=await res.json();
@@ -12055,6 +12071,7 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
           signal: ctrl ? ctrl.signal : undefined,
           headers:{'Content-Type':'application/json','apikey':_aiAnonKey,'Authorization':'Bearer '+_aiAnonKey},
           body:JSON.stringify({agentId:agId, mode:'chat', question:mensagem, context:ctx,
+            hub: await hubMapaParaAgente(),
             maxTokensHint:3000,
             history:_sala.falas.filter(function(f){return f.autor!=='sistema';}).slice(-10).map(function(f){
               return {role: f.autor==='ale'?'user':'assistant', content:(f.autor==='ale'?'':agenteNome(f.autor)+': ')+f.conteudo};
@@ -12149,6 +12166,14 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
     for(var i=0;i<acoes.length;i++){
       var a=acoes[i];
       try{
+        // Configuração só com o dedo do Ale. No chat a ACAO já é um botão que
+        // ele clica; aqui na sala ela executaria sozinha — então recusa, e o
+        // agente aprende a emitir PROPOR (prompt não é trava; a trava é esta).
+        if(a.tipo==='ajustar_sku'){
+          feitos.push({tipo:a.tipo, params:a.params, ok:false,
+                       erro:'configuração não executa sozinha — emita <<PROPOR:...>> para o Ale aprovar'});
+          continue;
+        }
         var ok=await escAcaoExecutar(a.tipo, a.params);
         feitos.push({tipo:a.tipo, params:a.params, ok:!!ok,
                      aviso: (ok && ok.aviso) ? ok.aviso : null,
@@ -12333,8 +12358,11 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
     ctx._regras_de_atuacao = [
       'Você é ' + _ag.nome + '. Responda apenas sobre a sua área.',
       'Se perguntarem algo fora do seu escopo, diga em uma frase qual agente é o dono do assunto e ofereça o que VOCÊ tem sobre aquele SKU. Não invente número de outra área.',
-      'Você só recebe no contexto o dado da sua área — se um número não está aqui, você não tem acesso a ele, e deve dizer isso em vez de estimar.',
-      'Quando encontrar algo que é problema de outro agente, proponha abrir_tarefa para ele em vez de tentar resolver.',
+      /* v19: silo de leitura caiu. A frase antiga ("você só recebe o dado da
+         sua área") era exatamente o que fazia o Gestor dizer que MPA de ontem
+         "não está disponível" com o dado no banco. */
+      'O contexto traz o resumo da sua área, mas você tem FERRAMENTAS de consulta para TODOS os dados da operação — margem inclusive (margem_por_sku). Se um número não está no contexto, consulte antes de dizer que não tem.',
+      'Resolva com as suas ferramentas e ações antes de repassar. abrir_tarefa é para trabalho da alçada de OUTRO agente, não para se livrar: tarefas são trabalhadas em segundo plano e o resultado aparece na fila do Escritório — nunca prometa "te aviso quando houver retorno".',
       /* Tom. Estava escrito de um jeito que ainda dava licença pra parágrafo de
          abertura e três alternativas — e o Ale reclamou, com razão, que eles
          falam demais. Aqui as regras são negativas de propósito: é mais fácil
@@ -12864,6 +12892,31 @@ window.initFinanceiroOnce=function(){
    A DRE mostra a janela inteira de uma vez — era justamente ter que escolher
    um mês por vez que fazia o Financeiro parecer um relatório sem série. */
 window.finChangeMes=function(v){ _st.mes=v; _st.dados=null; custoRealCarregar(); };
+
+/* O mapa do Hub RESOLVIDO (sku local → M.C.% pré-ADS) que vai no corpo de toda
+   chamada de agente. A resolução (hubResolver, chave 'meli') e a fórmula
+   (hubMcPre = mc + ads) continuam morando SÓ aqui no app — o servidor recebe
+   o resultado e apenas multiplica. O espelho no ai-agent existe para o worker,
+   que roda sem app na frente; se mexer aqui, mexa lá junto. */
+window.hubMapaParaAgente = async function(){
+  if(window._hubMapaAgenteCache) return window._hubMapaAgenteCache;
+  try{
+    var map = (typeof hubMcCarregar==='function')    ? await hubMcCarregar()    : {};
+    var links = (typeof hubLinksCarregar==='function') ? await hubLinksCarregar() : {};
+    var out = {};
+    Object.keys(map||{}).forEach(function(sku){
+      var r = hubResolver(map, links, sku, sku, 'meli');
+      if(r) out[sku] = hubMcPre(r.entry);
+    });
+    Object.keys(links||{}).forEach(function(local){
+      if(out[local]!==undefined) return;
+      var r = hubResolver(map, links, local, local, 'meli');
+      if(r) out[local] = hubMcPre(r.entry);
+    });
+    window._hubMapaAgenteCache = out;
+    return out;
+  }catch(e){ console.warn('[OfficeLed] hubMapaParaAgente', e); return {}; }
+};
 
 /* ── fetch ───────────────────────────────────────────────────────────────── */
 async function loadFin(){
@@ -16315,10 +16368,13 @@ window.apGarantirMes=async function(mes){
     // A fila de tarefas dos agentes é `agente_tarefas`, com `status`.
     try{
       var t=await sb.from('agente_tarefas').select('id,status,prioridade').eq('conta','Logbox')
-        .neq('status','concluida').limit(100);
-      var abertas=(t.data||[]);
+        .in('status',['aberta','em_andamento','respondida','erro_worker']).limit(100);
+      var vivas=(t.data||[]);
+      var respondidas=vivas.filter(function(x){ return x.status==='respondida'||x.status==='erro_worker'; });
+      var abertas=vivas.filter(function(x){ return x.status==='aberta'; });
       var altas=abertas.filter(function(x){ return String(x.prioridade||'').toLowerCase()==='alta'; });
       if(altas.length) ledSet('escritorio','alerta', altas.length+' tarefa(s) de prioridade alta na fila');
+      else if(respondidas.length) ledSet('escritorio','atencao', respondidas.length+' resposta(s) do worker esperando você');
       else if(abertas.length>=5) ledSet('escritorio','atencao', abertas.length+' tarefas abertas');
       else ledSet('escritorio',null);
     }catch(e){ /* idem */ }
