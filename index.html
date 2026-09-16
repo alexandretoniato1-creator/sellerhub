@@ -7242,8 +7242,76 @@ async function loadSkuHistorico(){
     if(!skuPerfData[r.conta][r.sku]) skuPerfData[r.conta][r.sku]={};
     skuPerfData[r.conta][r.sku][r.mes]={fat:+r.fat,pedidos:+r.pedidos,unidades:+r.unidades,preco:+r.preco,tacos:+r.tacos,rebait:+r.rebait,mc:+r.mc,conv:+r.conv,investimento:+r.investimento||0};
   });
-  // Após carregar SKUs, recalcula kpiData bottom-up
+  /* ── Faturamento real, não só o dos meses fechados ──────────────────────
+     `sku_historico` só existe para mês FECHADO. Em 16/09/2026 ela tinha
+     jan–abr (R$ 4,46M) enquanto `ml_vendas` já registrava jan–set
+     (R$ 9,44M) — então o Catálogo mostrava "Faturamento 2026" pela metade,
+     e a tabela por SKU perdia cinco meses inteiros.
+
+     Agora o faturamento, os pedidos e as unidades vêm de `ml_vendas`, que é
+     a fonte de verdade da receita (a mesma do Dashboard). O que o histórico
+     tem e as vendas não têm — M.C., TACOS, rebait, conversão — continua
+     vindo dele, mês fechado por mês fechado. */
+  await mesclarVendasReais();
   calcKpiFromSkus();
+}
+
+async function mesclarVendasReais(){
+  try{
+    const anoDe = perfMonths[0] + '-01';
+    const r = await sbTodas(function(de,ate){
+      return sbP('ml_vendas','item_id,sku,data,receita,unidades,pedidos')
+        .eq('conta','Logbox').gte('data', anoDe)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate);
+    }, 'catalogo/vendas-reais');
+    if(r.error) throw r.error;
+
+    // O SKU do anúncio vem do snapshot; ml_vendas nem sempre traz preenchido.
+    let i2sku = {};
+    try{
+      const snap = await sb.from('ml_anuncios').select('data').eq('conta','Logbox')
+        .order('data',{ascending:false}).limit(1).single();
+      const dia = snap.data && snap.data.data;
+      if(dia){
+        const an = await sbTodas(function(de,ate){
+          return sbP('ml_anuncios','item_id,sku').eq('conta','Logbox').eq('data',dia)
+            .order('item_id',{ascending:true}).range(de,ate);
+        }, 'catalogo/anuncios');
+        (an.data||[]).forEach(a=>{ if(a.sku) i2sku[a.item_id]=a.sku; });
+      }
+    }catch(e){ console.warn('[OfficeLed] catálogo: snapshot de anúncios', e); }
+
+    const agregado = {};
+    (r.data||[]).forEach(v=>{
+      const sku = v.sku || i2sku[v.item_id];
+      if(!sku) return;                       // sem SKU não entra no catálogo
+      const mes = String(v.data||'').slice(0,7);
+      if(perfMonths.indexOf(mes) < 0) return;
+      const ch = sku+'|'+mes;
+      if(!agregado[ch]) agregado[ch] = {fat:0, pedidos:0, unidades:0};
+      agregado[ch].fat      += Number(v.receita)||0;
+      agregado[ch].unidades += Number(v.unidades)||0;
+      agregado[ch].pedidos  += Number(v.pedidos)||0;
+    });
+
+    if(!skuPerfData['Logbox']) skuPerfData['Logbox'] = {};
+    Object.keys(agregado).forEach(ch=>{
+      const [sku, mes] = ch.split('|');
+      const a = agregado[ch];
+      if(!skuPerfData['Logbox'][sku]) skuPerfData['Logbox'][sku] = {};
+      const antes = skuPerfData['Logbox'][sku][mes] ||
+        {fat:0,pedidos:0,unidades:0,preco:0,tacos:0,rebait:0,mc:0,conv:0,investimento:0};
+      skuPerfData['Logbox'][sku][mes] = Object.assign({}, antes, {
+        fat: a.fat, pedidos: a.pedidos, unidades: a.unidades,
+        preco: a.unidades > 0 ? a.fat / a.unidades : antes.preco,
+        fonte_receita: 'ml_vendas',
+      });
+    });
+    console.log('[OfficeLed] catálogo: receita real mesclada em '
+      + Object.keys(agregado).length + ' pares SKU×mês');
+  }catch(e){
+    console.error('[OfficeLed] mesclarVendasReais falhou; catálogo segue só com meses fechados', e);
+  }
 }
 
 async function loadAnotacoes(){
@@ -7491,6 +7559,11 @@ document.addEventListener('DOMContentLoaded', () => {
 // ══════════════════════════════
 //  MENTORIA — módulo standalone
 // ══════════════════════════════
+/* Declarada de verdade, e com valor inicial. Antes era global implícita,
+   criada só dentro de loadAgendaCategorias — e qualquer tela que abrisse
+   antes da carga (ou depois de uma carga com erro) batia em ReferenceError. */
+var agendaCats = (typeof agendaCats !== 'undefined' && Array.isArray(agendaCats)) ? agendaCats : [];
+
 function catImpClass(cor) { return `cat-imp-${cor || 'green'}`; }
 function catById(id) { return agendaCats.find(c => c.id === id) || null; }
 function catOfEvent(ev) {
@@ -7514,8 +7587,11 @@ window.openCalModal = function(eid, defaultDate) {
   if (isNoteEvt) { alert('Este evento vem de uma Anotação. Edite-o na aba Anotações.'); return; }
   const ev = eid ? calEvents.find(e=>e.id===eid) : null;
   const evCat = ev ? catOfEvent(ev) : null;
-  const catOptions = agendaCats.map(c =>
-    `<option value="${c.id}" ${evCat && evCat.id===c.id?'selected':''}>${c.emoji} ${c.nome}</option>`
+  const cats = (Array.isArray(agendaCats) && agendaCats.length)
+    ? agendaCats
+    : [{id:null, nome:'Geral', emoji:'📅', cor:'green'}];   // tabela vazia não pode travar o modal
+  const catOptions = cats.map(c =>
+    `<option value="${c.id==null?'':c.id}" ${evCat && evCat.id===c.id?'selected':''}>${c.emoji} ${c.nome}</option>`
   ).join('');
   const lemAtual = ev?.lembrete_min || '';
   document.getElementById('modal').innerHTML = `
@@ -7582,7 +7658,11 @@ window.saveCalEventNew = async function(eid) {
     await saveAgendaNew(e);
   } else {
     const ev={id:0,title,date,cat:catLegado,cat_id:catId,obs,horario,lembrete_min};
-    await saveAgendaNew(ev); calEvents.push(ev);
+    await saveAgendaNew(ev);
+    // id 0 é FALSY: entrar na lista assim faria o evento reabrir como "Novo"
+    // em vez de editar, e um segundo Salvar criaria duplicata.
+    if(ev.id){ calEvents.push(ev); }
+    else { alert('Não consegui salvar o evento. Ele não foi criado.'); return; }
   }
   closeModal(); renderCal();
 };
@@ -7597,7 +7677,8 @@ async function saveAgendaNew(ev){
     const res=await sb.from('agenda').insert(payload).select().single();
     error=res.error; if(!error)ev.id=res.data.id;
   }
-  if(error)console.error('saveAgendaNew',error); else showSync('Salvo ✓',true);
+  if(error){ console.error('saveAgendaNew',error); showSync('Falhou ✗',true); }
+  else showSync('Salvo ✓',true);
 }
 
 // ── loadAgenda sobrescrito para incluir cat_id ──
@@ -9833,6 +9914,8 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
             +'</div>';
         } else if(s.origem==='vazio' || s.origem==='ronda'){
           botoes='';
+        } else if(escCampoPedido(s)){
+          botoes=escCampoPedidoHtml(escCampoPedido(s), id, done);
         } else {
           botoes='<button class="esc-sug-btn'+(done?' done':'')+'" onclick="escMarcarFeito(\''+id+'\',this)">'+(done?'✓ Feito':'Marcar como visto')+'</button>';
         }
@@ -10860,12 +10943,80 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
     return {error:null};
   }
 
+  /* ═══ PREENCHER NA HORA O QUE O AGENTE PEDIU ═══════════════════════════
+     Quando a observação é "falta preencher o TACOS alvo do 6CR305", o Ale
+     tinha que sair do Escritório, achar o SKU no Catálogo e voltar. Agora o
+     campo aparece no próprio cartão.
+
+     A escrita passa pelo MESMO escAcaoExecutar das propostas — mesmas
+     travas, mesmo recibo assinado pelo agente. Não existe caminho paralelo.
+     ═════════════════════════════════════════════════════════════════════ */
+  var CAMPOS_PEDIVEIS = [
+    { campo:'tacos_alvo',     re:/tacos\s*(alvo|alfa|target)?|alvo\s*de\s*tacos/i, rot:'TACOS alvo', sufixo:'%', passo:'0.5' },
+    { campo:'estoque_minimo', re:/estoque\s*m[íi]nimo|m[íi]nimo\s*de\s*estoque/i,  rot:'Estoque mínimo', sufixo:'un', passo:'1' },
+  ];
+  var RE_SKU = /\b([A-Z0-9]{2,}(?:[-/][A-Z0-9]+)+|\d[A-Z]{2,}\d+[A-Z]*)\b/;
+
+  function escCampoPedido(s){
+    var texto = (s.titulo||'') + ' ' + (s.descricao||'');
+    if(!/falta|preench|sem\s+(alvo|tacos|estoque\s*m[íi]nimo)|n[ãa]o\s+(tem|est[áa])\s+(definid|preench)|defin[ai]r/i.test(texto)) return null;
+    var def = CAMPOS_PEDIVEIS.find(function(c){ return c.re.test(texto); });
+    if(!def) return null;
+    var m = RE_SKU.exec(texto);
+    if(!m) return null;
+    return { campo:def.campo, rot:def.rot, sufixo:def.sufixo, passo:def.passo, sku:m[1] };
+  }
+
+  function escCampoPedidoHtml(p, id, done){
+    if(done) return '<button class="esc-sug-btn done" disabled>✓ Feito</button>';
+    return '<div style="display:flex;gap:6px;align-items:center;margin-top:10px;flex-wrap:wrap">'
+      +'<span style="font-size:11px;color:#8A8779">'+escHtml(p.rot)+' de <strong style="color:#C4C1B6;font-family:monospace">'+escHtml(p.sku)+'</strong></span>'
+      +'<input id="fill-'+id+'" type="number" step="'+p.passo+'" min="0" placeholder="0"'
+      +' style="width:78px;padding:5px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.14);'
+      +'background:rgba(255,255,255,.05);color:#F2F0EA;font-family:monospace;font-size:13px;outline:none">'
+      +'<span style="font-size:11px;color:#8A8779">'+escHtml(p.sufixo)+'</span>'
+      +'<button class="esc-sug-btn" style="flex:0 0 auto;padding:5px 14px"'
+      +' onclick="escPreencherCampo(this,\''+id+'\',\''+escHtml(p.sku)+'\',\''+p.campo+'\')">Salvar</button>'
+      +'</div>';
+  }
+
+  window.escPreencherCampo=async function(btn, id, sku, campo){
+    var inp=document.getElementById('fill-'+id);
+    var valor=inp && String(inp.value||'').trim();
+    if(valor===''||valor===null||valor===undefined){ inp && inp.focus(); return; }
+    btn.disabled=true; btn.textContent='…';
+    try{
+      // escAcaoExecutar assina o recibo com o agente do painel aberto
+      var r=await escAcaoExecutar('ajustar_sku',[sku, campo, valor]);
+      if(!r) throw new Error('ação recusada');
+      doneMap[id]=true;
+      btn.textContent='✓ Salvo';
+      if(inp) inp.disabled=true;
+      var card=document.querySelector('[data-sid="'+id+'"]');
+      if(card) card.classList.add('done');
+      if(r.aviso) btn.title=r.aviso;
+      if(typeof fetchDados==='function') setTimeout(fetchDados, 600);
+    }catch(e){
+      btn.disabled=false; btn.textContent='Salvar';
+      alert('Não consegui salvar: '+(e.message||e));
+    }
+  };
+
   window.escConcluirTarefa=async function(id, novoStatus){
     try{
-      await sb.from('agente_tarefas').update({status:novoStatus||'feita', concluido_em:new Date().toISOString()}).eq('id',id);
+      // supabase-js NÃO lança em erro de banco: devolve {error}. Sem conferir,
+      // uma falha de escrita passava calada e a tela ainda parecia ter salvo.
+      var r=await sb.from('agente_tarefas')
+        .update({status:novoStatus||'feita', concluido_em:new Date().toISOString()})
+        .eq('id',id).select();
+      if(r.error) throw r.error;
+      if(!r.data || !r.data.length) throw new Error('tarefa '+id+' não encontrada');
+
       tarefas=tarefas.map(function(t){ return t.id===id ? Object.assign({},t,{status:novoStatus||'feita'}) : t; });
+      buildSugestoes();            // ← o que faltava: sem remontar, o cartão ficava na tela
+      updateEscritorioBadge();
+      if(typeof ledsLeves==='function') ledsLeves();
       if(activeAgentId) openPanel(agentePorId(activeAgentId));
-     
     }catch(e){ alert('Não foi possível atualizar a tarefa: '+(e.message||e)); }
   };
 
@@ -14201,6 +14352,50 @@ window.apGarantirMes=async function(mes){
       .eq('conta','Logbox').gte('data',de).lte('data',ate)
       .order('data',{ascending:false}).order('movement_id',{ascending:true}).range(a,b); }; }
 
+  /* Corte por horário equivalente.
+     Só faz sentido quando a janela TERMINA hoje: aí o último dia está pela
+     metade e comparar com um dia inteiro engana. Para janelas fechadas
+     (ontem, mês passado) os dois lados já são completos e isto não roda.
+
+     ml_pedidos guarda ~30 dias e tem teto por rodada de sync, então serve
+     para a razão entre dois recortes do mesmo dia, não como fonte de
+     faturamento. Por isso o resultado vira um AVISO e um número ao lado,
+     nunca substitui o total que vem de ml_vendas. */
+  async function dashPedidosParciais(j){
+    try{
+      var hoje = diaISO(new Date());
+      if(j.fim !== hoje) return null;
+
+      var agora = new Date();
+      var corte = String(agora.getHours()).padStart(2,'0')+':'+String(agora.getMinutes()).padStart(2,'0');
+      var ontem = somaDias(hoje,-1);
+
+      var r = await sbTodas(function(a,b){
+        return sbP('ml_pedidos','order_id,data_compra,valor_total,status')
+          .eq('conta','Logbox').gte('data_compra', ontem+'T00:00:00')
+          .order('data_compra',{ascending:false}).order('order_id',{ascending:true}).range(a,b);
+      }, 'dash/pedidos-parcial');
+      if(r.error) throw r.error;
+
+      var hojeAte=0, ontemAte=0, ontemTodo=0, nH=0, nO=0;
+      (r.data||[]).forEach(function(p){
+        if(String(p.status||'')==='cancelled') return;
+        var iso=String(p.data_compra||'');
+        var dia=iso.slice(0,10), hora=iso.slice(11,16);
+        var v=Number(p.valor_total)||0;
+        if(dia===hoje && hora<=corte){ hojeAte+=v; nH++; }
+        else if(dia===ontem){
+          ontemTodo+=v;
+          if(hora<=corte){ ontemAte+=v; nO++; }
+        }
+      });
+      if(nH===0 && nO===0) return null;
+      return { corte:corte, hoje:hojeAte, ontemMesmaHora:ontemAte, ontemDiaTodo:ontemTodo,
+               pedidosHoje:nH, pedidosOntem:nO,
+               delta: ontemAte>0 ? (hojeAte-ontemAte)/ontemAte : null };
+    }catch(e){ console.warn('[OfficeLed] comparação por horário', e); return null; }
+  }
+
   async function dashLer(j){
     var snap = await sb.from('ml_anuncios').select('data')
                  .eq('conta','Logbox').order('data',{ascending:false}).limit(1).single();
@@ -14222,7 +14417,8 @@ window.apGarantirMes=async function(mes){
       sbTodas(function(a,b){ return sbP('skus','sku,estoque_minimo')
         .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'dash/skus'),
       sbTodas(qVis(j.ini,j.fim),   'dash/visitas'),
-      sbTodas(qVis(j.iniA,j.fimA), 'dash/visitasAnt')
+      sbTodas(qVis(j.iniA,j.fimA), 'dash/visitasAnt'),
+      dashPedidosParciais(j)
     ]);
     var erro = r.find(function(x){ return x.error; });
     if(erro) throw erro.error;
@@ -14236,6 +14432,7 @@ window.apGarantirMes=async function(mes){
       vendasA:r[3].data||[], adsA:r[4].data||[], finA:r[5].data||[],
       anuncios:r[6].data||[], reputacao:(r[7].data&&r[7].data[0])||null,
       skus:r[8].data||[], visitas:r[9].data||[], visitasA:r[10].data||[],
+      parcial:r[11]||null,
       hubMap:hubMap, hubLinks:hubLinks };
   }
 
@@ -14408,7 +14605,8 @@ window.apGarantirMes=async function(mes){
     return { j:j, tot:tot, totA:totA, serie:serie, linhas:linhas,
              reputacao:d.reputacao, snapDate:d.snapDate,
              diasSemFin:diasSemFin, diasVenda:diasVenda.length,
-             diasPrelim:Object.keys(ag.diasPrelim).sort() };
+             diasPrelim:Object.keys(ag.diasPrelim).sort(),
+             parcial:d.parcial||null };
   }
 
   /* ── Render ──────────────────────────────────────────────────────────────── */
@@ -14458,6 +14656,17 @@ window.apGarantirMes=async function(mes){
     g+=cartao('Nº de Vendas', dfmtN(t.vendas), delta(t.vendas,a.vendas));
     g+=cartao('Unidades', dfmtN(t.unidades), delta(t.unidades,a.unidades));
     g+=cartao('Ticket Médio', dfmtR(t.ticket), delta(t.ticket,a.ticket));
+    /* Hoje contra ontem NO MESMO HORÁRIO. Sem isso, às 10h da manhã o dia
+       corrente sempre aparece despencando contra um dia inteiro. */
+    if(c.parcial){
+      var pa=c.parcial;
+      var sinal = pa.delta===null ? '' :
+        '<span style="color:'+(pa.delta>=0?'var(--green-600)':'var(--coral-500)')+'">'
+        +(pa.delta>=0?'▲ ':'▼ ')+dpct(Math.abs(pa.delta),1)+'</span>';
+      g+=cartao('Hoje até '+pa.corte, dfmtR(pa.hoje),
+        sinal+' <span style="color:var(--slate-400)">vs '+dfmtR(pa.ontemMesmaHora)+' ontem à mesma hora</span>',
+        true);
+    }
     g+=cartao('Conversão', dpct(t.conversao,2),
       t.visitas ? delta(t.conversao,a.conversao,'pp')+' <span style="font-size:10.5px;color:var(--slate-400)">'
                   +dfmtN(t.visitas)+' visitas</span>'
@@ -14486,6 +14695,12 @@ window.apGarantirMes=async function(mes){
       av.push('<strong>M.C. e MPA cobrem '+dpct(c.tot.cobertura,0)+' do faturamento.</strong> '
         +c.tot.semHub+' SKU'+(c.tot.semHub>1?'s':'')+' com venda ('+dfmtR(c.tot.receitaSemHub)
         +') não está linkado ao Hub de Precificação. Continua no faturamento e no TACOS, fora da margem.');
+    }
+    if(c.parcial){
+      av.push('<strong>O cartão "Hoje até '+c.parcial.corte+'" vem de <code>ml_pedidos</code></strong>, '
+        +'não de <code>ml_vendas</code> — é o único lugar com hora do pedido. Serve para comparar '
+        +'dois recortes do mesmo horário, não como faturamento oficial: a tabela guarda ~30 dias e tem '
+        +'teto por rodada de sync. Ontem fechou o dia em '+dfmtR(c.parcial.ontemDiaTodo)+'.');
     }
     if(c.diasPrelim && c.diasPrelim.length){
       av.push('<strong>ADS preliminar em '+c.diasPrelim.length+' dia'
@@ -14604,17 +14819,17 @@ window.apGarantirMes=async function(mes){
     var W=800,H=240,P={t:14,r:14,b:26,l:56};
     var max=Math.max.apply(null,s.map(function(x){return Math.max(x.fat,0);}))||1;
     var min=Math.min.apply(null,s.map(function(x){return Math.min(x.posAds,0);}));
-    var esc=function(v){ return P.t+(H-P.t-P.b)*(1-(v-min)/(max-min||1)); };
+    var escY=function(v){ return P.t+(H-P.t-P.b)*(1-(v-min)/(max-min||1)); };
     var px=function(i){ return s.length<2?P.l:P.l+(W-P.l-P.r)*(i/(s.length-1)); };
     function area(campo,cor,op){
-      var topo=s.map(function(x,i){ return px(i)+','+esc(x[campo]); }).join(' ');
-      var base=esc(Math.max(min,0));
+      var topo=s.map(function(x,i){ return px(i)+','+escY(x[campo]); }).join(' ');
+      var base=escY(Math.max(min,0));
       return '<polygon points="'+P.l+','+base+' '+topo+' '+px(s.length-1)+','+base+'" fill="'+cor+'" opacity="'+op+'"/>'
            +'<polyline points="'+topo+'" fill="none" stroke="'+cor+'" stroke-width="1.5"/>';
     }
     var grid='';
     for(var k=0;k<=3;k++){
-      var v=min+(max-min)*k/3, y=esc(v);
+      var v=min+(max-min)*k/3, y=escY(v);
       grid+='<line x1="'+P.l+'" y1="'+y+'" x2="'+(W-P.r)+'" y2="'+y+'" stroke="var(--slate-50)"/>'
         +'<text x="'+(P.l-8)+'" y="'+(y+3)+'" text-anchor="end" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
         +(Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0))+'</text>';
@@ -14716,10 +14931,12 @@ window.apGarantirMes=async function(mes){
       var corMpa   = o.mpaPct===null?'':(o.mpaPct<0?'var(--coral-500)':'var(--slate-900)');
       var id=desc(o.sku).replace(/'/g,"\\'");
       return '<tr class="dash-linha" data-sku="'+desc(o.sku)+'" style="cursor:pointer" onclick="dashToggleLinha(\''+id+'\')">'
-        +'<td style="font-family:var(--font);max-width:250px">'
-          +'<div style="font-size:12.5px;color:var(--slate-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+desc(o.titulo)+'</div>'
-          +'<div style="font-size:11px;color:var(--slate-400);font-family:var(--mono)">'+desc(o.sku)
-          +(o.viaLink?' <span title="linkado manualmente ao Hub" style="color:var(--blue-600)">↔ '+desc(o.skuHub)+'</span>':'')+'</div></td>'
+        // O Ale identifica anúncio por SKU, não por título. O SKU vem primeiro,
+        // monoespaçado e em peso; o título desce para legenda.
+        +'<td style="max-width:250px">'
+          +'<div style="font-family:var(--mono);font-size:12.5px;color:var(--slate-900);font-weight:600">'+desc(o.sku)
+          +(o.viaLink?' <span title="linkado manualmente ao Hub" style="color:var(--blue-600);font-weight:400">↔ '+desc(o.skuHub)+'</span>':'')+'</div>'
+          +'<div style="font-size:11px;color:var(--slate-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+desc(o.titulo)+'</div></td>'
         +'<td data-rot="Faturado">'+dfmtR(o.receita)+'</td>'
         +'<td data-rot="Repres.">'+dpct(rep,1)+'</td>'
         +'<td data-rot="Unidades">'+dfmtN(o.unidades)+'</td>'
@@ -15017,9 +15234,28 @@ window.apGarantirMes=async function(mes){
                                                  : dashCalcular(await dashLer(j), j);
       _dash.cachePeriodo[ck]=c;
       _dash.dados=c; _dash.dia=null;
-      dashRenderAvisos(c); dashRenderKpis(c); dashRenderSaude(c);
-      dashRenderAtencao(c); dashRenderGrafico(c); dashRenderProdutos(c);
-      if(typeof ledsDoDashboard==='function') ledsDoDashboard(c);
+      /* Cada bloco protegido por si. Antes, um erro em qualquer render
+         derrubava os seguintes e deixava a área em branco — "não funciona"
+         sem nada para investigar. Agora o bloco que falhou diz o motivo e os
+         outros continuam de pé. */
+      [['avisos',dashRenderAvisos,'dash-avisos'],
+       ['indicadores',dashRenderKpis,'dash-kpis'],
+       ['saúde',dashRenderSaude,'dash-saude'],
+       ['pontos de atenção',dashRenderAtencao,'dash-atencao'],
+       ['evolução no período',dashRenderGrafico,'dash-grafico'],
+       ['produtos',dashRenderProdutos,'dash-produtos']
+      ].forEach(function(t){
+        try{ t[1](c); }
+        catch(err){
+          console.error('[OfficeLed] dashboard/'+t[0], err);
+          var alvo=document.getElementById(t[2]);
+          if(alvo) alvo.innerHTML='<div class="surface" style="padding:12px 14px">'
+            +'<p class="fin-note"><strong>Falhou ao montar "'+t[0]+'".</strong> '
+            +String(err&&err.message||err)+'</p></div>';
+        }
+      });
+      try{ if(typeof ledsDoDashboard==='function') ledsDoDashboard(c); }
+      catch(err){ console.warn('[OfficeLed] leds', err); }
       var sub=document.getElementById('home-subtitle');
       if(sub) sub.textContent=j.rotulo+(j.rotulo==='Personalizado'?' ('+j.dias+' dias)':'')
         +' · '+j.ini.split('-').reverse().join('/')
@@ -15342,10 +15578,13 @@ window.apGarantirMes=async function(mes){
         (o.alvo!==null && o.tacos>o.alvo ? 'var(--coral-500)' : (o.tacos>0.08?'var(--amber-600)':'var(--slate-600)'));
       var corRoas = o.roas===null ? '' : (o.roas<3?'var(--coral-500)':'var(--green-600)');
       return '<tr>'
-        +'<td style="max-width:230px"><div style="font-size:12.5px;color:var(--slate-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo)+'</div>'
-        +'<div style="font-size:11px;color:var(--slate-400);font-family:var(--mono)">'
-        +(_ads.agrupar==='marca' ? '' : esc(o.sku)+(o.marca?' · <span style="color:var(--blue-600)">'+esc(o.marca)+'</span>':''))
-        +'</div></td>'
+        +'<td style="max-width:230px">'
+        +(_ads.agrupar==='marca'
+          ? '<div style="font-size:12.5px;color:var(--slate-900);font-weight:600">'+esc(o.titulo)+'</div>'
+          : '<div style="font-family:var(--mono);font-size:12.5px;color:var(--slate-900);font-weight:600">'+esc(o.sku)
+            +(o.marca?' <span style="color:var(--blue-600);font-weight:400">'+esc(o.marca)+'</span>':'')+'</div>'
+            +'<div style="font-size:11px;color:var(--slate-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo)+'</div>')
+        +'</td>'
         +'<td data-rot="Gasto">'+fR(o.gasto)+'</td>'
         +'<td data-rot="Fat. Ads">'+fR(o.fatAds)+'</td>'
         +'<td data-rot="Fat. total">'+fR(o.receita)+'</td>'
@@ -15974,12 +16213,16 @@ window.apGarantirMes=async function(mes){
     var corpo=L.slice(0,150).map(function(o){
       var corCob = o.cobertura===null ? '' : (o.cobertura<15?'var(--coral-500)':(o.cobertura>120?'var(--amber-600)':'var(--slate-600)'));
       return '<tr'+(o.baixo?' style="background:var(--coral-50)"':'')+'>'
-        +'<td style="max-width:250px"><div style="font-size:12.5px;color:var(--slate-900);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo)+'</div>'
-        +'<div style="font-size:11px;color:var(--slate-400);font-family:var(--mono)">'
-        +(_est.agrupar==='marca' ? o.anuncios+' anúncios'+(o.baixos?' · <span style="color:var(--coral-500)">'+o.baixos+' no mínimo</span>':'')
-          : esc(o.sku)+(o.marca?' · <span style="color:var(--blue-600)">'+esc(o.marca)+'</span>':'')
-            +(o.anuncios>1?' · '+o.anuncios+' anúncios':'')+(o.ativo?'':' · <span style="color:var(--amber-600)">pausado</span>'))
-        +'</div></td>'
+        +'<td style="max-width:250px">'
+        +(_est.agrupar==='marca'
+          ? '<div style="font-size:12.5px;color:var(--slate-900);font-weight:600">'+esc(o.titulo)+'</div>'
+            +'<div style="font-size:11px;color:var(--slate-400)">'+o.anuncios+' anúncios'
+            +(o.baixos?' · <span style="color:var(--coral-500)">'+o.baixos+' no mínimo</span>':'')+'</div>'
+          : '<div style="font-family:var(--mono);font-size:12.5px;color:var(--slate-900);font-weight:600">'+esc(o.sku)
+            +(o.marca?' <span style="color:var(--blue-600);font-weight:400">'+esc(o.marca)+'</span>':'')
+            +(o.ativo?'':' <span style="color:var(--amber-600);font-weight:400">pausado</span>')+'</div>'
+            +'<div style="font-size:11px;color:var(--slate-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo)+'</div>')
+        +'</td>'
         +'<td data-rot="Estoque">'+fN(o.estoque)+(o.baixo?' <span style="color:var(--coral-500)">mín '+o.minimo+'</span>':'')+'</td>'
         +'<td data-rot="No Full">'+fN(o.full)+'</td>'
         +'<td data-rot="Preço">'+fR(o.preco)+'</td>'
