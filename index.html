@@ -1914,6 +1914,7 @@ body.sidebar-collapsed .hamburger { display: none; }
           <div class="page-subtitle" id="home-subtitle">Resumo da operação</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span id="dash-selo"></span>
           <select class="perf-select" id="dash-periodo" onchange="dashTrocarPeriodo(this.value)">
             <option value="hoje">Hoje</option>
             <option value="ontem">Ontem</option>
@@ -2016,6 +2017,7 @@ body.sidebar-collapsed .hamburger { display: none; }
           </select>
           <input class="notes-search" id="ads-busca" placeholder="SKU ou título"
                  style="width:180px;padding:6px 10px;font-size:12px" oninput="adsFiltrar()">
+          <span id="ads-selo"></span>
           <button class="perf-select" style="cursor:pointer" title="Reler do banco" onclick="adsRecarregar()">&#8635;</button>
         </div>
       </div>
@@ -2036,6 +2038,7 @@ body.sidebar-collapsed .hamburger { display: none; }
           <div class="page-title">Catálogo</div>
           <div class="page-subtitle">Seus anúncios: preço, margem, experiência e estoque</div>
         </div>
+        <span id="cat-selo"></span>
       </div>
       <div class="hub-secondary-nav" id="operacao-tabs">
         <button class="hub-secondary-btn active" id="op-tab-produtos" onclick="opGoTab('produtos',this)">Produtos</button>
@@ -2074,8 +2077,11 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div id="op-section-estoque" style="display:none">
         <div class="page-subtitle" id="est-subtitle" style="margin-top:0">Posição de hoje, valorizada a preço de venda. Sem custo de mercadoria.</div>
         <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <input class="notes-search" id="est-busca" placeholder="SKU ou título"
-                 style="width:220px;padding:6px 10px;font-size:12px" oninput="estFiltrar()">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input class="notes-search" id="est-busca" placeholder="SKU ou título"
+                   style="width:220px;padding:6px 10px;font-size:12px" oninput="estFiltrar()">
+            <span id="est-selo"></span>
+          </div>
           <div style="display:flex;gap:10px;align-items:center">
             <select class="perf-select" id="est-agrupar" onchange="estAgrupar(this.value)">
               <option value="sku">Por SKU</option>
@@ -3063,6 +3069,8 @@ function opGoTab(tab,btn){
   if(se) se.style.display = tab==='experiencia' ? '' : 'none';
   if(st) st.style.display = tab==='estoque' ? '' : 'none';
   if(sm) sm.style.display = tab==='marcas' ? '' : 'none';
+  var seloCat=document.getElementById('cat-selo');
+  if(seloCat && typeof seloDado==='function') seloCat.innerHTML=seloDado(window._catSnapDate,'anúncios');
   if(tab==='marcas'){
     if(sp) sp.style.display='none';
     if(typeof mrcCarregar==='function') mrcCarregar();
@@ -7278,6 +7286,7 @@ async function mesclarVendasReais(){
             .order('item_id',{ascending:true}).range(de,ate);
         }, 'catalogo/anuncios');
         (an.data||[]).forEach(a=>{ if(a.sku) i2sku[a.item_id]=a.sku; });
+        window._catSnapDate = dia;
       }
     }catch(e){ console.warn('[OfficeLed] catálogo: snapshot de anúncios', e); }
 
@@ -9082,6 +9091,52 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
 .kpi-sel { border-color: var(--slate-900) !important; }
 .kpi-sel::after { content: '●'; color: var(--slate-900); }
 .kpi-sel .kpi-v { color: var(--slate-900); }
+
+/* ── LED no hambúrguer (mobile) ────────────────────────────────────────────
+   A barra lateral some abaixo de 768px e leva os LEDs junto. O ponto vem
+   para o botão, com a mesma semântica: coral sangra, âmbar espera. */
+.hamburger { position: fixed; }
+.hamburger::after { content: ''; position: absolute; top: 5px; right: 5px;
+  width: 8px; height: 8px; border-radius: 50%; background: transparent;
+  transition: background .2s, box-shadow .2s; }
+.hamburger.led-on::after { background: #D2A44E; box-shadow: 0 0 8px rgba(210,164,78,.8); }
+.hamburger.led-alerta::after { background: var(--coral-500); box-shadow: 0 0 9px var(--coral-500); }
+
+/* ── Cabeçalho fixo em tabela longa ────────────────────────────────────────
+   Top 15 e DRE rolavam e o cabeçalho sumia: sobrava uma coluna de números
+   sem saber qual era. O topo da tabela gruda no cabeçalho da página. */
+#dash-produtos thead th, #dre-tabela thead th, #ads-tabela thead th, #est-tabela thead th {
+  position: sticky; top: 58px; z-index: 3; background: var(--bg);
+  box-shadow: inset 0 -1px 0 var(--slate-200);
+}
+#dre-tabela thead th.dre-rot { left: 0; z-index: 4; }
+@media (max-width: 768px){
+  #dash-produtos thead th, #dre-tabela thead th, #ads-tabela thead th, #est-tabela thead th { top: 52px; }
+}
+
+/* ── Data do dado ──────────────────────────────────────────────────────────
+   Toda tela que depende de snapshot diz de quando ele é. Sem isso, um sync
+   que falhou ontem passa por número de hoje. */
+.selo-dado { font-family: var(--mono); font-size: 10.5px; color: var(--slate-400);
+  border: 1px solid var(--slate-100); border-radius: 999px; padding: 3px 9px;
+  white-space: nowrap; }
+.selo-dado.velho { color: var(--amber-600); border-color: var(--amber-100); background: var(--amber-50); }
+
+/* ── Hierarquia nos indicadores ────────────────────────────────────────────
+   Catorze cartões do mesmo tamanho não dizem onde olhar. Os quatro que
+   decidem o dia ficam maiores; o resto vira contexto. */
+.kpi-grid-alto { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px; margin-bottom: 10px; }
+.kpi-grid-alto .kpi { padding: 16px 18px; }
+.kpi-grid-alto .kpi-v { font-size: 26px; }
+.kpi-grid-alto .kpi-l { font-size: 10px; }
+.kpi-grid-baixo { display: grid; grid-template-columns: repeat(auto-fit, minmax(135px, 1fr)); gap: 8px; }
+.kpi-grid-baixo .kpi { padding: 10px 12px; }
+.kpi-grid-baixo .kpi-v { font-size: 15px; }
+@media (max-width: 768px){
+  .kpi-grid-alto { grid-template-columns: 1fr 1fr; }
+  .kpi-grid-alto .kpi-v { font-size: 20px; }
+}
 </style>
 
 <script>
@@ -14430,7 +14485,12 @@ window.apGarantirMes=async function(mes){
       sbTodas(qVis(j.iniA,j.fimA), 'dash/visitasAnt'),
       dashPedidosParciais(j)
     ]);
-    var erro = r.find(function(x){ return x.error; });
+    /* `dashPedidosParciais` devolve NULL de propósito quando a janela não
+       termina hoje (Ontem, Mês passado, personalizado fechado). O find abaixo
+       lia `.error` de cada item e estourava em null — derrubando dashLer antes
+       de qualquer render. Era exatamente por isso que o filtro "Ontem" não
+       funcionava: as janelas que terminam hoje passavam, as fechadas quebravam. */
+    var erro = r.find(function(x){ return x && x.error; });
     if(erro) throw erro.error;
 
     var hubMap={}, hubLinks={};
@@ -14689,19 +14749,40 @@ window.apGarantirMes=async function(mes){
     if(alvo && _dash.metrica) alvo.scrollIntoView({behavior:'smooth', block:'center'});
   };
 
+  /* De quando é o dado. Sem isso, um sync que falhou ontem passa por número
+     de hoje — e o Ale decide em cima de foto velha sem saber. */
+  window.seloDado=function(dataISO, oQue){
+    if(!dataISO) return '<span class="selo-dado velho">'+(oQue||'dado')+' sem data</span>';
+    var hoje=diaISO(new Date());
+    var dias=Math.round((new Date(hoje+'T12:00:00')-new Date(dataISO+'T12:00:00'))/86400000);
+    var quando = dias<=0 ? 'hoje' : (dias===1 ? 'ontem' : dias+' dias atrás');
+    return '<span class="selo-dado'+(dias>=2?' velho':'')+'" title="'
+      +(oQue||'Snapshot')+' de '+dataISO.split('-').reverse().join('/')+'">'
+      +(oQue||'snapshot')+' · '+quando+'</span>';
+  };
+
   function dashRenderKpis(c){
     var t=c.tot, a=c.totA;
-    var g='<div class="kpi-grid">';
+    /* Catorze cartões do mesmo tamanho não dizem onde olhar. Faturamento,
+       M.C., MPA e TACOS decidem o dia; o resto é contexto e fica menor. */
+    var g='<div class="kpi-grid-alto">';
     g+=cartao('Faturamento', dfmtR(t.fat), delta(t.fat,a.fat), false, 'fat');
-    g+=cartao('M.C. — Hub', dpct(t.mcPct,1), delta(t.mcPct,a.mcPct,'pp'), true, 'mcPct');
+    g+=cartao('M.C. — Hub', dpct(t.mcPct,1), delta(t.mcPct,a.mcPct,'pp')
+      +' <span style="color:var(--slate-400)">'+dfmtR(t.mcVal)+'</span>', true, 'mcPct');
+    g+=cartao('MPA — pós-ADS', dpct(t.mpaPct,1), delta(t.mpaPct,a.mpaPct,'pp')
+      +' <span style="color:var(--slate-400)">'+dfmtR(t.mpaVal)+'</span>', true, 'mpaPct');
+    g+=cartao('TACOS real', dpct(t.tacos,2), delta(t.tacos,a.tacos,'pp',true)
+      +(t.alvoPct!==null?' <span style="color:var(--slate-400)">alvo '+dpct(t.alvoPct,2)+'</span>':''),
+      false, 'tacos');
+    g+='</div>';
+
+    g+='<div class="kpi-grid-baixo">';
     g+=cartao('M.C. em R$', dfmtR(t.mcVal), delta(t.mcVal,a.mcVal), false, 'mcVal');
-    g+=cartao('MPA — pós-ADS', dpct(t.mpaPct,1), delta(t.mpaPct,a.mpaPct,'pp'), true, 'mpaPct');
     g+=cartao('MPA em R$', dfmtR(t.mpaVal), delta(t.mpaVal,a.mpaVal), false, 'mpaVal');
-    g+=cartao('TACOS real', dpct(t.tacos,2), delta(t.tacos,a.tacos,'pp',true), false, 'tacos');
-    g+=cartao('ADS alvo do Hub', dpct(t.alvoPct,2),
-      t.desvioAds===null ? '' :
-      '<span style="font-size:11px;color:'+(t.desvioAds>0?'var(--coral-500)':'var(--green-600)')+'">'
-      +'desvio '+dpp(t.desvioAds)+'</span>');
+    g+=cartao('Desvio de ADS', t.desvioAds===null ? '—' : dpp(t.desvioAds),
+      t.desvioAds===null ? 'sem alvo no Hub'
+        : '<span style="color:'+(t.desvioAds>0?'var(--coral-500)':'var(--green-600)')+'">'
+          +(t.desvioAds>0?'acima do alvo':'dentro do alvo')+'</span>');
     g+=cartao('Valor em ADS', dfmtR(t.ads), delta(t.ads,a.ads,null,true), false, 'ads');
     g+=cartao('Nº de Vendas', dfmtN(t.vendas), delta(t.vendas,a.vendas), false, 'vendas');
     g+=cartao('Unidades', dfmtN(t.unidades), delta(t.unidades,a.unidades), false, 'unidades');
@@ -15191,7 +15272,7 @@ window.apGarantirMes=async function(mes){
         .eq('conta','Logbox').in('item_id',ids)
         .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(a,b); }, 'card/reclamacoes')
     ]);
-    var err=r.find(function(x){ return x.error; });
+    var err=r.find(function(x){ return x && x.error; });
     if(err) throw err.error;
 
     var an=(r[0].data||[])[0]||null;
@@ -15421,13 +15502,15 @@ window.apGarantirMes=async function(mes){
       });
       try{ if(typeof ledsDoDashboard==='function') ledsDoDashboard(c); }
       catch(err){ console.warn('[OfficeLed] leds', err); }
+      var selo=document.getElementById('dash-selo');
+      if(selo) selo.innerHTML = seloDado(c.snapDate, 'anúncios');
       var sub=document.getElementById('home-subtitle');
       if(sub) sub.textContent=j.rotulo+(j.rotulo==='Personalizado'?' ('+j.dias+' dias)':'')
         +' · '+j.ini.split('-').reverse().join('/')
         +(j.ini!==j.fim?' a '+j.fim.split('-').reverse().join('/'):'')
         +' · comparado com os '+j.dias+' dia'+(j.dias>1?'s':'')+' anteriores';
     }catch(err){
-      console.error('[Central]',err);
+      console.error('[OfficeLed] dashboard',err);
       kpis.innerHTML='<div class="fin-cascata"><p class="fin-note">Não consegui montar a dashboard. '
         +desc(String(err&&err.message||err))+'</p></div>';
     }
@@ -15534,9 +15617,10 @@ window.apGarantirMes=async function(mes){
       sbTodas(function(a,b){ return sbP('skus','sku,tacos_alvo,marca')
         .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'ads/skus')
     ]);
-    var e=r.find(function(x){ return x.error; });
+    var e=r.find(function(x){ return x && x.error; });
     if(e) throw e.error;
-    return { ads:r[0].data||[], vendas:r[1].data||[], anuncios:r[2].data||[], skus:r[3].data||[] };
+    return { snapDate:snapDate, ads:r[0].data||[], vendas:r[1].data||[],
+             anuncios:r[2].data||[], skus:r[3].data||[] };
   }
 
   function adsCalcular(d, j){
@@ -15611,7 +15695,8 @@ window.apGarantirMes=async function(mes){
                   tacos: s.fat>0 ? s.gasto/s.fat : 0});
     }
 
-    return { j:j, linhas:linhas, serie:serie, diasPrelim:Object.keys(diasPrelim).sort(), tot:{
+    return { j:j, snapDate:d.snapDate, linhas:linhas, serie:serie,
+             diasPrelim:Object.keys(diasPrelim).sort(), tot:{
       gasto:t.gasto, fatAds:t.fatAds, fat:t.fat, imp:t.imp, clq:t.clq,
       unAds:t.unAds, unOrg:t.unOrg,
       pctAds: atribT>0 ? t.unAds/atribT : null,
@@ -15817,6 +15902,8 @@ window.apGarantirMes=async function(mes){
       var c=(!forcar && _ads.cache[ck]) ? _ads.cache[ck] : adsCalcular(await adsLer(j), j);
       _ads.cache[ck]=c; _ads.dados=c;
       adsRenderAviso(c); adsRenderKpis(c); adsRenderGrafico(c); adsRenderTabela(c);
+      var seloA=document.getElementById('ads-selo');
+      if(seloA && typeof seloDado==='function') seloA.innerHTML=seloDado(c.snapDate,'anúncios');
       var sub=document.getElementById('ads-subtitle');
       if(sub) sub.textContent=j.rotulo+' · '+j.ini.split('-').reverse().join('/')
         +(j.ini!==j.fim?' a '+j.fim.split('-').reverse().join('/'):'');
@@ -15910,7 +15997,7 @@ window.apGarantirMes=async function(mes){
         .eq('conta','Logbox').eq('data',snapDate||'2099-01-01')
         .order('item_id',{ascending:true}).range(a,b); }, 'dre/anuncios')
     ]);
-    var e=r.find(function(x){ return x.error; });
+    var e=r.find(function(x){ return x && x.error; });
     if(e) throw e.error;
 
     var hubMap={}, hubLinks={};
@@ -16250,7 +16337,7 @@ window.apGarantirMes=async function(mes){
       sbTodas(function(a,b){ return sbP('skus','sku,estoque_minimo,marca')
         .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'est/skus')
     ]);
-    var e=r.find(function(x){ return x.error; });
+    var e=r.find(function(x){ return x && x.error; });
     if(e) throw e.error;
     return { snapDate:snapDate, anuncios:r[0].data||[], vendas:r[1].data||[],
              fin:r[2].data||[], skus:r[3].data||[] };
@@ -16346,7 +16433,9 @@ window.apGarantirMes=async function(mes){
       +'<div style="margin-top:10px;font-size:11.5px;color:var(--slate-400);line-height:1.6">'
       +'Sem custo de mercadoria, por escolha. <strong>Reservado, impedidas e último pedido</strong> não aparecem: '
       +'vêm do endpoint de estoque do Full, que o sync ainda não puxa.'
-      +(c.snapDate?' Snapshot de '+c.snapDate.split('-').reverse().join('/')+'.':'')+'</div>';
+      +'</div>';
+    var seloEst=document.getElementById('est-selo');
+    if(seloEst) seloEst.innerHTML = (typeof seloDado==='function') ? seloDado(c.snapDate,'estoque') : '';
   }
 
   window.estOrdenar=function(campo){
@@ -16493,7 +16582,7 @@ window.apGarantirMes=async function(mes){
         .eq('conta','Logbox').eq('data',(snap.data&&snap.data.data)||'2099-01-01')
         .order('item_id',{ascending:true}).range(a,b); }, 'mrc/anuncios')
     ]);
-    var e=r.find(function(x){ return x.error; });
+    var e=r.find(function(x){ return x && x.error; });
     if(e) throw e.error;
 
     var i2sku={};
@@ -16712,9 +16801,25 @@ window.apGarantirMes=async function(mes){
         else btn.removeAttribute('title');
       }
     }
-    var algum=Object.keys(_leds).some(function(k){ return _leds[k].nivel; });
+    var acesos=Object.keys(_leds).filter(function(k){ return _leds[k].nivel; });
+    var algum=acesos.length>0;
+    var alerta=acesos.some(function(k){ return _leds[k].nivel==='alerta'; });
+
     var logo=document.querySelector('.sidebar-logo');
     if(logo) logo.classList.toggle('led-on', algum);
+
+    /* No celular a barra lateral vive atrás do hambúrguer, então os LEDs — que
+       são a ideia central do app — sumiam justamente onde o Ale mais olha
+       rápido. O ponto acompanha o botão, com a severidade mais grave de todas
+       as abas, e o título lista o que está aceso. */
+    var hb=document.getElementById('hamburger');
+    if(hb){
+      hb.classList.toggle('led-on', algum && !alerta);
+      hb.classList.toggle('led-alerta', alerta);
+      hb.setAttribute('title', algum
+        ? acesos.map(function(k){ return _leds[k].motivo || k; }).join(' · ')
+        : 'Nada pedindo atenção');
+    }
   };
 
   window.ledLer=function(){ return JSON.parse(JSON.stringify(_leds)); };
