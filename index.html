@@ -1623,31 +1623,7 @@ body.sidebar-collapsed .hamburger { display: none; }
    Onze colunas não cabem em 380px. Em vez de um segundo render (duas fontes
    da verdade), a mesma tabela vira lista: cada td mostra seu rótulo a partir
    de data-rot. Um render só, dois formatos.                                */
-@media (max-width: 768px){
-  #dash-produtos .table-wrap{ overflow-x:visible; }
-  #dash-produtos table, #dash-produtos thead, #dash-produtos tbody,
-  #dash-produtos tr, #dash-produtos td{ display:block; width:100%; }
-  #dash-produtos thead{ display:none; }
-  #dash-produtos tbody tr.dash-linha{
-    border:1px solid var(--slate-100); border-radius:var(--radius);
-    background:var(--white); margin-bottom:10px; padding:10px 12px;
-  }
-  #dash-produtos tbody tr.dash-linha td{
-    border:none; padding:3px 0; text-align:right;
-    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
-  }
-  #dash-produtos tbody tr.dash-linha td:first-child{
-    text-align:left; display:block; margin-bottom:6px;
-    padding-bottom:6px; border-bottom:1px solid var(--slate-50);
-  }
-  #dash-produtos tbody tr.dash-linha td[data-rot]:not(:first-child)::before{
-    content:attr(data-rot);
-    font-size:10px; font-weight:600; text-transform:uppercase;
-    letter-spacing:.5px; color:var(--slate-400);
-  }
-  #dash-produtos tbody tr.dash-card-row td{ padding:0; }
-  #dash-kpis > div{ grid-template-columns:repeat(auto-fit,minmax(140px,1fr)) !important; }
-}
+
 
 /* ═══ DIREÇÃO C — painel com voz ══════════════════════════════════════════
    Escolhida em 15/09. Três regras que valem para o app inteiro:
@@ -3762,6 +3738,39 @@ function expGrupoReclamacao(motivo){
   return 'outro';
 }
 
+/* ═══ RECLAMAÇÃO "EM ABERTO" — CONTA ÚNICA ══════════════════════════════
+   Em aberto é a que PEDE AÇÃO MINHA, não a que o ML ainda não encerrou.
+
+   Medido em 20/09/2026: a conta tinha 102 claims com `status='opened'` e o
+   painel do Mercado Livre mostrava 16 em "Reclamações e mediações". As outras
+   86 já estavam atendidas, esperando só o encerramento formal. Quem separa é
+   a ação OBRIGATÓRIA do vendedor na claim — o sync grava isso em
+   `acao_obrigatoria` e `prazo_acao`.
+
+   Esta função é o único lugar que decide isso. Antes havia DUAS contas
+   diferentes no código: `status!=='closed'` no card do Dashboard e
+   `status==='opened'` na Experiência e nos agentes. Davam igual por acidente
+   (o ML só devolve dois status) e as duas estavam infladas ~6×.          */
+function reclAberta(r){
+  return !!(r && r.status==='opened' && r.acao_obrigatoria);
+}
+// Dia de hoje no fuso de quem está olhando a tela. `toISOString().slice(0,10)`
+// daria o dia em UTC — das 21h em diante no Brasil isso já é amanhã, e o prazo
+// apareceria como vencido um dia antes da hora. Helper próprio porque `diaISO`
+// mora dentro da IIFE do Dashboard e não existe neste bloco.
+function reclHoje(){
+  var d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+// Prazo estourando. `prazo_acao` vem com fuso do ML; a fatia de 10 caracteres
+// compara o DIA, que é como o painel do ML apresenta ("vence no final do dia").
+function reclVenceAte(r, dia){
+  return reclAberta(r) && !!r.prazo_acao && String(r.prazo_acao).slice(0,10) <= (dia||reclHoje());
+}
+function reclContarAbertas(lista){
+  return (lista||[]).filter(reclAberta).length;
+}
+
 function expPanorama(fonte){
   fonte=fonte||{};
   var an=(fonte.anuncios||[]).filter(function(a){return a.status!=='closed';});
@@ -3776,7 +3785,7 @@ function expPanorama(fonte){
     if(!r.item_id){ semItem++; return; }
     var o=reclPorItem[r.item_id]=reclPorItem[r.item_id]||{total:0,produto:0,nao_recebido:0,outro:0,abertas:0,disputa:0};
     o.total++; o[expGrupoReclamacao(r.motivo)]++;
-    if(r.status==='opened') o.abertas++;
+    if(reclAberta(r)) o.abertas++;
     if(r.stage==='dispute') o.disputa++;
   });
 
@@ -3867,7 +3876,7 @@ async function lbxCarregarTudo(){
     sb.from('skus').select('*').eq('conta','Logbox'),
     sbTodas(function(de,ate){ return sbP('ml_visitas','*').eq('conta','Logbox')
       .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_visitas/lbx'),
-    sbTodas(function(de,ate){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,motivo,data_abertura')
+    sbTodas(function(de,ate){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,tipo,motivo,data_abertura,acao_obrigatoria,prazo_acao')
       .eq('conta','Logbox').gte('data_abertura',d60.toISOString())
       .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(de,ate); }, 'ml_reclamacoes/lbx'),
   ]);
@@ -4276,6 +4285,10 @@ async function renderExperiencia(){
 
   const totalRecl = exp.itens.reduce((s,i)=>s+i.reclamacoes.total,0) + exp.reclamacoesSemItem;
   const totalUn = exp.itens.reduce((s,i)=>s+i.unidades60,0);
+  // Conta sobre a lista crua, não sobre exp.itens: a reclamação sem anúncio
+  // identificado também pede ação e some no agregado por item.
+  const aAtender = reclContarAbertas(recl);
+  const vencendoHoje = recl.filter(r=>reclVenceAte(r, reclHoje())).length;
   const taxaGlobal = totalUn>0 ? (totalRecl/totalUn*100) : null;
   const emRisco = exp.categorias.filter(c=>c.herancaEmRisco);
   const trocaram = exp.quedas.filter(i=>i.mudouDeFaixa);
@@ -4299,7 +4312,13 @@ async function renderExperiencia(){
                return emRisco.length ? `${n} anúncio${n>1?'s':''} pendurado${n>1?'s':''} nessa nota` : 'nenhuma categoria comprometida'; })(),
         emRisco.length ? '#B07A00' : 'var(--green-600)') +
     kpi('Reclamações em 60 dias', totalRecl.toLocaleString('pt-BR'),
-        taxaGlobal!==null ? `${taxaGlobal.toFixed(2)}% sobre ${totalUn.toLocaleString('pt-BR')} un vendidas` : 'sem base de vendas');
+        taxaGlobal!==null ? `${taxaGlobal.toFixed(2)}% sobre ${totalUn.toLocaleString('pt-BR')} un vendidas` : 'sem base de vendas') +
+    // O número que o painel do ML mostra em "Reclamações e mediações": as que
+    // ainda pedem ação minha. Coral porque é o que sangra agora.
+    kpi('Pedem ação agora', aAtender,
+        aAtender ? (vencendoHoje ? `${vencendoHoje} com prazo vencendo` : 'nenhum prazo estourando hoje')
+                 : 'nada na fila do SAC',
+        aAtender ? 'var(--coral-500)' : 'var(--green-600)');
 
   /* ── 2. O que mudou desde a semana passada ── */
   const quedasEl = document.getElementById('exp-quedas');
@@ -6684,7 +6703,16 @@ function renderNotes(){
   const b=document.getElementById('badge');
   if(pending){b.style.display='';b.textContent=pending;}else b.style.display='none';
   const today=localDateStr();
-  const sorted=f.sort((a,b)=>{ return b.ts-a.ts; });
+  /* Pendente sempre antes de concluída; dentro de cada grupo, a mais recente
+     primeiro (que era a ordem única de antes).
+
+     Só dá pra notar com a pill "Todas": nas outras duas a lista já é de um
+     grupo só. Mas a regra fica aqui sem `if` de filtro de propósito — ordenação
+     que muda conforme o filtro é o tipo de coisa que diverge sozinha depois.
+     Com "Todas" ativa, uma anotação concluída hoje empurrava para baixo a
+     pendente de ontem, que é justamente a que precisa de ação. */
+  const ordem=n=>n.status==='pendente'?0:1;
+  const sorted=f.sort((a,b)=>{ return ordem(a)-ordem(b) || b.ts-a.ts; });
   document.getElementById('notes-list').innerHTML=sorted.length?sorted.map(n=>{
     const ov=n.date&&n.date<today&&n.status==='pendente';
     const done=n.status==='concluido';
@@ -9105,13 +9133,18 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
 /* ── Cabeçalho fixo em tabela longa ────────────────────────────────────────
    Top 15 e DRE rolavam e o cabeçalho sumia: sobrava uma coluna de números
    sem saber qual era. O topo da tabela gruda no cabeçalho da página. */
+/* O offset é MEDIDO, não chutado. Eram dois números fixos — 58px no desktop e
+   52px no celular — contra um cabeçalho que mede 77px no Catálogo e 161px no
+   Ads a 390px. O cabeçalho sticky da tabela grudava DENTRO do cabeçalho da
+   página. `--pg-head-h` é publicado por JS a partir do .pg-head visível. */
 #dash-produtos thead th, #dre-tabela thead th, #ads-tabela thead th, #est-tabela thead th {
-  position: sticky; top: 58px; z-index: 3; background: var(--bg);
+  position: sticky; top: var(--pg-head-h, 58px); z-index: 3; background: var(--bg);
   box-shadow: inset 0 -1px 0 var(--slate-200);
 }
 #dre-tabela thead th.dre-rot { left: 0; z-index: 4; }
 @media (max-width: 768px){
-  #dash-produtos thead th, #dre-tabela thead th, #ads-tabela thead th, #est-tabela thead th { top: 52px; }
+  /* nada a sobrescrever aqui: `--pg-head-h` já é o valor certo em qualquer
+     largura, e no celular estas tabelas nem mostram <thead> (viram lista). */
 }
 
 /* ── Data do dado ──────────────────────────────────────────────────────────
@@ -9136,6 +9169,85 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
 @media (max-width: 768px){
   .kpi-grid-alto { grid-template-columns: 1fr 1fr; }
   .kpi-grid-alto .kpi-v { font-size: 20px; }
+}
+
+/* O padrão vale para QUALQUER tabela marcada com `.empilha`, não só o Top 15.
+   Ads, Estoque, DRE, Marcas e as duas da Experiência caíam no scroll lateral:
+   no celular era preciso arrastar de lado pra ler número, justamente o que
+   este bloco existia pra evitar. Os `data-rot` são preenchidos sozinhos a
+   partir do `<thead>` (ver `empilharTabelas`), então continua sendo UM render
+   em dois formatos — nenhum renderer precisou ganhar marcação extra. */
+@media (max-width: 768px){
+  /* Os !important abaixo não são preguiça: o bloco mobile legado declara
+     `.table-wrap{overflow-x:auto !important}` e `table{min-width:500px}`.
+     Sem neutralizar os dois, a tabela empilhada ficava com 500px de largura
+     e scroll lateral — ou seja, o empilhamento não valia de nada. */
+  .empilha .table-wrap{ overflow-x:visible !important; }
+  .empilha table{ min-width:0 !important; }
+  .empilha table, .empilha thead, .empilha tbody,
+  .empilha tr, .empilha td{ display:block; width:100%; }
+  .empilha thead{ display:none; }
+  .empilha tbody tr{
+    border:1px solid var(--slate-100); border-radius:var(--radius);
+    background:var(--white); margin-bottom:10px; padding:10px 12px;
+  }
+  .empilha tbody tr td{
+    border:none; padding:3px 0 !important; font-size:12.5px !important; text-align:right;
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  }
+  .empilha tbody tr td:first-child{
+    text-align:left; display:block; margin-bottom:6px;
+    padding-bottom:6px; border-bottom:1px solid var(--slate-50);
+  }
+  .empilha tbody tr td[data-rot]:not(:first-child)::before{
+    content:attr(data-rot);
+    font-size:10px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--slate-400);
+    text-align:left; flex:0 0 auto;
+  }
+  /* Rótulo vazio não abre buraco: célula sem cabeçalho ocupa a linha toda. */
+  .empilha tbody tr td[data-rot=""]{ display:block; text-align:left; }
+  /* Linha que só carrega a gaveta aberta não vira cartão. */
+  .empilha tbody tr.dash-card-row,
+  .empilha tbody tr.linha-gaveta{
+    border:none; background:none; margin:0; padding:0;
+  }
+  .empilha tbody tr.dash-card-row td,
+  .empilha tbody tr.linha-gaveta td{ padding:0 !important; display:block; }
+  .empilha tbody tr.dash-card-row td::before,
+  .empilha tbody tr.linha-gaveta td::before{ content:none; }
+  /* Linha de totais continua sendo totais, não mais um produto da lista. */
+  .empilha tbody tr.tr-total{ border-color:var(--slate-300); }
+  #dash-kpis > div{ grid-template-columns:repeat(auto-fit,minmax(140px,1fr)) !important; }
+}
+
+/* ── Cabeçalho de página no celular ───────────────────────────────────────
+   Dois problemas medidos a 390px:
+
+   1. O `.pg-head` saía 394px numa tela de 390 e a página inteira rolava de
+      lado. A causa era aritmética: a `.main` tem 14px de padding no celular
+      (regra de baixo, com !important) e a margem negativa do cabeçalho foi
+      escrita contra os 16px de uma regra mais antiga que já não vale. Agora
+      os dois lados saem da MESMA variável e não têm como divergir de novo.
+
+   2. A ALTURA continua em aberto, de propósito. Medida a 390px: 73px na
+      Agenda, 81px no Catálogo, 151px no Ads, 165px no Dashboard e 209px no
+      Análise — fixos na tela o tempo todo, porque o cabeçalho é sticky.
+      Tentei resolver empilhando em coluna com o seletor ocupando a linha:
+      PIOROU (Dashboard 137→165, Análise 137→209), porque o grupo de
+      controles passou a quebrar em duas linhas. Encurtar de verdade exige
+      decidir o que sai — subtítulo, tamanho do título ou lugar do seletor —
+      e isso é escolha de produto, não conserto. Fica medido e documentado.  */
+:root{ --pad-mob: 14px; }
+@media (max-width: 768px){
+  .main{ padding-left: var(--pad-mob) !important; padding-right: var(--pad-mob) !important; }
+  .pg-head{
+    margin-left: calc(-1 * var(--pad-mob)); margin-right: calc(-1 * var(--pad-mob));
+    padding-left: var(--pad-mob); padding-right: var(--pad-mob);
+  }
+  /* Filho de flex não encolhe abaixo do conteúdo sem isto — título longo
+     empurrava a largura e era parte do estouro. */
+  .pg-head > *{ min-width: 0; }
 }
 </style>
 
@@ -10201,7 +10313,12 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
         sb.from('skus').select('sku,descricao,custo,preco,tacos_alvo,estoque_minimo,mc,rebait').eq('conta','Logbox'),
         sb.from('ml_perguntas').select('question_id,item_id,texto,status,data_pergunta,resposta').eq('conta','Logbox').order('data_pergunta',{ascending:false}).limit(100),
         sb.from('ml_pedidos').select('order_id,status,status_envio,data_compra,valor_total,item_id,sku').eq('conta','Logbox').gte('data_compra',d30str+'T00:00:00').order('data_compra',{ascending:false}).limit(200),
-        sb.from('ml_reclamacoes').select('claim_id,order_id,item_id,status,stage,motivo,data_abertura').eq('conta','Logbox').gte('data_abertura',d60.toISOString()).order('data_abertura',{ascending:false}).limit(500),
+        // Eram `.limit(500)`: com 2.994 reclamações na base, 60 dias já passam
+        // disso e o agente recebia uma amostra achando que era o período.
+        // Regra de ouro nº 2 — leitura grande pagina de verdade.
+        sbTodas(function(de,ate){ return sbP('ml_reclamacoes','claim_id,order_id,item_id,status,stage,tipo,motivo,data_abertura,acao_obrigatoria,prazo_acao')
+          .eq('conta','Logbox').gte('data_abertura',d60.toISOString())
+          .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(de,ate); }, 'ml_reclamacoes/esc'),
         // `ml_financeiro` tem ~2 linhas por pedido (comissão + frete): com 5.379
         // pedidos em 13 dias são ~10.700 linhas em 30 dias. O `.limit(200)`
         // antigo era uma AMOSTRA que o contexto carregava e ninguém usava —
@@ -11600,7 +11717,10 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
     }
 
     // 5. Reclamação em disputa já saiu da nossa mão e vai pro ML decidir.
-    var emDisputa=(dados.reclamacoes||[]).filter(function(r){return r.stage==='dispute'&&r.status==='opened';});
+    // Só as que ainda pedem ação minha: `status==='opened'` sozinho pegava as
+    // 46 em disputa, das quais 33 já estavam atendidas. Alerta urgente que
+    // aparece 46 vezes por dia sem nada a fazer deixa de ser alerta.
+    var emDisputa=(dados.reclamacoes||[]).filter(function(r){return r.stage==='dispute'&&reclAberta(r);});
     if(emDisputa.length) jobs.push(registrarObservacao('sac',{
       severidade:'urgente',
       titulo:emDisputa.length+' reclamação'+(emDisputa.length===1?'':'ões')+' em mediação do Mercado Livre',
@@ -12925,8 +13045,19 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
       ctx.pedidos_resumo={total_30d:pedidos.length, por_status:pedidos.reduce(function(acc,p){acc[p.status||'?']=(acc[p.status||'?']||0)+1;return acc;},{})};
       ctx.perguntas_sem_resposta=perguntas.filter(function(p){return p.status==='UNANSWERED';}).slice(0,20)
         .map(function(p){var a=an.find(function(x){return x.item_id===p.item_id;}); return {sku:(a&&a.sku)||p.item_id, texto:(p.texto||'').slice(0,200), data:p.data_pergunta};});
-      ctx.reclamacoes_abertas=reclamacoes.filter(function(r){return r.status==='opened';}).slice(0,15)
-        .map(function(r){return {claim_id:r.claim_id, motivo:r.motivo, stage:r.stage, data:r.data_abertura};});
+      // "Aberta" aqui é a que pede ação minha (ver reclAberta). Passar as 102
+      // com status=opened fazia o SAC relatar um número que o painel do ML não
+      // mostra em lugar nenhum.
+      ctx.reclamacoes_abertas=reclamacoes.filter(reclAberta)
+        .sort(function(a,b){ return String(a.prazo_acao||'9').localeCompare(String(b.prazo_acao||'9')); })
+        .slice(0,15)
+        .map(function(r){return {claim_id:r.claim_id, motivo:r.motivo, stage:r.stage, tipo:r.tipo,
+                                 data:r.data_abertura, prazo:r.prazo_acao};});
+      ctx.reclamacoes_resumo={
+        pedem_acao_agora:reclContarAbertas(reclamacoes),
+        abertas_na_api_do_ml:reclamacoes.filter(function(r){return r.status==='opened';}).length,
+        _como_ler:'Relate "pedem_acao_agora" — é o número que o painel do Mercado Livre mostra. "abertas_na_api_do_ml" inclui as já atendidas que só aguardam encerramento formal; não é o número da operação.'
+      };
       if(!perguntas.length) ctx._aviso_perguntas='A tabela de perguntas está vazia — o sync ainda não trouxe esse dado. Não afirme que não há perguntas; diga que o dado não chegou.';
       if(!reclamacoes.length) ctx._aviso_reclamacoes='A tabela de reclamações está vazia — mesmo caso das perguntas.';
 
@@ -15247,7 +15378,7 @@ window.apGarantirMes=async function(mes){
   async function dashCarregarCard(linha, c){
     var ids=linha.itemIds||[];
     if(!ids.length) return {vazio:true};
-    var hoje=diaISO(new Date()), d30=somaDias(hoje,-29), d7=somaDias(hoje,-6);
+    var hoje=diaISO(new Date()), d30=somaDias(hoje,-29), d7=somaDias(hoje,-6), d60=somaDias(hoje,-59);
 
     var r=await Promise.all([
       sbTodas(function(a,b){ return sbP('ml_anuncios','*').eq('conta','Logbox')
@@ -15268,8 +15399,12 @@ window.apGarantirMes=async function(mes){
       sbTodas(function(a,b){ return sbP('ml_perguntas','question_id,item_id,texto,status,data_pergunta,resposta')
         .eq('conta','Logbox').in('item_id',ids)
         .order('data_pergunta',{ascending:false}).order('question_id',{ascending:true}).range(a,b); }, 'card/perguntas'),
-      sbTodas(function(a,b){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,motivo,data_abertura')
-        .eq('conta','Logbox').in('item_id',ids)
+      // 60 dias, a mesma janela da Experiência. Sem esse filtro o card trazia
+      // o histórico inteiro do anúncio: o MLB5732463622 aparecia com "47
+      // reclamações" aqui e zero na Experiência — mesmo dado, duas telas,
+      // dois números.
+      sbTodas(function(a,b){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,tipo,motivo,data_abertura,acao_obrigatoria,prazo_acao')
+        .eq('conta','Logbox').in('item_id',ids).gte('data_abertura',d60)
         .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(a,b); }, 'card/reclamacoes')
     ]);
     var err=r.find(function(x){ return x && x.error; });
@@ -15374,9 +15509,8 @@ window.apGarantirMes=async function(mes){
     var semResposta=(d.perguntas||[]).filter(function(q){
       return !q.resposta && String(q.status||'').toUpperCase()!=='ANSWERED';
     });
-    var abertas=(d.reclamacoes||[]).filter(function(x){
-      return String(x.status||'').toLowerCase()!=='closed';
-    });
+    var abertas=(d.reclamacoes||[]).filter(reclAberta);
+    var vencendo=(d.reclamacoes||[]).filter(function(x){ return reclVenceAte(x, reclHoje()); });
     if(semResposta.length || (d.reclamacoes||[]).length){
       h+='<div style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:9px">';
       if(semResposta.length){
@@ -15396,8 +15530,9 @@ window.apGarantirMes=async function(mes){
         var lista=Object.keys(motivos).sort(function(a,b){ return motivos[b]-motivos[a]; }).slice(0,4);
         h+='<div style="background:var(--coral-50);border:1px solid var(--coral-200);border-radius:var(--radius);padding:11px 13px">'
           +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--coral-600);margin-bottom:5px">'
-          +d.reclamacoes.length+' reclamaç'+(d.reclamacoes.length>1?'ões':'ão')
-          +(abertas.length?' · '+abertas.length+' em aberto':'')+'</div>'
+          +d.reclamacoes.length+' reclamaç'+(d.reclamacoes.length>1?'ões':'ão')+' em 60 dias'
+          +(abertas.length?' · '+abertas.length+' a atender':'')
+          +(vencendo.length?' · '+vencendo.length+' vencendo':'')+'</div>'
           +lista.map(function(m){
             return '<div style="font-size:11.5px;color:var(--slate-700);line-height:1.5">'
               +'<span style="font-family:var(--mono);color:var(--coral-600)">'+motivos[m]+'×</span> '+desc(m)+'</div>'; }).join('')
@@ -16892,6 +17027,167 @@ window.apGarantirMes=async function(mes){
       else ledSet('escritorio',null);
     }catch(e){ /* idem */ }
   };
+})();
+</script>
+
+<script>
+/* ═══ TABELA QUE VIRA LISTA NO CELULAR ════════════════════════════════════
+   Onze colunas não cabem em 380px. O Top 15 já resolvia isso empilhando cada
+   linha como cartão, mas o mecanismo dependia de `data-rot` escrito à mão em
+   cada <td> — por isso nenhuma outra tabela tinha ganhado o tratamento e
+   Ads, Estoque, DRE, Marcas e Experiência continuavam no scroll lateral.
+
+   Aqui o rótulo é lido do próprio <thead>. Nenhum renderer muda, nenhuma
+   marcação nova: continua UM render em dois formatos, e tabela nova nasce
+   com o comportamento de graça. O CSS de `.empilha` faz o resto.
+
+   Por que observar o DOM em vez de chamar depois de cada render: são doze
+   telas com render assíncrono próprio. Encaixar uma chamada em cada uma é
+   exatamente o tipo de coisa que passa a faltar numa delas seis meses depois.
+   ═════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  // Containers cujas tabelas viram lista no celular.
+  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela',
+               'mrc-tabela','exp-ofensoras','exp-categorias'];
+
+  // Rótulos do cabeçalho, com colspan expandido: a coluna 3 tem que casar com
+  // a 3ª célula mesmo que a 1ª ocupe duas.
+  function rotulos(tabela){
+    var linhas = tabela.tHead ? tabela.tHead.rows : null;
+    if(!linhas || !linhas.length) return null;
+    var tr = linhas[linhas.length-1], out = [];
+    for(var i=0;i<tr.cells.length;i++){
+      var th = tr.cells[i];
+      var txt = (th.textContent||'').replace(/\s+/g,' ').trim();
+      var span = Math.max(1, th.colSpan||1);
+      for(var k=0;k<span;k++) out.push(k===0?txt:'');
+    }
+    return out;
+  }
+
+  function empilharTabela(tabela){
+    var rots = rotulos(tabela);
+    if(!rots) return;
+    var corpos = tabela.tBodies;
+    for(var b=0;b<corpos.length;b++){
+      var linhas = corpos[b].rows;
+      for(var r=0;r<linhas.length;r++){
+        var tr = linhas[r], col = 0;
+        // Linha de uma célula só que atravessa a tabela é gaveta/detalhe,
+        // não registro: não vira cartão nem ganha rótulo.
+        if(tr.cells.length===1 && (tr.cells[0].colSpan||1) > 1){
+          tr.classList.add('linha-gaveta');
+          continue;
+        }
+        for(var c=0;c<tr.cells.length;c++){
+          var td = tr.cells[c];
+          // `data-rot` escrito à mão manda: o Top 15 usa abreviações que
+          // cabem melhor do que o cabeçalho inteiro.
+          if(!td.hasAttribute('data-rot')) td.setAttribute('data-rot', rots[col]||'');
+          col += Math.max(1, td.colSpan||1);
+        }
+      }
+    }
+  }
+
+  function aplicar(){
+    for(var i=0;i<ALVOS.length;i++){
+      var el = document.getElementById(ALVOS[i]);
+      if(!el) continue;
+      el.classList.add('empilha');
+      var tabelas = el.getElementsByTagName('table');
+      for(var t=0;t<tabelas.length;t++) empilharTabela(tabelas[t]);
+    }
+  }
+
+  // Um passe por quadro, no máximo: os renders trocam innerHTML inteiro e
+  // disparariam o observer dezenas de vezes seguidas.
+  var agendado = false;
+  function agendar(){
+    if(agendado) return;
+    agendado = true;
+    requestAnimationFrame(function(){ agendado = false; try{ aplicar(); }catch(e){ console.error('[OfficeLed] empilhar', e); } });
+  }
+
+  function ligar(){
+    aplicar();
+    if(!window.MutationObserver) return;   // sem observer, o passe inicial já cobre o essencial
+    var obs = new MutationObserver(agendar);
+    for(var i=0;i<ALVOS.length;i++){
+      var el = document.getElementById(ALVOS[i]);
+      if(el) obs.observe(el, {childList:true, subtree:true});
+    }
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ligar);
+  else ligar();
+
+  // Exposto para teste e para quem renderizar tabela fora dos alvos.
+  window.empilharTabelas = aplicar;
+  window._empilharTabela = empilharTabela;
+})();
+
+/* ═══ ALTURA REAL DO CABEÇALHO DE PÁGINA ══════════════════════════════════
+   O `<thead>` sticky das tabelas longas precisa grudar logo abaixo do
+   `.pg-head`, que também é sticky. Isso estava escrito como dois números
+   fixos — 58px no desktop, 52px no celular. Medido a 390px, o cabeçalho tem
+   77px no Catálogo, 137px no Dashboard e 161px no Ads: o cabeçalho da tabela
+   grudava DENTRO do cabeçalho da página e sumia.
+
+   Mesma disciplina do LED: não existe segundo cálculo do valor — a tela mede
+   o que ela própria desenhou e publica em `--pg-head-h`.
+   ═════════════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  var PADRAO = 58;
+
+  function visivel(){
+    var todos = document.querySelectorAll('.pg-head');
+    for(var i=0;i<todos.length;i++){
+      var r = todos[i].getBoundingClientRect();
+      if(r.height > 0) return todos[i];
+    }
+    return null;
+  }
+
+  function medir(){
+    var el = visivel();
+    var h = el ? Math.round(el.getBoundingClientRect().height) : PADRAO;
+    // Cabeçalho maior que meia tela seria erro de medida (render no meio do
+    // caminho, animação de troca de aba): melhor o padrão do que grudar a
+    // tabela no rodapé.
+    if(!(h > 0) || h > window.innerHeight/2) h = PADRAO;
+    document.documentElement.style.setProperty('--pg-head-h', h + 'px');
+  }
+
+  var agendado = false;
+  function agendar(){
+    if(agendado) return;
+    agendado = true;
+    requestAnimationFrame(function(){ agendado = false; try{ medir(); }catch(e){} });
+  }
+
+  function ligar(){
+    medir();
+    window.addEventListener('resize', agendar);
+    window.addEventListener('orientationchange', agendar);
+    if(window.ResizeObserver){
+      // ResizeObserver dispara quando o elemento passa de 0 para altura real,
+      // então trocar de aba já recalcula sem ninguém precisar avisar.
+      var ro = new ResizeObserver(agendar);
+      var todos = document.querySelectorAll('.pg-head');
+      for(var i=0;i<todos.length;i++) ro.observe(todos[i]);
+    } else {
+      setInterval(agendar, 1000);   // navegador antigo: pesquisa devagar
+    }
+  }
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ligar);
+  else ligar();
+
+  window.medirCabecalho = medir;
 })();
 </script>
 
