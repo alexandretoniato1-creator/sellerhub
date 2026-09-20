@@ -1920,13 +1920,11 @@ body.sidebar-collapsed .hamburger { display: none; }
         <div class="fin-loading"><div class="fin-spinner"></div> Montando a operação…</div>
       </div>
 
-      <div class="sec-title">Saúde da conta</div>
-      <div id="dash-saude"></div>
+      <!-- Saúde da conta e Pontos de atenção desceram para o fim da página em
+           20/09/2026, a pedido: o Dashboard abre nos números do período e o
+           diagnóstico fica como consulta, não como primeira leitura. -->
 
-      <div class="sec-title">Pontos de atenção</div>
-      <div id="dash-atencao"></div>
-
-      <div class="sec-title">Evolução no período</div>
+      <div class="sec-title" id="dash-grafico-titulo">Evolução no período</div>
       <div id="dash-grafico"></div>
 
       <div class="sec-title">Top 15 produtos por faturamento</div>
@@ -1958,6 +1956,18 @@ body.sidebar-collapsed .hamburger { display: none; }
         </div>
         <div id="home-notes"></div>
       </div>
+
+      <!-- DIAGNÓSTICO — fim da página.
+           Estes dois blocos abriam o Dashboard até 20/09/2026. Desceram para
+           cá: em cima ficam os números do período, aqui fica o porquê.
+           O LED da aba continua refletindo o que "Pontos de atenção" calcula,
+           então nada aqui embaixo depende de o Ale rolar até o fim pra
+           descobrir que existe. -->
+      <div class="sec-title" style="margin-top:28px">Saúde da conta</div>
+      <div id="dash-saude"></div>
+
+      <div class="sec-title">Pontos de atenção</div>
+      <div id="dash-atencao"></div>
     </div>
 
     <!-- ═══ ADS — o que o OfficeLed tinha no banco e não mostrava ═══════════
@@ -9133,13 +9143,61 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
 /* ── Cabeçalho fixo em tabela longa ────────────────────────────────────────
    Top 15 e DRE rolavam e o cabeçalho sumia: sobrava uma coluna de números
    sem saber qual era. O topo da tabela gruda no cabeçalho da página. */
-/* O offset é MEDIDO, não chutado. Eram dois números fixos — 58px no desktop e
-   52px no celular — contra um cabeçalho que mede 77px no Catálogo e 161px no
-   Ads a 390px. O cabeçalho sticky da tabela grudava DENTRO do cabeçalho da
-   página. `--pg-head-h` é publicado por JS a partir do .pg-head visível. */
+/* ── Cabeçalho da tabela que gruda ao rolar ───────────────────────────────
+   Duas correções que andam juntas, porque a segunda causava a primeira.
+
+   1. O `.table-wrap` estava com `overflow: hidden` (posto lá atrás para
+      recortar os cantos arredondados). Isso faz dele um container de rolagem,
+      e um container de rolagem vira o BLOCO DE CONTENÇÃO do sticky: o `top`
+      do <thead> passava a contar do topo da TABELA, não da página. Resultado
+      visível: o cabeçalho flutuando 67px dentro da tabela, por cima da
+      segunda linha. Com `overflow-x:auto` o excesso rola dentro do quadro em
+      vez de empurrar a página — entre 769px e ~1180px o wrap crescia até o
+      min-content da tabela (~1090px) e a página inteira rolava de lado.
+
+   2. O offset é MEDIDO, não chutado. Eram dois números fixos — 58px no
+      desktop, 52px no celular — contra um cabeçalho que mede 67px no
+      Dashboard, 79px no Catálogo e 161px no Ads a 390px.
+
+   `top` só pode valer `--pg-head-h` quando o wrap NÃO é scroller; enquanto
+   ele rola na horizontal, o único valor correto é 0. Daí os dois regimes. */
+.table-wrap{ overflow-x: auto; overflow-y: hidden; }
+
+/* Sem isto o `overflow-x:auto` acima não adianta nada. `.main` é item de flex,
+   e item de flex nasce com `min-width:auto`: ele se RECUSA a encolher abaixo
+   do min-content do que tem dentro. Com a Top 15 montada, a tabela pede
+   ~1090px, a `.main` crescia para 1163px numa tela de 900 e a página inteira
+   rolava de lado — em vez de a tabela rolar dentro do próprio quadro.
+   Valia para qualquer notebook ou tablet entre 769px e ~1180px. */
+.main{ min-width: 0; }
+
+/* O `!important` no fundo é o coração do conserto visual. `.hub-thead th`
+   declara `background: transparent !important` — bonito numa tabela parada,
+   desastre numa sticky: a linha que passa POR BAIXO do cabeçalho aparece
+   através dele, e o resultado é "PRODUTO FATURADO REPRES." impresso por cima
+   de "BC-SB-02  R$ 4.335,17". Era isso que estava desconfigurando, não a
+   posição. Branco porque é a cor da superfície da tabela; `var(--bg)`, que
+   estava aqui antes, é o fundo da PÁGINA e destoaria do quadro. */
 #dash-produtos thead th, #dre-tabela thead th, #ads-tabela thead th, #est-tabela thead th {
-  position: sticky; top: var(--pg-head-h, 58px); z-index: 3; background: var(--bg);
+  position: sticky; top: 0; z-index: 3;
+  background: var(--white) !important;
   box-shadow: inset 0 -1px 0 var(--slate-200);
+}
+
+/* Quando a tabela CABE sem rolar, o wrap deixa de ser scroller e o cabeçalho
+   volta a grudar no cabeçalho da página, que era a intenção original.
+
+   `.cabe` é posto por JS comparando a largura que a tabela pede com a que o
+   container tem. Tentei antes com `@media (min-width: 1180px)` e errei por
+   10px — e um número fixo ali é chute de qualquer jeito, porque a largura da
+   tabela depende do tamanho dos SKUs e dos valores daquele período.
+
+   O DRE fica de fora de propósito: ele tem coluna fixa à esquerda
+   (`.dre-rot`, position:sticky left:0), que só funciona dentro de um
+   container de rolagem horizontal. */
+.cabe .table-wrap{ overflow: visible; }
+#dash-produtos.cabe thead th, #ads-tabela.cabe thead th, #est-tabela.cabe thead th{
+  top: var(--pg-head-h, 58px);
 }
 #dre-tabela thead th.dre-rot { left: 0; z-index: 4; }
 @media (max-width: 768px){
@@ -14863,6 +14921,10 @@ window.apGarantirMes=async function(mes){
   };
 
   function cartao(rotulo, valor, sub, destaque, chave){
+    // Sem gráfico não há para onde clicar. Num período de um dia a seção de
+    // evolução não existe, então o cartão perde o ↗ e o cursor de mão em vez
+    // de prometer uma tela que não vai abrir.
+    if(chave && (!_dash.dados || !_dash.dados.serie || _dash.dados.serie.length<2)) chave = null;
     var sel = chave && _dash.metrica===chave;
     return '<div class="kpi'+(destaque?' destaque':'')+(chave?' kpi-clicavel':'')+(sel?' kpi-sel':'')+'"'
       +(chave?' onclick="dashVerMetrica(\''+chave+'\')" title="Ver no gráfico de evolução"':'')+'>'
@@ -14872,9 +14934,13 @@ window.apGarantirMes=async function(mes){
   }
 
   window.dashVerMetrica=function(chave){
+    var c=_dash.dados; if(!c) return;
+    // Período de um dia: a seção de evolução está fora da tela. Zera a
+    // seleção pra ela não ficar pendurada e voltar sozinha quando o período
+    // mudar para um intervalo.
+    if(!c.serie || c.serie.length<2){ _dash.metrica=null; return; }
     // clicar no cartão já aberto volta para as três faixas
     _dash.metrica = (_dash.metrica===chave) ? null : chave;
-    var c=_dash.dados; if(!c) return;
     try{ dashRenderKpis(c); dashRenderGrafico(c); }catch(e){ console.error('[OfficeLed] métrica', e); }
     var alvo=document.getElementById('dash-grafico');
     if(alvo && _dash.metrica) alvo.scrollIntoView({behavior:'smooth', block:'center'});
@@ -15075,8 +15141,21 @@ window.apGarantirMes=async function(mes){
     }).join('');
   }
 
+  // Um dia não tem evolução. Com "Hoje" ou "Ontem" selecionado a série tem um
+  // ponto só: a linha vira um pixel, a média tracejada passa exatamente em
+  // cima dele e o eixo não diz nada. Seção inteira sai da tela — título junto,
+  // senão fica um rótulo órfão. O dado do dia já está nos indicadores acima.
+  function dashSecaoGrafico(mostrar){
+    var t=document.getElementById('dash-grafico-titulo');
+    var g=document.getElementById('dash-grafico');
+    if(t) t.style.display = mostrar ? '' : 'none';
+    if(g) g.style.display = mostrar ? '' : 'none';
+  }
+
   function dashRenderGrafico(c){
     var el=document.getElementById('dash-grafico'), s=c.serie;
+    if(s.length<2){ dashSecaoGrafico(false); el.innerHTML=''; return; }
+    dashSecaoGrafico(true);
     if(!s.length || !s.some(function(x){return x.fat>0;})){
       el.innerHTML='<div class="fin-cascata"><p class="fin-note">Sem venda no período.</p></div>'; return;
     }
@@ -17092,6 +17171,23 @@ window.apGarantirMes=async function(mes){
     }
   }
 
+  // O DRE precisa rolar na horizontal sempre: a primeira coluna dele é fixa
+  // (position:sticky left:0) e coluna fixa só existe dentro de scroller.
+  var SEMPRE_ROLA = { 'dre-tabela': 1 };
+
+  // A tabela cabe no espaço que tem? Se cabe, o wrap para de ser container de
+  // rolagem e o <thead> pode grudar no cabeçalho da PÁGINA em vez de flutuar
+  // dentro da tabela. Comparar contra o container (e não contra o wrap) é o
+  // que mantém a medida estável quando o overflow muda.
+  function marcarSeCabe(el){
+    if(SEMPRE_ROLA[el.id]) { el.classList.remove('cabe'); return; }
+    var tabela = el.getElementsByTagName('table')[0];
+    if(!tabela){ el.classList.remove('cabe'); return; }
+    var espaco = el.clientWidth;
+    if(!espaco) return;                         // invisível: não decide nada
+    el.classList.toggle('cabe', tabela.scrollWidth <= espaco);
+  }
+
   function aplicar(){
     for(var i=0;i<ALVOS.length;i++){
       var el = document.getElementById(ALVOS[i]);
@@ -17099,6 +17195,7 @@ window.apGarantirMes=async function(mes){
       el.classList.add('empilha');
       var tabelas = el.getElementsByTagName('table');
       for(var t=0;t<tabelas.length;t++) empilharTabela(tabelas[t]);
+      marcarSeCabe(el);
     }
   }
 
@@ -17113,6 +17210,10 @@ window.apGarantirMes=async function(mes){
 
   function ligar(){
     aplicar();
+    // Redimensionar não mexe no DOM, então o MutationObserver não veria — mas
+    // muda se a tabela cabe ou não, que é o que decide o modo do cabeçalho.
+    window.addEventListener('resize', agendar);
+    window.addEventListener('orientationchange', agendar);
     if(!window.MutationObserver) return;   // sem observer, o passe inicial já cobre o essencial
     var obs = new MutationObserver(agendar);
     for(var i=0;i<ALVOS.length;i++){
