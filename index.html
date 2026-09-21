@@ -17791,6 +17791,30 @@ a:hover{ color:var(--brand-dark); }
   #page-financeiro.active{ padding:0 14px 96px !important; }
   #page-financeiro .pg-head{ margin:0 -14px 14px !important; padding:11px 14px !important; }
 }
+
+/* ── Gaveta do produto dentro da Top 15 ─────────────────────────────────────
+   O bloco acima põe `white-space:nowrap` em todo td da Top 15 — certo para as
+   células de número, errado para a gaveta, que também é um td. O texto de
+   "Experiência de compra" virava UMA linha, esticava a tabela e o cartão do
+   produto saía pela direita do quadro ("...Verifi" cortado).
+
+   Só devolver a quebra de linha não basta: a gaveta ocupa a largura da
+   TABELA (mínimo 960px, e ela rola de lado dentro do cartão). Com a coluna
+   mais estreita que isso, o lado direito do cartão continuava fora de vista.
+   Então o conteúdo da gaveta passa a ter a largura da área VISÍVEL do cartão
+   (container query no .table-wrap) e fica parado quando a tabela rola —
+   position:sticky left:0. */
+@media (min-width:769px){
+  #dash-produtos .table-wrap{ container-type:inline-size; }
+  /* padding:0 !important porque uma regra de primeira célula (com !important)
+     vencia o padding:0 inline e empurrava a gaveta 20px — que somados a 100cqw
+     faziam o cartão passar da borda exatamente por esses 20px. */
+  #dash-produtos tr.dash-card-row > td{ white-space:normal !important; padding:0 !important; }
+  #dash-produtos tr.dash-card-row > td > *{
+    position:sticky; left:0;
+    width:100cqw; max-width:100cqw; box-sizing:border-box;
+  }
+}
 </style>
 <!-- ═══ OFFICELED 2026 — barra de abas mobile ═══ -->
 <script>
