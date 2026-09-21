@@ -14762,7 +14762,8 @@ window.apGarantirMes=async function(mes){
 
       var r = await sbTodas(function(a,b){
         return sbP('ml_pedidos','order_id,data_compra,valor_total,status')
-          .eq('conta','Logbox').gte('data_compra', ontem+'T00:00:00')
+          // Sem fuso na string, o Postgres (em UTC) lia meia-noite de Greenwich.
+          .eq('conta','Logbox').gte('data_compra', ontem+'T00:00:00-03:00')
           .order('data_compra',{ascending:false}).order('order_id',{ascending:true}).range(a,b);
       }, 'dash/pedidos-parcial');
       if(r.error) throw r.error;
@@ -14770,8 +14771,13 @@ window.apGarantirMes=async function(mes){
       var hojeAte=0, ontemAte=0, ontemTodo=0, nH=0, nO=0;
       (r.data||[]).forEach(function(p){
         if(String(p.status||'')==='cancelled') return;
-        var iso=String(p.data_compra||'');
-        var dia=iso.slice(0,10), hora=iso.slice(11,16);
+        // O banco devolve `data_compra` em UTC ("2026-09-21T13:59:54+00:00").
+        // Recortar a string dava dia e hora de Greenwich: o pedido das 10:59
+        // virava "13:59" e ficava fora do corte, e os pedidos de ontem entre
+        // 21h e meia-noite caíam em "hoje". Converte para o relógio local.
+        var dt=new Date(p.data_compra);
+        if(isNaN(dt)) return;
+        var dia=diaISO(dt), hora=String(dt.getHours()).padStart(2,'0')+':'+String(dt.getMinutes()).padStart(2,'0');
         var v=Number(p.valor_total)||0;
         if(dia===hoje && hora<=corte){ hojeAte+=v; nH++; }
         else if(dia===ontem){
@@ -14784,6 +14790,99 @@ window.apGarantirMes=async function(mes){
                pedidosHoje:nH, pedidosOntem:nO,
                delta: ontemAte>0 ? (hojeAte-ontemAte)/ontemAte : null };
     }catch(e){ console.warn('[OfficeLed] comparação por horário', e); return null; }
+  }
+
+  /* ── Ontem, a esta mesma hora ──────────────────────────────────────────────
+     Com "Hoje" selecionado, o período anterior era ONTEM INTEIRO: às 11h o
+     painel inteiro aparecia despencando contra um dia completo.
+
+     A base certa é o acumulado de ontem até o mesmo minuto. Vem de duas fontes,
+     nesta ordem:
+       1. ml_hoje_fotos — o ml-live-hoje grava, a cada 5 min, o acumulado do
+          dia por anúncio (vendas E ADS). Exato para tudo que sai de vendas e
+          ADS: faturamento, vendas, unidades, ticket, M.C., MPA, TACOS.
+       2. ml_pedidos — reserva para quando não há foto (o primeiro dia depois
+          da implantação, ou uma rodada que falhou). Só tem venda, não tem ADS:
+          ADS, MPA e TACOS ficam "sem base no mesmo horário".
+     Nunca estima. O que não tem base no mesmo horário aparece como tal.
+
+     O resultado substitui vendasA/adsA e entra pelo MESMO dashAgregar/
+     dashTotais do período normal — M.C. e MPA continuam saindo da fórmula
+     única, não de uma segunda conta "só para comparar". */
+  var FOTO_PASSO = 5, FOTO_TOLERANCIA = 15;   // minutos
+
+  function dashMinutoAgora(d){
+    var m=d.getHours()*60+d.getMinutes();
+    return Math.floor(m/FOTO_PASSO)*FOTO_PASSO;
+  }
+  function dashHHMM(min){ return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0'); }
+
+  async function dashOntemMesmaHora(){
+    var agora=new Date(), hoje=diaISO(agora), ontem=somaDias(hoje,-1);
+    var alvo=dashMinutoAgora(agora);
+
+    // 1) foto mais recente de ontem até este minuto
+    try{
+      var q=await sb.from('ml_hoje_fotos').select('minuto')
+        .eq('conta','Logbox').eq('dia',ontem).lte('minuto',alvo)
+        .order('minuto',{ascending:false}).limit(1);
+      var minFoto = q.data && q.data[0] ? Number(q.data[0].minuto) : null;
+      // Foto de 40 minutos antes não é "a mesma hora": cai para a reserva.
+      if(minFoto!==null && alvo-minFoto<=FOTO_TOLERANCIA){
+        var r=await sbTodas(function(a,b){
+          return sbP('ml_hoje_fotos','item_id,receita,pedidos,unidades,comissao,gasto,impressoes,cliques,unidades_ads,unidades_organicas')
+            .eq('conta','Logbox').eq('dia',ontem).eq('minuto',minFoto)
+            .order('item_id',{ascending:true}).range(a,b);
+        }, 'dash/foto-ontem');
+        if(!r.error && r.data && r.data.length){
+          var vA=[], aA=[];
+          r.data.forEach(function(x){
+            if(Number(x.receita)||Number(x.pedidos))
+              vA.push({item_id:x.item_id, data:ontem, receita:x.receita, pedidos:x.pedidos,
+                       unidades:x.unidades, comissao:x.comissao});
+            if(Number(x.gasto)||Number(x.impressoes))
+              aA.push({item_id:x.item_id, data:ontem, gasto:x.gasto, impressoes:x.impressoes,
+                       cliques:x.cliques, unidades_ads:x.unidades_ads,
+                       unidades_organicas:x.unidades_organicas, preliminar:false});
+          });
+          return { fonte:'foto', corte:dashHHMM(minFoto), vendasA:vA, adsA:aA };
+        }
+      }
+    }catch(e){ console.warn('[OfficeLed] foto de ontem', e); }
+
+    // 2) reserva: pedidos de ontem até o mesmo horário
+    try{
+      var corte=dashHHMM(agora.getHours()*60+agora.getMinutes());
+      var p=await sbTodas(function(a,b){
+        return sbP('ml_pedidos','order_id,item_id,data_compra,valor_total,quantidade,status')
+          .eq('conta','Logbox')
+          .gte('data_compra', ontem+'T00:00:00-03:00')
+          .lte('data_compra', ontem+'T'+corte+':59-03:00')
+          .order('data_compra',{ascending:true}).order('order_id',{ascending:true}).range(a,b);
+      }, 'dash/pedidos-ontem');
+      if(p.error || !p.data || !p.data.length) return null;
+      var porItem={};
+      p.data.forEach(function(x){
+        if(String(x.status||'')==='cancelled' || !x.item_id) return;
+        var o=porItem[x.item_id]=porItem[x.item_id]||{item_id:x.item_id, data:ontem, receita:0, pedidos:0, unidades:0, comissao:0};
+        o.receita+=Number(x.valor_total)||0; o.pedidos+=1; o.unidades+=Number(x.quantidade)||0;
+      });
+      var lista=Object.keys(porItem).map(function(k){ return porItem[k]; });
+      if(!lista.length) return null;
+      return { fonte:'pedidos', corte:corte, vendasA:lista, adsA:null };
+    }catch(e){ console.warn('[OfficeLed] pedidos de ontem', e); return null; }
+  }
+
+  // Quais comparações NÃO existem no mesmo horário. Uma lista só, usada pelos
+  // cartões — a seta desses vira "sem base no mesmo horário", nunca um número.
+  //   · conversão: visitas não têm hora e só atualizam no sync diário
+  //   · custo do ML: o frete vem da tabela financeira, que é diária
+  //   · ADS e o que depende dele, quando a base é a reserva (pedidos não têm ADS)
+  function dashSemBaseMesmaHora(mh){
+    if(!mh) return {};
+    var s={conversao:true, custoML:true};
+    if(mh.semAds){ s.ads=true; s.tacos=true; s.mpaPct=true; s.mpaVal=true; }
+    return s;
   }
 
   async function dashLer(j){
@@ -14822,13 +14921,30 @@ window.apGarantirMes=async function(mes){
     try{ if(typeof hubMcCarregar==='function')   hubMap  = await hubMcCarregar()   || {}; }catch(e){}
     try{ if(typeof hubLinksCarregar==='function')hubLinks= await hubLinksCarregar()|| {}; }catch(e){}
 
-    return { snapDate:snapDate,
+    var out = { snapDate:snapDate,
       vendas:r[0].data||[], ads:r[1].data||[], fin:r[2].data||[],
       vendasA:r[3].data||[], adsA:r[4].data||[], finA:r[5].data||[],
       anuncios:r[6].data||[], reputacao:(r[7].data&&r[7].data[0])||null,
       skus:r[8].data||[], visitas:r[9].data||[], visitasA:r[10].data||[],
-      parcial:r[11]||null,
+      parcial:r[11]||null, mesmaHora:null,
       hubMap:hubMap, hubLinks:hubLinks };
+
+    // "Hoje": o período anterior deixa de ser ontem inteiro e passa a ser
+    // ontem até esta mesma hora. Se nenhuma fonte responder, fica o
+    // comportamento antigo — e o subtítulo diz que é contra o dia inteiro.
+    var hj=diaISO(new Date());
+    if(j.ini===hj && j.fim===hj){
+      var mh=await dashOntemMesmaHora();
+      if(mh){
+        out.vendasA=mh.vendasA;
+        out.adsA=mh.adsA||[];
+        out.finA=[];        // frete é diário: sem base no mesmo horário
+        out.visitasA=[];    // visitas idem
+        out.mesmaHora={fonte:mh.fonte, corte:mh.corte, semAds:!mh.adsA};
+        out.parcial=null;   // o cartão "Hoje até HH:MM" repetiria o Faturamento
+      }
+    }
+    return out;
   }
 
   /* ── Cálculo ─────────────────────────────────────────────────────────────── */
@@ -15013,7 +15129,7 @@ window.apGarantirMes=async function(mes){
              reputacao:d.reputacao, snapDate:d.snapDate,
              diasSemFin:diasSemFin, diasVenda:diasVenda.length,
              diasPrelim:Object.keys(ag.diasPrelim).sort(),
-             parcial:d.parcial||null };
+             parcial:d.parcial||null, mesmaHora:d.mesmaHora||null };
   }
 
   /* ── Render ──────────────────────────────────────────────────────────────── */
@@ -15096,27 +15212,31 @@ window.apGarantirMes=async function(mes){
 
   function dashRenderKpis(c){
     var t=c.tot, a=c.totA;
+    // Comparação que não existe no mesmo horário mostra isso, não um número.
+    var semBase=dashSemBaseMesmaHora(c.mesmaHora);
+    var SEM='<span class="delta-neutral" title="Este dado não tem registro por horário — comparar com ontem inteiro mentiria">sem base no mesmo horário</span>';
+    function dv(chave, html){ return semBase[chave] ? SEM : html; }
     /* Catorze cartões do mesmo tamanho não dizem onde olhar. Faturamento,
        M.C., MPA e TACOS decidem o dia; o resto é contexto e fica menor. */
     var g='<div class="kpi-grid-alto">';
     g+=cartao('Faturamento', dfmtR(t.fat), delta(t.fat,a.fat), false, 'fat');
     g+=cartao('M.C. — Hub', dpct(t.mcPct,1), delta(t.mcPct,a.mcPct,'pp')
       +' <span style="color:var(--slate-400)">'+dfmtR(t.mcVal)+'</span>', true, 'mcPct');
-    g+=cartao('MPA — pós-ADS', dpct(t.mpaPct,1), delta(t.mpaPct,a.mpaPct,'pp')
+    g+=cartao('MPA — pós-ADS', dpct(t.mpaPct,1), dv('mpaPct',delta(t.mpaPct,a.mpaPct,'pp'))
       +' <span style="color:var(--slate-400)">'+dfmtR(t.mpaVal)+'</span>', true, 'mpaPct');
-    g+=cartao('TACOS real', dpct(t.tacos,2), delta(t.tacos,a.tacos,'pp',true)
+    g+=cartao('TACOS real', dpct(t.tacos,2), dv('tacos',delta(t.tacos,a.tacos,'pp',true))
       +(t.alvoPct!==null?' <span style="color:var(--slate-400)">alvo '+dpct(t.alvoPct,2)+'</span>':''),
       false, 'tacos');
     g+='</div>';
 
     g+='<div class="kpi-grid-baixo">';
     g+=cartao('M.C. em R$', dfmtR(t.mcVal), delta(t.mcVal,a.mcVal), false, 'mcVal');
-    g+=cartao('MPA em R$', dfmtR(t.mpaVal), delta(t.mpaVal,a.mpaVal), false, 'mpaVal');
+    g+=cartao('MPA em R$', dfmtR(t.mpaVal), dv('mpaVal',delta(t.mpaVal,a.mpaVal)), false, 'mpaVal');
     g+=cartao('Desvio de ADS', t.desvioAds===null ? '—' : dpp(t.desvioAds),
       t.desvioAds===null ? 'sem alvo no Hub'
         : '<span style="color:'+(t.desvioAds>0?'var(--coral-500)':'var(--green-600)')+'">'
           +(t.desvioAds>0?'acima do alvo':'dentro do alvo')+'</span>');
-    g+=cartao('Valor em ADS', dfmtR(t.ads), delta(t.ads,a.ads,null,true), false, 'ads');
+    g+=cartao('Valor em ADS', dfmtR(t.ads), dv('ads',delta(t.ads,a.ads,null,true)), false, 'ads');
     g+=cartao('Nº de Vendas', dfmtN(t.vendas), delta(t.vendas,a.vendas), false, 'vendas');
     g+=cartao('Unidades', dfmtN(t.unidades), delta(t.unidades,a.unidades), false, 'unidades');
     g+=cartao('Ticket Médio', dfmtR(t.ticket), delta(t.ticket,a.ticket), false, 'ticket');
@@ -15132,7 +15252,7 @@ window.apGarantirMes=async function(mes){
         true);
     }
     g+=cartao('Conversão', dpct(t.conversao,2),
-      t.visitas ? delta(t.conversao,a.conversao,'pp')+' <span style="font-size:10.5px;color:var(--slate-400)">'
+      t.visitas ? dv('conversao',delta(t.conversao,a.conversao,'pp'))+' <span style="font-size:10.5px;color:var(--slate-400)">'
                   +dfmtN(t.visitas)+' visitas</span>'
                 : '<span style="font-size:10.5px;color:var(--slate-400)">sem visita sincada</span>',
       false, 'conversao');
@@ -15190,6 +15310,15 @@ window.apGarantirMes=async function(mes){
       av.push('<strong>M.C. e MPA cobrem '+dpct(c.tot.cobertura,0)+' do faturamento.</strong> '
         +c.tot.semHub+' SKU'+(c.tot.semHub>1?'s':'')+' com venda ('+dfmtR(c.tot.receitaSemHub)
         +') não está linkado ao Hub de Precificação. Continua no faturamento e no TACOS, fora da margem.');
+    }
+    if(c.mesmaHora){
+      av.push(c.mesmaHora.fonte==='foto'
+        ? '<strong>Setas comparadas com ontem até '+c.mesmaHora.corte+'</strong>, pela foto que o sync ao vivo '
+          +'grava a cada 5 min — não com ontem inteiro. Conversão e custo do ML não têm registro por horário '
+          +'(visitas e frete são diários) e ficam sem seta.'
+        : '<strong>Setas de venda comparadas com ontem até '+c.mesmaHora.corte+'</strong>, pelos pedidos. '
+          +'Ainda não existe foto de ontem neste horário (ela começou a ser gravada em 21/09/2026), '
+          +'então ADS, MPA e TACOS ficam sem seta em vez de comparar com o dia inteiro.');
     }
     if(c.parcial){
       av.push('<strong>O cartão "Hoje até '+c.parcial.corte+'" vem de <code>ml_pedidos</code></strong>, '
@@ -15888,7 +16017,9 @@ window.apGarantirMes=async function(mes){
       if(sub) sub.textContent=j.rotulo+(j.rotulo==='Personalizado'?' ('+j.dias+' dias)':'')
         +' · '+j.ini.split('-').reverse().join('/')
         +(j.ini!==j.fim?' a '+j.fim.split('-').reverse().join('/'):'')
-        +' · comparado com os '+j.dias+' dia'+(j.dias>1?'s':'')+' anteriores';
+        +(c.mesmaHora
+          ? ' · comparado com ontem até '+c.mesmaHora.corte
+          : ' · comparado com os '+j.dias+' dia'+(j.dias>1?'s':'')+' anteriores');
     }catch(err){
       console.error('[OfficeLed] dashboard',err);
       kpis.innerHTML='<div class="fin-cascata"><p class="fin-note">Não consegui montar a dashboard. '
