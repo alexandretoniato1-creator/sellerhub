@@ -2398,6 +2398,19 @@ function hubResolver(hubMcMap, hubLinks, sku, chaveLocal, marketplace) {
    ───────────────────────────────────────────────────────────────────────── */
 function hubMcPre(entry){ return entry ? Number(entry.mc||0) + Number(entry.ads||0) : null; }
 function hubAdsAlvo(entry){ return entry ? Number(entry.ads||0) : 0; }
+/* ALVO DE TACOS — mora no OfficeLed, não no Hub (corrigido em 21/09/2026).
+   O Hub de Precificação não tem alvo de ADS: o campo `ads` de
+   marketplace_dados está em 0 em TODAS as linhas de todos os marketplaces
+   (conferido: 352 linhas). O Dashboard, os Pontos de atenção e o LED
+   comparavam o TACOS com esse zero e acendiam "ADS acima do alvo" em 20 SKUs
+   que estavam dentro da meta. O alvo é `skus.tacos_alvo`, preenchido aqui —
+   o mesmo que a aba Ads já usava. SKU sem alvo preenchido fica SEM alvo:
+   nenhuma regra acende por ele (o LED não inventa meta).
+   hubMcPre continua mc + ads: com ads = 0 dá a M.C. do Hub, sem mudança. */
+function skuTacosAlvo(v){
+  var n = Number(v);
+  return (v===null || v===undefined || v==='' || !isFinite(n) || n<=0) ? null : n/100;
+}
 
 // Salva (ou remove, se skuHub vazio) o vínculo manual e limpa o cache.
 async function hubLinkSalvar(chaveLocal, skuHub) {
@@ -3451,7 +3464,7 @@ function skuEstoqueAcumular(acc, a){
    Coral = pede ação agora:  MPA negativa · estoque zerado ou no mínimo ·
                              reclamação com prazo vencendo hoje ·
                              experiência de compra caiu de faixa
-   Âmbar = pede atenção:     ADS acima do alvo do Hub · venda sem plano no Hub ·
+   Âmbar = pede atenção:     TACOS acima do alvo (skus.tacos_alvo) · venda sem plano no Hub ·
                              estoque para menos de 15 dias · experiência fora
                              da faixa Boa · reclamação pedindo ação ·
                              pergunta sem resposta
@@ -3461,7 +3474,7 @@ function skuEstoqueAcumular(acc, a){
    calculou (hubMcPre, MPA = M.C. − ADS real) e só compara. Regra de ouro nº 1.
    ═══════════════════════════════════════════════════════════════════════════ */
 var LED_COBERTURA_DIAS = 15;      // abaixo disso o estoque acende âmbar
-var LED_DESVIO_ADS = 0.02;        // 2 p.p. acima do alvo do Hub — mesmo limiar da tela de Ads
+var LED_DESVIO_ADS = 0.02;        // 2 p.p. acima do TACOS alvo do SKU — mesmo limiar do Dashboard
 var LED_AREAS = [
   {id:'resultado',   nome:'Resultado'},
   {id:'trafego',     nome:'Tráfego'},
@@ -3573,7 +3586,7 @@ function ledMotorAvaliar(entrada){
 
     // ── âmbar ──
     if(ledRegraAdsAcima(base))
-      add('ambar','trafego','ads_acima','TACOS de '+ledPct(base.tacos)+' contra alvo de '+ledPct(base.adsAlvo)+' do Hub.');
+      add('ambar','trafego','ads_acima','TACOS de '+ledPct(base.tacos)+' contra alvo de '+ledPct(base.adsAlvo)+'.');
     if(ledRegraSemHub(base))
       add('ambar','resultado','sem_hub','Vendeu sem plano no Hub: M.C. e MPA não calculam.');
     if(ledRegraCoberturaBaixa(base, dias))
@@ -3955,12 +3968,11 @@ async function renderProdutos(){
 
     const sku = g.sku;
     const skuInfo = sku ? skuMap[sku] : null;
-    /* CUIDADO: existem DOIS alvos de ADS no sistema e eles não conversam.
-       - metaTacos (skus.tacos_alvo, aqui): só liga alerta. Não entra em conta nenhuma.
-       - hubAdsAlvo (marketplace_dados.ads, no Hub do sócio): é o que cMarg desconta
-         e o que hubMcPre soma de volta. Esse move a M.C. que vai para os sócios.
-       Mudar um achando que mexeu no outro produz divergência silenciosa entre a
-       tela e o cálculo. Por isso os rótulos são diferentes de propósito. */
+    /* O alvo de TACOS é UM só: skus.tacos_alvo, preenchido no OfficeLed. O Hub
+       de Precificação não tem alvo de ADS (marketplace_dados.ads = 0 em todas
+       as linhas). Ele não entra na M.C.; só diz se o gasto passou da meta.
+       Aqui na aba Produtos o SKU sem alvo usa o padrão de 5% — no Dashboard e
+       no LED ele fica sem alvo. Divergência conhecida, decisão pendente. */
     const metaTacos = skuInfo?.tacos_alvo ?? LBX_TACOS_ALVO_PADRAO;
     const estoqueMin = skuInfo?.estoque_minimo ?? LBX_ESTOQUE_MIN_PADRAO;
     const custo = skuInfo?.custo || 0;
@@ -4439,7 +4451,7 @@ async function prodAbrirDrawer(chave){
     <div class="skup-margem-row">
       <div class="skup-margem-card"><div class="skup-kpi-label">M.C. — HUB</div>
         <div class="skup-margem-val ${l.mc<10?'ruim':l.mc>=15?'bom':''}">${l.mc.toFixed(1)}%</div>
-        <div class="skup-kpi-sub">${l.mcAtualizadaEm?'atualizada '+new Date(l.mcAtualizadaEm).toLocaleDateString('pt-BR'):'Hub de Precificação'} · ADS alvo do Hub ${( l.hubAdsAlvo||0).toFixed(1)}%</div></div>
+        <div class="skup-kpi-sub">${l.mcAtualizadaEm?'atualizada '+new Date(l.mcAtualizadaEm).toLocaleDateString('pt-BR'):'Hub de Precificação'} · TACOS alvo ${l.metaTacos}%</div></div>
       <div class="skup-margem-card"><div class="skup-kpi-label">MPA — PÓS-ADS (30D)</div>
         <div class="skup-margem-val ${mpa30!==null&&mpa30<0?'ruim':mpa30!==null&&mpa30>=15?'bom':''}">${mpa30!==null?mpa30.toFixed(1)+'%':'—'}</div>
         <div class="skup-kpi-sub">M.C. − TACOS real (${tacos30!==null?tacos30.toFixed(1)+'%':'—'})</div></div>
@@ -9437,7 +9449,7 @@ async function loadFin(){
     try{ if(typeof hubMcCarregar==='function') hubMcMap=await hubMcCarregar(); }catch(e){}
     try{ if(typeof hubLinksCarregar==='function') hubLinks=await hubLinksCarregar(); }catch(e){}
 
-    var [vR,aR,anR,vAR,aAR]=await Promise.all([
+    var [vR,aR,anR,vAR,aAR,skR]=await Promise.all([
       // Um mês fechado de ml_vendas passa de 3.500 linhas: sem paginar, o
       // Financeiro fechava o mês com pouco mais de uma semana de receita.
       sbTodas(function(de,ate){ return sbP('ml_vendas','item_id,data,unidades,receita,comissao,pedidos')
@@ -9455,8 +9467,13 @@ async function loadFin(){
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_vendas/finAnterior'),
       sbTodas(function(de,ate){ return sbP('ml_ads_reports','item_id,data,gasto,preliminar')
         .gte('data',iniA).lte('data',fimA)
-        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_ads_reports/finAnterior')
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_ads_reports/finAnterior'),
+      sbTodas(function(de,ate){ return sbP('skus','sku,tacos_alvo')
+        .eq('conta','Logbox').order('sku',{ascending:true}).range(de,ate); }, 'skus/fin')
     ]);
+    // Alvo de TACOS do SKU (percentual, ex.: 5 = 5%). O Hub não tem alvo de ADS.
+    var alvoSku={};
+    ((skR&&skR.data)||[]).forEach(function(x){ var al=skuTacosAlvo(x.tacos_alvo); if(al!==null) alvoSku[x.sku]=al*100; });
 
     var v=vR.data||[], a=aR.data||[], an=anR.data||[];
     var vA=vAR.data||[], aA=aAR.data||[];
@@ -9509,7 +9526,8 @@ async function loadFin(){
         porSku[k]={
           sku:i2s[itemId]||null, chave:k, titulo:i2t[itemId]||itemId,
           rec:0, ads:0, ped:0, uni:0,
-          linkado:!!hr, mcPct:hr?hubMcPre(hr.entry):null, adsAlvoPct:hr?hubAdsAlvo(hr.entry):null,
+          linkado:!!hr, mcPct:hr?hubMcPre(hr.entry):null,
+          adsAlvoPct:(i2s[itemId] && alvoSku[i2s[itemId]]!==undefined)?alvoSku[i2s[itemId]]:null,
         };
       }
       var o=porSku[k];
@@ -9527,8 +9545,8 @@ async function loadFin(){
         o.mpaVal  = o.mcVal - o.ads;
         o.mpaPct  = o.rec>0 ? o.mpaVal/o.rec*100 : null;
         o.tacos   = o.rec>0 ? o.ads/o.rec*100 : null;
-        o.adsAlvoVal = o.rec*(o.adsAlvoPct/100);
-        o.excessoAds = o.ads - o.adsAlvoVal;   // >0 = gastou mais que o hub previu
+        o.adsAlvoVal = o.adsAlvoPct!==null ? o.rec*(o.adsAlvoPct/100) : null;
+        o.excessoAds = o.adsAlvoVal!==null ? o.ads - o.adsAlvoVal : null;   // >0 = gastou mais que o TACOS alvo
       } else {
         o.mcVal=null; o.antesAds=null; o.mpaVal=null; o.mpaPct=null;
         o.tacos = o.rec>0 ? o.ads/o.rec*100 : null;
@@ -10066,19 +10084,19 @@ function renderRankings(d){
      }, totalMc);
 }
 
-/* ── sangria de ADS: gasto real vs alvo que o hub usou pra precificar ────── */
+/* ── sangria de ADS: gasto real vs o TACOS alvo do SKU ─────────────────── */
 function renderSangria(d){
   var el=document.getElementById('fin-sangria'); if(!el) return;
   var estourou=d.skus.filter(function(o){ return o.linkado && o.rec>0 && o.excessoAds>0.005; })
                      .sort(function(a,b){ return b.excessoAds-a.excessoAds; });
 
   if(!estourou.length){
-    el.innerHTML='<div class="attention is-clear"><div class="attention-head">Nenhum SKU gastou acima do ADS alvo do hub neste mês</div></div>';
+    el.innerHTML='<div class="attention is-clear"><div class="attention-head">Nenhum SKU gastou acima do TACOS alvo neste mês</div></div>';
     return;
   }
   var totalExcesso=estourou.reduce(function(s,o){return s+o.excessoAds;},0);
 
-  el.innerHTML='<div class="sec-hint" style="margin:0 0 8px">O hub precificou contando com um ADS alvo. Onde o gasto real passou disso, a margem encolheu — e o valor abaixo é exatamente o quanto.</div>'
+  el.innerHTML='<div class="sec-hint" style="margin:0 0 8px">Onde o TACOS real passou do TACOS alvo do SKU, a verba além da meta saiu da margem — o valor abaixo é exatamente o quanto.</div>'
     +'<div class="table-wrap"><table><thead class="hub-thead"><tr>'
     +'<th>SKU</th><th style="text-align:right">TACOS real</th><th style="text-align:right">ADS alvo</th>'
     +'<th style="text-align:right">Gasto real</th><th style="text-align:right">Excesso</th><th style="text-align:right">MPA</th>'
@@ -10866,7 +10884,7 @@ window.apGarantirMes=async function(mes){
         .order('item_id',{ascending:true}).range(a,b); }, 'dash/anuncios'),
       sb.from('ml_reputacao').select('*').eq('conta','Logbox')
         .order('data',{ascending:false}).limit(1),
-      sbTodas(function(a,b){ return sbP('skus','sku,estoque_minimo')
+      sbTodas(function(a,b){ return sbP('skus','sku,estoque_minimo,tacos_alvo')
         .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'dash/skus'),
       sbTodas(qVis(j.ini,j.fim),   'dash/visitas'),
       sbTodas(qVis(j.iniA,j.fimA), 'dash/visitasAnt'),
@@ -10966,9 +10984,10 @@ window.apGarantirMes=async function(mes){
   /* Totais. O bloco de margem só existe para SKU LINKADO ao Hub — sem plano
      não há M.C., e inventar uma seria pior do que a lacuna. Faturamento,
      unidades, ticket e TACOS continuam sobre tudo. */
-  function dashTotais(ag, hubDe){
+  function dashTotais(ag, hubDe, alvoDe){
     var t={ fat:0, vendas:0, unidades:0, ads:0, comTotal:0, freTotal:0, visitas:0,
-            recHub:0, mcVal:0, adsHub:0, alvoVal:0, semHub:0, receitaSemHub:0 };
+            recHub:0, mcVal:0, adsHub:0, alvoVal:0, semHub:0, receitaSemHub:0,
+            recAlvo:0, adsAlvoReal:0 };
     Object.keys(ag.porSku).forEach(function(k){
       var o=ag.porSku[k], h=hubDe(k);
       t.fat+=o.receita; t.vendas+=o.pedidos; t.unidades+=o.unidades; t.ads+=o.ads;
@@ -10978,17 +10997,21 @@ window.apGarantirMes=async function(mes){
       if(h){
         t.recHub+=o.receita;
         t.mcVal += o.receita*h.mcPct;
-        t.alvoVal += o.receita*h.adsAlvo;
         t.adsHub+=o.ads;
       } else if(o.receita>0){ t.semHub++; t.receitaSemHub+=o.receita; }
+      // Alvo de TACOS: só sobre os SKUs que têm alvo preenchido no OfficeLed.
+      var al = alvoDe ? alvoDe(k) : null;
+      if(al!==null && o.receita>0){ t.recAlvo+=o.receita; t.alvoVal+=o.receita*al; t.adsAlvoReal+=o.ads; }
     });
     t.mpaVal      = t.mcVal - t.adsHub;                  // M.C. − ADS real
     t.mcPct       = t.recHub>0 ? t.mcVal/t.recHub : null;
     t.mpaPct      = t.recHub>0 ? t.mpaVal/t.recHub : null;
     t.tacos       = t.fat>0 ? t.ads/t.fat : null;
     t.tacosHub    = t.recHub>0 ? t.adsHub/t.recHub : null;
-    t.alvoPct     = t.recHub>0 ? t.alvoVal/t.recHub : null;
-    t.desvioAds   = (t.tacosHub!==null && t.alvoPct!==null) ? t.tacosHub-t.alvoPct : null;
+    t.alvoPct     = t.recAlvo>0 ? t.alvoVal/t.recAlvo : null;       // alvo médio ponderado pela receita
+    t.tacosComAlvo= t.recAlvo>0 ? t.adsAlvoReal/t.recAlvo : null;   // TACOS real dos mesmos SKUs
+    t.desvioAds   = (t.tacosComAlvo!==null && t.alvoPct!==null) ? t.tacosComAlvo-t.alvoPct : null;
+    t.coberturaAlvo = t.fat>0 ? t.recAlvo/t.fat : null;
     t.ticket      = t.vendas>0 ? t.fat/t.vendas : null;
     t.cobertura   = t.fat>0 ? t.recHub/t.fat : null;
     t.conversao   = t.visitas>0 ? t.vendas/t.visitas : null;
@@ -11015,10 +11038,12 @@ window.apGarantirMes=async function(mes){
       if(a.buybox_status && (o.buybox===null || (ruim[a.buybox_status]||0) > (ruim[o.buybox]||0)))
         o.buybox=a.buybox_status;
     });
-    var estoqueMin={};
+    var estoqueMin={}, tacosAlvo={};
     (d.skus||[]).forEach(function(x){
       var m=Number(x.estoque_minimo);
       if(isFinite(m) && m>0) estoqueMin[x.sku]=m;
+      var ta=skuTacosAlvo(x.tacos_alvo);
+      if(ta!==null) tacosAlvo[x.sku]=ta;
     });
 
     // Lookup do Hub pela função canônica — inclui o vínculo manual de hub_links.
@@ -11030,16 +11055,17 @@ window.apGarantirMes=async function(mes){
         ? hubResolver(d.hubMap, d.hubLinks, sku, chave, MKT) : null;
       cacheHub[chave] = r ? {
         mcPct:   hubMcPre(r.entry)/100,
-        adsAlvo: hubAdsAlvo(r.entry)/100,
         viaLink: r.viaLink, skuHub: r.skuHub
       } : null;
       return cacheHub[chave];
     }
+    // Alvo de TACOS do SKU (skus.tacos_alvo). Independe do vínculo com o Hub.
+    function alvoDe(chave){ return tacosAlvo[chave]!==undefined ? tacosAlvo[chave] : null; }
 
     var ag  = dashAgregar(d.vendas,  d.ads,  d.fin,  i2sku, d.visitas,  hubDe);
     var agA = dashAgregar(d.vendasA, d.adsA, d.finA, i2sku, d.visitasA, hubDe);
-    var tot = dashTotais(ag,  hubDe);
-    var totA= dashTotais(agA, hubDe);
+    var tot = dashTotais(ag,  hubDe, alvoDe);
+    var totA= dashTotais(agA, hubDe, alvoDe);
 
     var diasComVenda={};
     d.vendas.forEach(function(r){ var x=String(r.data||'').slice(0,10);
@@ -11080,7 +11106,7 @@ window.apGarantirMes=async function(mes){
     });
 
     var linhas=Object.keys(ag.porSku).map(function(k){
-      var o=ag.porSku[k], h=hubDe(k);
+      var o=ag.porSku[k], h=hubDe(k), al=alvoDe(k);
       var com = o.comissaoML>0 ? o.comissaoML : o.comissaoVenda;
       var custoML = com + o.frete;
       var mcVal = h ? o.receita*h.mcPct : null;
@@ -11095,8 +11121,8 @@ window.apGarantirMes=async function(mes){
         custoML:custoML, custoMLPct: o.receita>0 ? custoML/o.receita : null,
         mcPct: h?h.mcPct:null, mcVal:mcVal,
         mpaVal:mpaVal, mpaPct: (mpaVal!==null && o.receita>0) ? mpaVal/o.receita : null,
-        tacos:tacos, adsAlvo: h?h.adsAlvo:null,
-        desvio: (tacos!==null && h) ? tacos-h.adsAlvo : null,
+        tacos:tacos, adsAlvo: al,
+        desvio: (tacos!==null && al!==null) ? tacos-al : null,
         viaLink: h?h.viaLink:false, skuHub: h?h.skuHub:null,
         snap: snapSku[k]||null, estoqueMin: estoqueMin[k]!==undefined?estoqueMin[k]:null,
         itemPrincipal: itemPrincipal[k]||null
@@ -11216,9 +11242,11 @@ window.apGarantirMes=async function(mes){
     g+=cartao('M.C. em R$', dfmtR(t.mcVal), delta(t.mcVal,a.mcVal), false, 'mcVal');
     g+=cartao('MPA em R$', dfmtR(t.mpaVal), dv('mpaVal',delta(t.mpaVal,a.mpaVal)), false, 'mpaVal');
     g+=cartao('Desvio de ADS', t.desvioAds===null ? '—' : dpp(t.desvioAds),
-      t.desvioAds===null ? 'sem alvo no Hub'
-        : '<span style="color:'+(t.desvioAds>0?'var(--coral-500)':'var(--green-600)')+'">'
-          +(t.desvioAds>0?'acima do alvo':'dentro do alvo')+'</span>');
+      t.desvioAds===null ? 'nenhum SKU com TACOS alvo'
+        : '<span style="color:'+(t.desvioAds>0?'var(--amber-600)':'var(--green-600)')+'">'
+          +(t.desvioAds>0?'acima do alvo':'dentro do alvo')+'</span>'
+          +(t.coberturaAlvo!==null && t.coberturaAlvo<0.995
+            ? ' <span style="color:var(--slate-400)" title="Só entram os SKUs com TACOS alvo preenchido">· '+dpct(t.coberturaAlvo,0)+' da receita</span>' : ''));
     g+=cartao('Valor em ADS', dfmtR(t.ads), dv('ads',delta(t.ads,a.ads,null,true)), false, 'ads');
     g+=cartao('Nº de Vendas', dfmtN(t.vendas), delta(t.vendas,a.vendas), false, 'vendas');
     g+=cartao('Unidades', dfmtN(t.unidades), delta(t.unidades,a.unidades), false, 'unidades');
@@ -11356,8 +11384,8 @@ window.apGarantirMes=async function(mes){
       .sort(function(a,b){ return (b.desvio*b.receita)-(a.desvio*a.receita); });
     if(sangria.length){
       var perdido=sangria.reduce(function(s,o){ return s+o.desvio*o.receita; },0);
-      itens.push({cor:'amber', t:'ADS acima do alvo do Hub em '+sangria.length+' SKU'+(sangria.length>1?'s':''),
-        d: dfmtR(perdido)+' de M.C. consumidos além do planejado. Piores: '
+      itens.push({cor:'amber', t:'TACOS acima do alvo em '+sangria.length+' SKU'+(sangria.length>1?'s':''),
+        d: dfmtR(perdido)+' de ADS além do TACOS alvo. Piores: '
            +sangria.slice(0,5).map(function(o){ return desc(o.sku)+' ('+dpp(o.desvio)+')'; }).join(' · ')});
     }
 
@@ -11703,8 +11731,8 @@ window.apGarantirMes=async function(mes){
       +'<th>Produto</th><th>Faturado</th><th>Repres.</th><th>Unid.</th><th>Preço médio</th>'
       +'<th>M.C.</th><th>MPA</th><th>MPA R$</th><th>TACOS</th><th>Desvio ADS</th><th>Conversão</th><th>Custo ML</th>'
       +'</tr></thead><tbody class="hub-tbody">'+linhas+'</tbody></table></div>'
-      +'<p class="fin-note"><strong>Desvio ADS</strong> é o TACOS real menos o alvo do Hub: positivo quer dizer '
-      +'que o ADS está comendo M.C. além do planejado. <strong>Custo ML</strong> é comissão + frete cobrados '
+      +'<p class="fin-note"><strong>Desvio ADS</strong> é o TACOS real menos o TACOS alvo do SKU (preenchido no OfficeLed): positivo quer dizer '
+      +'que o ADS passou da meta. Sem alvo preenchido, fica em branco. <strong>Custo ML</strong> é comissão + frete cobrados '
       +'sobre a receita do SKU — não entra na M.C., mas alto demais significa que o frete planejado ficou velho. '
       +'Clique na linha para abrir o produto aqui mesmo.</p>';
   }
@@ -11823,7 +11851,7 @@ window.apGarantirMes=async function(mes){
     // Linha 1 — margem, que é o que manda
     h+='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:9px">'
       +bloco('M.C. — Hub', dpct(o.mcPct,1),
-             o.mcPct===null?'sem plano no Hub':'ADS alvo do Hub '+dpct(o.adsAlvo,1), 'var(--green-600)')
+             o.mcPct===null?'sem plano no Hub':(o.adsAlvo!==null?'TACOS alvo '+dpct(o.adsAlvo,1):'sem TACOS alvo'), 'var(--green-600)')
       +bloco('MPA — pós-ADS', dpct(o.mpaPct,1), 'M.C. − TACOS real ('+dpct(o.tacos,1)+')')
       +bloco('MPA em R$', dfmtR(o.mpaVal), 'sobre '+dfmtR(o.receita)+' de receita')
       +bloco('Desvio do ADS', dpp(o.desvio),
@@ -13356,8 +13384,8 @@ window.apGarantirMes=async function(mes){
       // Ads: ADS acima do alvo é âmbar na regra única (o coral é a MPA negativa).
       if(sangria.length){
         var perdido=sangria.reduce(function(s,o){ return s+o.desvio*o.receita; },0);
-        ledSet('ads','atencao', sangria.length+' SKU(s) com ADS acima do alvo · R$ '
-          +perdido.toLocaleString('pt-BR',{maximumFractionDigits:0})+' de M.C. além do plano');
+        ledSet('ads','atencao', sangria.length+' SKU(s) com TACOS acima do alvo · R$ '
+          +perdido.toLocaleString('pt-BR',{maximumFractionDigits:0})+' de ADS além da meta');
       } else ledSet('ads',null);
 
       // Dashboard: MPA negativa é o pior caso — vende e perde.
@@ -13446,7 +13474,7 @@ window.apGarantirMes=async function(mes){
   function diaMenos(n){ var d=new Date(); d.setDate(d.getDate()-n);
     return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
   function areaNome(id){ var a=LED_AREAS.filter(function(x){return x.id===id;})[0]; return a?a.nome:id; }
-  var AREA_SUB={resultado:'M.C., MPA e o Hub', trafego:'ADS contra o alvo do Hub',
+  var AREA_SUB={resultado:'M.C., MPA e o Hub', trafego:'TACOS contra o seu alvo',
     experiencia:'reclamações e experiência de compra', anuncios:'perguntas sem resposta',
     estoque:'estoque e cobertura em dias'};
 
@@ -13852,7 +13880,7 @@ window.apGarantirMes=async function(mes){
           +num('Faturado', fR0(s.receita), fN(s.unidades)+' un')
           +num('M.C.', o.mcPct!==null&&o.mcPct!==undefined?fP(o.mcPct):'—', o.mcPct!==null&&o.mcPct!==undefined?'do Hub':'sem plano')
           +num('MPA', o.mpaPct!==null&&o.mpaPct!==undefined?fP(o.mpaPct):'—', o.mpaVal!==null&&o.mpaVal!==undefined?fR0(o.mpaVal):'')
-          +num('TACOS', o.tacos!==null&&o.tacos!==undefined?fP(o.tacos):'—', o.adsAlvo!==null&&o.adsAlvo!==undefined?'alvo Hub '+fP(o.adsAlvo):'')
+          +num('TACOS', o.tacos!==null&&o.tacos!==undefined?fP(o.tacos):'—', o.adsAlvo!==null&&o.adsAlvo!==undefined?'alvo '+fP(o.adsAlvo):'sem alvo')
           +num('Conversão', o.conversao!==null&&o.conversao!==undefined?fP(o.conversao):'—', o.visitas?fN(o.visitas)+' visitas':'')
           +num('Estoque', estoque!==undefined&&estoque!==null?fN(estoque)+' un':'—', cob!==null&&cob!==undefined?'~'+Math.floor(cob)+' dias':'')
           +num('Experiência', ex&&ex.valor!==null?String(ex.valor):'—', ex?ex.faixaNome:'')
@@ -13862,7 +13890,7 @@ window.apGarantirMes=async function(mes){
         +'<div class="led-acoes"><button class="led-btn led" onclick="ledPerguntarSku(\''+encodeURIComponent(sku)+'\')">Perguntar ao LED sobre este SKU</button></div>'
         +'<div><div class="led-sec">Seus ajustes</div>'
           +'<div class="led-form">'
-            +'<label>TACOS alvo (%)<input id="led-f-tacos" type="number" step="0.1" min="0" max="100" value="'+(sk.tacos_alvo!==null&&sk.tacos_alvo!==undefined?esc(sk.tacos_alvo):'')+'"><small>alvo de alerta; não muda a M.C.</small></label>'
+            +'<label>TACOS alvo (%)<input id="led-f-tacos" type="number" step="0.1" min="0" max="100" value="'+(sk.tacos_alvo!==null&&sk.tacos_alvo!==undefined?esc(sk.tacos_alvo):'')+'"><small>acima disso (+2 p.p.) a luz fica âmbar; não muda a M.C.</small></label>'
             +'<label>Estoque mínimo (un)<input id="led-f-min" type="number" step="1" min="0" value="'+(sk.estoque_minimo!==null&&sk.estoque_minimo!==undefined?esc(sk.estoque_minimo):'')+'"><small>abaixo disso a luz fica coral</small></label>'
             +'<label class="largo">Anotação<textarea id="led-f-nota" placeholder="O que você quer lembrar sobre este SKU">'+esc(cfg.anotacao||'')+'</textarea></label>'
             +'<label>Silenciar até<input id="led-f-sil" type="date" value="'+esc(cfg.silenciar_ate?String(cfg.silenciar_ate).slice(0,10):'')+'"><small>não acende nem avisa até a data</small></label>'
@@ -14013,7 +14041,7 @@ window.apGarantirMes=async function(mes){
         var o=foco.linha||{};
         ctx.sku_detalhe={ sku:foco.sku, titulo:foco.titulo, cor:foco.cor, motivos:foco.motivos.map(function(m){return m.texto;}),
           faturado:foco.receita, unidades:foco.unidades, mc_pct:o.mcPct, mpa_pct:o.mpaPct, mpa_rs:o.mpaVal,
-          tacos:o.tacos, alvo_ads_hub:o.adsAlvo, conversao:o.conversao, cobertura_dias:foco.coberturaDias,
+          tacos:o.tacos, tacos_alvo_do_sku:o.adsAlvo, conversao:o.conversao, cobertura_dias:foco.coberturaDias,
           anotacao:foco.anotacao||null, anuncio_principal:foco.itemPrincipal };
       }
     }
