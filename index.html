@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR" translate="no">
 <head>
@@ -15,6 +16,7 @@
 <link rel="shortcut icon" href="./favicon-32.png">
 <title>OfficeLed</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
@@ -1623,7 +1625,31 @@ body.sidebar-collapsed .hamburger { display: none; }
    Onze colunas não cabem em 380px. Em vez de um segundo render (duas fontes
    da verdade), a mesma tabela vira lista: cada td mostra seu rótulo a partir
    de data-rot. Um render só, dois formatos.                                */
-
+@media (max-width: 768px){
+  #dash-produtos .table-wrap{ overflow-x:visible; }
+  #dash-produtos table, #dash-produtos thead, #dash-produtos tbody,
+  #dash-produtos tr, #dash-produtos td{ display:block; width:100%; }
+  #dash-produtos thead{ display:none; }
+  #dash-produtos tbody tr.dash-linha{
+    border:1px solid var(--slate-100); border-radius:var(--radius);
+    background:var(--white); margin-bottom:10px; padding:10px 12px;
+  }
+  #dash-produtos tbody tr.dash-linha td{
+    border:none; padding:3px 0; text-align:right;
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  }
+  #dash-produtos tbody tr.dash-linha td:first-child{
+    text-align:left; display:block; margin-bottom:6px;
+    padding-bottom:6px; border-bottom:1px solid var(--slate-50);
+  }
+  #dash-produtos tbody tr.dash-linha td[data-rot]:not(:first-child)::before{
+    content:attr(data-rot);
+    font-size:10px; font-weight:600; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--slate-400);
+  }
+  #dash-produtos tbody tr.dash-card-row td{ padding:0; }
+  #dash-kpis > div{ grid-template-columns:repeat(auto-fit,minmax(140px,1fr)) !important; }
+}
 
 /* ═══ DIREÇÃO C — painel com voz ══════════════════════════════════════════
    Escolhida em 15/09. Três regras que valem para o app inteiro:
@@ -1781,6 +1807,8 @@ body.sidebar-collapsed .hamburger { display: none; }
 .pw-error { color: var(--coral-400) !important; }
 
 </style>
+
+
 </head>
 <body>
 
@@ -1794,7 +1822,7 @@ body.sidebar-collapsed .hamburger { display: none; }
   <span id="ptr-text">Solte para atualizar</span>
 </div>
 
-<div id="pw-screen">
+<div id="pw-screen" style="position: absolute; left: -2px; top: -5px">
   <div class="pw-logo"><span class="pw-led"></span>Office<span class="pw-hub">Led</span></div>
   <div class="pw-wrap">
     <span class="pw-label">Usuário</span>
@@ -1920,11 +1948,13 @@ body.sidebar-collapsed .hamburger { display: none; }
         <div class="fin-loading"><div class="fin-spinner"></div> Montando a operação…</div>
       </div>
 
-      <!-- Saúde da conta e Pontos de atenção desceram para o fim da página em
-           20/09/2026, a pedido: o Dashboard abre nos números do período e o
-           diagnóstico fica como consulta, não como primeira leitura. -->
+      <div class="sec-title">Saúde da conta</div>
+      <div id="dash-saude"></div>
 
-      <div class="sec-title" id="dash-grafico-titulo">Evolução no período</div>
+      <div class="sec-title">Pontos de atenção</div>
+      <div id="dash-atencao"></div>
+
+      <div class="sec-title">Evolução no período</div>
       <div id="dash-grafico"></div>
 
       <div class="sec-title">Top 15 produtos por faturamento</div>
@@ -1956,18 +1986,6 @@ body.sidebar-collapsed .hamburger { display: none; }
         </div>
         <div id="home-notes"></div>
       </div>
-
-      <!-- DIAGNÓSTICO — fim da página.
-           Estes dois blocos abriam o Dashboard até 20/09/2026. Desceram para
-           cá: em cima ficam os números do período, aqui fica o porquê.
-           O LED da aba continua refletindo o que "Pontos de atenção" calcula,
-           então nada aqui embaixo depende de o Ale rolar até o fim pra
-           descobrir que existe. -->
-      <div class="sec-title" style="margin-top:28px">Saúde da conta</div>
-      <div id="dash-saude"></div>
-
-      <div class="sec-title">Pontos de atenção</div>
-      <div id="dash-atencao"></div>
     </div>
 
     <!-- ═══ ADS — o que o OfficeLed tinha no banco e não mostrava ═══════════
@@ -2358,11 +2376,15 @@ body.sidebar-collapsed .hamburger { display: none; }
     <div class="page" id="page-escritorio" style="display:none">
       <div class="esc-header">
         <div class="esc-header-left">
-          <h2>🏢 Escritório Virtual</h2>
+          <h2>Escritório Virtual</h2>
           <p>Cada um na sua sala, vigiando a própria área. Clique para abrir — ou convoque uma reunião.</p>
         </div>
         <div class="esc-meta">
           <span id="esc-update-label">—</span>
+          <div class="esc-vista">
+            <button class="esc-vista-btn on" id="esc-vista-salas" onclick="escVista('salas')">Salas</button>
+            <button class="esc-vista-btn" id="esc-vista-planta" onclick="escVista('planta')">Planta 3D</button>
+          </div>
           <button class="esc-refresh-btn" onclick="escAbrirDiario()" style="border-color:rgba(0,216,122,.3);color:#4ADE9A">📋 Diário</button>
           <button class="esc-refresh-btn" onclick="escAbrirSala()" style="border-color:rgba(107,124,255,.35);color:#8B9BFF">🪑 Sala de reunião</button>
           <button class="esc-refresh-btn" onclick="escritorioRefresh()">↻ Atualizar</button>
@@ -2375,6 +2397,9 @@ body.sidebar-collapsed .hamburger { display: none; }
       </div>
       <!-- Faixa de vida: o que aconteceu, sem precisar abrir nada -->
       <div class="esc-pulso" id="esc-pulso"></div>
+      <!-- Vista "Salas": o achado de cada agente na superfície, sem precisar
+           clicar no canvas para descobrir se alguém trabalhou. -->
+      <div id="esc-salas"></div>
 
       <!-- Diário do escritório -->
       <div class="sala-bg" id="diario-bg">
@@ -3748,39 +3773,6 @@ function expGrupoReclamacao(motivo){
   return 'outro';
 }
 
-/* ═══ RECLAMAÇÃO "EM ABERTO" — CONTA ÚNICA ══════════════════════════════
-   Em aberto é a que PEDE AÇÃO MINHA, não a que o ML ainda não encerrou.
-
-   Medido em 20/09/2026: a conta tinha 102 claims com `status='opened'` e o
-   painel do Mercado Livre mostrava 16 em "Reclamações e mediações". As outras
-   86 já estavam atendidas, esperando só o encerramento formal. Quem separa é
-   a ação OBRIGATÓRIA do vendedor na claim — o sync grava isso em
-   `acao_obrigatoria` e `prazo_acao`.
-
-   Esta função é o único lugar que decide isso. Antes havia DUAS contas
-   diferentes no código: `status!=='closed'` no card do Dashboard e
-   `status==='opened'` na Experiência e nos agentes. Davam igual por acidente
-   (o ML só devolve dois status) e as duas estavam infladas ~6×.          */
-function reclAberta(r){
-  return !!(r && r.status==='opened' && r.acao_obrigatoria);
-}
-// Dia de hoje no fuso de quem está olhando a tela. `toISOString().slice(0,10)`
-// daria o dia em UTC — das 21h em diante no Brasil isso já é amanhã, e o prazo
-// apareceria como vencido um dia antes da hora. Helper próprio porque `diaISO`
-// mora dentro da IIFE do Dashboard e não existe neste bloco.
-function reclHoje(){
-  var d=new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-}
-// Prazo estourando. `prazo_acao` vem com fuso do ML; a fatia de 10 caracteres
-// compara o DIA, que é como o painel do ML apresenta ("vence no final do dia").
-function reclVenceAte(r, dia){
-  return reclAberta(r) && !!r.prazo_acao && String(r.prazo_acao).slice(0,10) <= (dia||reclHoje());
-}
-function reclContarAbertas(lista){
-  return (lista||[]).filter(reclAberta).length;
-}
-
 function expPanorama(fonte){
   fonte=fonte||{};
   var an=(fonte.anuncios||[]).filter(function(a){return a.status!=='closed';});
@@ -3795,7 +3787,7 @@ function expPanorama(fonte){
     if(!r.item_id){ semItem++; return; }
     var o=reclPorItem[r.item_id]=reclPorItem[r.item_id]||{total:0,produto:0,nao_recebido:0,outro:0,abertas:0,disputa:0};
     o.total++; o[expGrupoReclamacao(r.motivo)]++;
-    if(reclAberta(r)) o.abertas++;
+    if(r.status==='opened') o.abertas++;
     if(r.stage==='dispute') o.disputa++;
   });
 
@@ -3886,7 +3878,7 @@ async function lbxCarregarTudo(){
     sb.from('skus').select('*').eq('conta','Logbox'),
     sbTodas(function(de,ate){ return sbP('ml_visitas','*').eq('conta','Logbox')
       .order('data',{ascending:false}).order('item_id',{ascending:true}).range(de,ate); }, 'ml_visitas/lbx'),
-    sbTodas(function(de,ate){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,tipo,motivo,data_abertura,acao_obrigatoria,prazo_acao')
+    sbTodas(function(de,ate){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,motivo,data_abertura')
       .eq('conta','Logbox').gte('data_abertura',d60.toISOString())
       .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(de,ate); }, 'ml_reclamacoes/lbx'),
   ]);
@@ -4240,7 +4232,7 @@ function desenharProdutosTabela(){
     const estoqueBaixo = l.estoque!==null && l.estoque<=l.estoqueMin;
     return `
     <tr>
-      <td style="max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--coral-600);text-decoration:none;font-weight:600">${l.sku||l.itemId} ↗</a>`:`<span style="font-weight:600">${l.sku||l.itemId}</span>`}</td>
+      <td style="max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${l.titulo}">${l.permalink?`<a href="${l.permalink}" target="_blank" rel="noopener" style="color:var(--blue-600);text-decoration:none;font-weight:600">${l.sku||l.itemId} ↗</a>`:`<span style="font-weight:600">${l.sku||l.itemId}</span>`}</td>
       <td style="text-align:right">${lbxFmtMoeda(l.receita)}</td>
       <td style="text-align:right">${l.pedidos}</td>
       <td style="text-align:right">${l.conversao!==null?l.conversao.toFixed(1)+'%':'—'}</td>
@@ -4295,10 +4287,6 @@ async function renderExperiencia(){
 
   const totalRecl = exp.itens.reduce((s,i)=>s+i.reclamacoes.total,0) + exp.reclamacoesSemItem;
   const totalUn = exp.itens.reduce((s,i)=>s+i.unidades60,0);
-  // Conta sobre a lista crua, não sobre exp.itens: a reclamação sem anúncio
-  // identificado também pede ação e some no agregado por item.
-  const aAtender = reclContarAbertas(recl);
-  const vencendoHoje = recl.filter(r=>reclVenceAte(r, reclHoje())).length;
   const taxaGlobal = totalUn>0 ? (totalRecl/totalUn*100) : null;
   const emRisco = exp.categorias.filter(c=>c.herancaEmRisco);
   const trocaram = exp.quedas.filter(i=>i.mudouDeFaixa);
@@ -4322,13 +4310,7 @@ async function renderExperiencia(){
                return emRisco.length ? `${n} anúncio${n>1?'s':''} pendurado${n>1?'s':''} nessa nota` : 'nenhuma categoria comprometida'; })(),
         emRisco.length ? '#B07A00' : 'var(--green-600)') +
     kpi('Reclamações em 60 dias', totalRecl.toLocaleString('pt-BR'),
-        taxaGlobal!==null ? `${taxaGlobal.toFixed(2)}% sobre ${totalUn.toLocaleString('pt-BR')} un vendidas` : 'sem base de vendas') +
-    // O número que o painel do ML mostra em "Reclamações e mediações": as que
-    // ainda pedem ação minha. Coral porque é o que sangra agora.
-    kpi('Pedem ação agora', aAtender,
-        aAtender ? (vencendoHoje ? `${vencendoHoje} com prazo vencendo` : 'nenhum prazo estourando hoje')
-                 : 'nada na fila do SAC',
-        aAtender ? 'var(--coral-500)' : 'var(--green-600)');
+        taxaGlobal!==null ? `${taxaGlobal.toFixed(2)}% sobre ${totalUn.toLocaleString('pt-BR')} un vendidas` : 'sem base de vendas');
 
   /* ── 2. O que mudou desde a semana passada ── */
   const quedasEl = document.getElementById('exp-quedas');
@@ -6713,16 +6695,7 @@ function renderNotes(){
   const b=document.getElementById('badge');
   if(pending){b.style.display='';b.textContent=pending;}else b.style.display='none';
   const today=localDateStr();
-  /* Pendente sempre antes de concluída; dentro de cada grupo, a mais recente
-     primeiro (que era a ordem única de antes).
-
-     Só dá pra notar com a pill "Todas": nas outras duas a lista já é de um
-     grupo só. Mas a regra fica aqui sem `if` de filtro de propósito — ordenação
-     que muda conforme o filtro é o tipo de coisa que diverge sozinha depois.
-     Com "Todas" ativa, uma anotação concluída hoje empurrava para baixo a
-     pendente de ontem, que é justamente a que precisa de ação. */
-  const ordem=n=>n.status==='pendente'?0:1;
-  const sorted=f.sort((a,b)=>{ return ordem(a)-ordem(b) || b.ts-a.ts; });
+  const sorted=f.sort((a,b)=>{ return b.ts-a.ts; });
   document.getElementById('notes-list').innerHTML=sorted.length?sorted.map(n=>{
     const ov=n.date&&n.date<today&&n.status==='pendente';
     const done=n.status==='concluido';
@@ -9143,66 +9116,13 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
 /* ── Cabeçalho fixo em tabela longa ────────────────────────────────────────
    Top 15 e DRE rolavam e o cabeçalho sumia: sobrava uma coluna de números
    sem saber qual era. O topo da tabela gruda no cabeçalho da página. */
-/* ── Cabeçalho da tabela que gruda ao rolar ───────────────────────────────
-   Duas correções que andam juntas, porque a segunda causava a primeira.
-
-   1. O `.table-wrap` estava com `overflow: hidden` (posto lá atrás para
-      recortar os cantos arredondados). Isso faz dele um container de rolagem,
-      e um container de rolagem vira o BLOCO DE CONTENÇÃO do sticky: o `top`
-      do <thead> passava a contar do topo da TABELA, não da página. Resultado
-      visível: o cabeçalho flutuando 67px dentro da tabela, por cima da
-      segunda linha. Com `overflow-x:auto` o excesso rola dentro do quadro em
-      vez de empurrar a página — entre 769px e ~1180px o wrap crescia até o
-      min-content da tabela (~1090px) e a página inteira rolava de lado.
-
-   2. O offset é MEDIDO, não chutado. Eram dois números fixos — 58px no
-      desktop, 52px no celular — contra um cabeçalho que mede 67px no
-      Dashboard, 79px no Catálogo e 161px no Ads a 390px.
-
-   `top` só pode valer `--pg-head-h` quando o wrap NÃO é scroller; enquanto
-   ele rola na horizontal, o único valor correto é 0. Daí os dois regimes. */
-.table-wrap{ overflow-x: auto; overflow-y: hidden; }
-
-/* Sem isto o `overflow-x:auto` acima não adianta nada. `.main` é item de flex,
-   e item de flex nasce com `min-width:auto`: ele se RECUSA a encolher abaixo
-   do min-content do que tem dentro. Com a Top 15 montada, a tabela pede
-   ~1090px, a `.main` crescia para 1163px numa tela de 900 e a página inteira
-   rolava de lado — em vez de a tabela rolar dentro do próprio quadro.
-   Valia para qualquer notebook ou tablet entre 769px e ~1180px. */
-.main{ min-width: 0; }
-
-/* O `!important` no fundo é o coração do conserto visual. `.hub-thead th`
-   declara `background: transparent !important` — bonito numa tabela parada,
-   desastre numa sticky: a linha que passa POR BAIXO do cabeçalho aparece
-   através dele, e o resultado é "PRODUTO FATURADO REPRES." impresso por cima
-   de "BC-SB-02  R$ 4.335,17". Era isso que estava desconfigurando, não a
-   posição. Branco porque é a cor da superfície da tabela; `var(--bg)`, que
-   estava aqui antes, é o fundo da PÁGINA e destoaria do quadro. */
 #dash-produtos thead th, #dre-tabela thead th, #ads-tabela thead th, #est-tabela thead th {
-  position: sticky; top: 0; z-index: 3;
-  background: var(--white) !important;
+  position: sticky; top: 58px; z-index: 3; background: var(--bg);
   box-shadow: inset 0 -1px 0 var(--slate-200);
-}
-
-/* Quando a tabela CABE sem rolar, o wrap deixa de ser scroller e o cabeçalho
-   volta a grudar no cabeçalho da página, que era a intenção original.
-
-   `.cabe` é posto por JS comparando a largura que a tabela pede com a que o
-   container tem. Tentei antes com `@media (min-width: 1180px)` e errei por
-   10px — e um número fixo ali é chute de qualquer jeito, porque a largura da
-   tabela depende do tamanho dos SKUs e dos valores daquele período.
-
-   O DRE fica de fora de propósito: ele tem coluna fixa à esquerda
-   (`.dre-rot`, position:sticky left:0), que só funciona dentro de um
-   container de rolagem horizontal. */
-.cabe .table-wrap{ overflow: visible; }
-#dash-produtos.cabe thead th, #ads-tabela.cabe thead th, #est-tabela.cabe thead th{
-  top: var(--pg-head-h, 58px);
 }
 #dre-tabela thead th.dre-rot { left: 0; z-index: 4; }
 @media (max-width: 768px){
-  /* nada a sobrescrever aqui: `--pg-head-h` já é o valor certo em qualquer
-     largura, e no celular estas tabelas nem mostram <thead> (viram lista). */
+  #dash-produtos thead th, #dre-tabela thead th, #ads-tabela thead th, #est-tabela thead th { top: 0 !important; }
 }
 
 /* ── Data do dado ──────────────────────────────────────────────────────────
@@ -9227,85 +9147,6 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
 @media (max-width: 768px){
   .kpi-grid-alto { grid-template-columns: 1fr 1fr; }
   .kpi-grid-alto .kpi-v { font-size: 20px; }
-}
-
-/* O padrão vale para QUALQUER tabela marcada com `.empilha`, não só o Top 15.
-   Ads, Estoque, DRE, Marcas e as duas da Experiência caíam no scroll lateral:
-   no celular era preciso arrastar de lado pra ler número, justamente o que
-   este bloco existia pra evitar. Os `data-rot` são preenchidos sozinhos a
-   partir do `<thead>` (ver `empilharTabelas`), então continua sendo UM render
-   em dois formatos — nenhum renderer precisou ganhar marcação extra. */
-@media (max-width: 768px){
-  /* Os !important abaixo não são preguiça: o bloco mobile legado declara
-     `.table-wrap{overflow-x:auto !important}` e `table{min-width:500px}`.
-     Sem neutralizar os dois, a tabela empilhada ficava com 500px de largura
-     e scroll lateral — ou seja, o empilhamento não valia de nada. */
-  .empilha .table-wrap{ overflow-x:visible !important; }
-  .empilha table{ min-width:0 !important; }
-  .empilha table, .empilha thead, .empilha tbody,
-  .empilha tr, .empilha td{ display:block; width:100%; }
-  .empilha thead{ display:none; }
-  .empilha tbody tr{
-    border:1px solid var(--slate-100); border-radius:var(--radius);
-    background:var(--white); margin-bottom:10px; padding:10px 12px;
-  }
-  .empilha tbody tr td{
-    border:none; padding:3px 0 !important; font-size:12.5px !important; text-align:right;
-    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
-  }
-  .empilha tbody tr td:first-child{
-    text-align:left; display:block; margin-bottom:6px;
-    padding-bottom:6px; border-bottom:1px solid var(--slate-50);
-  }
-  .empilha tbody tr td[data-rot]:not(:first-child)::before{
-    content:attr(data-rot);
-    font-size:10px; font-weight:600; text-transform:uppercase;
-    letter-spacing:.5px; color:var(--slate-400);
-    text-align:left; flex:0 0 auto;
-  }
-  /* Rótulo vazio não abre buraco: célula sem cabeçalho ocupa a linha toda. */
-  .empilha tbody tr td[data-rot=""]{ display:block; text-align:left; }
-  /* Linha que só carrega a gaveta aberta não vira cartão. */
-  .empilha tbody tr.dash-card-row,
-  .empilha tbody tr.linha-gaveta{
-    border:none; background:none; margin:0; padding:0;
-  }
-  .empilha tbody tr.dash-card-row td,
-  .empilha tbody tr.linha-gaveta td{ padding:0 !important; display:block; }
-  .empilha tbody tr.dash-card-row td::before,
-  .empilha tbody tr.linha-gaveta td::before{ content:none; }
-  /* Linha de totais continua sendo totais, não mais um produto da lista. */
-  .empilha tbody tr.tr-total{ border-color:var(--slate-300); }
-  #dash-kpis > div{ grid-template-columns:repeat(auto-fit,minmax(140px,1fr)) !important; }
-}
-
-/* ── Cabeçalho de página no celular ───────────────────────────────────────
-   Dois problemas medidos a 390px:
-
-   1. O `.pg-head` saía 394px numa tela de 390 e a página inteira rolava de
-      lado. A causa era aritmética: a `.main` tem 14px de padding no celular
-      (regra de baixo, com !important) e a margem negativa do cabeçalho foi
-      escrita contra os 16px de uma regra mais antiga que já não vale. Agora
-      os dois lados saem da MESMA variável e não têm como divergir de novo.
-
-   2. A ALTURA continua em aberto, de propósito. Medida a 390px: 73px na
-      Agenda, 81px no Catálogo, 151px no Ads, 165px no Dashboard e 209px no
-      Análise — fixos na tela o tempo todo, porque o cabeçalho é sticky.
-      Tentei resolver empilhando em coluna com o seletor ocupando a linha:
-      PIOROU (Dashboard 137→165, Análise 137→209), porque o grupo de
-      controles passou a quebrar em duas linhas. Encurtar de verdade exige
-      decidir o que sai — subtítulo, tamanho do título ou lugar do seletor —
-      e isso é escolha de produto, não conserto. Fica medido e documentado.  */
-:root{ --pad-mob: 14px; }
-@media (max-width: 768px){
-  .main{ padding-left: var(--pad-mob) !important; padding-right: var(--pad-mob) !important; }
-  .pg-head{
-    margin-left: calc(-1 * var(--pad-mob)); margin-right: calc(-1 * var(--pad-mob));
-    padding-left: var(--pad-mob); padding-right: var(--pad-mob);
-  }
-  /* Filho de flex não encolhe abaixo do conteúdo sem isto — título longo
-     empurrava a largura e era parte do estouro. */
-  .pg-head > *{ min-width: 0; }
 }
 </style>
 
@@ -10371,12 +10212,7 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
         sb.from('skus').select('sku,descricao,custo,preco,tacos_alvo,estoque_minimo,mc,rebait').eq('conta','Logbox'),
         sb.from('ml_perguntas').select('question_id,item_id,texto,status,data_pergunta,resposta').eq('conta','Logbox').order('data_pergunta',{ascending:false}).limit(100),
         sb.from('ml_pedidos').select('order_id,status,status_envio,data_compra,valor_total,item_id,sku').eq('conta','Logbox').gte('data_compra',d30str+'T00:00:00').order('data_compra',{ascending:false}).limit(200),
-        // Eram `.limit(500)`: com 2.994 reclamações na base, 60 dias já passam
-        // disso e o agente recebia uma amostra achando que era o período.
-        // Regra de ouro nº 2 — leitura grande pagina de verdade.
-        sbTodas(function(de,ate){ return sbP('ml_reclamacoes','claim_id,order_id,item_id,status,stage,tipo,motivo,data_abertura,acao_obrigatoria,prazo_acao')
-          .eq('conta','Logbox').gte('data_abertura',d60.toISOString())
-          .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(de,ate); }, 'ml_reclamacoes/esc'),
+        sb.from('ml_reclamacoes').select('claim_id,order_id,item_id,status,stage,motivo,data_abertura').eq('conta','Logbox').gte('data_abertura',d60.toISOString()).order('data_abertura',{ascending:false}).limit(500),
         // `ml_financeiro` tem ~2 linhas por pedido (comissão + frete): com 5.379
         // pedidos em 13 dias são ~10.700 linhas em 30 dias. O `.limit(200)`
         // antigo era uma AMOSTRA que o contexto carregava e ninguém usava —
@@ -11438,7 +11274,133 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
     }).join('');
     el.innerHTML='<span>'+(acoesHoje?'<b>'+acoesHoje+'</b> registro'+(acoesHoje>1?'s':'')+' hoje'
       +(ultimo?' · último '+horaCurta(ultimo):''):'Nenhum registro hoje ainda')+'</span>'+chips;
+    escPintarTudo();
   }
+
+  /* ── VISTA "SALAS" ────────────────────────────────────────────────────────
+     A planta 3D era a única porta: para saber o que o ADS viu, era preciso
+     achar a mesa dele e clicar. Aqui cada agente é um cartão com estado,
+     pendências e o último achado; a planta virou uma aba. */
+  function escPintarTudo(){ try{ escPintarSalas(); }catch(e){ console.warn('[Escritório] salas', e); } }
+
+  function escEstadoDe(agId){
+    var at=atividadeDe(agId), ult=ultimoFeito(agId);
+    var trabalhando = at && at.estado!=='feito';
+    return {
+      trabalhando: trabalhando,
+      rotulo: trabalhando ? 'trabalhando' : (ult ? 'ronda ok' : 'parado'),
+      led: trabalhando ? '#8A6412' : (ult ? '#146B52' : '#B6BCC2'),
+      quando: trabalhando ? (at.texto || 'agora') : (ult ? haQuantoTempo(ult.criado_em) : '—'),
+      ult: ult
+    };
+  }
+
+  function escCardAgente(a){
+    var e=escEstadoDe(a.id);
+    var sug=sugestoes[a.id]||[];
+    var pend=alertCounts[a.id]||0;
+    var urg=sug.some(function(s){ return s.tipo==='urgente'; });
+    var pendCor = pend===0 ? '#4A5057' : (urg ? '#A93A2C' : '#8A6412');
+    var foco=sug.filter(function(s){ return s.tipo==='urgente'||s.tipo==='atencao'; })[0] || sug[0] || null;
+    var titulo = foco ? foco.titulo : (e.ult ? e.ult.titulo : 'Sem registro ainda');
+    var desc = foco ? (foco.descricao||'') : (e.ult ? (e.ult.corpo||'') : 'Clique em ↻ Atualizar para mandar varrer a área.');
+    desc=String(desc).split('\n').slice(0,2).join(' · ');
+    var abrir='_escAbrirAgente(&#39;'+a.id+'&#39;)';
+    return '<div class="esc-card" onclick="'+abrir+'">'
+      +'<div class="esc-card-topo">'
+        +'<div class="esc-card-av" style="background:'+a.cor+'1F">'+a.emoji+'</div>'
+        +'<div class="esc-card-id">'
+          +'<div class="esc-card-nome">'+escHtml(a.nome)
+            +'<span class="esc-card-led" style="background:'+e.led+'"></span>'
+            +'<span class="esc-card-estado">'+e.rotulo+'</span></div>'
+          +'<div class="esc-card-cargo">'+escHtml(a.cargo||'')+'</div>'
+        +'</div>'
+        +'<div class="esc-card-pend"><div class="esc-card-pend-n" style="color:'+pendCor+'">'+pend+'</div>'
+          +'<div class="esc-card-pend-l">pendências</div></div>'
+      +'</div>'
+      +'<div class="esc-card-achado">'
+        +'<div class="esc-card-achado-t">'+escHtml(titulo)+'</div>'
+        +(desc?'<div class="esc-card-achado-d">'+escHtml(desc)+'</div>':'')
+      +'</div>'
+      +'<div class="esc-card-acoes">'
+        +'<button class="esc-card-btn forte" onclick="event.stopPropagation();'+abrir+'">Análise</button>'
+        +'<button class="esc-card-btn" onclick="event.stopPropagation();'+abrir+';escGoTab(&#39;chat&#39;)">Chat</button>'
+        +'<span class="esc-card-hora">'+escHtml(e.quando)+'</span>'
+      +'</div>'
+    +'</div>';
+  }
+
+  function escPintarSalas(){
+    var el=document.getElementById('esc-salas'); if(!el) return;
+
+    var cards=AGENTS.map(escCardAgente).join('');
+
+    // Pulso: o diário das últimas horas, sem abrir o diário.
+    var itens=[];
+    AGENTS.forEach(function(a){
+      (memoria[a.id]||[]).forEach(function(m){ itens.push({ag:a,m:m}); });
+    });
+    itens.sort(function(x,y){ return String(y.m.criado_em||'').localeCompare(String(x.m.criado_em||'')); });
+    var pulso = itens.length
+      ? itens.slice(0,8).map(function(o){
+          return '<div class="esc-rail-row" onclick="_escAbrirAgente(&#39;'+o.ag.id+'&#39;)">'
+            +'<span class="esc-rail-hora">'+horaCurta(o.m.criado_em)+'</span>'
+            +'<span class="esc-rail-dot" style="background:'+o.ag.cor+'"></span>'
+            +'<span class="esc-rail-txt"><b>'+escHtml(o.ag.nome)+'</b> '+escHtml(o.m.titulo||'')+'</span>'
+          +'</div>';
+        }).join('')
+      : '<div class="esc-rail-vazio">Nada registrado ainda. O pulso enche sozinho a cada ronda.</div>';
+
+    // Fila de handoff entre agentes.
+    var abertas=(tarefas||[]).filter(function(t){ return t.status==='aberta'||t.status==='em_andamento'; });
+    var prioCor={alta:'#A93A2C',media:'#8A6412',baixa:'#4A5057'};
+    var fila = abertas.length
+      ? abertas.slice(0,6).map(function(t){
+          var p=t.prioridade||'media';
+          return '<div class="esc-rail-row col">'
+            +'<div class="esc-rail-de">'+escHtml(agenteNome(t.de_agente))+' <span>→</span> '
+              +'<b>'+escHtml(agenteNome(t.para_agente))+'</b>'
+              +'<span class="esc-rail-prio" style="color:'+(prioCor[p]||'#4A5057')+'">'+p+'</span></div>'
+            +'<div class="esc-rail-tit">'+escHtml(t.titulo||'')+(t.sku?' <span class="esc-rail-sku">'+escHtml(t.sku)+'</span>':'')+'</div>'
+          +'</div>';
+        }).join('')
+      : '<div class="esc-rail-vazio">Nenhuma tarefa aberta entre eles.</div>';
+
+    el.innerHTML='<div class="esc-cards-col">'
+        +'<div class="esc-salas-tit">O que cada um viu na última ronda'
+        +'<span>clique no cartão para abrir análise, chat ou reunião</span></div>'
+        +'<div class="esc-cards">'+cards+'</div>'
+      +'</div>'
+      +'<aside class="esc-rail">'
+        +'<div class="esc-rail-card">'
+          +'<div class="esc-rail-head">Pulso do escritório'
+            +'<button class="esc-rail-link" onclick="escAbrirDiario()">Diário →</button></div>'
+          +pulso
+        +'</div>'
+        +'<div class="esc-rail-card">'
+          +'<div class="esc-rail-head">Fila entre agentes'
+            +'<span class="esc-rail-cont">'+abertas.length+'</span></div>'
+          +fila
+        +'</div>'
+      +'</aside>';
+  }
+
+  /* Alterna entre as salas (padrão) e a planta 3D, que continua existindo. */
+  window.escVista=function(v){
+    var pg=document.getElementById('page-escritorio');
+    var bs=document.getElementById('esc-vista-salas'), bp=document.getElementById('esc-vista-planta');
+    var ehPlanta=(v==='planta');
+    if(pg) pg.classList.toggle('vista-planta', ehPlanta);
+    if(bs) bs.classList.toggle('on',!ehPlanta);
+    if(bp) bp.classList.toggle('on',ehPlanta);
+    if(ehPlanta){
+      /* o wrapper estava display:none e o ResizeObserver gravou largura 0 —
+         só a própria resizeCanvas remede depois de ele voltar a existir */
+      requestAnimationFrame(function(){
+        try{ resizeCanvas(); }catch(e){ console.warn('[Escritório] resize canvas', e); }
+      });
+    } else escPintarSalas();
+  };
 
   /* ── Diário do escritório: tudo o que eles fizeram, em ordem ─────────── */
   var _diarioFiltro='todos';
@@ -11775,10 +11737,7 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
     }
 
     // 5. Reclamação em disputa já saiu da nossa mão e vai pro ML decidir.
-    // Só as que ainda pedem ação minha: `status==='opened'` sozinho pegava as
-    // 46 em disputa, das quais 33 já estavam atendidas. Alerta urgente que
-    // aparece 46 vezes por dia sem nada a fazer deixa de ser alerta.
-    var emDisputa=(dados.reclamacoes||[]).filter(function(r){return r.stage==='dispute'&&reclAberta(r);});
+    var emDisputa=(dados.reclamacoes||[]).filter(function(r){return r.stage==='dispute'&&r.status==='opened';});
     if(emDisputa.length) jobs.push(registrarObservacao('sac',{
       severidade:'urgente',
       titulo:emDisputa.length+' reclamação'+(emDisputa.length===1?'':'ões')+' em mediação do Mercado Livre',
@@ -13103,19 +13062,8 @@ input[type="date"] { font-family: var(--mono); font-size: 12px; color: var(--sla
       ctx.pedidos_resumo={total_30d:pedidos.length, por_status:pedidos.reduce(function(acc,p){acc[p.status||'?']=(acc[p.status||'?']||0)+1;return acc;},{})};
       ctx.perguntas_sem_resposta=perguntas.filter(function(p){return p.status==='UNANSWERED';}).slice(0,20)
         .map(function(p){var a=an.find(function(x){return x.item_id===p.item_id;}); return {sku:(a&&a.sku)||p.item_id, texto:(p.texto||'').slice(0,200), data:p.data_pergunta};});
-      // "Aberta" aqui é a que pede ação minha (ver reclAberta). Passar as 102
-      // com status=opened fazia o SAC relatar um número que o painel do ML não
-      // mostra em lugar nenhum.
-      ctx.reclamacoes_abertas=reclamacoes.filter(reclAberta)
-        .sort(function(a,b){ return String(a.prazo_acao||'9').localeCompare(String(b.prazo_acao||'9')); })
-        .slice(0,15)
-        .map(function(r){return {claim_id:r.claim_id, motivo:r.motivo, stage:r.stage, tipo:r.tipo,
-                                 data:r.data_abertura, prazo:r.prazo_acao};});
-      ctx.reclamacoes_resumo={
-        pedem_acao_agora:reclContarAbertas(reclamacoes),
-        abertas_na_api_do_ml:reclamacoes.filter(function(r){return r.status==='opened';}).length,
-        _como_ler:'Relate "pedem_acao_agora" — é o número que o painel do Mercado Livre mostra. "abertas_na_api_do_ml" inclui as já atendidas que só aguardam encerramento formal; não é o número da operação.'
-      };
+      ctx.reclamacoes_abertas=reclamacoes.filter(function(r){return r.status==='opened';}).slice(0,15)
+        .map(function(r){return {claim_id:r.claim_id, motivo:r.motivo, stage:r.stage, data:r.data_abertura};});
       if(!perguntas.length) ctx._aviso_perguntas='A tabela de perguntas está vazia — o sync ainda não trouxe esse dado. Não afirme que não há perguntas; diga que o dado não chegou.';
       if(!reclamacoes.length) ctx._aviso_reclamacoes='A tabela de reclamações está vazia — mesmo caso das perguntas.';
 
@@ -13258,8 +13206,8 @@ var _st = {
 };
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
-function fmtR(v){ return 'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function fmtP(v){ return ((v||0)*100).toFixed(1).replace('.',',')+' %'; }
+function fmtR(v){ return 'R$ '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function fmtP(v){ return ((v||0)*100).toFixed(1).replace('.',',')+' %'; }
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function lastDay(y,m){ return new Date(y,m,0).getDate(); }
@@ -13944,7 +13892,7 @@ function renderRankings(d){
         return '<tr>'
           +'<td style="max-width:210px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(o.titulo)+'">'
             +'<span class="fin-rank-num">'+(i+1)+'</span>'
-            +'<a href="#" onclick="event.preventDefault();finAbrirSku(\'' + esc(o.chave).replace(/'/g,"\\'") + '\')" style="color:var(--coral-600);text-decoration:none;font-weight:600">'+esc(nome(o))+'</a>'
+            +'<a href="#" onclick="event.preventDefault();finAbrirSku(\'' + esc(o.chave).replace(/'/g,"\\'") + '\')" style="color:var(--blue-600);text-decoration:none;font-weight:600">'+esc(nome(o))+'</a>'
           +'</td>'
           +'<td style="text-align:right;font-weight:600">'+fmtR(val)+'</td>'
           +'<td style="text-align:right"><span class="fin-rank-share">'+share.toFixed(0)+'%</span><div style="height:3px;background:var(--slate-50);border-radius:2px;margin-top:3px"><div style="height:100%;width:'+Math.min(100,share).toFixed(0)+'%;background:var(--green-600);border-radius:2px"></div></div></td>'
@@ -13987,7 +13935,7 @@ function renderSangria(d){
     +'</tr></thead><tbody class="hub-tbody">'
     +estourou.slice(0,12).map(function(o){
       return '<tr>'
-        +'<td><a href="#" onclick="event.preventDefault();finAbrirSku(\'' + esc(o.chave).replace(/'/g,"\\'") + '\')" style="color:var(--coral-600);text-decoration:none;font-weight:600">'+esc(o.sku||o.titulo)+'</a></td>'
+        +'<td><a href="#" onclick="event.preventDefault();finAbrirSku(\'' + esc(o.chave).replace(/'/g,"\\'") + '\')" style="color:var(--blue-600);text-decoration:none;font-weight:600">'+esc(o.sku||o.titulo)+'</a></td>'
         +'<td style="text-align:right;color:var(--coral-500);font-weight:600">'+o.tacos.toFixed(1)+'%</td>'
         +'<td style="text-align:right;color:var(--slate-400)">'+o.adsAlvoPct.toFixed(1)+'%</td>'
         +'<td style="text-align:right">'+fmtR(o.ads)+'</td>'
@@ -14921,10 +14869,6 @@ window.apGarantirMes=async function(mes){
   };
 
   function cartao(rotulo, valor, sub, destaque, chave){
-    // Sem gráfico não há para onde clicar. Num período de um dia a seção de
-    // evolução não existe, então o cartão perde o ↗ e o cursor de mão em vez
-    // de prometer uma tela que não vai abrir.
-    if(chave && (!_dash.dados || !_dash.dados.serie || _dash.dados.serie.length<2)) chave = null;
     var sel = chave && _dash.metrica===chave;
     return '<div class="kpi'+(destaque?' destaque':'')+(chave?' kpi-clicavel':'')+(sel?' kpi-sel':'')+'"'
       +(chave?' onclick="dashVerMetrica(\''+chave+'\')" title="Ver no gráfico de evolução"':'')+'>'
@@ -14934,13 +14878,9 @@ window.apGarantirMes=async function(mes){
   }
 
   window.dashVerMetrica=function(chave){
-    var c=_dash.dados; if(!c) return;
-    // Período de um dia: a seção de evolução está fora da tela. Zera a
-    // seleção pra ela não ficar pendurada e voltar sozinha quando o período
-    // mudar para um intervalo.
-    if(!c.serie || c.serie.length<2){ _dash.metrica=null; return; }
     // clicar no cartão já aberto volta para as três faixas
     _dash.metrica = (_dash.metrica===chave) ? null : chave;
+    var c=_dash.dados; if(!c) return;
     try{ dashRenderKpis(c); dashRenderGrafico(c); }catch(e){ console.error('[OfficeLed] métrica', e); }
     var alvo=document.getElementById('dash-grafico');
     if(alvo && _dash.metrica) alvo.scrollIntoView({behavior:'smooth', block:'center'});
@@ -15005,6 +14945,35 @@ window.apGarantirMes=async function(mes){
       false, 'custoML');
     g+='</div>';
 
+    /* CADEIA DO LUCRO — os mesmos números, na ordem em que um vira o outro.
+       Custos = faturamento − M.C. por definição do Hub; ADS sai da M.C. e o que
+       resta é MPA. Nenhuma conta nova, só a leitura que faltava. */
+    var _fat=t.fat||0, _mcv=t.mcVal||0, _ads=t.ads||0, _mpv=t.mpaVal||0;
+    var _pMc=_fat>0?Math.max(0,Math.min(100,_mcv/_fat*100)):0;
+    var _pAds=_mcv>0?Math.max(0,Math.min(100,_ads/_mcv*100)):0;
+    function _seg(w,bg,fg,rot,val,sub){
+      return '<div style="width:'+w.toFixed(1)+'%;min-width:0;background:'+bg+';border-radius:6px;padding:8px 11px;overflow:hidden">'
+        +'<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:'+sub+';white-space:nowrap">'+rot+'</div>'
+        +'<div style="font-family:var(--mono);font-size:13px;color:'+fg+';margin-top:2px;white-space:nowrap">'+val+'</div></div>';
+    }
+    g+='<div class="surface" style="margin-top:10px;padding:15px 17px">'
+      +'<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">'
+      +'<div style="font-size:13.5px;font-weight:600;letter-spacing:-.2px">De onde sai o lucro</div>'
+      +'<div style="font-size:11.5px;color:var(--slate-400)">faturamento → custos → M.C. → ADS → MPA</div></div>'
+      +'<div style="display:flex;gap:3px">'
+      +_seg(100-_pMc,'var(--slate-50)','var(--slate-700)','Custos — ML, CMV e impostos',dfmtR(_fat-_mcv),'var(--slate-400)')
+      +_seg(_pMc,'var(--brand)','#FFFFFF','M.C. Hub',dfmtR(_mcv),'#B8D6F2')
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;margin:6px 0 14px">'
+      +'<span style="font-family:var(--mono);font-size:10.5px;color:var(--slate-400)">Faturamento '+dfmtR(_fat)+' = 100%</span>'
+      +'<span style="font-family:var(--mono);font-size:10.5px;color:var(--slate-400)">M.C. '+dpct(_mcv/(_fat||1),1)+'</span></div>'
+      +'<div style="display:flex;gap:3px">'
+      +_seg(_pAds,'var(--amber-50)','var(--amber-600)','ADS',dfmtR(_ads),'var(--amber-600)')
+      +_seg(100-_pAds,'var(--green-50)','var(--green-600)','MPA — sobra pós-ADS',dfmtR(_mpv),'var(--green-600)')
+      +'</div>'
+      +'<div style="font-family:var(--mono);font-size:10.5px;color:var(--slate-400);margin-top:6px">'
+      +'a M.C. acima, repartida: '+dpct(_pAds/100,0)+' vai para ADS</div>'
+      +'</div>';
     g+='<div class="surface" style="margin-top:10px;padding:12px 14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">'
       +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Comissão cobrada</div>'
       +'<div style="font-family:var(--mono);font-size:15px;color:var(--slate-700)">'+dfmtR(t.comTotal)+'</div></div>'
@@ -15044,7 +15013,7 @@ window.apGarantirMes=async function(mes){
         +'Preencher em Financeiro → Custo real do Mercado Livre.');
     }
     el.innerHTML = av.length
-      ? '<div style="background:var(--amber-50);border:1px solid var(--amber-100);border-radius:var(--radius);padding:12px 14px">'
+      ? '<div style="background:var(--white);border:1px solid var(--slate-100);border-left:2.5px solid var(--amber-600);border-radius:var(--radius);padding:11px 14px">'
         +av.map(function(a){ return '<div style="font-size:12px;color:var(--slate-700);line-height:1.6;margin-bottom:4px">'+a+'</div>'; }).join('')
         +'</div>'
       : '';
@@ -15132,30 +15101,18 @@ window.apGarantirMes=async function(mes){
       return;
     }
     el.innerHTML=itens.map(function(i){
-      var bg = i.cor==='coral' ? 'var(--coral-50)' : 'var(--amber-50)';
-      var bd = i.cor==='coral' ? 'var(--coral-200)' : 'var(--amber-100)';
-      var fg = i.cor==='coral' ? 'var(--coral-600)' : 'var(--amber-600)';
-      return '<div style="background:'+bg+';border:1px solid '+bd+';border-radius:var(--radius);padding:11px 14px;margin-bottom:8px">'
-        +'<div style="font-size:12px;font-weight:700;color:'+fg+';margin-bottom:3px">'+i.t+'</div>'
-        +'<div style="font-size:11.5px;color:var(--slate-700);line-height:1.6;font-family:var(--mono)">'+i.d+'</div></div>';
+      var fg = i.cor==='coral' ? 'var(--coral-500)' : 'var(--amber-600)';
+      var sel = i.cor==='coral' ? 'agora' : 'espera';
+      return '<div style="background:var(--white);border:1px solid var(--slate-100);border-left:3px solid '+fg+';border-radius:var(--radius);padding:12px 15px;margin-bottom:8px">'
+        +'<div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px">'
+        +'<div style="font-size:13px;font-weight:600;color:var(--slate-900);letter-spacing:-.1px">'+i.t+'</div>'
+        +'<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:'+fg+';margin-left:auto;white-space:nowrap">'+sel+'</div></div>'
+        +'<div style="font-size:11.5px;color:var(--slate-600);line-height:1.65;font-family:var(--mono)">'+i.d+'</div></div>';
     }).join('');
-  }
-
-  // Um dia não tem evolução. Com "Hoje" ou "Ontem" selecionado a série tem um
-  // ponto só: a linha vira um pixel, a média tracejada passa exatamente em
-  // cima dele e o eixo não diz nada. Seção inteira sai da tela — título junto,
-  // senão fica um rótulo órfão. O dado do dia já está nos indicadores acima.
-  function dashSecaoGrafico(mostrar){
-    var t=document.getElementById('dash-grafico-titulo');
-    var g=document.getElementById('dash-grafico');
-    if(t) t.style.display = mostrar ? '' : 'none';
-    if(g) g.style.display = mostrar ? '' : 'none';
   }
 
   function dashRenderGrafico(c){
     var el=document.getElementById('dash-grafico'), s=c.serie;
-    if(s.length<2){ dashSecaoGrafico(false); el.innerHTML=''; return; }
-    dashSecaoGrafico(true);
     if(!s.length || !s.some(function(x){return x.fat>0;})){
       el.innerHTML='<div class="fin-cascata"><p class="fin-note">Sem venda no período.</p></div>'; return;
     }
@@ -15457,7 +15414,7 @@ window.apGarantirMes=async function(mes){
   async function dashCarregarCard(linha, c){
     var ids=linha.itemIds||[];
     if(!ids.length) return {vazio:true};
-    var hoje=diaISO(new Date()), d30=somaDias(hoje,-29), d7=somaDias(hoje,-6), d60=somaDias(hoje,-59);
+    var hoje=diaISO(new Date()), d30=somaDias(hoje,-29), d7=somaDias(hoje,-6);
 
     var r=await Promise.all([
       sbTodas(function(a,b){ return sbP('ml_anuncios','*').eq('conta','Logbox')
@@ -15478,12 +15435,8 @@ window.apGarantirMes=async function(mes){
       sbTodas(function(a,b){ return sbP('ml_perguntas','question_id,item_id,texto,status,data_pergunta,resposta')
         .eq('conta','Logbox').in('item_id',ids)
         .order('data_pergunta',{ascending:false}).order('question_id',{ascending:true}).range(a,b); }, 'card/perguntas'),
-      // 60 dias, a mesma janela da Experiência. Sem esse filtro o card trazia
-      // o histórico inteiro do anúncio: o MLB5732463622 aparecia com "47
-      // reclamações" aqui e zero na Experiência — mesmo dado, duas telas,
-      // dois números.
-      sbTodas(function(a,b){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,tipo,motivo,data_abertura,acao_obrigatoria,prazo_acao')
-        .eq('conta','Logbox').in('item_id',ids).gte('data_abertura',d60)
+      sbTodas(function(a,b){ return sbP('ml_reclamacoes','claim_id,item_id,status,stage,motivo,data_abertura')
+        .eq('conta','Logbox').in('item_id',ids)
         .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(a,b); }, 'card/reclamacoes')
     ]);
     var err=r.find(function(x){ return x && x.error; });
@@ -15588,8 +15541,9 @@ window.apGarantirMes=async function(mes){
     var semResposta=(d.perguntas||[]).filter(function(q){
       return !q.resposta && String(q.status||'').toUpperCase()!=='ANSWERED';
     });
-    var abertas=(d.reclamacoes||[]).filter(reclAberta);
-    var vencendo=(d.reclamacoes||[]).filter(function(x){ return reclVenceAte(x, reclHoje()); });
+    var abertas=(d.reclamacoes||[]).filter(function(x){
+      return String(x.status||'').toLowerCase()!=='closed';
+    });
     if(semResposta.length || (d.reclamacoes||[]).length){
       h+='<div style="margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:9px">';
       if(semResposta.length){
@@ -15609,9 +15563,8 @@ window.apGarantirMes=async function(mes){
         var lista=Object.keys(motivos).sort(function(a,b){ return motivos[b]-motivos[a]; }).slice(0,4);
         h+='<div style="background:var(--coral-50);border:1px solid var(--coral-200);border-radius:var(--radius);padding:11px 13px">'
           +'<div style="font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--coral-600);margin-bottom:5px">'
-          +d.reclamacoes.length+' reclamaç'+(d.reclamacoes.length>1?'ões':'ão')+' em 60 dias'
-          +(abertas.length?' · '+abertas.length+' a atender':'')
-          +(vencendo.length?' · '+vencendo.length+' vencendo':'')+'</div>'
+          +d.reclamacoes.length+' reclamaç'+(d.reclamacoes.length>1?'ões':'ão')
+          +(abertas.length?' · '+abertas.length+' em aberto':'')+'</div>'
           +lista.map(function(m){
             return '<div style="font-size:11.5px;color:var(--slate-700);line-height:1.5">'
               +'<span style="font-family:var(--mono);color:var(--coral-600)">'+motivos[m]+'×</span> '+desc(m)+'</div>'; }).join('')
@@ -16440,7 +16393,7 @@ window.apGarantirMes=async function(mes){
         +'. M.C. e MPA desses meses valem só para a parte linkada.');
     }
     el.innerHTML = av.length
-      ? '<div style="background:var(--amber-50);border:1px solid var(--amber-100);border-radius:var(--radius);padding:12px 14px">'
+      ? '<div style="background:var(--white);border:1px solid var(--slate-100);border-left:2.5px solid var(--amber-600);border-radius:var(--radius);padding:11px 14px">'
         +av.map(function(a){ return '<div style="font-size:12px;color:var(--slate-700);line-height:1.6;margin-bottom:4px">'+a+'</div>'; }).join('')
         +'</div>' : '';
   }
@@ -17109,188 +17062,493 @@ window.apGarantirMes=async function(mes){
 })();
 </script>
 
+
+<!-- ═══ OFFICELED 2026 — IDENTIDADE AZUL + HIERARQUIA (último bloco do head) ═══ -->
+<style id="ol26">
+:root{
+  --coral-900:#511A14; --coral-700:#7A281F; --coral-600:#8F3025; --coral-500:#A93A2C;
+  --coral-400:#D98C7F; --coral-200:#EBC4BD; --coral-50:#F7EAE8;
+  --slate-900:#14171A; --slate-700:#2B3035; --slate-600:#4A5057; --slate-400:#757C85;
+  --slate-200:#B6BCC2; --slate-100:#DDE1E3; --slate-50:#F1F3F4;
+  --green-600:#146B52; --green-100:#BFE0D0; --green-50:#E8F2ED;
+  --amber-600:#8A6412; --amber-100:#EBD9A8; --amber-50:#FAF0DC;
+  --blue-600:#13579E; --blue-100:#BDD4EE; --blue-50:#E8F0F9;
+  --brand:#13579E; --brand-dark:#0E407A; --brand-soft:#E8F0F9; --brand-mid:#4D9FE0;
+  --grafite:#13579E; --grafite-2:#0E407A;
+  --accent:#13579E; --accent-dark:#0E407A; --accent-soft:rgba(19,87,158,.07);
+  --accent-pale:#E8F0F9; --accent-mid:#6FA3DE;
+  --bg:#F5F6F5; --white:#FFFFFF;
+  --font:'Instrument Sans',-apple-system,sans-serif; --mono:'IBM Plex Mono',monospace;
+  --radius:12px; --radius-sm:8px;
+  --shadow-sm:0 1px 2px rgba(20,23,26,.05); --shadow:0 2px 10px rgba(20,23,26,.07);
+  --text:#14171A; /* referenciado por .skup-* e nunca definido em folha alguma */
+}
+body.theme-teal, body.theme-indigo{
+  --accent:#13579E !important; --accent-dark:#0E407A !important;
+  --accent-soft:rgba(19,87,158,.07) !important; --accent-pale:#E8F0F9 !important; --accent-mid:#6FA3DE !important;
+}
+body{ font-family:var(--font); background:var(--bg); color:var(--slate-900); -webkit-font-smoothing:antialiased; }
+a{ color:var(--blue-600); }
+a:hover{ color:var(--brand-dark); }
+.kpi-v,.metric-cell-value,.selo-dado,td,th,input[type="date"]{ font-variant-numeric:tabular-nums; }
+
+/* ── SIDEBAR: rótulo, grupo e marca azul (sai o rail de 64px) ── */
+@media (min-width:769px){
+  /* RAIL: só ícone. O nome aparece ao passar o mouse, nunca cortado. */
+  .sidebar{ width:64px !important; overflow:hidden !important; }
+  .sidebar:hover{ width:216px !important; box-shadow:12px 0 40px rgba(20,23,26,.28) !important; }
+  .main{ margin-left:64px !important; }
+  #page-escritorio, #page-financeiro.active, #page-apresentacao.active{ left:64px !important; }
+  .nav-item{ padding:9px 0 9px 21px; }
+  .nav-item svg{ flex-shrink:0; }
+  .nav-item-text, .nav-sec, .nav-badge,
+  .sidebar-user-name, .sidebar-user-role, .sidebar-logout{
+    opacity:0 !important; transition:opacity .14s ease; white-space:nowrap; }
+  /* o rótulo sai do fluxo no rail: sem ele empurrando, o LED cabe nos 64px */
+  .nav-item-text{ position:absolute; left:52px; top:9px; }
+  .nav-item{ position:relative; }
+  .nav-led{ position:absolute !important; top:8px; right:9px; margin:0 !important; }
+  .sidebar:hover .nav-item-text{ position:static; }
+  .sidebar:hover .nav-led{ position:static !important; margin-left:auto !important; }
+  .sidebar:hover .nav-item-text, .sidebar:hover .nav-sec, .sidebar:hover .nav-badge,
+  .sidebar:hover .sidebar-user-name, .sidebar:hover .sidebar-user-role,
+  .sidebar:hover .sidebar-logout{ opacity:1 !important; }
+  .sidebar-logo{ padding:0 0 0 18px !important; position:relative; }
+  .sidebar-logo > *, .sidebar-logo{ visibility:hidden; }
+  .sidebar-logo::before{ content:'O'; visibility:visible; position:absolute; left:18px; top:0;
+    font-size:17px; font-weight:700; color:#FFFFFF; letter-spacing:-.5px; }
+  .sidebar:hover .sidebar-logo, .sidebar:hover .sidebar-logo > *{ visibility:visible; }
+  .sidebar:hover .sidebar-logo::before{ display:none; }
+  .nav-sec{ margin:16px 0 7px !important; }
+  .sidebar-user-badge{ justify-content:flex-start; }
+  body.sidebar-collapsed .main{ margin-left:0 !important; }
+  body.sidebar-collapsed #page-escritorio,
+  body.sidebar-collapsed #page-financeiro.active,
+  body.sidebar-collapsed #page-apresentacao.active{ left:0 !important; }
+}
+.sidebar{ background:#14171A; }
+.sidebar::before{ display:none !important; }
+.sidebar-logo{ opacity:1 !important; font-size:15.5px; font-weight:600; letter-spacing:-.3px; }
+.sidebar-logo span{ color:var(--brand-mid); }
+.nav-item-text{ transform:none !important; }
+.nav-sec{ font-family:var(--mono); font-size:9.5px; font-weight:500; letter-spacing:.14em;
+  text-transform:uppercase; color:#6B7378; padding:0 14px; margin:16px 0 7px; }
+.nav-item{ border-radius:var(--radius-sm); font-size:13.5px; color:#9AA3A9; padding:9px 11px; gap:11px; }
+.nav-item:hover{ background:#1C2023 !important; color:#FFFFFF !important; }
+.nav-item.active{ background:#22272B !important; color:#FFFFFF !important; font-weight:500;
+  box-shadow:inset 2.5px 0 0 var(--brand-mid) !important; }
+.nav-badge{ background:var(--brand); color:#FFFFFF; font-family:var(--mono); font-size:10px; }
+.nav-item.active .nav-badge{ background:var(--brand-mid); color:#0A2848; }
+.sidebar-user-avatar{ opacity:1 !important; }
+.sidebar-user-avatar{ background:#22272B !important; color:#C8CED2 !important; font-family:var(--mono); }
+
+/* ── CABEÇALHO DA PÁGINA ── */
+.pg-head{ position:sticky; top:0; z-index:5; background:var(--white);
+  border-bottom:1px solid var(--slate-100); margin:-24px -32px 20px; padding:13px 32px; }
+.page-title{ font-size:19px; font-weight:600; letter-spacing:-.35px; }
+.page-subtitle{ font-size:12.5px; color:var(--slate-400); }
+.sec-title{ font-size:14.5px; font-weight:600; letter-spacing:-.2px; color:var(--slate-900); margin:24px 0 10px; }
+.sec-hint{ font-size:11.5px; color:var(--slate-400); }
+
+/* ── DASHBOARD: atenção antes de saúde; três níveis de leitura ── */
+/* duas colunas, como no mockup: conteúdo à esquerda, trilho de decisão à direita.
+   O trilho é montado por script (ol-wrap/ol-col/ol-rail) porque os blocos
+   nascem irmãos no HTML original. */
+#page-home:not(.active){ display:none !important; }
+#page-home.active{ display:block; }
+#ol-wrap{ display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:20px; align-items:start; }
+/* sem min-width:0 o item flex não encolhe e a tabela larga estoura o app */
+.main{ min-width:0; background:var(--bg) !important; }
+#ol-col, #ol-rail-a, #ol-rail-b{ min-width:0; }
+@media (min-width:769px){
+  /* na coluna estreita as 12 colunas eram comprimidas abaixo da largura natural:
+     a célula quebrava em duas linhas e o cabeçalho fixo (de uma linha só)
+     passava a montar em cima dos dados. Largura mínima + rolagem no cartão. */
+  #dash-produtos .table-wrap{ overflow-x:auto; }
+  #dash-produtos table{ min-width:960px; }
+  #dash-produtos td, #dash-produtos th{ white-space:nowrap; }
+  /* o cartão rolável virou o scrollport do sticky: o offset do cabeçalho
+     passa a ser 0 dentro dele, senão ele monta 64px adentro da tabela */
+  #dash-produtos thead th{ top:0 !important; z-index:6 !important; }
+}
+#ol-rail{ display:flex; flex-direction:column; min-width:0; }
+#ol-rail .sec-title:first-child, #ol-rail-a .sec-title:first-child{ margin-top:0; }
+#ol-rail #dash-atencao > div{ margin-bottom:8px; }
+@media (max-width:1180px){ #ol-wrap{ grid-template-columns:minmax(0,1fr) 300px; gap:16px; } }
+@media (max-width:980px){
+  /* flex de coluna herdando align-items:start deixa os filhos em max-content
+     e a tabela larga estoura o app — aqui eles voltam a esticar */
+  #ol-wrap{ display:flex; flex-direction:column; align-items:stretch; }
+  #ol-col, #ol-rail-a, #ol-rail-b{ width:100%; }
+  #ol-rail{ display:contents; }
+  #ol-rail-a{ order:0; } #ol-col{ order:1; } #ol-rail-b{ order:2; }
+}
+
+.kpi{ border-radius:13px; border:1px solid var(--slate-100) !important; background:var(--white); }
+.kpi-l{ font-family:var(--mono); font-size:10px; font-weight:500; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--slate-400); }
+.kpi-v{ font-family:var(--mono); font-weight:500; letter-spacing:-.9px; color:var(--slate-900); }
+.kpi-d{ font-size:12px; color:var(--slate-400); }
+.kpi-grid-alto{ grid-template-columns:repeat(auto-fit,minmax(215px,1fr)); gap:12px; margin-bottom:12px; }
+.kpi-grid-alto .kpi{ padding:18px 20px; }
+.kpi-grid-alto .kpi-v{ font-size:clamp(24px,2.3vw,34px); }
+.kpi-grid-baixo{ grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px;
+  background:var(--slate-100); border:1px solid var(--slate-100); border-radius:12px; overflow:hidden; }
+.kpi-grid-baixo .kpi{ border:0 !important; border-radius:0 !important; padding:12px 14px; }
+.kpi-grid-baixo .kpi-v{ font-size:17px; letter-spacing:-.4px; }
+.kpi-clicavel:hover{ border-color:var(--brand) !important; transform:none; }
+.kpi-sel{ border-color:var(--brand) !important; box-shadow:inset 0 0 0 1px var(--brand) !important; }
+.kpi-sel::after{ color:var(--brand) !important; }
+.kpi-sel .kpi-v{ color:var(--brand); }
+
+/* ── TABELAS ── */
+.table-wrap, .surface, .fin-cascata, .fin-conc, .metric-strip{ border-radius:var(--radius); border-color:var(--slate-100) !important; }
+#dash-produtos td, #ads-tabela td, #est-tabela td{ font-size:12.5px; }
+#dash-produtos tbody tr:hover td{ background:var(--slate-50); }
+/* TODA .table-wrap tem overflow-x:auto — ou seja, o cartão é o scrollport do
+   cabeçalho fixo. Qualquer top > 0 empurra o cabeçalho para DENTRO da tabela,
+   por cima das linhas. Em tabela rolável o offset é sempre 0. */
+#dash-produtos thead th, #dre-tabela thead th, #ads-tabela thead th, #est-tabela thead th,
+#dre-tabela thead th.dre-rot{
+  background:var(--white) !important;
+  top:0 !important;
+  z-index:6 !important;
+  box-shadow:inset 0 -1px 0 var(--slate-100) !important;
+}
+.kpi.destaque{ border-color:var(--blue-100) !important; }
+.kpi.destaque::before{ background:var(--brand) !important; }
+.metric-cell-value{ color:var(--slate-900); }
+
+/* ── BOTÕES E CONTROLES: ação é azul ── */
+.btn-primary{ background:var(--brand) !important; color:#FFFFFF !important; }
+.btn-primary:hover{ background:var(--brand-dark) !important; }
+.tab.active, .perf-subtab.active, .hub-secondary-btn.active{ color:var(--brand) !important; border-bottom-color:var(--brand) !important; }
+.notes-filter-pill.active, .comp-month-btn.active{ background:var(--brand) !important; border-color:var(--brand) !important; }
+.cal-sidebar-add-btn{ background:var(--brand) !important; }
+.cal-sidebar-add-btn:hover{ background:var(--brand-dark) !important; }
+.cal-day.today .cal-day-num{ background:var(--brand) !important; }
+.perf-select:focus, .fin-select:focus, .notes-search:focus, input[type="date"]:focus{ border-color:var(--brand) !important; }
+.home-section-link, .kc-link, .btn-hub-edit{ color:var(--brand) !important; border-color:var(--blue-100) !important; }
+.home-section-title{ font-size:14.5px; font-weight:600; letter-spacing:-.2px; }
+#ptr-indicator{ background:var(--brand) !important; }
+
+/* ── LOGIN ── */
+#pw-screen{ background-image:radial-gradient(ellipse at 20% 20%,rgba(19,87,158,.16) 0%,transparent 52%),
+  radial-gradient(ellipse at 80% 80%,rgba(19,87,158,.10) 0%,transparent 50%); }
+.pw-btn{ background:var(--brand) !important; box-shadow:0 4px 16px rgba(19,87,158,.32) !important; }
+.pw-btn:hover{ background:var(--brand-dark) !important; box-shadow:0 6px 20px rgba(19,87,158,.38) !important; }
+.pw-input:focus{ border-color:var(--brand-mid) !important; box-shadow:0 0 0 3px rgba(19,87,158,.18) !important; }
+.pw-error{ color:#8CC8F0; }
+.pw-led{ background:var(--brand-mid) !important; }
+
+/* ── ESCRITÓRIO: mesma família fria, sotaque azul ── */
+#page-escritorio{ background:#0B0E12; }
+.esc-header{ border-bottom:1px solid rgba(255,255,255,.07); }
+.esc-header-left h2{ color:#E6EAEC; font-size:18px; }
+.esc-header-left p{ color:#7D8794; font-size:12.5px; }
+#esc-update-label{ color:#7D8794; }
+.esc-refresh-btn{ border-radius:var(--radius-sm) !important; font-family:var(--font) !important; font-size:12.5px !important; }
+.esc-pulso{ color:#8A94A8; }
+.esc-pulso b{ color:#D4DAE2; }
+.esc-panel-tab.active{ color:#8CC8F0 !important; border-bottom-color:#4D9FE0 !important; }
+.esc-sug-tipo.info{ color:#6FA3DE; }
+
+/* ── MOBILE: consulta rápida ── */
+#ol-tabbar{ display:none; }
+@media (max-width:768px){
+  .main{ margin-left:0 !important; padding:64px 14px 96px !important; background:var(--bg) !important; }
+  .pg-head{ position:sticky; top:0; margin:-16px -14px 14px !important; padding:11px 14px !important; }
+  .page-title{ font-size:17px !important; }
+  .page-subtitle{ font-size:12px !important; }
+  .kpi-grid-alto{ grid-template-columns:1fr 1fr !important; gap:10px !important; }
+  .kpi-grid-alto .kpi{ padding:13px 14px !important; }
+  .kpi-grid-alto .kpi-v{ font-size:23px !important; }
+  .kpi-grid-baixo{ grid-template-columns:1fr 1fr !important; }
+  .kpi-grid-baixo .kpi-v{ font-size:15px !important; }
+  .hamburger{ display:none !important; }
+  .sidebar, .sidebar:hover{ width:240px !important; overflow:visible !important; }
+  .nav-item{ padding:9px 11px !important; }
+  .nav-item-text, .nav-sec, .nav-badge,
+  .sidebar-user-name, .sidebar-user-role, .sidebar-logout{ opacity:1 !important; }
+  .sidebar-logo, .sidebar-logo span{ font-size:15.5px !important; }
+  .sidebar-logo::before{ display:none !important; }
+  #page-escritorio, #page-financeiro.active, #page-apresentacao.active{ padding-bottom:74px !important; }
+  #ol-tabbar{ display:flex; position:fixed; left:0; right:0; bottom:0; z-index:130;
+    background:var(--white); border-top:1px solid var(--slate-100);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom)); }
+  .ol-tab{ flex:1; min-height:48px; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; gap:3px; background:none; border:0; cursor:pointer; position:relative;
+    color:var(--slate-400); font-family:var(--font); font-size:10.5px; }
+  .ol-tab svg{ width:19px; height:19px; stroke-width:2; }
+  .ol-tab.active{ color:var(--brand); font-weight:600; }
+  .ol-tab-led{ position:absolute; top:4px; right:calc(50% - 17px); width:7px; height:7px;
+    border-radius:50%; background:transparent; }
+  .ol-tab.led-on .ol-tab-led{ background:var(--amber-600); }
+  .ol-tab.led-alerta .ol-tab-led{ background:var(--coral-500); }
+}
+
+/* ══ ANÁLISE — era a única aba com fundo escuro e sem respiro. Agora usa a
+   mesma superfície, o mesmo cabeçalho fixo e o mesmo ritmo das outras. ══ */
+#page-financeiro.active{
+  background:var(--bg) !important;
+  padding:0 32px 44px !important;
+  box-sizing:border-box;
+}
+#fin-section-mes{ max-width:1340px; margin:0 auto; }
+/* as páginas que moram fora da <main> precisam ficar acima do cabeçalho dela */
+#page-financeiro.active, #page-apresentacao.active, #page-escritorio{ z-index:40 !important; }
+#page-financeiro .pg-head{ margin:0 -32px 20px !important; padding:13px 32px !important; }
+#page-financeiro .sec-title:first-of-type{ margin-top:18px; }
+.fin-select{ font-family:var(--font) !important; font-size:12.5px !important;
+  padding:7px 11px !important; border-radius:var(--radius-sm) !important;
+  border:1px solid var(--slate-100) !important; color:var(--slate-700) !important; }
+.fin-select:focus{ border-color:var(--brand) !important; }
+.fin-cascata, .fin-conc{ padding:15px 17px !important; border-radius:var(--radius) !important;
+  border:1px solid var(--slate-100) !important; }
+.fin-cline{ padding:9px 0; border-top-color:var(--slate-50); }
+.fin-c-label{ font-size:12.5px; color:var(--slate-600); }
+.fin-cline.result .fin-c-label{ color:var(--slate-900); font-weight:600; }
+.fin-c-valor{ font-size:13px; }
+.fin-cline.result .fin-c-valor{ font-weight:600; font-size:14px; }
+.fin-c-bar{ height:6px; background:var(--slate-50); }
+.fin-c-bar-fill.pos{ background:var(--blue-100); }
+.fin-c-bar-fill.neg{ background:var(--coral-200); }
+.fin-c-bar-fill.ads{ background:var(--amber-100); }
+.fin-c-bar-fill.res{ background:var(--green-600); }
+.fin-c-bar-fill.neg-res{ background:var(--coral-500); }
+.fin-conc-frase{ font-size:13.5px; color:var(--slate-600); }
+.fin-conc-frase strong{ color:var(--slate-900); font-weight:600; }
+.fin-conc-barra{ height:24px; border-radius:var(--radius-sm); border-color:var(--slate-100); }
+.fin-conc-seg{ font-family:var(--mono); font-size:10px; }
+.fin-duo{ gap:16px; }
+.fin-rank-num{ font-family:var(--mono); color:var(--slate-400); }
+/* legibilidade: nota e dica saem do cinza-claro sobre branco */
+.fin-note, .sec-hint{ color:var(--slate-600) !important; font-size:11.5px; line-height:1.65; }
+.fin-note strong{ color:var(--slate-900); font-weight:600; }
+.fin-loading{ padding:28px; font-size:12.5px; }
+.fin-spinner{ border-color:var(--slate-100); border-top-color:var(--brand); }
+.sec-title{ text-transform:none !important; letter-spacing:-.2px !important; }
+.hub-secondary-btn.active{ color:var(--brand) !important; border-bottom-color:var(--brand) !important; }
+.hub-secondary-btn{ font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; }
+/* drawer por SKU: sai o creme quente, entra o neutro frio das outras telas */
+.skup-kpi{ background:var(--bg) !important; border-color:var(--slate-100) !important; }
+.skup-margem-card{ background:var(--white) !important; border-color:var(--slate-100) !important; }
+.skup-preco-tag, .skup-badge.alerta{ color:var(--amber-600) !important; background:var(--amber-50) !important;
+  border-color:var(--amber-100) !important; }
+.skup-badge.ok{ color:var(--green-600) !important; background:var(--green-50) !important;
+  border:1px solid var(--green-100) !important; }
+.skup-cob-bar{ background:var(--slate-50) !important; }
+.skup-nolink{ background:var(--white) !important; border:1px solid var(--slate-100) !important;
+  border-left:2.5px solid var(--amber-600) !important; }
+.skup-nolink-head{ color:var(--slate-900) !important; font-weight:600 !important; }
+.skup-nolink-sub{ color:var(--slate-600) !important; }
+.skup-link-form input{ border-color:var(--slate-100) !important; font-family:var(--mono) !important; }
+.skup-delta.bom{ color:var(--green-600); background:var(--green-50); }
+.skup-delta.ruim{ color:var(--coral-500); background:var(--coral-50); }
+/* ══ ESCRITÓRIO — vista "Salas": mesma superfície clara do resto do sistema.
+   A planta 3D continua inteira, agora atrás da aba. Os overlays (drawer do
+   agente, sala de reunião, diário) seguem escuros de propósito. ══ */
+#page-escritorio{ background:var(--bg) !important; overflow-y:auto !important; overflow-x:hidden !important; }
+.esc-header{ background:var(--white) !important; border-bottom:1px solid var(--slate-100) !important;
+  padding:13px 26px !important; position:sticky; top:0; z-index:6; flex-shrink:0; }
+.esc-header-left h2{ color:var(--slate-900) !important; font-size:19px !important; letter-spacing:-.35px !important; }
+.esc-header-left p{ color:var(--slate-400) !important; font-size:12.5px !important; }
+#esc-update-label{ color:var(--slate-400) !important; }
+.esc-refresh-btn{ background:var(--white) !important; border:1px solid var(--slate-100) !important;
+  color:var(--slate-700) !important; padding:7px 12px !important; }
+.esc-refresh-btn:hover{ background:var(--slate-50) !important; color:var(--slate-900) !important; }
+.esc-vista{ display:flex; background:var(--slate-50); border:1px solid var(--slate-100);
+  border-radius:9px; padding:2px; }
+.esc-vista-btn{ background:none; border:0; border-radius:7px; padding:6px 11px; cursor:pointer;
+  font-family:var(--font); font-size:12.5px; color:var(--slate-600); }
+.esc-vista-btn.on{ background:var(--white); color:var(--slate-900); font-weight:500;
+  box-shadow:0 1px 2px rgba(20,23,26,.09); }
+.esc-canvas-wrap{ display:none; margin:20px 26px 26px; border-radius:14px; min-height:420px !important; }
+.esc-pulso{ display:none; }
+#page-escritorio.vista-planta #esc-salas{ display:none !important; }
+#page-escritorio.vista-planta .esc-canvas-wrap{ display:block !important; }
+#page-escritorio.vista-planta .esc-pulso{ display:flex !important; }
+
+#esc-salas{ display:grid; grid-template-columns:minmax(0,1fr) 336px; gap:18px;
+  padding:20px 26px 34px; align-items:start; flex-shrink:0; }
+.esc-cards-col{ min-width:0; }
+.esc-salas-tit{ font-size:14.5px; font-weight:600; letter-spacing:-.2px; color:var(--slate-900);
+  margin-bottom:14px; display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
+.esc-salas-tit span{ font-size:12px; font-weight:400; color:var(--slate-400); }
+.esc-cards{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.esc-card{ background:var(--white); border:1px solid var(--slate-100); border-radius:13px;
+  padding:16px 18px; display:flex; flex-direction:column; gap:12px; cursor:pointer; min-width:0;
+  transition:border-color .15s, box-shadow .15s; }
+.esc-card:hover{ border-color:var(--slate-200); box-shadow:0 4px 14px rgba(20,23,26,.07); }
+.esc-card-topo{ display:flex; align-items:center; gap:10px; min-width:0; }
+.esc-card-av{ width:34px; height:34px; border-radius:9px; display:flex; align-items:center;
+  justify-content:center; font-size:16px; flex-shrink:0; }
+.esc-card-id{ min-width:0; }
+.esc-card-nome{ display:flex; align-items:center; gap:7px; font-size:14.5px; font-weight:600;
+  letter-spacing:-.2px; color:var(--slate-900); }
+.esc-card-led{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.esc-card-estado{ font-family:var(--mono); font-size:10px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--slate-400); font-weight:400; }
+.esc-card-cargo{ font-size:11.5px; color:var(--slate-400); margin-top:1px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.esc-card-pend{ margin-left:auto; text-align:right; flex-shrink:0; }
+.esc-card-pend-n{ font-family:var(--mono); font-size:15px; font-weight:500; }
+.esc-card-pend-l{ font-family:var(--mono); font-size:9.5px; letter-spacing:.06em;
+  text-transform:uppercase; color:var(--slate-400); }
+.esc-card-achado{ background:var(--slate-50); border:1px solid var(--slate-100);
+  border-radius:9px; padding:11px 12px; }
+.esc-card-achado-t{ font-size:13px; font-weight:500; line-height:1.4; color:var(--slate-900); text-wrap:pretty; }
+.esc-card-achado-d{ font-size:11.5px; color:var(--slate-600); line-height:1.45; margin-top:4px;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.esc-card-acoes{ display:flex; align-items:center; gap:8px; }
+.esc-card-btn{ padding:6px 11px; border:1px solid var(--slate-100); background:var(--white);
+  border-radius:7px; font-family:var(--font); font-size:12px; color:var(--slate-600); cursor:pointer; }
+.esc-card-btn.forte{ color:var(--slate-900); font-weight:500; }
+.esc-card-btn:hover{ background:var(--slate-50); border-color:var(--slate-200); }
+.esc-card-hora{ margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--slate-400); }
+
+.esc-rail{ display:flex; flex-direction:column; gap:16px; min-width:0; }
+.esc-rail-card{ background:var(--white); border:1px solid var(--slate-100); border-radius:13px; overflow:hidden; }
+.esc-rail-head{ padding:15px 18px 12px; display:flex; align-items:center; gap:8px;
+  font-size:14.5px; font-weight:600; letter-spacing:-.2px; color:var(--slate-900); }
+.esc-rail-link{ margin-left:auto; background:none; border:0; cursor:pointer;
+  font-family:var(--font); font-size:12px; font-weight:500; color:var(--brand); }
+.esc-rail-cont{ margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--slate-600);
+  background:var(--slate-50); padding:2px 7px; border-radius:6px; }
+.esc-rail-row{ display:flex; gap:10px; padding:11px 18px; border-top:1px solid var(--slate-50);
+  cursor:pointer; align-items:flex-start; }
+.esc-rail-row:hover{ background:var(--slate-50); }
+.esc-rail-row.col{ flex-direction:column; gap:4px; cursor:default; }
+.esc-rail-row.col:hover{ background:none; }
+.esc-rail-hora{ font-family:var(--mono); font-size:10.5px; color:var(--slate-400);
+  width:34px; flex-shrink:0; padding-top:2px; }
+.esc-rail-dot{ width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:6px; }
+.esc-rail-txt{ font-size:12.5px; line-height:1.4; color:var(--slate-600); text-wrap:pretty; min-width:0; }
+.esc-rail-txt b{ color:var(--slate-900); font-weight:600; }
+.esc-rail-de{ font-family:var(--mono); font-size:10px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--slate-400); display:flex; align-items:center; gap:6px; width:100%; }
+.esc-rail-de b{ color:var(--brand); font-weight:500; }
+.esc-rail-prio{ margin-left:auto; }
+.esc-rail-tit{ font-size:12.5px; font-weight:500; line-height:1.4; color:var(--slate-900); text-wrap:pretty; }
+.esc-rail-sku{ font-family:var(--mono); font-size:10.5px; color:var(--slate-400); }
+.esc-rail-vazio{ padding:14px 18px 18px; font-size:12px; color:var(--slate-400); line-height:1.6;
+  border-top:1px solid var(--slate-50); }
+@media (max-width:1180px){
+  #esc-salas{ grid-template-columns:minmax(0,1fr) 300px; gap:16px; }
+  .esc-cards{ grid-template-columns:1fr; }
+}
+@media (max-width:980px){
+  #esc-salas{ display:flex; flex-direction:column; align-items:stretch; padding:16px 14px 90px; }
+  .esc-header{ padding:11px 14px !important; flex-wrap:wrap; gap:10px; }
+  .esc-canvas-wrap{ margin:14px; min-height:320px !important; }
+}
+
+@media (max-width:768px){
+  #page-financeiro.active{ padding:0 14px 96px !important; }
+  #page-financeiro .pg-head{ margin:0 -14px 14px !important; padding:11px 14px !important; }
+}
+</style>
+<!-- ═══ OFFICELED 2026 — barra de abas mobile ═══ -->
 <script>
-/* ═══ TABELA QUE VIRA LISTA NO CELULAR ════════════════════════════════════
-   Onze colunas não cabem em 380px. O Top 15 já resolvia isso empilhando cada
-   linha como cartão, mas o mecanismo dependia de `data-rot` escrito à mão em
-   cada <td> — por isso nenhuma outra tabela tinha ganhado o tratamento e
-   Ads, Estoque, DRE, Marcas e Experiência continuavam no scroll lateral.
+(function ol26(){
+  function lastStyle(){ var st=document.getElementById('ol26'); if(st) document.body.appendChild(st); }
+  setTimeout(lastStyle,0); addEventListener('load',lastStyle); setTimeout(lastStyle,2500);
 
-   Aqui o rótulo é lido do próprio <thead>. Nenhum renderer muda, nenhuma
-   marcação nova: continua UM render em dois formatos, e tabela nova nasce
-   com o comportamento de graça. O CSS de `.empilha` faz o resto.
+  var ABAS=[['home','Dashboard'],['ads','Ads'],['escritorio','Escritório'],['agenda','Agenda']];
+  function navEl(k){ return document.querySelector('.nav-item[data-nav-key="'+k+'"]'); }
 
-   Por que observar o DOM em vez de chamar depois de cada render: são doze
-   telas com render assíncrono próprio. Encaixar uma chamada em cada uma é
-   exatamente o tipo de coisa que passa a faltar numa delas seis meses depois.
-   ═════════════════════════════════════════════════════════════════════ */
-(function(){
-  'use strict';
+  function montar(){
+    if(document.getElementById('ol-tabbar')) return;
+    var bar=document.createElement('nav'); bar.id='ol-tabbar';
+    ABAS.forEach(function(a){
+      var src=navEl(a[0]); if(!src) return;
+      var b=document.createElement('button'); b.className='ol-tab'; b.dataset.key=a[0];
+      var svg=src.querySelector('svg');
+      if(svg) b.appendChild(svg.cloneNode(true));
+      var lb=document.createElement('span'); lb.textContent=a[1]; b.appendChild(lb);
+      var led=document.createElement('span'); led.className='ol-tab-led'; b.appendChild(led);
+      b.onclick=function(){ var el=navEl(a[0]); if(el) el.click(); };
+      bar.appendChild(b);
+    });
+    var mais=document.createElement('button'); mais.className='ol-tab'; mais.dataset.key='mais';
+    mais.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">'
+      +'<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg><span>Mais</span>';
+    var led2=document.createElement('span'); led2.className='ol-tab-led'; mais.appendChild(led2);
+    mais.onclick=function(){ if(typeof toggleSidebar==='function') toggleSidebar(); };
+    bar.appendChild(mais);
+    document.body.appendChild(bar);
+    sincronizar();
+  }
 
-  // Containers cujas tabelas viram lista no celular.
-  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela',
-               'mrc-tabela','exp-ofensoras','exp-categorias'];
+  function sincronizar(){
+    var ativo=document.querySelector('.nav-item.active');
+    var key=ativo?ativo.getAttribute('data-nav-key'):null;
+    document.querySelectorAll('.ol-tab').forEach(function(t){
+      t.classList.toggle('active', t.dataset.key===key);
+    });
+    medirHead();
+    // o LED do hambúrguer passa a morar na aba "Mais"
+    var h=document.querySelector('.hamburger'), m=document.querySelector('.ol-tab[data-key="mais"]');
+    if(h&&m){ m.classList.toggle('led-on',h.classList.contains('led-on'));
+              m.classList.toggle('led-alerta',h.classList.contains('led-alerta')); }
+    // e o LED de cada aba espelha o da barra lateral
+    document.querySelectorAll('.ol-tab[data-key]').forEach(function(t){
+      var led=document.querySelector('.nav-led[data-led="'+t.dataset.key+'"]');
+      if(!led) return;
+      t.classList.toggle('led-on', led.classList.contains('on')||led.classList.contains('led-on'));
+      t.classList.toggle('led-alerta', led.classList.contains('alerta')||led.classList.contains('led-alerta'));
+    });
+  }
 
-  // Rótulos do cabeçalho, com colspan expandido: a coluna 3 tem que casar com
-  // a 3ª célula mesmo que a 1ª ocupe duas.
-  function rotulos(tabela){
-    var linhas = tabela.tHead ? tabela.tHead.rows : null;
-    if(!linhas || !linhas.length) return null;
-    var tr = linhas[linhas.length-1], out = [];
-    for(var i=0;i<tr.cells.length;i++){
-      var th = tr.cells[i];
-      var txt = (th.textContent||'').replace(/\s+/g,' ').trim();
-      var span = Math.max(1, th.colSpan||1);
-      for(var k=0;k<span;k++) out.push(k===0?txt:'');
+  function railHome(){
+    var home=document.getElementById('page-home');
+    if(!home || document.getElementById('ol-wrap')) return;
+    var wrap=document.createElement('div'); wrap.id='ol-wrap';
+    var col=document.createElement('div'); col.id='ol-col';
+    var rail=document.createElement('aside'); rail.id='ol-rail';
+    var ra=document.createElement('div'); ra.id='ol-rail-a';
+    var rb=document.createElement('div'); rb.id='ol-rail-b';
+    rail.appendChild(ra); rail.appendChild(rb);
+    wrap.appendChild(col); wrap.appendChild(rail);
+    home.appendChild(wrap);
+    function mover(dest,id){
+      var el=document.getElementById(id); if(!el) return;
+      var t=el.previousElementSibling;
+      if(t && t.classList && t.classList.contains('sec-title')) dest.appendChild(t);
+      dest.appendChild(el);
     }
-    return out;
-  }
-
-  function empilharTabela(tabela){
-    var rots = rotulos(tabela);
-    if(!rots) return;
-    var corpos = tabela.tBodies;
-    for(var b=0;b<corpos.length;b++){
-      var linhas = corpos[b].rows;
-      for(var r=0;r<linhas.length;r++){
-        var tr = linhas[r], col = 0;
-        // Linha de uma célula só que atravessa a tabela é gaveta/detalhe,
-        // não registro: não vira cartão nem ganha rótulo.
-        if(tr.cells.length===1 && (tr.cells[0].colSpan||1) > 1){
-          tr.classList.add('linha-gaveta');
-          continue;
-        }
-        for(var c=0;c<tr.cells.length;c++){
-          var td = tr.cells[c];
-          // `data-rot` escrito à mão manda: o Top 15 usa abreviações que
-          // cabem melhor do que o cabeçalho inteiro.
-          if(!td.hasAttribute('data-rot')) td.setAttribute('data-rot', rots[col]||'');
-          col += Math.max(1, td.colSpan||1);
-        }
-      }
+    mover(col,'dash-custom-erro'); mover(col,'dash-avisos'); mover(col,'dash-kpis');
+    mover(ra,'dash-atencao'); mover(rb,'dash-saude');
+    mover(col,'dash-grafico'); mover(col,'dash-produtos'); mover(col,'home-escritorio-alerts');
+    Array.prototype.forEach.call(home.children, function(n){ /* nada: coleta abaixo */ });
+    var secoes=[]; 
+    for(var i=0;i<home.children.length;i++){
+      var n=home.children[i];
+      if(n.classList && n.classList.contains('home-section')) secoes.push(n);
     }
+    secoes.forEach(function(sec){ rb.appendChild(sec); });
   }
 
-  // O DRE precisa rolar na horizontal sempre: a primeira coluna dele é fixa
-  // (position:sticky left:0) e coluna fixa só existe dentro de scroller.
-  var SEMPRE_ROLA = { 'dre-tabela': 1 };
-
-  // A tabela cabe no espaço que tem? Se cabe, o wrap para de ser container de
-  // rolagem e o <thead> pode grudar no cabeçalho da PÁGINA em vez de flutuar
-  // dentro da tabela. Comparar contra o container (e não contra o wrap) é o
-  // que mantém a medida estável quando o overflow muda.
-  function marcarSeCabe(el){
-    if(SEMPRE_ROLA[el.id]) { el.classList.remove('cabe'); return; }
-    var tabela = el.getElementsByTagName('table')[0];
-    if(!tabela){ el.classList.remove('cabe'); return; }
-    var espaco = el.clientWidth;
-    if(!espaco) return;                         // invisível: não decide nada
-    el.classList.toggle('cabe', tabela.scrollWidth <= espaco);
+  function medirHead(){
+    var ativa=document.querySelector('.page.active') || document.getElementById('page-home');
+    var head=ativa && ativa.querySelector('.pg-head');
+    var h=head?Math.round(head.getBoundingClientRect().height):64;
+    if(h>20) document.documentElement.style.setProperty('--pgh', h+'px');
   }
+  addEventListener('resize', medirHead);
+  addEventListener('load', medirHead);
 
-  function aplicar(){
-    for(var i=0;i<ALVOS.length;i++){
-      var el = document.getElementById(ALVOS[i]);
-      if(!el) continue;
-      el.classList.add('empilha');
-      var tabelas = el.getElementsByTagName('table');
-      for(var t=0;t<tabelas.length;t++) empilharTabela(tabelas[t]);
-      marcarSeCabe(el);
-    }
+  function iniciar(){
+    railHome();
+    medirHead();
+    setTimeout(medirHead,1500);
+    montar();
+    var nav=document.querySelector('.sidebar-nav');
+    if(nav) new MutationObserver(sincronizar).observe(nav,{subtree:true,attributes:true,attributeFilter:['class']});
   }
-
-  // Um passe por quadro, no máximo: os renders trocam innerHTML inteiro e
-  // disparariam o observer dezenas de vezes seguidas.
-  var agendado = false;
-  function agendar(){
-    if(agendado) return;
-    agendado = true;
-    requestAnimationFrame(function(){ agendado = false; try{ aplicar(); }catch(e){ console.error('[OfficeLed] empilhar', e); } });
-  }
-
-  function ligar(){
-    aplicar();
-    // Redimensionar não mexe no DOM, então o MutationObserver não veria — mas
-    // muda se a tabela cabe ou não, que é o que decide o modo do cabeçalho.
-    window.addEventListener('resize', agendar);
-    window.addEventListener('orientationchange', agendar);
-    if(!window.MutationObserver) return;   // sem observer, o passe inicial já cobre o essencial
-    var obs = new MutationObserver(agendar);
-    for(var i=0;i<ALVOS.length;i++){
-      var el = document.getElementById(ALVOS[i]);
-      if(el) obs.observe(el, {childList:true, subtree:true});
-    }
-  }
-
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ligar);
-  else ligar();
-
-  // Exposto para teste e para quem renderizar tabela fora dos alvos.
-  window.empilharTabelas = aplicar;
-  window._empilharTabela = empilharTabela;
-})();
-
-/* ═══ ALTURA REAL DO CABEÇALHO DE PÁGINA ══════════════════════════════════
-   O `<thead>` sticky das tabelas longas precisa grudar logo abaixo do
-   `.pg-head`, que também é sticky. Isso estava escrito como dois números
-   fixos — 58px no desktop, 52px no celular. Medido a 390px, o cabeçalho tem
-   77px no Catálogo, 137px no Dashboard e 161px no Ads: o cabeçalho da tabela
-   grudava DENTRO do cabeçalho da página e sumia.
-
-   Mesma disciplina do LED: não existe segundo cálculo do valor — a tela mede
-   o que ela própria desenhou e publica em `--pg-head-h`.
-   ═════════════════════════════════════════════════════════════════════ */
-(function(){
-  'use strict';
-  var PADRAO = 58;
-
-  function visivel(){
-    var todos = document.querySelectorAll('.pg-head');
-    for(var i=0;i<todos.length;i++){
-      var r = todos[i].getBoundingClientRect();
-      if(r.height > 0) return todos[i];
-    }
-    return null;
-  }
-
-  function medir(){
-    var el = visivel();
-    var h = el ? Math.round(el.getBoundingClientRect().height) : PADRAO;
-    // Cabeçalho maior que meia tela seria erro de medida (render no meio do
-    // caminho, animação de troca de aba): melhor o padrão do que grudar a
-    // tabela no rodapé.
-    if(!(h > 0) || h > window.innerHeight/2) h = PADRAO;
-    document.documentElement.style.setProperty('--pg-head-h', h + 'px');
-  }
-
-  var agendado = false;
-  function agendar(){
-    if(agendado) return;
-    agendado = true;
-    requestAnimationFrame(function(){ agendado = false; try{ medir(); }catch(e){} });
-  }
-
-  function ligar(){
-    medir();
-    window.addEventListener('resize', agendar);
-    window.addEventListener('orientationchange', agendar);
-    if(window.ResizeObserver){
-      // ResizeObserver dispara quando o elemento passa de 0 para altura real,
-      // então trocar de aba já recalcula sem ninguém precisar avisar.
-      var ro = new ResizeObserver(agendar);
-      var todos = document.querySelectorAll('.pg-head');
-      for(var i=0;i<todos.length;i++) ro.observe(todos[i]);
-    } else {
-      setInterval(agendar, 1000);   // navegador antigo: pesquisa devagar
-    }
-  }
-
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', ligar);
-  else ligar();
-
-  window.medirCabecalho = medir;
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded',function(){ setTimeout(iniciar,300); });
+  else setTimeout(iniciar,300);
 })();
 </script>
-
 </body>
 </html>
