@@ -2407,6 +2407,37 @@ function hubAdsAlvo(entry){ return entry ? Number(entry.ads||0) : 0; }
    o mesmo que a aba Ads já usava. SKU sem alvo preenchido fica SEM alvo:
    nenhuma regra acende por ele (o LED não inventa meta).
    hubMcPre continua mc + ads: com ads = 0 dá a M.C. do Hub, sem mudança. */
+/* URL de anúncio do Mercado Livre → id do anúncio (item) ou do produto de
+   catálogo. Formatos vistos:
+     produto.mercadolivre.com.br/MLB-3665186255-bomba-..._JM      → item
+     www.mercadolivre.com.br/kit-aerador/p/MLB12345678           → produto (catálogo)
+     .../p/MLB123?pdp_filters=item_id:MLB456  ou  ...#wid=MLB456  → item (o do vendedor)
+     MLB3665186255  ou  MLB-3665186255                            → item
+   Quando a URL traz os dois, vale o item: é o anúncio daquele vendedor. */
+function concExtrairIds(texto){
+  var s = String(texto||'').trim();
+  if(!s) return null;
+  var m = s.match(/(?:wid=|item_id(?::|%3A|=))(MLB-?\d{6,})/i);
+  if(m) return { item: m[1].replace('-','').toUpperCase(), produto: null, apelido: concApelidoDaUrl(s) };
+  m = s.match(/\/p\/(MLB-?\d{6,})/i);
+  if(m) return { item: null, produto: m[1].replace('-','').toUpperCase(), apelido: concApelidoDaUrl(s) };
+  m = s.match(/(?:^|[\/\s])(MLB-?\d{6,})(?![\d])/i);
+  if(m) return { item: m[1].replace('-','').toUpperCase(), produto: null, apelido: concApelidoDaUrl(s) };
+  return null;
+}
+function concApelidoDaUrl(s){
+  var m = String(s).match(/MLB-\d+-([a-z0-9-]+?)(?:-_JM|_JM|$|[?#])/i) || String(s).match(/mercadolivre\.com\.br\/([a-z0-9-]+)\/p\//i);
+  if(!m) return null;
+  var t = decodeURIComponent(m[1]).replace(/-/g,' ').replace(/\s+/g,' ').trim();
+  return t ? t.charAt(0).toUpperCase()+t.slice(1, 80) : null;
+}
+/* Vendas estimadas = visitas reais × conversão informada. Nunca é dado do ML. */
+function concEstimar(visitas, conversaoPct){
+  if(visitas===null || visitas===undefined || conversaoPct===null || conversaoPct===undefined || conversaoPct==='') return null;
+  var c = Number(conversaoPct);
+  if(!isFinite(c) || c<=0) return null;
+  return Number(visitas) * c / 100;
+}
 function skuTacosAlvo(v){
   var n = Number(v);
   return (v===null || v===undefined || v==='' || !isFinite(n) || n<=0) ? null : n/100;
@@ -4656,6 +4687,8 @@ async function prodAbrirDrawer(chave){
     ${comentariosHtml}
     ${anunciosHtml}
 
+    <div id="pd-conc"></div>
+
     <div class="perf-section-label" style="margin-top:22px">Últimos ${dias14.length} dias</div>
     <div class="table-wrap"><table class="skup-tab">
       <thead class="hub-thead"><tr>
@@ -4679,12 +4712,12 @@ async function prodAbrirDrawer(chave){
     <div class="m-field"><label>Custo do produto (R$)</label><input type="number" step="0.01" id="pd-custo" value="${l.custo?(+l.custo).toFixed(2):''}"></div>
     <div class="m-field"><label>Alvo de alerta — TACOS (%)</label><input type="number" step="0.1" id="pd-tacos-alvo" value="${l.metaTacos}">
       <div style="font-size:10.5px;color:var(--slate-400);margin-top:4px;line-height:1.4">
-        Só liga o alerta aqui no OfficeLed. <strong>Não</strong> altera a margem:
-        o ADS alvo que o Hub desconta da M.C. mora no Hub de Precificação e é editado lá.</div></div>
+        Só liga o alerta aqui no OfficeLed. <strong>Não</strong> altera a margem (a M.C. vem do Hub).</div></div>
     <div class="m-field"><label>Estoque mínimo (unidades)</label><input type="number" step="1" id="pd-estoque-min" value="${l.estoqueMin}"></div>
     <button class="btn btn-primary" style="margin-top:8px" onclick="prodSalvarDrawer('${l.sku||''}')">Salvar</button>
     <div id="pd-save-msg" style="font-size:12px;color:var(--green-600);margin-top:6px"></div>
   `;
+  if(window.concMontar) window.concMontar(document.getElementById('pd-conc'), {sku: l.chaveLocal || l.sku || ('item:'+l.itemId), itemIds: l.itemIds||[]});
 }
 
 // Salva o vínculo SKU local → SKU do hub e recarrega o painel.
@@ -13888,6 +13921,7 @@ window.apGarantirMes=async function(mes){
           +num('Preço médio', o.precoMedio?fR(o.precoMedio):'—', '')
         +'</div></div>'
         +'<div class="led-acoes"><button class="led-btn led" onclick="ledPerguntarSku(\''+encodeURIComponent(sku)+'\')">Perguntar ao LED sobre este SKU</button></div>'
+        +'<div id="led-conc-slot"></div>'
         +'<div><div class="led-sec">Seus ajustes</div>'
           +'<div class="led-form">'
             +'<label>TACOS alvo (%)<input id="led-f-tacos" type="number" step="0.1" min="0" max="100" value="'+(sk.tacos_alvo!==null&&sk.tacos_alvo!==undefined?esc(sk.tacos_alvo):'')+'"><small>acima disso (+2 p.p.) a luz fica âmbar; não muda a M.C.</small></label>'
@@ -13899,6 +13933,7 @@ window.apGarantirMes=async function(mes){
           +(sk.sku?'':'<p class="fin-note" style="margin:8px 0 0">Este SKU não está na tabela de SKUs: TACOS alvo e estoque mínimo só salvam depois que ele for cadastrado.</p>')
         +'</div>'
       +'</div>';
+    if(window.concMontar) window.concMontar(document.getElementById('led-conc-slot'), {sku:sku, itemIds:((_led.res.c.skuItens||{})[sku]||[])});
   }
 
   window.ledSalvarSku=async function(skuEnc){
@@ -14444,6 +14479,197 @@ window.apGarantirMes=async function(mes){
   else esperarApp();
 })();
 </script>
+<script>
+/* ═════════════════════════════════════════════════════════════════════════════
+   CONCORRENTES DO SKU — dentro do painel do produto (Catálogo) e do painel do
+   SKU no Mural. Não tem aba própria: concorrente só faz sentido ao lado do
+   SKU que ele disputa.
+
+   O que é dado e o que é conta, sem misturar:
+     • Visitas por dia, posição no ranking, avaliações e perguntas → Mercado
+       Livre, lidos todo dia por ml-concorrencia (tabela concorrente_dia).
+     • Conversão → você informa, copiando do painel Análise de mercado do ML.
+     • Vendas do concorrente → ESTIMATIVA: visitas reais × a sua conversão
+       informada (concEstimar). O ML não entrega vendas de anúncio de terceiro
+       (403), e a tela diz isso em vez de apresentar o número como fato.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function ConcorrenciaModule(){
+  var CONTA='Logbox';
+  var CONV_VELHA_DIAS=30;
+  var _estado={};   // por elemento montado: {sku, itemIds}
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function fN(v){ return (v===null||v===undefined||!isFinite(v)) ? '—' : Math.round(v).toLocaleString('pt-BR'); }
+  function fEst(v){ if(v===null||v===undefined||!isFinite(v)) return '—'; return '≈'+(v<10 ? v.toFixed(1).replace('.',',') : Math.round(v).toLocaleString('pt-BR')); }
+  function diaLocal(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function diasAtras(n){ var d=new Date(); d.setDate(d.getDate()-n); return diaLocal(d); }
+  function dm(iso){ return String(iso||'').slice(8,10)+'/'+String(iso||'').slice(5,7); }
+  function idade(iso){ if(!iso) return null; return Math.floor((new Date(diaLocal(new Date())+'T12:00:00') - new Date(String(iso).slice(0,10)+'T12:00:00'))/86400000); }
+
+  async function chamar(corpo){
+    var r=await fetch(SUPA_URL+'/functions/v1/ml-concorrencia',{method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY},
+      body:JSON.stringify(corpo)});
+    var t=await r.text(), j=null; try{ j=JSON.parse(t); }catch(e){}
+    if(!r.ok && r.status!==207) throw new Error((j&&j.error)||('HTTP '+r.status));
+    return j||{};
+  }
+
+  /* Monta o bloco num elemento. `ctx.sku` é a chave do SKU (ou item:MLB… para
+     anúncio sem SKU) e `ctx.itemIds` os NOSSOS anúncios desse SKU, para a
+     comparação dia a dia. */
+  window.concMontar=async function(el, ctx){
+    if(!el || !ctx || !ctx.sku) return;
+    var id=el.id || ('conc-'+Math.random().toString(36).slice(2)); el.id=id;
+    _estado[id]={sku:ctx.sku, itemIds:ctx.itemIds||[]};
+    el.classList.add('conc-bloco');
+    el.innerHTML='<div class="conc-cab"><b>Concorrentes</b><span>carregando…</span></div>';
+    try{ await pintar(id); }
+    catch(e){ el.innerHTML='<div class="conc-cab"><b>Concorrentes</b></div><p class="fin-note">Não consegui ler os concorrentes: '+esc(e&&e.message||e)+'</p>'; }
+  };
+
+  async function pintar(id){
+    var el=document.getElementById(id), st=_estado[id]; if(!el||!st) return;
+    var desde=diasAtras(8);
+    var lista=await sb.from('concorrentes').select('*').eq('conta',CONTA).eq('sku',st.sku).eq('ativo',true).order('criado_em',{ascending:true});
+    if(lista.error) throw lista.error;
+    var conc=lista.data||[];
+    var ids=conc.map(function(c){ return c.item_id; });
+    var r=await Promise.all([
+      ids.length ? sbTodas(function(a,b){ return sbP('concorrente_dia','item_id,data,visitas,posicao,categoria,avaliacoes,nota,perguntas')
+        .in('item_id',ids).gte('data',desde).order('data',{ascending:true}).order('item_id',{ascending:true}).range(a,b); }, 'conc/dia') : Promise.resolve({data:[]}),
+      st.itemIds.length ? sbTodas(function(a,b){ return sbP('ml_visitas','item_id,data,visitas').eq('conta',CONTA)
+        .in('item_id',st.itemIds).gte('data',desde).order('data',{ascending:true}).order('item_id',{ascending:true}).range(a,b); }, 'conc/nossasVisitas') : Promise.resolve({data:[]}),
+      st.itemIds.length ? sbTodas(function(a,b){ return sbP('ml_vendas','item_id,data,unidades').eq('conta',CONTA)
+        .in('item_id',st.itemIds).gte('data',desde).order('data',{ascending:true}).order('item_id',{ascending:true}).range(a,b); }, 'conc/nossasVendas') : Promise.resolve({data:[]})
+    ]);
+    var porItem={};
+    (r[0].data||[]).forEach(function(x){ (porItem[x.item_id]=porItem[x.item_id]||{})[String(x.data).slice(0,10)]=x; });
+    var nosVis={}, nosUn={};
+    (r[1].data||[]).forEach(function(x){ var d=String(x.data).slice(0,10); nosVis[d]=(nosVis[d]||0)+(Number(x.visitas)||0); });
+    (r[2].data||[]).forEach(function(x){ var d=String(x.data).slice(0,10); nosUn[d]=(nosUn[d]||0)+(Number(x.unidades)||0); });
+
+    // Sete dias FECHADOS: de anteontem-6 até ontem. Hoje ainda está correndo.
+    var dias=[]; for(var i=7;i>=1;i--) dias.push(diasAtras(i));
+    var ontem=dias[dias.length-1];
+
+    el.innerHTML='<div class="conc-cab"><b>Concorrentes</b><span>visitas reais do ML · vendas estimadas pela conversão que você informa</span>'
+        +'<button class="conc-x" title="Recarregar" onclick="concRecarregar(\''+id+'\')">↻</button></div>'
+      +(conc.length ? conc.map(function(c){ return cartao(id, c, porItem[c.item_id]||{}, dias, ontem, nosVis, nosUn); }).join('')
+                    : '<p class="conc-vazio">Nenhum concorrente acompanhado neste SKU.</p>')
+      +'<div class="conc-add" id="'+id+'-add">'
+        +'<input class="conc-in" id="'+id+'-url" placeholder="Cole a URL do anúncio do concorrente">'
+        +'<input class="conc-in conc-in-pct" id="'+id+'-conv" type="number" step="0.1" min="0" max="100" placeholder="conv. %">'
+        +'<button class="led-btn pri" onclick="concAdicionar(\''+id+'\')">Acompanhar</button>'
+        +'<div class="conc-msg" id="'+id+'-msg"></div>'
+      +'</div>';
+  }
+
+  function cartao(id, c, dia, dias, ontem, nosVis, nosUn){
+    var foto=null;   // a leitura mais recente de posição/avaliações
+    Object.keys(dia).sort().forEach(function(d){ if(dia[d].avaliacoes!==null && dia[d].avaliacoes!==undefined) foto=dia[d]; });
+    var vis7=0, tem7=0, est7=0, nos7=0, nosUn7=0;
+    dias.forEach(function(d){
+      var v=dia[d]&&dia[d].visitas; if(v!==null&&v!==undefined){ vis7+=v; tem7++; }
+      nos7+=nosVis[d]||0; nosUn7+=nosUn[d]||0;
+    });
+    var conv=c.conversao_pct, idd=idade(c.conversao_informada_em);
+    est7=concEstimar(tem7?vis7:null, conv);
+    var visOntem=dia[ontem]?dia[ontem].visitas:null;
+    var semDado=!tem7;
+    var nossaConv = nos7>0 ? nosUn7/nos7*100 : null;
+    return '<div class="conc-card">'
+      +'<div class="conc-topo"><div style="min-width:0">'
+        +'<a class="conc-tit" href="'+esc(c.url||('https://produto.mercadolivre.com.br/'+c.item_id.replace('MLB','MLB-')))+'" target="_blank" rel="noopener">'+esc(c.titulo||c.item_id)+'</a>'
+        +'<div class="conc-meta">'+esc(c.item_id)
+          +(foto&&foto.posicao?' · #'+foto.posicao+' em '+esc(foto.categoria||'categoria'):'')
+          +(foto&&foto.avaliacoes!==null?' · '+(foto.nota?String(foto.nota).replace('.',',')+'★ ':'')+fN(foto.avaliacoes)+' aval.':'')
+          +(foto&&foto.perguntas!==null?' · '+fN(foto.perguntas)+' perguntas':'')+'</div></div>'
+        +'<button class="conc-x" title="Parar de acompanhar" onclick="concRemover(\''+id+'\','+c.id+')">✕</button></div>'
+      +(semDado
+        ? '<p class="conc-vazio">Primeira leitura em andamento. As visitas dos últimos 30 dias aparecem em alguns segundos — clique em ↻ se não aparecerem.</p>'
+        : '<div class="conc-nums">'
+            +'<div><span>Visitas ontem</span><b>'+fN(visOntem)+'</b><small>você: '+fN(nosVis[ontem]||0)+'</small></div>'
+            +'<div><span>Visitas 7 dias</span><b>'+fN(vis7)+'</b><small>você: '+fN(nos7)+'</small></div>'
+            +'<div><span>Vendas 7 dias</span><b>'+(est7!==null?fEst(est7):'—')+'</b><small>'+(est7!==null?'estimativa · você: '+fN(nosUn7)+' reais':'informe a conversão')+'</small></div>'
+          +'</div>')
+      +'<div class="conc-conv"><label>Conversão dele (%)'
+        +'<input class="conc-in conc-in-pct" id="'+id+'-cv-'+c.id+'" type="number" step="0.1" min="0" max="100" value="'+(conv!==null&&conv!==undefined?esc(conv):'')+'"></label>'
+        +'<button class="led-btn" onclick="concSalvarConv(\''+id+'\','+c.id+')">Salvar</button>'
+        +'<span class="conc-conv-nota'+(idd!==null&&idd>CONV_VELHA_DIAS?' velha':'')+'">'
+          +(idd===null?'copie do painel Análise de mercado do ML':('informada em '+dm(c.conversao_informada_em)+(idd>CONV_VELHA_DIAS?' — faz '+idd+' dias, confira no ML':'')))
+          +(nossaConv!==null?' · a sua: '+nossaConv.toFixed(1).replace('.',',')+'%':'')+'</span></div>'
+      +(semDado?'':'<details class="conc-dias"><summary>Dia a dia</summary><div class="table-wrap"><table><thead class="hub-thead"><tr>'
+        +'<th>Dia</th><th style="text-align:right">Visitas dele</th><th style="text-align:right">Vendas est.</th>'
+        +'<th style="text-align:right">Suas visitas</th><th style="text-align:right">Suas vendas</th></tr></thead><tbody class="hub-tbody">'
+        +dias.slice().reverse().map(function(d){
+          var v=dia[d]?dia[d].visitas:null;
+          return '<tr><td>'+dm(d)+'</td><td style="text-align:right">'+fN(v)+'</td><td style="text-align:right">'+fEst(concEstimar(v,conv))+'</td>'
+            +'<td style="text-align:right">'+fN(nosVis[d]||0)+'</td><td style="text-align:right">'+fN(nosUn[d]||0)+'</td></tr>';
+        }).join('')+'</tbody></table></div></details>')
+      +'</div>';
+  }
+
+  function msg(id, texto, erro){
+    var m=document.getElementById(id+'-msg'); if(!m) return;
+    m.style.color = erro ? 'var(--coral-500)' : 'var(--slate-600)'; m.innerHTML=texto;
+  }
+
+  window.concAdicionar=async function(id, itemEscolhido){
+    var st=_estado[id]; if(!st) return;
+    var url=(document.getElementById(id+'-url')||{}).value||'';
+    var cvTxt=((document.getElementById(id+'-conv')||{}).value||'').trim().replace(',','.');
+    var conv = cvTxt==='' ? null : parseFloat(cvTxt);
+    if(conv!==null && (isNaN(conv)||conv<0||conv>100)){ msg(id,'Conversão precisa estar entre 0 e 100.',true); return; }
+    var ids=concExtrairIds(url);
+    if(!ids && !itemEscolhido){ msg(id,'Não achei o código do anúncio nessa URL. Cole o link do anúncio (tem MLB e números).',true); return; }
+    var item=itemEscolhido || ids.item, apelido=ids&&ids.apelido;
+    try{
+      if(!item && ids.produto){
+        msg(id,'É um produto de catálogo — procurando as ofertas…');
+        var r=await chamar({acao:'resolver', produto:ids.produto});
+        apelido = apelido || r.nome;
+        var of=r.ofertas||[];
+        if(!of.length){ msg(id, esc(r.aviso||'Nesse catálogo não há oferta de outro vendedor agora.'), true); return; }
+        if(of.length>1){
+          msg(id,'Esse catálogo tem '+of.length+' ofertas de outros vendedores. Qual você quer acompanhar?<div class="conc-escolha">'
+            +of.map(function(o){ return '<button class="led-btn" onclick="concAdicionar(\''+id+'\',\''+o.item_id+'\')">'+o.item_id
+              +(o.preco!==null?' · R$ '+Number(o.preco).toLocaleString('pt-BR',{minimumFractionDigits:2}):'')+(o.full?' · Full':'')+'</button>'; }).join('')+'</div>');
+          return;
+        }
+        item=of[0].item_id;
+      }
+      if(st.itemIds.indexOf(item)>=0){ msg(id,'Esse anúncio é seu.',true); return; }
+      // Conversão em branco não apaga a que já estava salva (re-adicionar um que foi removido).
+      var linha={conta:CONTA, sku:st.sku, item_id:item, url:url||null, titulo:apelido||null, ativo:true};
+      if(conv!==null){ linha.conversao_pct=conv; linha.conversao_informada_em=diaLocal(new Date()); }
+      var ins=await sb.from('concorrentes').upsert(linha, {onConflict:'conta,sku,item_id'});
+      if(ins.error) throw ins.error;
+      msg(id,'Lendo 30 dias de visitas do ML…');
+      try{ await chamar({acao:'coletar', item_id:item}); }catch(e){ console.warn('[Concorrentes] primeira leitura', e); }
+      await pintar(id);
+    }catch(e){ msg(id,'Não consegui adicionar: '+esc(e&&e.message||e),true); }
+  };
+
+  window.concSalvarConv=async function(id, concId){
+    var inp=document.getElementById(id+'-cv-'+concId); if(!inp) return;
+    var t=String(inp.value||'').trim().replace(',','.'), v=t===''?null:parseFloat(t);
+    if(v!==null && (isNaN(v)||v<0||v>100)){ inp.style.borderColor='var(--coral-500)'; return; }
+    var u=await sb.from('concorrentes').update({conversao_pct:v, conversao_informada_em: v!==null?diaLocal(new Date()):null}).eq('id',concId);
+    if(u.error){ inp.style.borderColor='var(--coral-500)'; return; }
+    await pintar(id);
+  };
+
+  window.concRecarregar=function(id){ var st=_estado[id]; var el=document.getElementById(id); if(st&&el) window.concMontar(el, st); };
+
+  window.concRemover=async function(id, concId){
+    // Não apaga: desativa. A série diária continua no banco se ele voltar.
+    await sb.from('concorrentes').update({ativo:false}).eq('id',concId);
+    await pintar(id);
+  };
+})();
+</script>
 
 
 <!-- ═══ OFFICELED 2026 — IDENTIDADE AZUL + HIERARQUIA (último bloco do head) ═══ -->
@@ -14927,6 +15153,40 @@ body:has(#page-led.active) .fab{ display:none !important; }
   .led-sala-grid{display:flex;flex-direction:column}
   .led-rail{width:100%}
 }
+/* Concorrentes do SKU (painel do produto e painel do LED) */
+.conc-bloco{margin-top:22px}
+.led-painel .conc-bloco{margin-top:0}
+.conc-cab{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.conc-cab b{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-400);font-weight:500}
+.conc-cab span{font-size:11px;color:var(--slate-400);flex:1;min-width:0}
+.conc-card{border:1px solid var(--slate-100);border-radius:10px;padding:11px 12px;margin-bottom:9px;background:var(--white)}
+.conc-topo{display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.conc-tit{font-size:13px;font-weight:500;color:var(--slate-900);text-decoration:none;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.conc-tit:hover{color:var(--brand);text-decoration:underline}
+.conc-meta{font-family:var(--mono);font-size:10.5px;color:var(--slate-400);margin-top:2px;line-height:1.5}
+.conc-x{flex:0 0 auto;border:0;background:none;color:var(--slate-400);cursor:pointer;font-size:13px;padding:2px 5px;border-radius:5px}
+.conc-x:hover{background:var(--slate-50);color:var(--slate-700)}
+.conc-nums{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:9px}
+.conc-nums>div{background:var(--slate-50);border:1px solid var(--slate-100);border-radius:9px;padding:8px 10px;min-width:0}
+.conc-nums span{display:block;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-400)}
+.conc-nums b{display:block;font-family:var(--mono);font-size:15px;font-weight:500;color:var(--slate-900);margin-top:2px}
+.conc-nums small{display:block;font-size:10.5px;color:var(--slate-400);margin-top:1px}
+.conc-conv{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:9px;font-size:11.5px;color:var(--slate-600)}
+.conc-conv label{display:flex;align-items:center;gap:6px}
+.conc-conv-nota{font-size:11px;color:var(--slate-400)}
+.conc-conv-nota.velha{color:var(--amber-600);background:var(--amber-50);padding:2px 6px;border-radius:5px}
+.conc-in{padding:6px 9px;border:1px solid var(--slate-100);border-radius:7px;font-size:12.5px;background:var(--white);color:var(--slate-900);min-width:0}
+.conc-in-pct{width:78px}
+.conc-dias{margin-top:8px}
+.conc-dias summary{cursor:pointer;font-size:11.5px;color:var(--brand)}
+.conc-dias table{width:100%;font-size:12px;margin-top:6px}
+.conc-add{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
+.conc-add .conc-in:first-child{flex:1 1 220px}
+.conc-msg{flex-basis:100%;font-size:11.5px;line-height:1.45}
+.conc-escolha{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.conc-vazio{font-size:12px;color:var(--slate-400);margin:4px 0 9px}
+@media (max-width:768px){ .conc-nums{grid-template-columns:repeat(3,minmax(0,1fr))} .conc-nums b{font-size:13.5px} }
+
 @media (max-width:768px){
   body.led-flutua #led-flutuante{display:none}
   #led-chat{inset:0;width:auto;height:auto;border-radius:0;border:0}
