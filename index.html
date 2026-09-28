@@ -1725,6 +1725,7 @@ body.sidebar-collapsed .hamburger { display: none; }
         <button class="hub-secondary-btn" id="op-tab-experiencia" onclick="opGoTab('experiencia',this)">Experiência</button>
         <button class="hub-secondary-btn" id="op-tab-estoque" onclick="opGoTab('estoque',this)">Estoque</button>
         <button class="hub-secondary-btn" id="op-tab-marcas" onclick="opGoTab('marcas',this)">Marcas</button>
+        <button class="hub-secondary-btn" id="op-tab-lancamentos" onclick="opGoTab('lancamentos',this)">Lançamentos</button>
       </div>
 
       <!-- Secao Experiencia de compra -->
@@ -1754,6 +1755,11 @@ body.sidebar-collapsed .hamburger { display: none; }
         </div>
       </div>
 
+      <!-- LANÇAMENTOS — espelho do quadro Cronograma Comercial do Trello (28/09). -->
+      <div id="op-section-lancamentos" style="display:none">
+        <div class="page-subtitle" style="margin-top:0">Produtos novos no Cronograma Comercial do Trello: em que etapa cada um está e há quanto tempo. Você recebe um aviso no celular quando um produto muda de etapa.</div>
+        <div id="lanc-corpo"></div>
+      </div>
       <div id="op-section-estoque" style="display:none">
         <div class="page-subtitle" id="est-subtitle" style="margin-top:0">Posição de hoje, valorizada a preço de venda. Sem custo de mercadoria.</div>
         <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
@@ -2727,15 +2733,24 @@ function opGoTab(tab,btn){
   _hubTab.operacao=tab;
   document.querySelectorAll('#operacao-tabs .hub-secondary-btn').forEach(function(b){b.classList.remove('active');});
   if(btn) btn.classList.add('active');
+  // No celular a faixa de sub-abas rola de lado: traz a aba escolhida para a vista.
+  if(btn && innerWidth<=768 && btn.parentNode){ var pn=btn.parentNode; pn.scrollLeft=Math.max(0, btn.offsetLeft-pn.clientWidth/2+btn.offsetWidth/2); }
   var sp=document.getElementById('op-section-produtos');
   var se=document.getElementById('op-section-experiencia');
   var st=document.getElementById('op-section-estoque');
   var sm=document.getElementById('op-section-marcas');
+  var sl=document.getElementById('op-section-lancamentos');
+  if(sl) sl.style.display = tab==='lancamentos' ? '' : 'none';
   if(se) se.style.display = tab==='experiencia' ? '' : 'none';
   if(st) st.style.display = tab==='estoque' ? '' : 'none';
   if(sm) sm.style.display = tab==='marcas' ? '' : 'none';
   var seloCat=document.getElementById('cat-selo');
   if(seloCat && typeof seloDado==='function') seloCat.innerHTML=seloDado(window._catSnapDate,'anúncios');
+  if(tab==='lancamentos'){
+    if(sp) sp.style.display='none';
+    if(typeof lancCarregar==='function') lancCarregar();
+    return;
+  }
   if(tab==='marcas'){
     if(sp) sp.style.display='none';
     if(typeof mrcCarregar==='function') mrcCarregar();
@@ -14670,6 +14685,154 @@ window.apGarantirMes=async function(mes){
   };
 })();
 </script>
+<script>
+/* ═════════════════════════════════════════════════════════════════════════════
+   LANÇAMENTOS — espelho do quadro "Cronograma Comercial" do Trello.
+   Catálogo → Lançamentos. Cada coluna é uma etapa (lista do quadro, na ordem
+   do quadro; "Pré" é o molde e não aparece). Cada cartão mostra o SKU, há
+   quanto tempo está na etapa e quem cuida dela (o nome entre parênteses na
+   lista: "Imagem Capa (CAROL)").
+   Quem lê o Trello é a função trello-sync (a cada 10 min, só leitura); o app
+   só lê as tabelas. O aviso no celular quando um produto muda de etapa sai
+   do push-notify.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function LancamentosModule(){
+  var QUADRO_URL='https://trello.com/b/U2m8Cyl2/cronograma-comercial';
+  var FINAL_DIAS=30;          // Finalizado: mostra só os últimos 30 dias
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  // "Imagem Capa (CAROL)" → {nome:'Imagem Capa', resp:'CAROL'}
+  function lancEtapaPartes(nome){
+    var m=String(nome||'').match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+    return m ? {nome:m[1].trim(), resp:m[2].trim()} : {nome:String(nome||'').trim(), resp:null};
+  }
+  function lancEhFinal(nome){ return /finalizad/i.test(String(nome||'')); }
+  function lancEhComVoce(nome){ var r=lancEtapaPartes(nome).resp; return !!r && /^ale$/i.test(r); }
+  // Nome do produto: 1ª linha da descrição que não é o SKU nem link; senão o nome do cartão.
+  function lancProduto(c){
+    if(!c.sku) return '';                                         // sem SKU, o nome do cartão já é o produto
+    var linhas=String(c.descricao||'').split(/\n/).map(function(l){ return l.replace(/[*_`#>\[\]]/g,'').trim(); })
+      .filter(function(l){ return l && !/^https?:/i.test(l) && !/^sku\s*:/i.test(l) && !/:$/.test(l) && l!==c.sku && l.length>2; });
+    var p=linhas[0]||'';
+    if(c.sku && c.nome && c.nome.indexOf(c.sku)<0) p=c.nome;    // nome descritivo ("Mola de Piso")
+    return p.slice(0,90);
+  }
+  function lancDias(iso, agora){
+    if(!iso) return null;
+    return Math.max(0, ((agora||Date.now()) - new Date(iso).getTime())/86400000);
+  }
+  function lancTextoDias(d){
+    if(d===null) return '—';
+    if(d<1) return 'hoje';
+    var n=Math.floor(d);
+    return n===1 ? 'há 1 dia' : 'há '+n+' dias';
+  }
+  // Mudanças recentes: um cartão que vai e volta em poucos minutos conta só o último movimento.
+  function lancMovimentosLimpos(movs){
+    var ord=(movs||[]).slice().sort(function(a,b){ return a.quando<b.quando?1:-1; });
+    var out=[], visto={};
+    ord.forEach(function(m){
+      var k=m.card_id, t=new Date(m.quando).getTime();
+      if(visto[k] && visto[k]-t < 10*60000){ return; }   // ida-e-volta em menos de 10 min: fica o mais recente
+      visto[k]=t; out.push(m);
+    });
+    return out;
+  }
+  window._lanc={ etapaPartes:lancEtapaPartes, produto:lancProduto, dias:lancDias, textoDias:lancTextoDias, movimentosLimpos:lancMovimentosLimpos, ehComVoce:lancEhComVoce };
+
+  var _dados=null;
+  async function lancLer(){
+    var r=await Promise.all([
+      sb.from('trello_etapas').select('lista_id,nome,pos,etapa,ativa').eq('ativa',true).order('pos',{ascending:true}),
+      sbTodas(function(a,b){ return sbP('trello_cartoes','card_id,nome,sku,variante,descricao,lista_id,lista_nome,lista_desde,url,ativo').eq('ativo',true).order('card_id',{ascending:true}).range(a,b); },'trello_cartoes'),
+      sb.from('trello_movimentos').select('card_id,card_nome,de_lista_id,de_lista,para_lista_id,para_lista,quem,quando').gte('quando',new Date(Date.now()-7*86400000).toISOString()).order('quando',{ascending:false}).limit(200),
+      sb.from('trello_sync').select('lido_em,ok,erro').limit(1)
+    ]);
+    r.forEach(function(x){ if(x && x.error) throw x.error; });
+    return { etapas:r[0].data||[], cartoes:r[1].data||[], movs:r[2].data||[], sync:(r[3].data||[])[0]||null };
+  }
+
+  function cartaoHtml(c, agora){
+    var d=lancDias(c.lista_desde, agora);
+    var prod=lancProduto(c);
+    return '<a class="lanc-card" href="'+esc(c.url||QUADRO_URL)+'" target="_blank" rel="noopener">'
+      +'<div class="lanc-sku">'+esc(c.sku||c.nome)+(c.variante?'<span>'+esc(c.variante)+'</span>':'')+'</div>'
+      +(prod?'<div class="lanc-prod">'+esc(prod)+'</div>':'')
+      +'<div class="lanc-dias">'+lancTextoDias(d)+' nesta etapa</div></a>';
+  }
+
+  function pintar(){
+    var el=document.getElementById('lanc-corpo'); if(!el||!_dados) return;
+    var agora=Date.now();
+    var etapas=_dados.etapas.filter(function(e){ return e.etapa!==false; })
+      .sort(function(a,b){ return (Number(a.pos)||0)-(Number(b.pos)||0); });
+    var porLista={}; _dados.cartoes.forEach(function(c){ (porLista[c.lista_id]=porLista[c.lista_id]||[]).push(c); });
+    var nomeDe={}; _dados.etapas.forEach(function(e){ nomeDe[e.lista_id]=e.nome; });
+    var andamento=0, comVoce=0, finais=0;
+    var colunas=etapas.map(function(e){
+      var lst=(porLista[e.lista_id]||[]).slice().sort(function(a,b){ return String(a.lista_desde)<String(b.lista_desde)?-1:1; });
+      var partes=lancEtapaPartes(e.nome), fim=lancEhFinal(e.nome), escondidos=0;
+      if(fim){
+        var todos=lst.length;
+        lst=lst.filter(function(c){ var d=lancDias(c.lista_desde,agora); return d!==null && d<=FINAL_DIAS; })
+               .sort(function(a,b){ return String(a.lista_desde)<String(b.lista_desde)?1:-1; });
+        escondidos=todos-lst.length; finais+=lst.length;
+      } else {
+        andamento+=lst.length;
+        if(lancEhComVoce(e.nome)) comVoce+=lst.length;
+      }
+      return '<div class="lanc-col'+(lancEhComVoce(e.nome)?' voce':'')+(fim?' fim':'')+'">'
+        +'<div class="lanc-col-cab"><b>'+esc(partes.nome)+'</b>'
+          +(partes.resp?'<span class="lanc-resp">'+esc(partes.resp)+'</span>':'')
+          +'<i>'+(fim?lst.length:(porLista[e.lista_id]||[]).length)+'</i></div>'
+        +'<div class="lanc-col-corpo">'
+          +(lst.length ? lst.map(function(c){ return cartaoHtml(c,agora); }).join('') : '<div class="lanc-vazio">—</div>')
+          +(escondidos?'<div class="lanc-vazio">+ '+escondidos+' finalizados há mais de '+FINAL_DIAS+' dias</div>':'')
+        +'</div></div>';
+    }).join('');
+    var movs=lancMovimentosLimpos(_dados.movs).slice(0,20);
+    var cardDe={}; _dados.cartoes.forEach(function(c){ cardDe[c.card_id]=c; });
+    var s=_dados.sync;
+    var lido = s && s.lido_em ? new Date(s.lido_em) : null;
+    el.innerHTML=
+      '<div class="lanc-topo">'
+        +'<div class="lanc-num"><b>'+andamento+'</b><span>em andamento</span></div>'
+        +'<div class="lanc-num voce"><b>'+comVoce+'</b><span>com você (ALE)</span></div>'
+        +'<div class="lanc-num"><b>'+finais+'</b><span>finalizados em '+FINAL_DIAS+' dias</span></div>'
+        +'<div class="lanc-lido">'+(s && s.ok===false ? '<span style="color:var(--coral-500)">Última leitura do Trello falhou: '+esc(s.erro||'')+'</span>'
+            : (lido ? 'Trello lido às '+String(lido.getHours()).padStart(2,'0')+':'+String(lido.getMinutes()).padStart(2,'0')+' · atualiza a cada 10 min' : 'Ainda sem leitura do Trello'))
+          +' · <a href="'+QUADRO_URL+'" target="_blank" rel="noopener">abrir o quadro ↗</a>'
+          +' <button class="led-btn" onclick="lancAtualizar()" id="lanc-btn">↻ Ler agora</button></div>'
+      +'</div>'
+      +'<div class="lanc-quadro">'+colunas+'</div>'
+      +'<div class="lanc-movs"><div class="led-sec">Mudanças de etapa · últimos 7 dias</div>'
+        +(movs.length ? movs.map(function(m){
+            var c=cardDe[m.card_id]||{};
+            var para=nomeDe[m.para_lista_id]||m.para_lista||'—';
+            var q=new Date(m.quando);
+            return '<div class="lanc-mov"><span class="q">'+String(q.getDate()).padStart(2,'0')+'/'+String(q.getMonth()+1).padStart(2,'0')+' '+String(q.getHours()).padStart(2,'0')+':'+String(q.getMinutes()).padStart(2,'0')+'</span>'
+              +'<b>'+esc(c.sku||m.card_nome||c.nome||'—')+(c.variante?' ('+esc(c.variante)+')':'')+'</b> → '+esc(lancEtapaPartes(para).nome)
+              +(lancEtapaPartes(para).resp?' <span class="lanc-resp">'+esc(lancEtapaPartes(para).resp)+'</span>':'')
+              +(m.quem?'<span class="quem">'+esc(m.quem)+'</span>':'')+'</div>';
+          }).join('') : '<p class="fin-note">Nenhuma mudança de etapa nos últimos 7 dias.</p>')
+      +'</div>';
+  }
+
+  window.lancCarregar=async function(){
+    var el=document.getElementById('lanc-corpo'); if(!el) return;
+    if(!_dados) el.innerHTML='<p class="fin-note">Lendo o cronograma…</p>';
+    try{ _dados=await lancLer(); pintar(); }
+    catch(e){ el.innerHTML='<p class="fin-note">Não consegui ler o cronograma: '+esc(e&&e.message||e)+'</p>'; }
+  };
+  window.lancAtualizar=async function(){
+    var b=document.getElementById('lanc-btn'); if(b){ b.disabled=true; b.textContent='lendo o Trello…'; }
+    try{
+      await fetch(SUPA_URL+'/functions/v1/trello-sync',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY},body:'{}'});
+    }catch(e){ console.warn('[Lançamentos] trello-sync',e); }
+    await window.lancCarregar();
+  };
+})();
+</script>
 
 
 <!-- ═══ OFFICELED 2026 — IDENTIDADE AZUL + HIERARQUIA (último bloco do head) ═══ -->
@@ -15153,6 +15316,44 @@ body:has(#page-led.active) .fab{ display:none !important; }
   .led-sala-grid{display:flex;flex-direction:column}
   .led-rail{width:100%}
 }
+/* Lançamentos (Cronograma Comercial do Trello) */
+.lanc-topo{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}
+.lanc-num{background:var(--white);border:1px solid var(--slate-100);border-radius:10px;padding:8px 14px;display:flex;align-items:baseline;gap:7px}
+.lanc-num b{font-family:var(--mono);font-size:20px;font-weight:500;color:var(--slate-900)}
+.lanc-num span{font-size:12px;color:var(--slate-600)}
+.lanc-num.voce{border-color:rgba(19,87,158,.35);background:var(--brand-soft)}
+.lanc-num.voce b{color:var(--brand)}
+.lanc-lido{margin-left:auto;font-size:11.5px;color:var(--slate-400);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.lanc-quadro{display:flex;gap:10px;overflow-x:auto;padding-bottom:8px;align-items:flex-start}
+.lanc-col{flex:1 0 146px;background:var(--slate-50);border:1px solid var(--slate-100);border-radius:12px;padding:8px;max-height:560px;display:flex;flex-direction:column}
+.lanc-col.voce{border-color:rgba(19,87,158,.4);box-shadow:inset 0 3px 0 var(--brand)}
+.lanc-col.fim{opacity:.92}
+.lanc-col-cab{display:flex;align-items:center;gap:6px;padding:2px 4px 8px}
+.lanc-col-cab b{font-size:12.5px;font-weight:600;color:var(--slate-900);flex:1;min-width:0;line-height:1.25}
+.lanc-col-cab i{font-style:normal;font-family:var(--mono);font-size:11px;color:var(--slate-400)}
+.lanc-resp{font-family:var(--mono);font-size:9.5px;letter-spacing:.05em;padding:2px 6px;border-radius:5px;background:var(--white);border:1px solid var(--slate-100);color:var(--slate-600)}
+.lanc-col.voce .lanc-resp{background:var(--brand);border-color:var(--brand);color:#fff}
+.lanc-col-corpo{overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.lanc-card{display:block;background:var(--white);border:1px solid var(--slate-100);border-radius:9px;padding:8px 9px;text-decoration:none;color:inherit}
+.lanc-card:hover{border-color:var(--slate-200);box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.lanc-sku{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--slate-900);overflow-wrap:anywhere}
+.lanc-sku span{display:block;font-weight:400;color:var(--slate-400);font-size:10.5px}
+.lanc-prod{font-size:11.5px;color:var(--slate-600);margin-top:2px;line-height:1.35}
+.lanc-dias{font-size:10.5px;color:var(--slate-400);margin-top:4px}
+.lanc-vazio{font-size:11px;color:var(--slate-400);text-align:center;padding:6px 0}
+.lanc-movs{margin-top:16px}
+.lanc-mov{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;font-size:12.5px;color:var(--slate-700);padding:5px 0;border-bottom:1px solid var(--slate-100)}
+.lanc-mov .q{font-family:var(--mono);font-size:10.5px;color:var(--slate-400);min-width:78px}
+.lanc-mov .quem{margin-left:auto;font-size:11px;color:var(--slate-400)}
+@media (max-width:768px){
+  /* as sub-abas do Catálogo (agora 5) rolam de lado dentro da própria faixa, não a página */
+  .hub-secondary-nav{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .hub-secondary-nav .hub-secondary-btn{flex:0 0 auto;white-space:nowrap}
+  .lanc-quadro{flex-direction:column;overflow-x:visible}
+  .lanc-col{flex:1 1 auto;width:100%;max-height:none}
+  .lanc-lido{margin-left:0;width:100%}
+}
+
 /* Concorrentes do SKU (painel do produto e painel do LED) */
 .conc-bloco{margin-top:22px}
 .led-painel .conc-bloco{margin-top:0}
