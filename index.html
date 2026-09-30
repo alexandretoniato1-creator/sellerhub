@@ -1769,6 +1769,17 @@ body.sidebar-collapsed .hamburger { display: none; }
         <div id="lanc-corpo"></div>
       </div>
       <div id="op-section-estoque" style="display:none">
+        <div class="estv-seg" id="estv-seg">
+          <button class="active" data-v="geral" onclick="estVisao('geral')">Estoque</button>
+          <button data-v="full" id="estv-btn-full" onclick="estVisao('full')">Full: Magis5 × ML</button>
+        </div>
+        <!-- FULL: MAGIS5 × MERCADO LIVRE (30/09) — estoque-full-sync → estoque_full_comparacao -->
+        <div id="est-visao-full" style="display:none">
+          <div id="estf-corpo"></div>
+          <div id="estf-tabela"></div>
+          <div id="estf-rodape"></div>
+        </div>
+        <div id="est-visao-geral">
         <div class="page-subtitle" id="est-subtitle" style="margin-top:0">Posição de hoje, valorizada a preço de venda. Sem custo de mercadoria.</div>
         <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -1791,6 +1802,7 @@ body.sidebar-collapsed .hamburger { display: none; }
         </div>
         <div class="sec-title">Por SKU</div>
         <div id="est-tabela"></div>
+        </div><!-- /est-visao-geral -->
       </div>
 
       <div id="op-section-experiencia" style="display:none">
@@ -15151,6 +15163,212 @@ window.apGarantirMes=async function(mes){
 @media (max-width:768px){ #cup-busca{ width:100% !important; } }
 </style>
 
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   FULL: MAGIS5 × MERCADO LIVRE — Catálogo → Estoque → "Full: Magis5 × ML" (30/09).
+
+   O depósito do vendedor não entra aqui: o ML puxa esse número do próprio
+   Magis5, então comparar os dois é comparar o Magis5 com ele mesmo. O Full é
+   diferente: quem conta é o ML. Por isso a comparação é só do Full.
+
+     Magis5   estoque do depósito "DEPOSITO FULL ML - LOGBOX" do SKU
+              (o que foi registrado; "—" quando o SKU não tem esse depósito)
+     ML       /inventories/{id}/stock/fulfillment — o que o Full tem de fato:
+              disponível + indisponível (transferência, processo interno, não
+              aceito, perdido, sem cobertura fiscal…)
+     Diferença = Magis5 − ML total
+
+   Quem lê é a função estoque-full-sync (1× por dia e no botão); o app só lê
+   estoque_full_comparacao. Sem alerta: é para enxergar e achar erro.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function EstoqueFullModule(){
+  var _f={ dados:null, carregando:false, busca:'', soDif:false, filtro:'todos', ordem:'absdif', desc:true, visao:'geral' };
+  var DETALHE={ transfer:'Em transferência', internalProcess:'Em processo interno', notSupported:'Não aceito',
+    lost:'Perdido', noFiscalCoverage:'Sem cobertura fiscal', damaged:'Avariado', withdrawal:'Em retirada' };
+
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function fN(v){ return (v===null||v===undefined) ? '—' : Number(v).toLocaleString('pt-BR'); }
+  function fDif(v){ return !v ? '0' : (v>0?'+':'−')+Math.abs(v).toLocaleString('pt-BR'); }
+
+  // Linha pronta para a tela: separa "sem cobertura fiscal" do resto de "outros".
+  function prep(l){
+    var det=l.ml_detalhe||{}, semNF=Number(det.noFiscalCoverage)||0;
+    return Object.assign({}, l, { sem_nf: semNF, outros: Math.max(0,(Number(l.ml_outros)||0)-semNF), absdif: Math.abs(Number(l.diferenca)||0) });
+  }
+  function resumo(L){
+    var t={magis:0, ml:0, disp:0, comDif:0, semDep:0, perdido:0, skus:L.length};
+    L.forEach(function(o){ t.magis+=o.magis_full||0; t.ml+=o.ml_total||0; t.disp+=o.ml_disponivel||0;
+      if(o.diferenca) t.comDif++; if(!o.magis_tem_deposito && o.ml_total>0) t.semDep++; t.perdido+=o.ml_perdido||0; });
+    return t;
+  }
+
+  async function ler(){
+    var ult=await sb.from('estoque_full_comparacao').select('data').order('data',{ascending:false}).limit(1);
+    if(ult.error) throw ult.error;
+    var data=ult.data&&ult.data[0]&&ult.data[0].data;
+    var r=await Promise.all([
+      data ? sbTodas(function(a,b){ return sbP('estoque_full_comparacao','*').eq('data',data).order('sku',{ascending:true}).range(a,b); }, 'estf/linhas') : Promise.resolve({data:[]}),
+      sb.from('estoque_full_sync').select('*').eq('conta','Logbox').limit(1)
+    ]);
+    var e=r.find(function(x){ return x && x.error; }); if(e) throw e.error;
+    return { data:data, linhas:(r[0].data||[]).map(prep), sync:(r[1].data&&r[1].data[0])||null };
+  }
+
+  function kpi(rot,val,sub,cor){
+    return '<div class="kpi"><div class="kpi-l">'+rot+'</div><div class="kpi-v"'+(cor?' style="color:'+cor+'"':'')+'>'+val+'</div><div class="kpi-d">'+(sub||'')+'</div></div>';
+  }
+  function th(rot,campo,dica){
+    var ativo=_f.ordem===campo;
+    return '<th style="cursor:pointer;white-space:nowrap"'+(dica?' title="'+esc(dica)+'"':'')+' onclick="estfOrdenar(\''+campo+'\')">'+rot
+      +'<span style="color:'+(ativo?'var(--slate-900)':'var(--slate-200)')+'"> '+(ativo?(_f.desc?'▼':'▲'):'↕')+'</span></th>';
+  }
+  function filtradas(){
+    var q=_f.busca.toLowerCase();
+    var L=_f.dados.linhas.filter(function(o){
+      if(_f.soDif && !o.diferenca) return false;
+      if(_f.filtro==='com' && !o.magis_tem_deposito) return false;
+      if(_f.filtro==='sem' && o.magis_tem_deposito) return false;
+      return !q || String(o.sku).toLowerCase().indexOf(q)>=0 || String(o.titulo||'').toLowerCase().indexOf(q)>=0
+        || (o.outros_skus||[]).some(function(s){ return String(s).toLowerCase().indexOf(q)>=0; })
+        || (o.anuncios||[]).some(function(s){ return String(s).toLowerCase().indexOf(q)>=0; });
+    });
+    var c=_f.ordem, d=_f.desc?-1:1;
+    return L.sort(function(a,b){
+      var va=a[c], vb=b[c];
+      if(va===null||va===undefined) return 1; if(vb===null||vb===undefined) return -1;
+      if(typeof va==='string') return va.localeCompare(vb)*d;
+      return (va-vb)*d || a.sku.localeCompare(b.sku);
+    });
+  }
+  function selos(o){
+    var s=[];
+    if(!o.magis_tem_deposito) s.push('<span class="estf-selo estf-selo-am" title="O SKU não tem o depósito FULL ML cadastrado no Magis5">sem depósito Full no Magis5</span>');
+    if(o.vinculo==='sem_magis5') s.push('<span class="estf-selo estf-selo-am" title="Nenhum produto do Magis5 ligado a este anúncio">sem cadastro no Magis5</span>');
+    if(o.vinculo==='sku') s.push('<span class="estf-selo" title="O anúncio não está ligado no Magis5; casado pelo SKU do anúncio">casado pelo SKU</span>');
+    (o.kits||[]).forEach(function(k){ s.push('<span class="estf-selo" title="Anúncio de kit: unidades do Full × '+k+'">kit ×'+k+'</span>'); });
+    if((o.outros_skus||[]).length) s.push('<span class="estf-selo" title="Outros SKUs do Magis5 ligados aos mesmos anúncios">também: '+esc(o.outros_skus.join(', '))+'</span>');
+    return s.join(' ');
+  }
+  function tabela(){
+    var L=filtradas();
+    if(!L.length) return '<div class="fin-cascata"><p class="fin-note">Nada bate com esse filtro.</p></div>';
+    var corpo=L.map(function(o){
+      var dif=Number(o.diferenca)||0;
+      var corDif = !dif ? 'var(--green-600)' : 'var(--amber-600)';
+      var titDif = !dif ? 'Bate' : (dif>0 ? 'Magis5 tem '+fN(dif)+' a mais que o Full do ML' : 'O Full do ML tem '+fN(-dif)+' a mais que o Magis5');
+      var det=Object.keys(o.ml_detalhe||{}).map(function(k){ return (DETALHE[k]||k)+': '+o.ml_detalhe[k]; }).join(' · ');
+      return '<tr data-sku="'+esc(o.sku)+'">'
+        +'<td style="max-width:280px"><div style="font-family:var(--mono);font-size:12.5px;color:var(--slate-900);font-weight:600">'+esc(o.sku)+'</div>'
+        +'<div style="font-size:11px;color:var(--slate-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo||'')+'</div>'
+        +'<div class="estf-selos">'+selos(o)+'</div></td>'
+        +'<td data-rot="Magis5"'+(o.magis_full===null?' title="sem depósito Full no Magis5" style="color:var(--slate-300)"':'')+'>'+fN(o.magis_full)+'</td>'
+        +'<td data-rot="ML total" title="'+esc((o.anuncios||[]).join(', '))+'">'+fN(o.ml_total)+'</td>'
+        +'<td data-rot="Diferença" class="estf-dif" style="color:'+corDif+'" title="'+esc(titDif)+'">'+fDif(dif)+'</td>'
+        +'<td data-rot="Disponível">'+fN(o.ml_disponivel)+'</td>'
+        +'<td data-rot="Transferência">'+fN(o.ml_transferencia)+'</td>'
+        +'<td data-rot="Processo interno">'+fN(o.ml_processo)+'</td>'
+        +'<td data-rot="Não aceito">'+fN(o.ml_nao_aceito)+'</td>'
+        +'<td data-rot="Perdido"'+(o.ml_perdido?' style="color:var(--coral-500);font-weight:600"':'')+'>'+fN(o.ml_perdido)+'</td>'
+        +'<td data-rot="Sem cobertura fiscal">'+fN(o.sem_nf)+'</td>'
+        +'<td data-rot="Outros"'+(det?' title="'+esc(det)+'"':'')+'>'+fN(o.outros)+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div class="table-wrap"><table><thead class="hub-thead"><tr>'
+      +th('Produto','sku')+th('Magis5','magis_full','Estoque do depósito FULL ML no Magis5')
+      +th('ML total','ml_total','Tudo que está no Full do ML: disponível + indisponível')
+      +th('Diferença','absdif','Magis5 − ML total')
+      +th('Disponível','ml_disponivel')+th('Transferência','ml_transferencia','Sendo transferido entre centros do ML')
+      +th('Processo interno','ml_processo')+th('Não aceito','ml_nao_aceito','Recusado pelo Full (precisa retirar)')
+      +th('Perdido','ml_perdido','O ML perdeu — cabe pedido de ressarcimento')
+      +th('Sem cobertura fiscal','sem_nf','Sem nota fiscal que cubra a unidade')+th('Outros','outros')
+      +'</tr></thead><tbody class="hub-tbody">'+corpo+'</tbody></table></div>'
+      +'<p class="fin-note" style="margin-top:6px">'+L.length+' de '+_f.dados.linhas.length+' SKUs.</p>';
+  }
+  function pintar(){
+    var el=document.getElementById('estf-corpo'); if(!el||!_f.dados) return;
+    var c=_f.dados, t=resumo(c.linhas), s=c.sync;
+    var selo = s ? '<span class="estf-lido'+(s.ok===false?' estf-lido-erro':'')+'">'+(s.ok===false?'⚠ ':'')+'lido do Magis5 e do ML '
+      +new Date(s.lido_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      +(s.ok===false&&s.erro?' · '+esc(s.erro):'')+'</span>' : '<span class="estf-lido estf-lido-erro">ainda não lido</span>';
+    el.innerHTML=
+      '<div class="page-subtitle" style="margin-top:0">O que está registrado no depósito <strong>Full ML</strong> do Magis5 contra o que o Full do Mercado Livre tem de fato. O depósito de vocês não entra: o ML puxa esse número do próprio Magis5.</div>'
+      +'<div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:10px">'
+        +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+          +'<input class="notes-search" id="estf-busca" placeholder="SKU, título ou MLB" value="'+esc(_f.busca)+'" style="width:210px;padding:6px 10px;font-size:12px" oninput="estfBuscar(this.value)">'
+          +'<select class="perf-select" id="estf-filtro" onchange="estfFiltro(this.value)">'
+            +'<option value="todos"'+(_f.filtro==='todos'?' selected':'')+'>Todos os SKUs</option>'
+            +'<option value="com"'+(_f.filtro==='com'?' selected':'')+'>Com depósito Full no Magis5</option>'
+            +'<option value="sem"'+(_f.filtro==='sem'?' selected':'')+'>Sem depósito Full no Magis5</option>'
+          +'</select>'
+          +'<label style="font-size:12px;color:var(--slate-500);display:flex;align-items:center;gap:6px"><input type="checkbox" id="estf-so-dif"'+(_f.soDif?' checked':'')+' onchange="estfSoDif(this.checked)"> só com diferença</label>'
+        +'</div>'
+        +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+selo
+          +'<button class="perf-select" id="estf-btn" style="cursor:pointer" onclick="estfAtualizar()">↻ Ler agora</button></div>'
+      +'</div>'
+      +'<div class="kpi-grid" id="estf-kpis" style="margin-top:14px">'
+        +kpi('Magis5 diz ter no Full', fN(t.magis), 'soma do depósito Full ML')
+        +kpi('Full do ML tem', fN(t.ml), fN(t.disp)+' disponíveis')
+        +kpi('SKUs com diferença', fN(t.comDif)+' de '+fN(t.skus), '')
+        +kpi('No Full sem depósito no Magis5', fN(t.semDep), 'SKUs que o ML tem e o Magis5 não registra')
+      +'</div>'
+      +'<div class="sec-title">Por SKU</div>';
+    document.getElementById('estf-tabela').innerHTML=tabela();
+    document.getElementById('estf-rodape').innerHTML='<p class="fin-note">'
+      +'<strong>Diferença</strong> = Magis5 − ML total. Negativa: o Full do ML tem mais do que o Magis5 registra. Positiva: o Magis5 registra unidades que o Full não tem. '
+      +'O ML total soma o disponível e o indisponível (em transferência, processo interno, não aceito, perdido, sem cobertura fiscal). '
+      +'O SKU é ligado ao anúncio pelo próprio Magis5; quando o anúncio não está ligado lá, pelo SKU do anúncio. Anúncio de kit conta unidades (kit × quantidade). '
+      +'Lido uma vez por dia e no botão "Ler agora".</p>';
+  }
+  function reTabela(){ var el=document.getElementById('estf-tabela'); if(el&&_f.dados) el.innerHTML=tabela(); }
+  window.estfOrdenar=function(c){ if(_f.ordem===c) _f.desc=!_f.desc; else { _f.ordem=c; _f.desc=c!=='sku'; } reTabela(); };
+  window.estfBuscar=function(v){ _f.busca=String(v||''); reTabela(); };
+  window.estfSoDif=function(v){ _f.soDif=!!v; reTabela(); };
+  window.estfFiltro=function(v){ _f.filtro=v||'todos'; reTabela(); };
+  window.estfCarregar=async function(){
+    var el=document.getElementById('estf-corpo'); if(!el||_f.carregando) return;
+    _f.carregando=true;
+    if(!_f.dados) el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Lendo o Full…</div>';
+    try{ _f.dados=await ler(); pintar(); }
+    catch(e){ console.error('[Full Magis5×ML]', e); el.innerHTML='<p class="fin-note">Não consegui ler a comparação: '+esc(e&&e.message||e)+'</p>'; }
+    _f.carregando=false;
+  };
+  window.estfAtualizar=async function(){
+    var b=document.getElementById('estf-btn'); if(b){ b.disabled=true; b.textContent='lendo Magis5 e ML… (~40s)'; }
+    try{ await fetch(SUPA_URL+'/functions/v1/estoque-full-sync',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY},body:'{}'}); }
+    catch(e){ console.warn('[Full Magis5×ML] sync', e); }
+    await window.estfCarregar();
+  };
+  // Troca de visão dentro de Catálogo → Estoque
+  window.estVisao=function(v){
+    _f.visao = v==='full' ? 'full' : 'geral';
+    var g=document.getElementById('est-visao-geral'), f=document.getElementById('est-visao-full');
+    if(g) g.style.display = _f.visao==='geral' ? '' : 'none';
+    if(f) f.style.display = _f.visao==='full' ? '' : 'none';
+    document.querySelectorAll('#estv-seg button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-v')===_f.visao); });
+    if(_f.visao==='full') window.estfCarregar();
+  };
+  window._estf={ prep:prep, resumo:resumo, estado:_f };
+})();
+</script>
+<style id="estf-css">
+.estv-seg{ display:inline-flex; border:1px solid var(--slate-100); border-radius:var(--radius-sm); overflow:hidden; margin-bottom:12px; background:var(--white); }
+.estv-seg button{ border:0; background:transparent; padding:7px 14px; font-size:12.5px; color:var(--slate-600); cursor:pointer; font-family:var(--font); }
+.estv-seg button + button{ border-left:1px solid var(--slate-100); }
+.estv-seg button.active{ background:var(--brand-soft); color:var(--brand); font-weight:600; }
+#estf-kpis{ grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+#estf-tabela td{ font-size:12.5px; }
+#estf-tabela thead th{ position:sticky; top:0 !important; z-index:6 !important; background:var(--white) !important; box-shadow:inset 0 -1px 0 var(--slate-100) !important; }
+#estf-tabela tbody tr:hover td{ background:var(--slate-50); }
+#estf-tabela .estf-dif{ font-family:var(--mono); font-weight:600; }
+@media (min-width:769px){ #estf-tabela td:not(:first-child), #estf-tabela th{ white-space:nowrap; } }
+.estf-selos{ margin-top:3px; display:flex; flex-wrap:wrap; gap:4px; }
+.estf-selo{ font-size:10.5px; color:var(--slate-600); background:var(--slate-50); border:1px solid var(--slate-100); border-radius:6px; padding:1px 6px; white-space:nowrap; }
+.estf-selo-am{ color:var(--amber-600); background:var(--amber-50); border-color:var(--amber-100); }
+.estf-lido{ font-size:11.5px; color:var(--slate-400); }
+.estf-lido-erro{ color:var(--amber-600); }
+@media (max-width:768px){ #estf-busca{ width:100% !important; } .estf-selo{ white-space:normal; } }
+</style>
+
 
 <!-- ═══ OFFICELED 2026 — IDENTIDADE AZUL + HIERARQUIA (último bloco do head) ═══ -->
 <style id="ol26">
@@ -15867,7 +16085,7 @@ body:has(#page-led.active) .fab{ display:none !important; }
   'use strict';
 
   // Containers cujas tabelas viram lista no celular.
-  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela','cup-tabela',
+  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela','cup-tabela','estf-tabela',
                'mrc-tabela','exp-ofensoras','exp-categorias'];
 
   // Rótulos do cabeçalho, com colspan expandido: a coluna 3 tem que casar com
