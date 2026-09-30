@@ -1724,6 +1724,7 @@ body.sidebar-collapsed .hamburger { display: none; }
         <button class="hub-secondary-btn active" id="op-tab-produtos" onclick="opGoTab('produtos',this)">Produtos</button>
         <button class="hub-secondary-btn" id="op-tab-experiencia" onclick="opGoTab('experiencia',this)">Experiência</button>
         <button class="hub-secondary-btn" id="op-tab-estoque" onclick="opGoTab('estoque',this)">Estoque</button>
+        <button class="hub-secondary-btn" id="op-tab-cupons" onclick="opGoTab('cupons',this)">Cupons</button>
         <button class="hub-secondary-btn" id="op-tab-marcas" onclick="opGoTab('marcas',this)">Marcas</button>
         <button class="hub-secondary-btn" id="op-tab-lancamentos" onclick="opGoTab('lancamentos',this)">Lançamentos</button>
       </div>
@@ -1756,6 +1757,13 @@ body.sidebar-collapsed .hamburger { display: none; }
       </div>
 
       <!-- LANÇAMENTOS — espelho do quadro Cronograma Comercial do Trello (28/09). -->
+      <!-- CUPONS E REBATE — ml_descontos (sync ml-descontos, de hora em hora). 30/09. -->
+      <div id="op-section-cupons" style="display:none">
+        <div class="page-subtitle" style="margin-top:0">Quanto das vendas usa cupom (principalmente o cupom Pix, que não está no Hub), quanto você gasta com isso e quanto o ML põe de rebate em cada produto.</div>
+        <div id="cup-corpo"></div>
+        <div id="cup-tabela"></div>
+        <div id="cup-rodape"></div>
+      </div>
       <div id="op-section-lancamentos" style="display:none">
         <div class="page-subtitle" style="margin-top:0">Produtos novos no Cronograma Comercial do Trello: em que etapa cada um está e há quanto tempo. Você recebe um aviso no celular quando um produto muda de etapa.</div>
         <div id="lanc-corpo"></div>
@@ -2740,12 +2748,19 @@ function opGoTab(tab,btn){
   var st=document.getElementById('op-section-estoque');
   var sm=document.getElementById('op-section-marcas');
   var sl=document.getElementById('op-section-lancamentos');
+  var sc=document.getElementById('op-section-cupons');
   if(sl) sl.style.display = tab==='lancamentos' ? '' : 'none';
+  if(sc) sc.style.display = tab==='cupons' ? '' : 'none';
   if(se) se.style.display = tab==='experiencia' ? '' : 'none';
   if(st) st.style.display = tab==='estoque' ? '' : 'none';
   if(sm) sm.style.display = tab==='marcas' ? '' : 'none';
   var seloCat=document.getElementById('cat-selo');
   if(seloCat && typeof seloDado==='function') seloCat.innerHTML=seloDado(window._catSnapDate,'anúncios');
+  if(tab==='cupons'){
+    if(sp) sp.style.display='none';
+    if(typeof cupCarregar==='function') cupCarregar();
+    return;
+  }
   if(tab==='lancamentos'){
     if(sp) sp.style.display='none';
     if(typeof lancCarregar==='function') lancCarregar();
@@ -10766,6 +10781,17 @@ window.apGarantirMes=async function(mes){
     return sbP('ml_visitas','item_id,data,visitas')
       .eq('conta','Logbox').gte('data',de).lte('data',ate)
       .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }; }
+  /* Rebate e cupons (ml_descontos_dia — sync ml-descontos, de hora em hora).
+     Opcional: se a leitura falhar, a Dashboard segue sem a coluna Rebate. */
+  async function dashDescontos(de,ate){
+    try{
+      var r=await sbTodas(function(a,b){ return sbP('ml_descontos_dia','item_id,data,receita,rebate,cupom_pix,ped_pix,pedidos')
+        .eq('conta','Logbox').gte('data',de).lte('data',ate)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'dash/descontos');
+      if(r.error) throw r.error;
+      return r.data||[];
+    }catch(e){ console.warn('[OfficeLed] rebate/cupons', e); return null; }
+  }
   function qFin(de,ate){ return function(a,b){
     return sbP('ml_financeiro','movement_id,tipo,valor,data,sku')
       .eq('conta','Logbox').gte('data',de).lte('data',ate)
@@ -10936,7 +10962,8 @@ window.apGarantirMes=async function(mes){
         .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'dash/skus'),
       sbTodas(qVis(j.ini,j.fim),   'dash/visitas'),
       sbTodas(qVis(j.iniA,j.fimA), 'dash/visitasAnt'),
-      dashPedidosParciais(j)
+      dashPedidosParciais(j),
+      dashDescontos(j.ini,j.fim)
     ]);
     /* `dashPedidosParciais` devolve NULL de propósito quando a janela não
        termina hoje (Ontem, Mês passado, personalizado fechado). O find abaixo
@@ -10955,7 +10982,7 @@ window.apGarantirMes=async function(mes){
       vendasA:r[3].data||[], adsA:r[4].data||[], finA:r[5].data||[],
       anuncios:r[6].data||[], reputacao:(r[7].data&&r[7].data[0])||null,
       skus:r[8].data||[], visitas:r[9].data||[], visitasA:r[10].data||[],
-      parcial:r[11]||null, mesmaHora:null,
+      parcial:r[11]||null, mesmaHora:null, descontos:r[12]||null,
       hubMap:hubMap, hubLinks:hubLinks };
 
     // "Hoje": o período anterior deixa de ser ontem inteiro e passa a ser
@@ -11068,6 +11095,21 @@ window.apGarantirMes=async function(mes){
     return t;
   }
 
+  /* Soma a visão diária de descontos por SKU. null = sem leitura (a coluna
+     mostra "—"); objeto vazio = leu e não havia venda com rebate. */
+  function dashRebatePorSku(desc, i2sku){
+    if(!desc) return null;
+    var m={};
+    desc.forEach(function(r){
+      var k=i2sku[r.item_id]||('item:'+r.item_id);
+      var o=m[k]||(m[k]={receita:0, rebate:0, pix:0, pedidos:0, pedPix:0});
+      o.receita+=Number(r.receita)||0; o.rebate+=Number(r.rebate)||0;
+      o.pix+=Number(r.cupom_pix)||0; o.pedidos+=Number(r.pedidos)||0; o.pedPix+=Number(r.ped_pix)||0;
+    });
+    return m;
+  }
+  window._dashRebatePorSku=dashRebatePorSku;
+
   function dashCalcular(d, j){
     var i2sku={}, skuItens={}, titDe={}, snapSku={};
     d.anuncios.forEach(function(a){
@@ -11110,6 +11152,7 @@ window.apGarantirMes=async function(mes){
     // Alvo de TACOS do SKU (skus.tacos_alvo). Independe do vínculo com o Hub.
     function alvoDe(chave){ return tacosAlvo[chave]!==undefined ? tacosAlvo[chave] : null; }
 
+    var reb = dashRebatePorSku(d.descontos, i2sku);
     var ag  = dashAgregar(d.vendas,  d.ads,  d.fin,  i2sku, d.visitas,  hubDe);
     var agA = dashAgregar(d.vendasA, d.adsA, d.finA, i2sku, d.visitasA, hubDe);
     var tot = dashTotais(ag,  hubDe, alvoDe);
@@ -11173,7 +11216,10 @@ window.apGarantirMes=async function(mes){
         desvio: (tacos!==null && al!==null) ? tacos-al : null,
         viaLink: h?h.viaLink:false, skuHub: h?h.skuHub:null,
         snap: snapSku[k]||null, estoqueMin: estoqueMin[k]!==undefined?estoqueMin[k]:null,
-        itemPrincipal: itemPrincipal[k]||null
+        itemPrincipal: itemPrincipal[k]||null,
+        // Rebate = parte do desconto que o ML banca, sobre a receita das MESMAS vendas.
+        rebateVal: reb && reb[k] ? reb[k].rebate : null,
+        rebatePct: reb && reb[k] && reb[k].receita>0 ? reb[k].rebate/reb[k].receita : null
       };
     }).filter(function(o){ return o.receita>0; })
       .sort(function(a,b){ return b.receita-a.receita; });
@@ -11762,6 +11808,8 @@ window.apGarantirMes=async function(mes){
         +'<td data-rot="Repres.">'+dpct(rep,1)+'</td>'
         +'<td data-rot="Unidades">'+dfmtN(o.unidades)+'</td>'
         +'<td data-rot="Preço médio">'+dfmtR(o.precoMedio)+'</td>'
+        +'<td data-rot="Rebate" title="'+(o.rebateVal!==null?'R$ '+Number(o.rebateVal).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' bancados pelo ML':'sem leitura de descontos')+'"'
+          +(o.rebatePct>0?' style="color:var(--green-600)"':'')+'>'+(o.rebatePct===null?'—':dpct(o.rebatePct,1))+'</td>'
         +'<td data-rot="M.C.">'+(o.mcPct===null?'<span style="color:var(--slate-200)">sem plano</span>':dpct(o.mcPct,1))+'</td>'
         +'<td data-rot="MPA" style="color:'+corMpa+'">'+dpct(o.mpaPct,1)+'</td>'
         +'<td data-rot="MPA R$">'+dfmtR(o.mpaVal)+'</td>'
@@ -11771,17 +11819,19 @@ window.apGarantirMes=async function(mes){
         +'<td data-rot="Custo ML" style="color:'+corCusto+'">'+dpct(o.custoMLPct,1)+'</td>'
         +'</tr>'
         +'<tr class="dash-card-row" id="dash-card-'+btoa(unescape(encodeURIComponent(o.sku))).replace(/[^A-Za-z0-9]/g,'')+'" style="display:none">'
-        +'<td colspan="12" style="padding:0;background:var(--bg)"></td></tr>';
+        +'<td colspan="13" style="padding:0;background:var(--bg)"></td></tr>';
     }).join('');
 
     el.innerHTML='<div class="table-wrap"><table>'
       +'<thead class="hub-thead"><tr>'
-      +'<th>Produto</th><th>Faturado</th><th>Repres.</th><th>Unid.</th><th>Preço médio</th>'
+      +'<th>Produto</th><th>Faturado</th><th>Repres.</th><th>Unid.</th><th>Preço médio</th><th title="Parte do desconto que o Mercado Livre banca, sobre a receita">Rebate</th>'
       +'<th>M.C.</th><th>MPA</th><th>MPA R$</th><th>TACOS</th><th>Desvio ADS</th><th>Conversão</th><th>Custo ML</th>'
       +'</tr></thead><tbody class="hub-tbody">'+linhas+'</tbody></table></div>'
       +'<p class="fin-note"><strong>Desvio ADS</strong> é o TACOS real menos o TACOS alvo do SKU (preenchido no OfficeLed): positivo quer dizer '
       +'que o ADS passou da meta. Sem alvo preenchido, fica em branco. <strong>Custo ML</strong> é comissão + frete cobrados '
       +'sobre a receita do SKU — não entra na M.C., mas alto demais significa que o frete planejado ficou velho. '
+      +'<strong>Rebate</strong> é a parte do desconto que o Mercado Livre banca (vem como tarifa menor), sobre a receita do SKU — '
+      +'já está no preço do Hub, então não mexe na M.C.; serve para você ver quanto o ML está pondo em cada produto. '
       +'Clique na linha para abrir o produto aqui mesmo.</p>';
   }
 
@@ -14834,6 +14884,273 @@ window.apGarantirMes=async function(mes){
 })();
 </script>
 
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUPONS E REBATE — Catálogo → Cupons (30/09/2026).
+
+   Fonte: ml_descontos (uma linha por pedido × anúncio), gravada de hora em
+   hora pela função ml-descontos a partir de /orders/{id}/discounts. O app lê
+   a visão diária ml_descontos_dia. SÓ LEITURA do Mercado Livre.
+
+   O que cada coisa é:
+     Cupom Pix     cupom SEU fora das campanhas de cupom, pago no Pix ou saldo
+                   do Mercado Pago. Vem empilhado por cima do cupom de 5% e o %
+                   dele é sobre o valor já com os 5%. NÃO está no Hub — é custo
+                   que sai da margem sem aparecer na M.C.
+     Cupom 5%      cupom SEU das campanhas de cupom (Central de marketing).
+     Cupom do ML   parte do cupom que o ML banca: não sai do seu bolso.
+     Rebate        parte do DESCONTO de preço que o ML banca (vem como tarifa
+                   menor). Já precificado no Hub: aqui é só para enxergar.
+
+   Nada daqui altera M.C. ou MPA — a fórmula continua uma só.
+   ═══════════════════════════════════════════════════════════════════════════ */
+(function CuponsModule(){
+  var CONTA='Logbox';
+  var _cup={ dias:30, busca:'', ordem:'pix', desc:true, dados:null, carregando:false };
+
+  function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function fR(v){ return (v===null||v===undefined||!isFinite(v)) ? '—'
+    : 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function fN(v){ return (Number(v)||0).toLocaleString('pt-BR'); }
+  function fP(v,c){ return (v===null||v===undefined||!isFinite(v)) ? '—'
+    : (v*100).toFixed(c===undefined?1:c).replace('.',',')+'%'; }
+  function fPP(v){ return (v===null||v===undefined||!isFinite(v)) ? '—'
+    : (v*100).toFixed(2).replace('.',',')+' p.p.'; }
+  function diaISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function dataBR(iso){ return iso ? String(iso).slice(0,10).split('-').reverse().join('/') : '—'; }
+
+  /* Soma a visão diária por SKU. `i2sku`: anúncio → SKU (snapshot do dia);
+     sem SKU no snapshot, usa o SKU do pedido e, por fim, o próprio anúncio. */
+  function cupAgregar(dias, i2sku, titDe){
+    var m={}, t=novo('Total');
+    function novo(k){ return {sku:k, titulo:(titDe&&titDe[k])||k, pedidos:0, receita:0, unidades:0,
+      pedPix:0, recPix:0, basePix:0, pix:0, pedCamp:0, camp:0, pedCml:0, cupomMl:0, outro:0,
+      pedReb:0, rebate:0, pedPagPix:0}; }
+    function somar(o,r){
+      o.pedidos+=+r.pedidos||0; o.receita+=+r.receita||0; o.unidades+=+r.unidades||0;
+      o.pedPix+=+r.ped_pix||0; o.recPix+=+r.rec_pix||0; o.basePix+=+r.base_pix||0; o.pix+=+r.cupom_pix||0;
+      o.pedCamp+=+r.ped_campanha||0; o.camp+=+r.cupom_campanha||0;
+      o.pedCml+=+r.ped_cupom_ml||0; o.cupomMl+=+r.cupom_ml||0; o.outro+=+r.cupom_seu_outro||0;
+      o.pedReb+=+r.ped_rebate||0; o.rebate+=+r.rebate||0; o.pedPagPix+=+r.ped_pag_pix||0;
+    }
+    (dias||[]).forEach(function(r){
+      var k=(i2sku&&i2sku[r.item_id]) || r.sku || ('item:'+r.item_id);
+      somar(m[k]||(m[k]=novo(k)), r); somar(t, r);
+    });
+    function derivar(o){
+      o.pctPedPix  = o.pedidos>0 ? o.pedPix/o.pedidos : null;   // % das vendas com cupom Pix
+      o.pctRecPix  = o.receita>0 ? o.recPix/o.receita : null;
+      o.pixSobreRec= o.receita>0 ? o.pix/o.receita : null;      // quanto o Pix tira da receita (p.p.)
+      o.pixAplicado= o.basePix>0 ? o.pix/o.basePix : null;      // % médio do cupom Pix
+      o.pctPedCamp = o.pedidos>0 ? o.pedCamp/o.pedidos : null;
+      o.pctPedCml  = o.pedidos>0 ? o.pedCml/o.pedidos : null;
+      o.rebatePct  = o.receita>0 ? o.rebate/o.receita : null;
+      o.pctPedReb  = o.pedidos>0 ? o.pedReb/o.pedidos : null;
+      o.cuponsSeus = o.pix+o.camp+o.outro;
+      o.cuponsSeusPct = o.receita>0 ? o.cuponsSeus/o.receita : null;
+      o.pctPagPix  = o.pedidos>0 ? o.pedPagPix/o.pedidos : null;
+      return o;
+    }
+    var linhas=Object.keys(m).map(function(k){ return derivar(m[k]); });
+    return { linhas:linhas, tot:derivar(t) };
+  }
+
+  async function cupLer(dias){
+    var hoje=diaISO(new Date()), de=diaISO(new Date(Date.now()-(dias-1)*86400000));
+    var snap=await sb.from('ml_anuncios').select('data').eq('conta',CONTA).order('data',{ascending:false}).limit(1).single();
+    var snapDate=snap.data && snap.data.data;
+    var r=await Promise.all([
+      sbTodas(function(a,b){ return sbP('ml_descontos_dia','*').eq('conta',CONTA).gte('data',de).lte('data',hoje)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'cupons/dia'),
+      sbTodas(function(a,b){ return sbP('ml_anuncios','item_id,sku,titulo').eq('conta',CONTA).eq('data',snapDate||'2099-01-01')
+        .order('item_id',{ascending:true}).range(a,b); }, 'cupons/anuncios'),
+      sb.from('ml_promocoes').select('promotion_id,nome,status,inicio,fim,percentual_fixo,compra_minima,compra_maxima,orcamento,orcamento_restante,cupons_usados,itens_total')
+        .eq('conta',CONTA).eq('tipo','SELLER_COUPON_CAMPAIGN').in('status',['started','pending']).order('fim',{ascending:true}),
+      sb.from('ml_descontos_sync').select('*').eq('conta',CONTA).limit(1),
+      sb.from('ml_descontos').select('data').eq('conta',CONTA).order('data',{ascending:true}).limit(1)
+    ]);
+    var e=r.find(function(x){ return x && x.error; });
+    if(e) throw e.error;
+    var i2sku={}, titDe={};
+    (r[1].data||[]).forEach(function(a){ var k=a.sku||('item:'+a.item_id); i2sku[a.item_id]=k; if(!titDe[k]) titDe[k]=a.titulo||k; });
+    var ag=cupAgregar(r[0].data||[], i2sku, titDe);
+    return { de:de, ate:hoje, dias:dias, ag:ag, campanhas:r[2].data||[],
+             sync:(r[3].data&&r[3].data[0])||null, inicioDados:(r[4].data&&r[4].data[0]&&r[4].data[0].data)||null };
+  }
+
+  function kpi(rot,val,sub,cor,destaque){
+    return '<div class="kpi'+(destaque?' destaque':'')+'"><div class="kpi-l">'+rot+'</div>'
+      +'<div class="kpi-v"'+(cor?' style="color:'+cor+'"':'')+'>'+val+'</div>'
+      +'<div class="kpi-d">'+(sub||'')+'</div></div>';
+  }
+
+  function pintarKpis(c){
+    var t=c.ag.tot;
+    return '<div class="kpi-grid" id="cup-kpis">'
+      +kpi('Vendas com cupom Pix', fP(t.pctPedPix), fN(t.pedPix)+' de '+fN(t.pedidos)+' pedidos · '+fR(t.recPix)+' ('+fP(t.pctRecPix)+' da receita)', 'var(--brand)', true)
+      +kpi('Gasto com cupom Pix', fR(t.pix), fPP(t.pixSobreRec)+' da receita total · '+fP(t.pixAplicado)+' em média nessas vendas · <strong>fora do Hub</strong>', 'var(--coral-500)')
+      +kpi('Cupom 5% (campanhas)', fR(t.camp), fP(t.pctPedCamp)+' dos pedidos · '+fPP(t.camp/(t.receita||1))+' da receita')
+      +kpi('Cupom pago pelo ML', fP(t.pctPedCml), fN(t.pedCml)+' pedidos · '+fR(t.cupomMl)+' que não saíram do seu bolso')
+      +kpi('Rebate do ML', fR(t.rebate), fP(t.rebatePct)+' da receita · em '+fP(t.pctPedReb,0)+' dos pedidos', 'var(--green-600)')
+      +'</div>';
+  }
+
+  function th(rot, campo, dica){
+    var ativo=_cup.ordem===campo;
+    return '<th style="cursor:pointer;white-space:nowrap"'+(dica?' title="'+esc(dica)+'"':'')+' onclick="cupOrdenar(\''+campo+'\')">'+rot
+      +'<span style="color:'+(ativo?'var(--slate-900)':'var(--slate-200)')+'"> '+(ativo?(_cup.desc?'▼':'▲'):'↕')+'</span></th>';
+  }
+
+  function pintarTabela(c){
+    var q=_cup.busca.toLowerCase();
+    var L=c.ag.linhas.filter(function(o){ return o.pedidos>0 && (!q || o.sku.toLowerCase().indexOf(q)>=0 || String(o.titulo).toLowerCase().indexOf(q)>=0); });
+    var campo=_cup.ordem, dir=_cup.desc?-1:1;
+    L.sort(function(a,b){
+      var va=a[campo], vb=b[campo];
+      if(va===null||va===undefined) return 1;
+      if(vb===null||vb===undefined) return -1;
+      return (va-vb)*dir || (b.receita-a.receita);
+    });
+    if(!L.length) return '<div class="fin-cascata"><p class="fin-note">Nenhum SKU com venda nesse filtro.</p></div>';
+    var corpo=L.slice(0,150).map(function(o){
+      var alto = o.pixSobreRec!==null && o.pixSobreRec>=0.02;
+      return '<tr data-sku="'+esc(o.sku)+'">'
+        +'<td style="max-width:240px"><div style="font-family:var(--mono);font-size:12.5px;color:var(--slate-900);font-weight:600">'+esc(o.sku)+'</div>'
+        +'<div style="font-size:11px;color:var(--slate-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo)+'</div></td>'
+        +'<td data-rot="Pedidos">'+fN(o.pedidos)+'</td>'
+        +'<td data-rot="Receita">'+fR(o.receita)+'</td>'
+        +'<td data-rot="Vendas c/ Pix" style="font-weight:600;color:var(--brand)">'+fP(o.pctPedPix)+'</td>'
+        +'<td data-rot="Cupom Pix">'+fR(o.pix)+'</td>'
+        +'<td data-rot="Pix s/ receita"'+(alto?' style="color:var(--coral-500);font-weight:600"':'')+'>'+fPP(o.pixSobreRec)+'</td>'
+        +'<td data-rot="% do Pix">'+(o.pixAplicado===null?'—':fP(o.pixAplicado,0))+'</td>'
+        +'<td data-rot="Vendas c/ 5%">'+fP(o.pctPedCamp)+'</td>'
+        +'<td data-rot="Cupom 5%">'+fR(o.camp)+'</td>'
+        +'<td data-rot="Cupom do ML">'+fP(o.pctPedCml)+'</td>'
+        +'<td data-rot="Rebate" style="color:var(--green-600)">'+fP(o.rebatePct)+'</td>'
+        +'<td data-rot="Rebate R$">'+fR(o.rebate)+'</td>'
+        +'</tr>';
+    }).join('');
+    return '<div class="table-wrap"><table><thead class="hub-thead"><tr>'
+      +th('Produto','receita')+th('Pedidos','pedidos')+th('Receita','receita')
+      +th('Vendas c/ Pix','pctPedPix','% dos pedidos do SKU que usaram cupom Pix')
+      +th('Cupom Pix','pix','R$ que você bancou em cupom Pix')
+      +th('Pix s/ receita','pixSobreRec','Quanto o cupom Pix tira da receita do SKU — é o que falta descontar da M.C. do Hub')
+      +th('% do Pix','pixAplicado','% médio do cupom Pix, sobre o valor já com o cupom de 5%')
+      +th('Vendas c/ 5%','pctPedCamp','% dos pedidos com cupom de campanha (5%)')
+      +th('Cupom 5%','camp')
+      +th('Cupom do ML','pctPedCml','% dos pedidos com cupom bancado pelo ML')
+      +th('Rebate','rebatePct','Parte do desconto que o ML banca, sobre a receita')
+      +th('Rebate R$','rebate')
+      +'</tr></thead><tbody class="hub-tbody">'+corpo+'</tbody></table></div>'
+      +(L.length>150?'<p class="fin-note">Mostrando 150 de '+L.length+' SKUs. Use a busca.</p>':'');
+  }
+
+  function pintarCampanhas(c){
+    if(!c.campanhas.length) return '<p class="fin-note">Nenhuma campanha de cupom ativa.</p>';
+    return '<div class="cup-camps">'+c.campanhas.map(function(k){
+      var orc=Number(k.orcamento), rest=Number(k.orcamento_restante);
+      var temOrc=isFinite(orc) && orc>0 && k.orcamento!==null;
+      var usado=temOrc && isFinite(rest) ? Math.max(0,orc-rest) : null;
+      var pct=temOrc && usado!==null ? Math.min(1,usado/orc) : null;
+      return '<div class="cup-camp">'
+        +'<div class="cup-camp-top"><span class="cup-camp-nome">'+esc(k.nome||k.promotion_id)+'</span>'
+        +'<span class="cup-camp-pct">'+(k.percentual_fixo!==null?fN(k.percentual_fixo)+'%':'—')+'</span></div>'
+        +'<div class="cup-camp-sub">'+(k.status==='pending'?'começa '+dataBR(k.inicio)+' · ':'')+'até '+dataBR(k.fim)
+          +(k.compra_minima!==null?' · compra de '+fR(k.compra_minima)+(k.compra_maxima!==null?' a '+fR(k.compra_maxima):''):'')
+          +(k.itens_total?' · '+fN(k.itens_total)+' anúncios':'')+'</div>'
+        +(pct!==null
+          ? '<div class="cup-barra"><span style="width:'+(pct*100).toFixed(1)+'%;background:'+(pct>0.85?'var(--coral-500)':'var(--brand)')+'"></span></div>'
+            +'<div class="cup-camp-sub">'+fR(usado)+' usados de '+fR(orc)+' · sobra '+fR(rest)
+            +(k.cupons_usados!==null?' · '+fN(k.cupons_usados)+' cupons usados':'')+'</div>'
+          : (k.cupons_usados!==null?'<div class="cup-camp-sub">'+fN(k.cupons_usados)+' cupons usados</div>':''))
+        +'</div>';
+    }).join('')+'</div>';
+  }
+
+  function pintar(){
+    var el=document.getElementById('cup-corpo'); if(!el||!_cup.dados) return;
+    var c=_cup.dados;
+    var s=c.sync;
+    var selo = s ? ('<span class="cup-selo'+(s.ok===false?' cup-selo-erro':'')+'">'+(s.ok===false?'⚠ ':'')+'lido do ML '
+      +new Date(s.lido_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
+      +(s.ok===false&&s.erro?' · '+esc(s.erro):'')+'</span>') : '<span class="cup-selo cup-selo-erro">ainda não sincronizado</span>';
+    var parcial = c.inicioDados && c.inicioDados>c.de
+      ? '<p class="fin-note" style="color:var(--amber-600)">Os dados de cupom começam em '+dataBR(c.inicioDados)+': o período mostra só a partir daí.</p>' : '';
+    el.innerHTML=
+      '<div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:10px">'
+        +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
+          +'<select class="perf-select" id="cup-dias" onchange="cupPeriodo(this.value)">'
+          +[7,15,30,60].map(function(n){ return '<option value="'+n+'"'+(n===_cup.dias?' selected':'')+'>Últimos '+n+' dias</option>'; }).join('')
+          +'</select>'
+          +'<input class="notes-search" id="cup-busca" placeholder="SKU ou título" value="'+esc(_cup.busca)+'" style="width:200px;padding:6px 10px;font-size:12px" oninput="cupBuscar(this.value)">'
+        +'</div>'
+        +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+selo
+          +'<button class="perf-select" id="cup-btn" style="cursor:pointer" onclick="cupAtualizar()">↻ Ler do ML</button></div>'
+      +'</div>'
+      +parcial
+      +'<div style="margin-top:14px">'+pintarKpis(c)+'</div>'
+      +'<div class="sec-title">Por SKU</div>';
+    document.getElementById('cup-tabela').innerHTML=pintarTabela(c);
+    document.getElementById('cup-rodape').innerHTML=
+      '<p class="fin-note" style="margin-top:8px"><strong>Cupom Pix</strong> é o cupom pago por você que não vem das campanhas de cupom e só aparece em compra no Pix ou com saldo do Mercado Pago — '
+      +'o ML não diz "Pix" em lugar nenhum da API, então a regra é: cupom seu + pagamento Pix/saldo MP + fora do % das campanhas (hoje 5%). '
+      +'Ele empilha com o de 5% e o % dele é sobre o valor já com os 5%. <strong>Pix s/ receita</strong> é quanto ele tira da receita do SKU: como o Hub não conta esse cupom, '
+      +'é quanto a margem real fica abaixo da M.C. A M.C. e o MPA do OfficeLed não mudam — este número fica ao lado para você decidir. '
+      +'<strong>Rebate</strong> é a parte do desconto de preço que o ML banca (vem como tarifa menor) e já está no Hub. Cancelados ficam de fora.</p>'
+      +'<div class="sec-title">Campanhas de cupom ativas</div>'
+      +pintarCampanhas(c);
+  }
+
+  window.cupOrdenar=function(campo){
+    if(_cup.ordem===campo) _cup.desc=!_cup.desc; else { _cup.ordem=campo; _cup.desc=true; }
+    var el=document.getElementById('cup-tabela'); if(el&&_cup.dados) el.innerHTML=pintarTabela(_cup.dados);
+  };
+  window.cupBuscar=function(v){
+    _cup.busca=String(v||'');
+    var el=document.getElementById('cup-tabela'); if(el&&_cup.dados) el.innerHTML=pintarTabela(_cup.dados);
+  };
+  window.cupPeriodo=function(v){ _cup.dias=Number(v)||30; _cup.dados=null; window.cupCarregar(); };
+  window.cupCarregar=async function(){
+    var el=document.getElementById('cup-corpo'); if(!el) return;
+    if(_cup.carregando) return;
+    _cup.carregando=true;
+    function limparResto(){ ['cup-tabela','cup-rodape'].forEach(function(id){ var x=document.getElementById(id); if(x) x.innerHTML=''; }); }
+    if(!_cup.dados){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Somando cupons e rebate…</div>'; limparResto(); }
+    try{ _cup.dados=await cupLer(_cup.dias); pintar(); }
+    catch(e){ console.error('[Cupons]', e); limparResto(); el.innerHTML='<p class="fin-note">Não consegui ler os cupons: '+esc(e&&e.message||e)+'</p>'; }
+    _cup.carregando=false;
+  };
+  window.cupAtualizar=async function(){
+    var b=document.getElementById('cup-btn'); if(b){ b.disabled=true; b.textContent='lendo o ML…'; }
+    try{
+      await fetch(SUPA_URL+'/functions/v1/ml-descontos',{method:'POST',headers:{'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY},body:JSON.stringify({dias:2})});
+    }catch(e){ console.warn('[Cupons] ml-descontos',e); }
+    _cup.dados=null;
+    await window.cupCarregar();
+  };
+  window._cup={ agregar:cupAgregar, estado:_cup };
+})();
+</script>
+<style id="cup-css">
+#cup-kpis{ grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); }
+#cup-tabela td{ font-size:12.5px; }
+@media (min-width:769px){ #cup-tabela td:not(:first-child), #cup-tabela th{ white-space:nowrap; } }
+#cup-tabela thead th{ position:sticky; top:0 !important; z-index:6 !important; background:var(--white) !important; box-shadow:inset 0 -1px 0 var(--slate-100) !important; }
+#cup-tabela tbody tr:hover td{ background:var(--slate-50); }
+.cup-selo{ font-size:11.5px; color:var(--slate-400); }
+.cup-selo-erro{ color:var(--amber-600); }
+.cup-camps{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
+.cup-camp{ background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius); padding:12px 14px; }
+.cup-camp-top{ display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
+.cup-camp-nome{ font-size:13px; font-weight:600; color:var(--slate-900); }
+.cup-camp-pct{ font-family:var(--mono); font-size:15px; color:var(--brand); font-weight:600; }
+.cup-camp-sub{ font-size:11.5px; color:var(--slate-400); margin-top:4px; line-height:1.5; }
+.cup-barra{ height:6px; background:var(--slate-50); border-radius:4px; overflow:hidden; margin-top:8px; }
+.cup-barra span{ display:block; height:100%; border-radius:4px; }
+@media (max-width:768px){ #cup-busca{ width:100% !important; } }
+</style>
+
 
 <!-- ═══ OFFICELED 2026 — IDENTIDADE AZUL + HIERARQUIA (último bloco do head) ═══ -->
 <style id="ol26">
@@ -15346,7 +15663,7 @@ body:has(#page-led.active) .fab{ display:none !important; }
 .lanc-mov .q{font-family:var(--mono);font-size:10.5px;color:var(--slate-400);min-width:78px}
 .lanc-mov .quem{margin-left:auto;font-size:11px;color:var(--slate-400)}
 @media (max-width:768px){
-  /* as sub-abas do Catálogo (agora 5) rolam de lado dentro da própria faixa, não a página */
+  /* as sub-abas do Catálogo (agora 6) rolam de lado dentro da própria faixa, não a página */
   .hub-secondary-nav{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .hub-secondary-nav .hub-secondary-btn{flex:0 0 auto;white-space:nowrap}
   .lanc-quadro{flex-direction:column;overflow-x:visible}
@@ -15550,7 +15867,7 @@ body:has(#page-led.active) .fab{ display:none !important; }
   'use strict';
 
   // Containers cujas tabelas viram lista no celular.
-  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela',
+  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela','cup-tabela',
                'mrc-tabela','exp-ofensoras','exp-categorias'];
 
   // Rótulos do cabeçalho, com colspan expandido: a coluna 3 tem que casar com
