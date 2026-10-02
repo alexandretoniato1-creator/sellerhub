@@ -16254,5 +16254,191 @@ body:has(#page-led.active) .fab{ display:none !important; }
 })();
 </script>
 
+
+<!-- ═══ CELULAR: anotações + voltar (02/10) ═══════════════════════════════════
+     1. Anotações no celular: lista OU editor, nunca os dois empilhados. O editor
+        ganha uma barra fixa no topo com "‹ Anotações" — antes o "← Lista" ficava
+        no fim de uma fileira de botões que não quebrava linha e saía da tela
+        (x=747 numa tela de 390).
+     2. Campos com fonte de 16px no celular: abaixo disso o iPhone dá zoom
+        sozinho ao tocar no campo e a tela fica "presa" ampliada.
+     3. Voltar do celular (gesto/botão do Android, voltar do navegador): fecha o
+        que estiver aberto por cima (editor de anotação, janela, gaveta, painel do
+        SKU, menu) e, sem nada aberto, volta para a tela anterior.            -->
+<style id="ol-mobile">
+#note-mob-bar{ display:none; }
+@media (max-width:768px){
+  /* :is() dá a todos a especificidade do mais forte — senão ".editor-body-big{14px !important}" vence o textarea */
+  html body :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea){ font-size:16px !important; }
+  #ag-section-anotacoes .notes-layout{ display:block !important; width:100% !important; max-width:100% !important; min-width:0 !important; height:auto !important; }
+  #ag-section-anotacoes .notes-sidebar, #ag-section-anotacoes .note-editor-wrap{ min-width:0 !important; max-width:100% !important; width:100% !important; }
+  #ag-section-anotacoes .notes-sidebar{ max-height:none !important; overflow:visible !important; border-bottom:0 !important; }
+  #ag-section-anotacoes .notes-list-wrap{ overflow:visible !important; }
+  #ag-section-anotacoes .notes-filters{ display:none !important; }      /* repetia os filtros de cima */
+  #ag-section-anotacoes .notes-search-wrap, #ag-section-anotacoes .notes-search{ width:100% !important; max-width:100% !important; box-sizing:border-box; }
+  #notes-toolbar{ flex-wrap:wrap !important; }
+  #notes-new-btn-wrap .btn{ width:100% !important; box-sizing:border-box; }
+  .note-card{ max-width:100% !important; box-sizing:border-box; }
+  .note-card *{ min-width:0; }
+  /* editor */
+  #note-mob-bar{ display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:5; background:var(--white);
+    margin:0 -16px; padding:8px 12px; border-bottom:1px solid var(--slate-100); }
+  #note-mob-voltar{ display:inline-flex; align-items:center; gap:4px; min-height:44px; padding:0 14px 0 6px; border:0; background:none;
+    font-family:var(--font); font-size:16px; font-weight:600; color:var(--brand); cursor:pointer; }
+  #note-mob-voltar svg{ width:22px; height:22px; }
+  #note-mob-salvo{ margin-left:auto; font-size:12px; color:var(--slate-400); }
+  #btn-back-mobile{ display:none !important; }                          /* substituído pela barra */
+  .editor-status-bar{ flex-wrap:wrap !important; row-gap:8px !important; }
+  .editor-status-bar .ed-chip{ min-height:36px; }
+  .editor-status-bar .ed-chip[onclick="newNote()"]{ margin-left:0 !important; }
+  .note-editor-header{ padding-top:0 !important; }
+  .editor-title-big, .editor-body-big{ width:100% !important; box-sizing:border-box; }
+  .editor-body-big{ min-height:38vh !important; }
+  .note-editor-footer{ padding-bottom:18px !important; }
+  #ag-section-anotacoes #search-notes{ padding-left:36px !important; font-size:16px !important; }
+  /* alvos de toque nos fechamentos */
+  .led-painel-cab .fechar, .sku-drawer-close{ min-width:44px; min-height:44px; font-size:22px !important; }
+}
+</style>
+<script>
+(function MobileModule(){
+  function ehCelular(){ return innerWidth<=768; }
+  function $(id){ return document.getElementById(id); }
+
+  /* ── 1. Anotações: lista ou editor ─────────────────────────────────────── */
+  function modoNotas(m){
+    var sb=$('notes-sidebar'), ed=$('notes-editor-wrap'); if(!sb||!ed) return;
+    if(!ehCelular()){ sb.classList.remove('mobile-hidden'); ed.classList.remove('mobile-hidden'); return; }
+    sb.classList.toggle('mobile-hidden', m==='editor');
+    ed.classList.toggle('mobile-hidden', m!=='editor');
+  }
+  function editorAberto(){ var ed=$('notes-editor-wrap'); return ehCelular() && !!ed && !ed.classList.contains('mobile-hidden') && !!ed.offsetParent; }
+  function garantirBarra(){
+    var ed=$('notes-editor-wrap'); if(!ed || $('note-mob-bar')) return;
+    var bar=document.createElement('div'); bar.id='note-mob-bar';
+    bar.innerHTML='<button id="note-mob-voltar" type="button" onclick="notasVoltar()">'
+      +'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>Anotações</button>'
+      +'<span id="note-mob-salvo"></span>';
+    ed.insertBefore(bar, ed.firstChild);
+  }
+  // Salva o que estiver pendente do autosave antes de sair do editor.
+  function salvarPendente(){
+    try{
+      if(typeof autoSaveTimer!=='undefined' && autoSaveTimer){ clearTimeout(autoSaveTimer); autoSaveTimer=null; if(typeof saveNote==='function') saveNote(true); }
+    }catch(e){ console.warn('[notas] salvar ao voltar', e); }
+  }
+  function fecharEditorNotas(){
+    salvarPendente();
+    modoNotas('lista');
+    var bk=$('btn-back-mobile'); if(bk) bk.style.display='none';
+    if(typeof renderNotes==='function') renderNotes();
+    var s=$('ag-section-anotacoes'); if(s) s.scrollIntoView({block:'start'});
+  }
+  window.notasVoltar=function(){
+    if(history.state && history.state.ol==='camada' && editorAberto()) history.back();   // o popstate fecha
+    else fecharEditorNotas();
+  };
+  window.mobileBackToList=window.notasVoltar;
+
+  function embrulhar(nome, depois){
+    var orig=window[nome]; if(typeof orig!=='function' || orig._ol) return;
+    var f=function(){ var r=orig.apply(this, arguments); try{ depois.apply(this, arguments); }catch(e){ console.warn('[mobile]', nome, e); } return r; };
+    f._ol=true; window[nome]=f;
+  }
+  function ligarNotas(){
+    garantirBarra();
+    embrulhar('editNote', function(){ if(ehCelular()){ modoNotas('editor'); scrollTo(0,0); } });
+    embrulhar('newNote', function(){ if(ehCelular()){ modoNotas('editor'); scrollTo(0,0); } });
+    embrulhar('agGoTab', function(tab){ if(tab==='anotacoes') modoNotas('lista'); });
+    // o "Salvo ✓" do autosave aparece também na barra de cima
+    var h=$('autosave-hint'), s=$('note-mob-salvo');
+    if(h && s && window.MutationObserver) new MutationObserver(function(){ s.textContent=h.textContent; }).observe(h,{childList:true,characterData:true,subtree:true});
+    var largAnt=innerWidth;
+    addEventListener('resize', function(){ if((largAnt<=768)!==(innerWidth<=768)) modoNotas(editorAberto()?'editor':'lista'); largAnt=innerWidth; });
+    if(ehCelular()) modoNotas('lista');
+  }
+
+  /* ── 2. Voltar do celular ─────────────────────────────────────────────── */
+  // Camadas que se abrem por cima da tela, da mais "alta" para a mais baixa.
+  var CAMADAS=[
+    { aberta:function(){ var e=$('modal-bg'); return e && e.classList.contains('active'); }, fechar:function(){ closeModal(); } },
+    { aberta:function(){ var e=$('ml-modal-bg'); return e && e.classList.contains('active'); }, fechar:function(){ closeMlModal(); } },
+    { aberta:function(){ var e=$('hub-modal-bg'); return e && e.classList.contains('active'); }, fechar:function(){ closeHubModal(); } },
+    { aberta:function(){ var e=$('led-painel'); return e && e.classList.contains('open'); }, fechar:function(){ ledFecharSku(); } },
+    { aberta:function(){ var e=$('prod-drawer'); return e && e.classList.contains('open'); }, fechar:function(){ closeProdDrawer(); } },
+    { aberta:function(){ var e=$('sidebar'); return ehCelular() && e && e.classList.contains('open'); }, fechar:function(){ toggleSidebar(); } },
+    { aberta:editorAberto, fechar:fecharEditorNotas }
+  ];
+  function topo(){ for(var i=0;i<CAMADAS.length;i++) if(CAMADAS[i].aberta()) return CAMADAS[i]; return null; }
+  function nAbertas(){ var n=0; CAMADAS.forEach(function(c){ if(c.aberta()) n++; }); return n; }
+
+  var voltando=false, ignorarPop=0, abertasAntes=0;
+  function paginaAtual(){ var p=document.querySelector('.page.active'); return p ? p.id.replace(/^page-/,'') : null; }
+
+  // Camada abriu → uma entrada no histórico; fechou pela tela → consome a entrada.
+  function conferirCamadas(){
+    var n=nAbertas();
+    if(!voltando && ehCelular()){
+      for(var k=abertasAntes; k<n; k++) history.pushState({ol:'camada', pagina:paginaAtual()}, '');
+      if(n<abertasAntes && history.state && history.state.ol==='camada'){ ignorarPop++; history.back(); }
+    }
+    abertasAntes=n;
+  }
+  var agendado=false;
+  function agendar(){ if(agendado) return; agendado=true; setTimeout(function(){ agendado=false; conferirCamadas(); }, 0); }
+
+  // Troca de tela → uma entrada no histórico (só no celular).
+  function ligarPaginas(){
+    var orig=window.go; if(typeof orig!=='function' || orig._ol) return;
+    var f=function(id){
+      var antes=paginaAtual();
+      var r=orig.apply(this, arguments);
+      try{
+        var agora=paginaAtual();
+        if(!voltando && ehCelular() && agora && agora!==antes){
+          if(!history.state || !history.state.ol) history.replaceState({ol:'pagina', id:antes||agora}, '');
+          history.pushState({ol:'pagina', id:agora}, '');
+        }
+      }catch(e){ console.warn('[mobile] histórico', e); }
+      return r;
+    };
+    f._ol=true; window.go=f;
+  }
+  function irPara(id){
+    var nav=document.querySelector('.nav-item[data-nav-key="'+id+'"]');
+    if(nav) nav.click(); else if(typeof window.go==='function') window.go(id);
+  }
+  addEventListener('popstate', function(ev){
+    if(ignorarPop>0){ ignorarPop--; abertasAntes=nAbertas(); return; }
+    voltando=true;
+    try{
+      var c=topo();
+      if(c){ c.fechar(); }
+      else{
+        // Sem nada aberto: volta para a tela daquela entrada (de página, ou a
+        // tela onde uma camada tinha sido aberta antes de trocar de tela).
+        var st=ev.state, alvo=st && (st.ol==='pagina' ? st.id : st.ol==='camada' ? st.pagina : null);
+        if(alvo && alvo!==paginaAtual()) irPara(alvo);
+      }
+    }catch(e){ console.warn('[mobile] voltar', e); }
+    setTimeout(function(){ voltando=false; abertasAntes=nAbertas(); }, 0);
+  });
+
+  function iniciar(){
+    ligarNotas();
+    ligarPaginas();
+    if(ehCelular() && (!history.state || !history.state.ol)) history.replaceState({ol:'pagina', id:paginaAtual()||'home'}, '');
+    abertasAntes=nAbertas();
+    if(window.MutationObserver){
+      var obs=new MutationObserver(agendar);
+      obs.observe(document.body,{subtree:true, attributes:true, attributeFilter:['class'], childList:true});
+    }
+  }
+  if(document.readyState==='loading') addEventListener('DOMContentLoaded', function(){ setTimeout(iniciar, 900); });
+  else setTimeout(iniciar, 900);
+  window._olMobile={ topo:topo, nAbertas:nAbertas, modoNotas:modoNotas };
+})();
+</script>
+
 </body>
 </html>
