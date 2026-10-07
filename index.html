@@ -7388,55 +7388,82 @@ function urlBase64ToUint8Array(base64String) {
   return new Uint8Array([...rawData].map(c => c.charCodeAt(0)));
 }
 
-async function initPush() {
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    alert('Seu navegador não suporta notificações push. Use Chrome ou Edge.');
-    return;
-  }
+/* Push v2 (07/10/2026). Antes: a inscrição só era feita no botão, e o botão
+   dizia "ativas ✓" só por a permissão estar concedida — mesmo que a inscrição
+   deste aparelho nunca tivesse chegado ao servidor (a única gravada era de
+   21/04). Agora:
+     • toda vez que o app abre com permissão concedida, a inscrição deste
+       aparelho é conferida (e refeita se sumiu) e reenviada ao servidor;
+     • o botão mostra o estado real e, quando ativo, manda um TESTE só para
+       este aparelho;
+     • no iPhone, push só existe no app aberto pelo ícone da tela de início —
+       o botão explica isso em vez de falhar calado. */
+const _push = { estado: 'desconhecido', endpoint: null, erro: null };
+
+function pushEhIOS() { return /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function pushEhAppInstalado() { return window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches); }
+function pushSuportado() { return ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window); }
+
+// Confere/refaz a inscrição DESTE aparelho e grava no servidor. Não pede permissão.
+async function pushSincronizar() {
+  if (!pushSuportado() || Notification.permission !== 'granted') return false;
+  if (pushEhIOS() && !pushEhAppInstalado()) return false;   // iPhone: só o app da tela de início recebe push
   try {
-    // Registrar service worker externo (sw.js no mesmo repositório)
-    const reg = await navigator.serviceWorker.register('./sw.js', {scope: './'});
+    const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
     await navigator.serviceWorker.ready;
-
-    // Pedir permissão
-    const perm = await Notification.requestPermission();
-    if (perm !== 'granted') {
-      alert('Permissão de notificação negada. Habilite nas configurações do navegador.');
-      return;
-    }
-
-    // Verificar se já tem inscrição
+    try { await reg.update(); } catch (_) { /* sem rede */ }
     let sub = await reg.pushManager.getSubscription();
-    if (!sub) {
-      sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
-      });
-    }
-
-    // Enviar inscrição para o servidor
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC) });
     const res = await fetch(`${PUSH_FN}/subscribe`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(sub.toJSON()),
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.assign(sub.toJSON(), { origem: location.origin + location.pathname, user_agent: navigator.userAgent })),
     });
-
-    if (res.ok) {
-      console.log('✅ Notificações push ativadas');
-      return true;
-    }
-  } catch(e) {
-    console.warn('Erro ao ativar push:', e.message);
-    alert('Erro ao ativar notificações: ' + e.message);
+    if (!res.ok) throw new Error('servidor respondeu ' + res.status);
+    _push.endpoint = sub.endpoint; _push.estado = 'ativo'; _push.erro = null;
+    return true;
+  } catch (e) {
+    console.warn('[push] sincronizar', e);
+    _push.estado = 'erro'; _push.erro = String(e && e.message || e);
+    return false;
   }
-  return false;
+}
+
+async function initPush() {
+  if (!pushSuportado()) {
+    alert(pushEhIOS()
+      ? 'No iPhone, as notificações só funcionam no OfficeLed aberto pelo ícone da tela de início.\n\nNo Safari: botão Compartilhar → "Adicionar à Tela de Início". Depois abra pelo ícone e toque em "Ativar notificações".'
+      : 'Este navegador não suporta notificações push. Use Chrome, Edge ou Safari atualizado.');
+    return false;
+  }
+  if (pushEhIOS() && !pushEhAppInstalado()) {
+    alert('No iPhone, as notificações só funcionam no OfficeLed aberto pelo ícone da tela de início (não pelo Safari).\n\nAbra pelo ícone e toque em "Ativar notificações" de lá.');
+    return false;
+  }
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') {
+    alert(pushEhIOS()
+      ? 'As notificações estão bloqueadas. No iPhone: Ajustes → Notificações → OfficeLed → Permitir Notificações.'
+      : 'Permissão de notificação negada. Habilite nas configurações do navegador.');
+    return false;
+  }
+  const ok = await pushSincronizar();
+  if (!ok) alert('Não consegui registrar este aparelho para notificações: ' + (_push.erro || 'erro desconhecido'));
+  return ok;
+}
+
+async function pushEnviarTeste() {
+  if (!_push.endpoint) return false;
+  try {
+    const r = await fetch(`${PUSH_FN}/test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ endpoint: _push.endpoint }) });
+    const j = await r.json().catch(() => ({}));
+    const st = j && j.results && j.results[0] && j.results[0].status;
+    return st >= 200 && st < 300;
+  } catch (_) { return false; }
 }
 
 function renderPushBtn() {
-  if (!('Notification' in window)) return;
   const sidebar = document.querySelector('.sidebar-nav');
   if (!sidebar) return;
-  // Remove botão anterior se existir (garante re-render correto após reinstall)
   const old = document.getElementById('push-btn');
   if (old) old.remove();
   const btn = document.createElement('button');
@@ -7444,22 +7471,28 @@ function renderPushBtn() {
   btn.className = 'nav-item';
   btn.style.cssText = 'margin-top:auto;border-top:1px solid var(--slate-700);padding-top:12px';
   const svgBell = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>`;
-  const granted = Notification.permission === 'granted';
-  btn.innerHTML = `${svgBell}${granted ? 'Notificações ativas ✓' : 'Ativar notificações'}`;
-  if (granted) btn.style.color = 'var(--green-100)';
+  const set = (txt, cor) => { btn.innerHTML = `${svgBell}<span class="nav-item-text">${txt}</span>`; btn.style.color = cor || ''; btn.dataset.estado = _push.estado; };
+  const perm = ('Notification' in window) ? Notification.permission : 'indisponivel';
+  if (!pushSuportado() || (pushEhIOS() && !pushEhAppInstalado())) { _push.estado = 'sem-suporte'; set('Notificações: abra pelo ícone'); }
+  else if (perm === 'denied') { _push.estado = 'bloqueado'; set('Notificações bloqueadas', 'var(--coral-400)'); }
+  else if (_push.estado === 'ativo') set('Notificações ativas ✓ · testar', 'var(--green-100)');
+  else if (_push.estado === 'erro') set('Reativar notificações', 'var(--amber-100)');
+  else set('Ativar notificações');
   btn.onclick = async () => {
-    btn.innerHTML = `${svgBell}Ativando…`;
-    btn.disabled = true;
+    if (_push.estado === 'ativo') {
+      set('Enviando teste…');
+      const ok = await pushEnviarTeste();
+      set(ok ? 'Teste enviado — chegou?' : 'Teste falhou · toque p/ reativar', ok ? 'var(--green-100)' : 'var(--amber-100)');
+      if (!ok) _push.estado = 'erro';
+      setTimeout(renderPushBtn, 9000);
+      return;
+    }
+    if (_push.estado === 'bloqueado') { alert('As notificações estão bloqueadas para o OfficeLed. No iPhone: Ajustes → Notificações → OfficeLed → Permitir Notificações. Depois abra o app de novo.'); return; }
+    set('Ativando…'); btn.disabled = true;
     const ok = await initPush();
     btn.disabled = false;
-    if (ok || Notification.permission === 'granted') {
-      btn.innerHTML = `${svgBell}Notificações ativas ✓`;
-      btn.style.color = 'var(--green-100)';
-      startLembreteChecker();
-    } else {
-      btn.innerHTML = `${svgBell}Ativar notificações`;
-      btn.style.color = '';
-    }
+    if (ok) startLembreteChecker();
+    renderPushBtn();
   };
   sidebar.appendChild(btn);
 }
@@ -7526,8 +7559,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const observer = new MutationObserver(() => {
     if (document.getElementById('app')?.classList.contains('active')) {
       renderPushBtn();
-      // Se já tem permissão, inicia o checker automaticamente
-      if (Notification.permission === 'granted') startLembreteChecker();
+      // Com permissão: confere a inscrição deste aparelho a cada abertura e
+      // redesenha o botão com o estado real.
+      if (('Notification' in window) && Notification.permission === 'granted') {
+        startLembreteChecker();
+        pushSincronizar().then(renderPushBtn);
+      }
       observer.disconnect();
     }
   });
