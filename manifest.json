@@ -1,7 +1,7 @@
 {
-  "name": "SellerHub",
-  "short_name": "SellerHub",
-  "description": "Hub de gestão para sellers de marketplace",
+  "name": "OfficeLed",
+  "short_name": "OfficeLed",
+  "description": "OfficeLed — gestão da operação nos marketplaces",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -9,22 +9,8 @@
   "theme_color": "#2C2C2A",
   "lang": "pt-BR",
   "icons": [
-    {
-      "src": "./favicon-32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "./icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "./favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
