@@ -1757,10 +1757,12 @@ body.sidebar-collapsed .hamburger { display: none; }
       </div>
 
       <!-- LANÇAMENTOS — espelho do quadro Cronograma Comercial do Trello (28/09). -->
-      <!-- CUPONS E REBATE — ml_descontos (sync ml-descontos, de hora em hora). 30/09. -->
+      <!-- CUPONS — campanhas (ml_promocoes) + quem pagou (ml_descontos_dia). v2 14/10. -->
       <div id="op-section-cupons" style="display:none">
-        <div class="page-subtitle" style="margin-top:0">Quanto das vendas usa cupom (principalmente o cupom Pix, que não está no Hub), quanto você gasta com isso e quanto o ML põe de rebate em cada produto.</div>
+        <div class="page-subtitle" style="margin-top:0">Suas campanhas de cupom num lugar só (ativas, agendadas, orçamento e ritmo) e quem pagou cada desconto: você ou o Mercado Livre.</div>
         <div id="cup-corpo"></div>
+        <div id="cup-semanas"></div>
+        <div id="cup-sku-cab"></div>
         <div id="cup-tabela"></div>
         <div id="cup-rodape"></div>
       </div>
@@ -14935,32 +14937,37 @@ window.apGarantirMes=async function(mes){
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   CUPONS E REBATE — Catálogo → Cupons (30/09/2026).
+   CUPONS — Catálogo → Cupons (v2, 14/10/2026). SÓ LEITURA do Mercado Livre.
 
-   Fonte: ml_descontos (uma linha por pedido × anúncio), gravada de hora em
-   hora pela função ml-descontos a partir de /orders/{id}/discounts. O app lê
-   a visão diária ml_descontos_dia. SÓ LEITURA do Mercado Livre.
+   1. CAMPANHAS DE CUPOM — o painel de controle que a Central de marketing não
+      dá: o que está ativo, agendado e encerrado, separado por objetivo
+      (carrinho abandonado, novos seguidores, outro). Para cada campanha:
+      %, compra mínima, desconto máximo, orçamento usado, cupons usados, gasto
+      médio por uso, ritmo de gasto e até quando o orçamento dura.
+        Fonte: ml_promocoes (o ml-descontos lê /seller-promotions de hora em
+        hora) + ml_cupom_campanha_dia (foto diária, para o ritmo).
+        Objetivo: cupom_objetivo (marcado aqui na tela). Sem marcação, o nome
+        sugere ("carrinho…", "seguidor…") e a tela diz que é pelo nome.
+   2. QUEM PAGOU — o que sai do seu bolso (cupom 5% das campanhas e cupom Pix
+      seu) e o que o ML banca (cupom do ML e rebate), que não mexe na margem.
+   3. SEMANA A SEMANA e POR SKU.
 
-   O que cada coisa é:
-     Cupom Pix     cupom SEU fora das campanhas de cupom, pago no Pix ou saldo
-                   do Mercado Pago. Vem empilhado por cima do cupom de 5% e o %
-                   dele é sobre o valor já com os 5%. NÃO está no Hub — é custo
-                   que sai da margem sem aparecer na M.C.
-     Cupom 5%      cupom SEU das campanhas de cupom (Central de marketing).
-     Cupom do ML   parte do cupom que o ML banca: não sai do seu bolso.
-     Rebate        parte do DESCONTO de preço que o ML banca (vem como tarifa
-                   menor). Já precificado no Hub: aqui é só para enxergar.
-
+   Fonte das vendas: ml_descontos_dia (pedido × anúncio, de /orders/{id}/discounts).
    Nada daqui altera M.C. ou MPA — a fórmula continua uma só.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function CuponsModule(){
-  var CONTA='Logbox';
-  var _cup={ dias:30, busca:'', ordem:'pix', desc:true, dados:null, carregando:false };
+  var CONTA='Logbox', DIA=86400000;
+  var OBJ=[['carrinho','Carrinho abandonado'],['seguidores','Novos seguidores'],['outro','Outro']];
+  var OBJ_NOME={carrinho:'Carrinho abandonado', seguidores:'Novos seguidores', outro:'Outro', '':'Sem objetivo marcado'};
+  var PCT_PLANEJADO={carrinho:5, seguidores:5};   // o que o Ale quer manter nesses cupons
+  var VENCE_DIAS=3, ORC_ALERTA=0.9;
+  var _cup={ dias:30, busca:'', ordem:'cuponsSeus', desc:true, dados:null, carregando:false, encerradas:false };
 
   function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
   function fR(v){ return (v===null||v===undefined||!isFinite(v)) ? '—'
     : 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function fR0(v){ return (v===null||v===undefined||!isFinite(v)) ? '—' : 'R$ '+Math.round(v).toLocaleString('pt-BR'); }
   function fN(v){ return (Number(v)||0).toLocaleString('pt-BR'); }
   function fP(v,c){ return (v===null||v===undefined||!isFinite(v)) ? '—'
     : (v*100).toFixed(c===undefined?1:c).replace('.',',')+'%'; }
@@ -14968,9 +14975,63 @@ window.apGarantirMes=async function(mes){
     : (v*100).toFixed(2).replace('.',',')+' p.p.'; }
   function diaISO(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
   function dataBR(iso){ return iso ? String(iso).slice(0,10).split('-').reverse().join('/') : '—'; }
+  // Data/hora do ML (UTC) no dia de Brasília: fim 2026-10-28T02:59:59Z = 27/10.
+  function diaBR(iso){ if(!iso) return '—'; var d=new Date(new Date(iso).getTime()-3*3600000);
+    return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0'); }
+  function num(v){ return (v===null||v===undefined||v===''||!isFinite(Number(v))) ? null : Number(v); }
 
-  /* Soma a visão diária por SKU. `i2sku`: anúncio → SKU (snapshot do dia);
-     sem SKU no snapshot, usa o SKU do pedido e, por fim, o próprio anúncio. */
+  /* ── Campanhas: funções puras (o teste confere) ─────────────────────────── */
+  function cupObjetivo(k, marcados){
+    var m=marcados && marcados[k.promotion_id];
+    if(m) return { obj:m, pelo:'marcado' };
+    var n=String(k.nome||'').toLowerCase();
+    if(/carrinho/.test(n)) return { obj:'carrinho', pelo:'nome' };
+    if(/seguidor/.test(n)) return { obj:'seguidores', pelo:'nome' };
+    return { obj:'', pelo:null };
+  }
+  function cupStatus(k, agora){
+    var t=agora.getTime(), fim=k.fim?new Date(k.fim).getTime():null, ini=k.inicio?new Date(k.inicio).getTime():null;
+    if(k.status==='finished' || (fim!==null && fim<=t)) return { st:'encerrada', dias:null };
+    if(ini!==null && ini>t) return { st:'agendada', dias:diasCal(agora, k.inicio) };
+    return { st:'ativa', dias: fim!==null ? diasCal(agora, k.fim) : null };   // 0 = termina hoje
+  }
+  // Dias de calendário (Brasília) entre agora e a data: 0 = hoje, 1 = amanhã.
+  function diasCal(agora, iso){
+    var a=new Date(agora.getTime()-3*3600000), b=new Date(new Date(iso).getTime()-3*3600000);
+    return Math.round((Date.UTC(b.getUTCFullYear(),b.getUTCMonth(),b.getUTCDate())-Date.UTC(a.getUTCFullYear(),a.getUTCMonth(),a.getUTCDate()))/DIA);
+  }
+  function gastoDe(o){ var orc=num(o.orcamento), r=num(o.orcamento_restante); return (orc!==null && orc>0 && r!==null) ? Math.max(0,orc-r) : null; }
+  /* Ritmo de gasto: pelas fotos diárias dos últimos 7 dias; sem foto antiga
+     o bastante, média desde o início da campanha. */
+  function cupRitmo(k, fotos, agora){
+    var gNow=gastoDe(k), uNow=num(k.cupons_usados);
+    if(gNow===null && uNow===null) return null;
+    var t=agora.getTime(), lim=t-7.5*DIA;
+    var fs=(fotos||[]).filter(function(f){ return f.promotion_id===k.promotion_id && f.lido_em; })
+      .map(function(f){ return { t:new Date(f.lido_em).getTime(), g:gastoDe(f), u:num(f.cupons_usados) }; })
+      .filter(function(f){ return f.t>=lim && t-f.t>=0.9*DIA; })
+      .sort(function(a,b){ return a.t-b.t; });
+    if(fs.length){
+      var f=fs[0], d=(t-f.t)/DIA;
+      return { porDia: (gNow!==null&&f.g!==null)?Math.max(0,gNow-f.g)/d:null, usosDia:(uNow!==null&&f.u!==null)?Math.max(0,uNow-f.u)/d:null,
+               base:'últimos '+Math.round(d)+' dias' };
+    }
+    var ini=k.inicio?new Date(k.inicio).getTime():null;
+    if(ini===null || ini>t) return null;
+    var dd=Math.max(1,(t-ini)/DIA);
+    return { porDia: gNow!==null?gNow/dd:null, usosDia: uNow!==null?uNow/dd:null, base:'média desde o início' };
+  }
+  /* Até quando o orçamento dura no ritmo atual. */
+  function cupProjecao(k, ritmo, agora){
+    var orc=num(k.orcamento), rest=num(k.orcamento_restante);
+    if(!(orc>0) || rest===null || !ritmo || !(ritmo.porDia>0)) return null;
+    var t=agora.getTime(), fim=k.fim?new Date(k.fim).getTime():null;
+    var acaba=t+rest/ritmo.porDia*DIA;
+    if(fim===null || acaba<fim) return { antes:true, quando:new Date(acaba).toISOString(), sobra:0 };
+    return { antes:false, quando:null, sobra:Math.max(0, rest-ritmo.porDia*(fim-t)/DIA) };
+  }
+
+  /* ── Vendas: soma da visão diária ───────────────────────────────────────── */
   function cupAgregar(dias, i2sku, titDe){
     var m={}, t=novo('Total');
     function novo(k){ return {sku:k, titulo:(titDe&&titDe[k])||k, pedidos:0, receita:0, unidades:0,
@@ -14987,26 +15048,42 @@ window.apGarantirMes=async function(mes){
       var k=(i2sku&&i2sku[r.item_id]) || r.sku || ('item:'+r.item_id);
       somar(m[k]||(m[k]=novo(k)), r); somar(t, r);
     });
-    function derivar(o){
-      o.pctPedPix  = o.pedidos>0 ? o.pedPix/o.pedidos : null;   // % das vendas com cupom Pix
-      o.pctRecPix  = o.receita>0 ? o.recPix/o.receita : null;
-      o.pixSobreRec= o.receita>0 ? o.pix/o.receita : null;      // quanto o Pix tira da receita (p.p.)
-      o.pixAplicado= o.basePix>0 ? o.pix/o.basePix : null;      // % médio do cupom Pix
-      o.pctPedCamp = o.pedidos>0 ? o.pedCamp/o.pedidos : null;
-      o.pctPedCml  = o.pedidos>0 ? o.pedCml/o.pedidos : null;
-      o.rebatePct  = o.receita>0 ? o.rebate/o.receita : null;
-      o.pctPedReb  = o.pedidos>0 ? o.pedReb/o.pedidos : null;
-      o.cuponsSeus = o.pix+o.camp+o.outro;
-      o.cuponsSeusPct = o.receita>0 ? o.cuponsSeus/o.receita : null;
-      o.pctPagPix  = o.pedidos>0 ? o.pedPagPix/o.pedidos : null;
-      return o;
-    }
     var linhas=Object.keys(m).map(function(k){ return derivar(m[k]); });
     return { linhas:linhas, tot:derivar(t) };
   }
+  function derivar(o){
+    o.pctPedPix  = o.pedidos>0 ? o.pedPix/o.pedidos : null;
+    o.pctRecPix  = o.receita>0 ? o.recPix/o.receita : null;
+    o.pixSobreRec= o.receita>0 ? o.pix/o.receita : null;      // quanto o Pix tira da receita (p.p.)
+    o.pixAplicado= o.basePix>0 ? o.pix/o.basePix : null;      // % médio do cupom Pix
+    o.pctPedCamp = o.pedidos>0 ? o.pedCamp/o.pedidos : null;
+    o.campSobreRec = o.receita>0 ? o.camp/o.receita : null;
+    o.campMedio  = o.pedCamp>0 ? o.camp/o.pedCamp : null;
+    o.pctPedCml  = o.pedidos>0 ? o.pedCml/o.pedidos : null;
+    o.rebatePct  = o.receita>0 ? o.rebate/o.receita : null;
+    o.pctPedReb  = o.pedidos>0 ? o.pedReb/o.pedidos : null;
+    o.cuponsSeus = o.pix+o.camp+o.outro;
+    o.cuponsSeusPct = o.receita>0 ? o.cuponsSeus/o.receita : null;
+    o.doML       = o.cupomMl+o.rebate;
+    o.pctPagPix  = o.pedidos>0 ? o.pedPagPix/o.pedidos : null;
+    return o;
+  }
+  /* Semana a semana (segunda a domingo). */
+  function cupSemanas(dias){
+    var m={};
+    (dias||[]).forEach(function(r){
+      var d=new Date(r.data+'T12:00:00'), seg=new Date(d.getTime()-((d.getDay()+6)%7)*DIA), k=diaISO(seg);
+      var o=m[k]||(m[k]={semana:k, pedidos:0, receita:0, pedCamp:0, camp:0, pedPix:0, pix:0, outro:0, cupomMl:0, pedCml:0, rebate:0, pedReb:0, recPix:0, basePix:0, pedPagPix:0, unidades:0});
+      o.pedidos+=+r.pedidos||0; o.receita+=+r.receita||0; o.pedCamp+=+r.ped_campanha||0; o.camp+=+r.cupom_campanha||0;
+      o.pedPix+=+r.ped_pix||0; o.pix+=+r.cupom_pix||0; o.outro+=+r.cupom_seu_outro||0; o.cupomMl+=+r.cupom_ml||0;
+      o.pedCml+=+r.ped_cupom_ml||0; o.rebate+=+r.rebate||0; o.pedReb+=+r.ped_rebate||0;
+    });
+    return Object.keys(m).sort().reverse().map(function(k){ return derivar(m[k]); });
+  }
 
   async function cupLer(dias){
-    var hoje=diaISO(new Date()), de=diaISO(new Date(Date.now()-(dias-1)*86400000));
+    var agora=new Date(), hoje=diaISO(agora), de=diaISO(new Date(Date.now()-(dias-1)*DIA));
+    var corteCamp=new Date(Date.now()-45*DIA).toISOString(), corteFoto=diaISO(new Date(Date.now()-9*DIA));
     var snap=await sb.from('ml_anuncios').select('data').eq('conta',CONTA).order('data',{ascending:false}).limit(1).single();
     var snapDate=snap.data && snap.data.data;
     var r=await Promise.all([
@@ -15014,45 +15091,166 @@ window.apGarantirMes=async function(mes){
         .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'cupons/dia'),
       sbTodas(function(a,b){ return sbP('ml_anuncios','item_id,sku,titulo').eq('conta',CONTA).eq('data',snapDate||'2099-01-01')
         .order('item_id',{ascending:true}).range(a,b); }, 'cupons/anuncios'),
-      sb.from('ml_promocoes').select('promotion_id,nome,status,inicio,fim,percentual_fixo,compra_minima,compra_maxima,orcamento,orcamento_restante,cupons_usados,itens_total')
-        .eq('conta',CONTA).eq('tipo','SELLER_COUPON_CAMPAIGN').in('status',['started','pending']).order('fim',{ascending:true}),
+      sb.from('ml_promocoes').select('promotion_id,nome,status,inicio,fim,percentual_fixo,compra_minima,compra_maxima,orcamento,orcamento_restante,cupons_usados,usos_por_comprador,itens_total')
+        .eq('conta',CONTA).eq('tipo','SELLER_COUPON_CAMPAIGN').gte('fim',corteCamp).order('fim',{ascending:true}),
       sb.from('ml_descontos_sync').select('*').eq('conta',CONTA).limit(1),
-      sb.from('ml_descontos').select('data').eq('conta',CONTA).order('data',{ascending:true}).limit(1)
+      sb.from('ml_descontos').select('data').eq('conta',CONTA).order('data',{ascending:true}).limit(1),
+      sb.from('ml_cupom_campanha_dia').select('data,promotion_id,orcamento,orcamento_restante,cupons_usados,lido_em').gte('data',corteFoto).order('data',{ascending:true}),
+      sb.from('cupom_objetivo').select('promotion_id,objetivo')
     ]);
     var e=r.find(function(x){ return x && x.error; });
     if(e) throw e.error;
     var i2sku={}, titDe={};
     (r[1].data||[]).forEach(function(a){ var k=a.sku||('item:'+a.item_id); i2sku[a.item_id]=k; if(!titDe[k]) titDe[k]=a.titulo||k; });
-    var ag=cupAgregar(r[0].data||[], i2sku, titDe);
-    return { de:de, ate:hoje, dias:dias, ag:ag, campanhas:r[2].data||[],
+    var marcados={}; (r[6].data||[]).forEach(function(o){ if(o.objetivo) marcados[o.promotion_id]=o.objetivo; });
+    return { de:de, ate:hoje, dias:dias, agora:agora, ag:cupAgregar(r[0].data||[], i2sku, titDe), semanas:cupSemanas(r[0].data||[]),
+             campanhas:r[2].data||[], fotos:r[5].data||[], marcados:marcados,
              sync:(r[3].data&&r[3].data[0])||null, inicioDados:(r[4].data&&r[4].data[0]&&r[4].data[0].data)||null };
   }
 
-  function kpi(rot,val,sub,cor,destaque){
-    return '<div class="kpi'+(destaque?' destaque':'')+'"><div class="kpi-l">'+rot+'</div>'
+  /* ── Pintura: campanhas ─────────────────────────────────────────────────── */
+  function chip(txt, cls){ return '<span class="cup-chip '+(cls||'')+'">'+txt+'</span>'; }
+  function cartaoCampanha(k, c){
+    var s=cupStatus(k, c.agora), o=cupObjetivo(k, c.marcados);
+    var orc=num(k.orcamento), rest=num(k.orcamento_restante), usado=gastoDe(k), usos=num(k.cupons_usados);
+    var pctOrc= (usado!==null && orc>0) ? Math.min(1, usado/orc) : null;
+    var ritmo= s.st==='ativa' ? cupRitmo(k, c.fotos, c.agora) : null;
+    var proj = s.st==='ativa' ? cupProjecao(k, ritmo, c.agora) : null;
+    var pct=num(k.percentual_fixo), plano=PCT_PLANEJADO[o.obj];
+    var chips=[];
+    if(s.st==='ativa') chips.push(chip('Ativa','cup-chip-ok'));
+    if(s.st==='agendada') chips.push(chip('Agendada · começa '+diaBR(k.inicio),'cup-chip-azul'));
+    if(s.st==='encerrada') chips.push(chip('Encerrada '+diaBR(k.fim),'cup-chip-cinza'));
+    if(s.st==='ativa' && s.dias!==null && s.dias<=VENCE_DIAS) chips.push(chip(s.dias<=0?'termina hoje':s.dias===1?'termina amanhã':'termina em '+s.dias+' dias','cup-chip-alerta'));
+    if(s.st!=='encerrada' && pctOrc!==null && pctOrc>=ORC_ALERTA) chips.push(chip('orçamento '+fP(pctOrc,0),'cup-chip-coral'));
+    if(s.st!=='encerrada' && plano && pct!==null && pct!==plano) chips.push(chip('planejado '+plano+'%','cup-chip-alerta'));
+    var regras=[];
+    if(num(k.compra_minima)!==null) regras.push('compra mín. '+fR0(k.compra_minima));
+    if(num(k.compra_maxima)!==null) regras.push('desconto máx. '+fR0(k.compra_maxima));
+    regras.push((s.st==='encerrada'?'foi ':'')+'até '+diaBR(k.fim));
+    if(num(k.usos_por_comprador)) regras.push(fN(k.usos_por_comprador)+' uso'+(k.usos_por_comprador>1?'s':'')+' por comprador');
+    var stats=
+      '<div class="cup-stat"><b>'+(usos===null?'—':fN(usos))+'</b><span>cupons usados</span></div>'
+      +'<div class="cup-stat"><b>'+(usado===null?'—':fR0(usado))+'</b><span>gasto</span></div>'
+      +'<div class="cup-stat"><b>'+((usado!==null&&usos>0)?fR(usado/usos):'—')+'</b><span>por uso</span></div>';
+    var linhaRitmo='';
+    if(ritmo && ritmo.porDia!==null){
+      linhaRitmo='<div class="cup-camp-sub">Ritmo: '+fR0(ritmo.porDia)+'/dia'+(ritmo.usosDia!==null?' · '+ritmo.usosDia.toFixed(1).replace('.',',')+' usos/dia':'')+' ('+ritmo.base+')</div>';
+      if(proj) linhaRitmo+= proj.antes
+        ? '<div class="cup-camp-proj cup-proj-alerta">Nesse ritmo o orçamento acaba por volta de '+diaBR(proj.quando)+', antes do fim ('+diaBR(k.fim)+').</div>'
+        : '<div class="cup-camp-proj">Nesse ritmo o orçamento dá até o fim'+(proj.sobra>0?' (sobra ~'+fR0(proj.sobra)+')':'')+'.</div>';
+    }
+    var sel='<select class="cup-obj" data-id="'+esc(k.promotion_id)+'" onchange="cupMarcar(this.dataset.id,this.value)">'
+      +(o.obj?'':'<option value="" selected>— marcar —</option>')
+      +OBJ.map(function(x){ return '<option value="'+x[0]+'"'+(o.obj===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join('')
+      +'</select>'+(o.pelo==='nome'?'<span class="cup-obj-dica">pelo nome</span>':'');
+    return '<div class="cup-camp cup-st-'+s.st+'" data-id="'+esc(k.promotion_id)+'">'
+      +'<div class="cup-camp-top"><span class="cup-camp-nome">'+esc(k.nome||k.promotion_id)+'</span>'
+      +'<span class="cup-camp-pct">'+(pct!==null?fN(pct)+'%':'—')+'</span></div>'
+      +'<div class="cup-chips">'+chips.join('')+'</div>'
+      +'<div class="cup-camp-sub">'+regras.join(' · ')+'</div>'
+      +(pctOrc!==null
+        ? '<div class="cup-barra"><span style="width:'+(pctOrc*100).toFixed(1)+'%;background:'+(pctOrc>=ORC_ALERTA?'var(--coral-500)':'var(--brand)')+'"></span></div>'
+          +'<div class="cup-camp-sub">'+fR0(usado)+' de '+fR0(orc)+' ('+fP(pctOrc,0)+') · sobra '+fR0(rest)+'</div>'
+        : '<div class="cup-camp-sub">sem orçamento informado pelo ML</div>')
+      +'<div class="cup-stats">'+stats+'</div>'
+      +linhaRitmo
+      +'<div class="cup-camp-obj">Objetivo '+sel+'</div>'
+      +'</div>';
+  }
+  function pintarCampanhas(c){
+    var vivas=[], encerradas=[];
+    c.campanhas.forEach(function(k){ (cupStatus(k,c.agora).st==='encerrada'?encerradas:vivas).push(k); });
+    var ativas=vivas.filter(function(k){ return cupStatus(k,c.agora).st==='ativa'; });
+    var gastoAtivas=ativas.reduce(function(s,k){ return s+(gastoDe(k)||0); },0);
+    var usosAtivas=ativas.reduce(function(s,k){ return s+(num(k.cupons_usados)||0); },0);
+    var urg=ativas.filter(function(k){ var s=cupStatus(k,c.agora), g=gastoDe(k), orc=num(k.orcamento);
+      return (s.dias!==null&&s.dias<=VENCE_DIAS) || (g!==null&&orc>0&&g/orc>=ORC_ALERTA); }).length;
+    var resumo='<div class="cup-camps-resumo">'
+      +'<span><b>'+ativas.length+'</b> ativa'+(ativas.length===1?'':'s')+'</span>'
+      +'<span><b>'+(vivas.length-ativas.length)+'</b> agendada'+(vivas.length-ativas.length===1?'':'s')+'</span>'
+      +'<span><b>'+fN(usosAtivas)+'</b> cupons usados nas ativas</span>'
+      +'<span><b>'+fR0(gastoAtivas)+'</b> gastos nas ativas</span>'
+      +(urg?'<span class="cup-urg">'+urg+' pedindo atenção</span>':'')
+      +'</div>';
+    var grupos={carrinho:[],seguidores:[],outro:[],'':[]};
+    vivas.sort(function(a,b){ var sa=cupStatus(a,c.agora).st, sb2=cupStatus(b,c.agora).st;
+      return (sa===sb2?0:sa==='ativa'?-1:1) || (new Date(a.fim)-new Date(b.fim)); });
+    vivas.forEach(function(k){ (grupos[cupObjetivo(k,c.marcados).obj]||grupos.outro).push(k); });
+    var html=resumo;
+    ['carrinho','seguidores','outro',''].forEach(function(g){
+      var L=grupos[g];
+      if(!L.length && (g==='outro'||g==='')) return;
+      var gasto=L.reduce(function(s,k){ return s+(cupStatus(k,c.agora).st==='ativa'?(gastoDe(k)||0):0); },0);
+      html+='<div class="cup-grupo" data-obj="'+g+'"><div class="cup-grupo-tit">'+OBJ_NOME[g]
+        +(L.length?'<span>'+L.length+' campanha'+(L.length>1?'s':'')+' · '+fR0(gasto)+' gastos</span>':'')+'</div>';
+      html+= L.length ? '<div class="cup-camps">'+L.map(function(k){ return cartaoCampanha(k,c); }).join('')+'</div>'
+        : '<div class="cup-vazio">Nenhuma campanha ativa ou agendada'+(g==='seguidores'?' para novos seguidores':g==='carrinho'?' para carrinho abandonado':'')
+          +'. Para criar: Central de marketing do Mercado Livre → Cupons.'+(PCT_PLANEJADO[g]?' O plano é '+PCT_PLANEJADO[g]+'%.':'')+'</div>';
+      html+='</div>';
+    });
+    html+='<label class="cup-toggle"><input type="checkbox" id="cup-enc"'+(_cup.encerradas?' checked':'')+' onchange="cupEncerradas(this.checked)"> Mostrar encerradas nos últimos 45 dias ('+encerradas.length+')</label>';
+    if(_cup.encerradas && encerradas.length){
+      encerradas.sort(function(a,b){ return new Date(b.fim)-new Date(a.fim); });
+      html+='<div class="cup-grupo" data-obj="encerradas"><div class="cup-grupo-tit">Encerradas</div><div class="cup-camps">'
+        +encerradas.map(function(k){ return cartaoCampanha(k,c); }).join('')+'</div></div>';
+    }
+    return html;
+  }
+
+  /* ── Pintura: quem pagou ────────────────────────────────────────────────── */
+  function kpi(rot,val,sub,cor,destaque,cls){
+    return '<div class="kpi'+(destaque?' destaque':'')+(cls?' '+cls:'')+'"><div class="kpi-l">'+rot+'</div>'
       +'<div class="kpi-v"'+(cor?' style="color:'+cor+'"':'')+'>'+val+'</div>'
       +'<div class="kpi-d">'+(sub||'')+'</div></div>';
   }
-
   function pintarKpis(c){
     var t=c.ag.tot;
-    return '<div class="kpi-grid" id="cup-kpis">'
-      +kpi('Vendas com cupom Pix', fP(t.pctPedPix), fN(t.pedPix)+' de '+fN(t.pedidos)+' pedidos · '+fR(t.recPix)+' ('+fP(t.pctRecPix)+' da receita)', 'var(--brand)', true)
-      +kpi('Gasto com cupom Pix', fR(t.pix), fPP(t.pixSobreRec)+' da receita total · '+fP(t.pixAplicado)+' em média nessas vendas · <strong>fora do Hub</strong>', 'var(--coral-500)')
-      +kpi('Cupom 5% (campanhas)', fR(t.camp), fP(t.pctPedCamp)+' dos pedidos · '+fPP(t.camp/(t.receita||1))+' da receita')
-      +kpi('Cupom pago pelo ML', fP(t.pctPedCml), fN(t.pedCml)+' pedidos · '+fR(t.cupomMl)+' que não saíram do seu bolso')
-      +kpi('Rebate do ML', fR(t.rebate), fP(t.rebatePct)+' da receita · em '+fP(t.pctPedReb,0)+' dos pedidos', 'var(--green-600)')
+    var pix = t.pix>0
+      ? kpi('Cupom Pix seu', fR(t.pix), fP(t.pctPedPix)+' dos pedidos · '+fPP(t.pixSobreRec)+' da receita · '+fP(t.pixAplicado)+' em média · <strong>fora do Hub</strong>', 'var(--coral-500)')
+      : kpi('Cupom Pix seu', '—', 'nenhum no período. Se você voltar a usar, aparece aqui.', null, false, 'cup-kpi-mudo');
+    return '<div id="cup-kpis">'
+      +'<div class="cup-kpi-grupo"><div class="cup-kpi-tit">Sai do seu bolso</div><div class="kpi-grid">'
+        +kpi('Seus cupons', fR(t.cuponsSeus), fPP(t.cuponsSeusPct)+' da receita de '+fR0(t.receita), 'var(--coral-500)', true)
+        +kpi('Cupom de campanha', fR(t.camp), fP(t.pctPedCamp)+' dos pedidos ('+fN(t.pedCamp)+') · '+fR(t.campMedio)+' por pedido')
+        +pix
+      +'</div></div>'
+      +'<div class="cup-kpi-grupo"><div class="cup-kpi-tit">Bancado pelo ML <span>não mexe na sua margem</span></div><div class="kpi-grid">'
+        +kpi('Cupom do ML', fR(t.cupomMl), fP(t.pctPedCml)+' dos pedidos ('+fN(t.pedCml)+')', 'var(--green-600)')
+        +kpi('Rebate do ML', fR(t.rebate), fP(t.rebatePct)+' da receita · em '+fP(t.pctPedReb,0)+' dos pedidos', 'var(--green-600)')
+      +'</div></div>'
       +'</div>';
   }
 
+  /* ── Pintura: semanas e SKUs ────────────────────────────────────────────── */
+  function pintarSemanas(c){
+    var S=c.semanas; if(!S.length) return '<p class="fin-note">Sem vendas no período.</p>';
+    var temPix=c.ag.tot.pix>0;
+    var corpo=S.map(function(o){
+      var fimS=new Date(new Date(o.semana+'T12:00:00').getTime()+6*DIA);
+      var rot=dataBR(o.semana).slice(0,5)+' a '+String(fimS.getDate()).padStart(2,'0')+'/'+String(fimS.getMonth()+1).padStart(2,'0');
+      return '<tr data-semana="'+o.semana+'"><td style="font-weight:600;color:var(--slate-900)">'+rot+'</td>'
+        +'<td data-rot="Pedidos">'+fN(o.pedidos)+'</td>'
+        +'<td data-rot="Receita">'+fR0(o.receita)+'</td>'
+        +'<td data-rot="Vendas c/ cupom de campanha">'+fP(o.pctPedCamp)+'</td>'
+        +'<td data-rot="Cupom de campanha">'+fR0(o.camp)+'</td>'
+        +(temPix?'<td data-rot="Cupom Pix seu">'+fR0(o.pix)+'</td>':'')
+        +'<td data-rot="Seus cupons s/ receita" style="font-weight:600">'+fPP(o.cuponsSeusPct)+'</td>'
+        +'<td data-rot="Cupom do ML" style="color:var(--green-600)">'+fR0(o.cupomMl)+'</td>'
+        +'<td data-rot="Rebate do ML" style="color:var(--green-600)">'+fR0(o.rebate)+'</td></tr>';
+    }).join('');
+    return '<div class="table-wrap"><table><thead class="hub-thead"><tr><th>Semana</th><th>Pedidos</th><th>Receita</th>'
+      +'<th title="% dos pedidos com cupom de campanha">Vendas c/ cupom</th><th>Cupom de campanha</th>'+(temPix?'<th>Cupom Pix seu</th>':'')
+      +'<th title="Seus cupons (campanha + Pix) sobre a receita da semana">Seus cupons s/ receita</th><th>Cupom do ML</th><th>Rebate do ML</th></tr></thead>'
+      +'<tbody class="hub-tbody">'+corpo+'</tbody></table></div>';
+  }
   function th(rot, campo, dica){
     var ativo=_cup.ordem===campo;
     return '<th style="cursor:pointer;white-space:nowrap"'+(dica?' title="'+esc(dica)+'"':'')+' onclick="cupOrdenar(\''+campo+'\')">'+rot
       +'<span style="color:'+(ativo?'var(--slate-900)':'var(--slate-200)')+'"> '+(ativo?(_cup.desc?'▼':'▲'):'↕')+'</span></th>';
   }
-
   function pintarTabela(c){
-    var q=_cup.busca.toLowerCase();
+    var q=_cup.busca.toLowerCase(), temPix=c.ag.tot.pix>0;
     var L=c.ag.linhas.filter(function(o){ return o.pedidos>0 && (!q || o.sku.toLowerCase().indexOf(q)>=0 || String(o.titulo).toLowerCase().indexOf(q)>=0); });
     var campo=_cup.ordem, dir=_cup.desc?-1:1;
     L.sort(function(a,b){
@@ -15069,87 +15267,61 @@ window.apGarantirMes=async function(mes){
         +'<div style="font-size:11px;color:var(--slate-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo)+'</div></td>'
         +'<td data-rot="Pedidos">'+fN(o.pedidos)+'</td>'
         +'<td data-rot="Receita">'+fR(o.receita)+'</td>'
-        +'<td data-rot="Vendas c/ Pix" style="font-weight:600;color:var(--brand)">'+fP(o.pctPedPix)+'</td>'
-        +'<td data-rot="Cupom Pix">'+fR(o.pix)+'</td>'
-        +'<td data-rot="Pix s/ receita"'+(alto?' style="color:var(--coral-500);font-weight:600"':'')+'>'+fPP(o.pixSobreRec)+'</td>'
-        +'<td data-rot="% do Pix">'+(o.pixAplicado===null?'—':fP(o.pixAplicado,0))+'</td>'
-        +'<td data-rot="Vendas c/ 5%">'+fP(o.pctPedCamp)+'</td>'
-        +'<td data-rot="Cupom 5%">'+fR(o.camp)+'</td>'
-        +'<td data-rot="Cupom do ML">'+fP(o.pctPedCml)+'</td>'
+        +'<td data-rot="Vendas c/ cupom">'+fP(o.pctPedCamp)+'</td>'
+        +'<td data-rot="Cupom de campanha">'+fR(o.camp)+'</td>'
+        +(temPix?'<td data-rot="Cupom Pix seu"'+(alto?' style="color:var(--coral-500);font-weight:600"':'')+'>'+fR(o.pix)+'</td>':'')
+        +'<td data-rot="Seus cupons s/ receita" style="font-weight:600">'+fPP(o.cuponsSeusPct)+'</td>'
+        +'<td data-rot="Cupom do ML" style="color:var(--green-600)">'+fR(o.cupomMl)+'</td>'
         +'<td data-rot="Rebate" style="color:var(--green-600)">'+fP(o.rebatePct)+'</td>'
         +'<td data-rot="Rebate R$">'+fR(o.rebate)+'</td>'
         +'</tr>';
     }).join('');
     return '<div class="table-wrap"><table><thead class="hub-thead"><tr>'
       +th('Produto','receita')+th('Pedidos','pedidos')+th('Receita','receita')
-      +th('Vendas c/ Pix','pctPedPix','% dos pedidos do SKU que usaram cupom Pix')
-      +th('Cupom Pix','pix','R$ que você bancou em cupom Pix')
-      +th('Pix s/ receita','pixSobreRec','Quanto o cupom Pix tira da receita do SKU — é o que falta descontar da M.C. do Hub')
-      +th('% do Pix','pixAplicado','% médio do cupom Pix, sobre o valor já com o cupom de 5%')
-      +th('Vendas c/ 5%','pctPedCamp','% dos pedidos com cupom de campanha (5%)')
-      +th('Cupom 5%','camp')
-      +th('Cupom do ML','pctPedCml','% dos pedidos com cupom bancado pelo ML')
-      +th('Rebate','rebatePct','Parte do desconto que o ML banca, sobre a receita')
+      +th('Vendas c/ cupom','pctPedCamp','% dos pedidos do SKU com cupom de campanha')
+      +th('Cupom de campanha','camp','R$ que você bancou nos cupons das campanhas')
+      +(temPix?th('Cupom Pix seu','pix','R$ de cupom Pix pago por você — fora do Hub'):'')
+      +th('Seus cupons s/ receita','cuponsSeusPct','Seus cupons (campanha + Pix) sobre a receita do SKU')
+      +th('Cupom do ML','cupomMl','Cupom bancado pelo ML: não sai do seu bolso')
+      +th('Rebate','rebatePct','Parte do desconto de preço que o ML banca, sobre a receita')
       +th('Rebate R$','rebate')
       +'</tr></thead><tbody class="hub-tbody">'+corpo+'</tbody></table></div>'
       +(L.length>150?'<p class="fin-note">Mostrando 150 de '+L.length+' SKUs. Use a busca.</p>':'');
   }
 
-  function pintarCampanhas(c){
-    if(!c.campanhas.length) return '<p class="fin-note">Nenhuma campanha de cupom ativa.</p>';
-    return '<div class="cup-camps">'+c.campanhas.map(function(k){
-      var orc=Number(k.orcamento), rest=Number(k.orcamento_restante);
-      var temOrc=isFinite(orc) && orc>0 && k.orcamento!==null;
-      var usado=temOrc && isFinite(rest) ? Math.max(0,orc-rest) : null;
-      var pct=temOrc && usado!==null ? Math.min(1,usado/orc) : null;
-      return '<div class="cup-camp">'
-        +'<div class="cup-camp-top"><span class="cup-camp-nome">'+esc(k.nome||k.promotion_id)+'</span>'
-        +'<span class="cup-camp-pct">'+(k.percentual_fixo!==null?fN(k.percentual_fixo)+'%':'—')+'</span></div>'
-        +'<div class="cup-camp-sub">'+(k.status==='pending'?'começa '+dataBR(k.inicio)+' · ':'')+'até '+dataBR(k.fim)
-          +(k.compra_minima!==null?' · compra de '+fR(k.compra_minima)+(k.compra_maxima!==null?' a '+fR(k.compra_maxima):''):'')
-          +(k.itens_total?' · '+fN(k.itens_total)+' anúncios':'')+'</div>'
-        +(pct!==null
-          ? '<div class="cup-barra"><span style="width:'+(pct*100).toFixed(1)+'%;background:'+(pct>0.85?'var(--coral-500)':'var(--brand)')+'"></span></div>'
-            +'<div class="cup-camp-sub">'+fR(usado)+' usados de '+fR(orc)+' · sobra '+fR(rest)
-            +(k.cupons_usados!==null?' · '+fN(k.cupons_usados)+' cupons usados':'')+'</div>'
-          : (k.cupons_usados!==null?'<div class="cup-camp-sub">'+fN(k.cupons_usados)+' cupons usados</div>':''))
-        +'</div>';
-    }).join('')+'</div>';
-  }
-
   function pintar(){
     var el=document.getElementById('cup-corpo'); if(!el||!_cup.dados) return;
-    var c=_cup.dados;
-    var s=c.sync;
+    var c=_cup.dados, s=c.sync;
     var selo = s ? ('<span class="cup-selo'+(s.ok===false?' cup-selo-erro':'')+'">'+(s.ok===false?'⚠ ':'')+'lido do ML '
       +new Date(s.lido_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})
       +(s.ok===false&&s.erro?' · '+esc(s.erro):'')+'</span>') : '<span class="cup-selo cup-selo-erro">ainda não sincronizado</span>';
     var parcial = c.inicioDados && c.inicioDados>c.de
       ? '<p class="fin-note" style="color:var(--amber-600)">Os dados de cupom começam em '+dataBR(c.inicioDados)+': o período mostra só a partir daí.</p>' : '';
     el.innerHTML=
-      '<div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:10px">'
-        +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'
-          +'<select class="perf-select" id="cup-dias" onchange="cupPeriodo(this.value)">'
-          +[7,15,30,60].map(function(n){ return '<option value="'+n+'"'+(n===_cup.dias?' selected':'')+'>Últimos '+n+' dias</option>'; }).join('')
-          +'</select>'
-          +'<input class="notes-search" id="cup-busca" placeholder="SKU ou título" value="'+esc(_cup.busca)+'" style="width:200px;padding:6px 10px;font-size:12px" oninput="cupBuscar(this.value)">'
-        +'</div>'
-        +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+selo
-          +'<button class="perf-select" id="cup-btn" style="cursor:pointer" onclick="cupAtualizar()">↻ Ler do ML</button></div>'
-      +'</div>'
+      '<div class="perf-vg-controls" style="justify-content:flex-end;flex-wrap:wrap;gap:10px">'+selo
+        +'<button class="perf-select" id="cup-btn" style="cursor:pointer" onclick="cupAtualizar()">↻ Ler do ML</button></div>'
+      +'<div class="sec-title" style="margin-top:6px">Campanhas de cupom</div>'
+      +'<div id="cup-campanhas">'+pintarCampanhas(c)+'</div>'
+      +'<div class="cup-periodo"><div class="sec-title" style="margin:0">Quem pagou os descontos</div>'
+        +'<select class="perf-select" id="cup-dias" onchange="cupPeriodo(this.value)">'
+        +[7,15,30,60].map(function(n){ return '<option value="'+n+'"'+(n===_cup.dias?' selected':'')+'>Últimos '+n+' dias</option>'; }).join('')
+        +'</select></div>'
       +parcial
-      +'<div style="margin-top:14px">'+pintarKpis(c)+'</div>'
-      +'<div class="sec-title">Por SKU</div>';
+      +pintarKpis(c)
+      +'<div class="sec-title">Semana a semana</div>';
+    document.getElementById('cup-semanas').innerHTML=pintarSemanas(c);
+    document.getElementById('cup-sku-cab').innerHTML='<div class="cup-periodo"><div class="sec-title" style="margin:0">Por SKU</div>'
+      +'<input class="notes-search" id="cup-busca" placeholder="SKU ou título" value="'+esc(_cup.busca)+'" style="width:200px;padding:6px 10px;font-size:12px" oninput="cupBuscar(this.value)"></div>';
     document.getElementById('cup-tabela').innerHTML=pintarTabela(c);
     document.getElementById('cup-rodape').innerHTML=
-      '<p class="fin-note" style="margin-top:8px"><strong>Cupom Pix</strong> é o cupom pago por você que não vem das campanhas de cupom e só aparece em compra no Pix ou com saldo do Mercado Pago — '
-      +'o ML não diz "Pix" em lugar nenhum da API, então a regra é: cupom seu + pagamento Pix/saldo MP + fora do % das campanhas (hoje 5%). '
-      +'Ele empilha com o de 5% e o % dele é sobre o valor já com os 5%. <strong>Pix s/ receita</strong> é quanto ele tira da receita do SKU: como o Hub não conta esse cupom, '
-      +'é quanto a margem real fica abaixo da M.C. A M.C. e o MPA do OfficeLed não mudam — este número fica ao lado para você decidir. '
-      +'<strong>Rebate</strong> é a parte do desconto de preço que o ML banca (vem como tarifa menor) e já está no Hub. Cancelados ficam de fora.</p>'
-      +'<div class="sec-title">Campanhas de cupom ativas</div>'
-      +pintarCampanhas(c);
+      '<p class="fin-note" style="margin-top:8px"><strong>Cupom de campanha</strong> é o cupom das suas campanhas (Central de marketing), pago por você. '
+      +'<strong>Cupom Pix seu</strong> é cupom pago por você fora das campanhas, em compra no Pix ou com saldo do Mercado Pago; ele não está no Hub. '
+      +'<strong>Cupom do ML</strong> e <strong>Rebate</strong> são bancados pelo Mercado Livre (o rebate volta como tarifa menor): não mexem na sua margem. '
+      +'Cupom que bate no desconto máximo da campanha (ex.: 5% de R$ 1.400 limitado a R$ 50) continua contando como cupom de campanha. '
+      +'Nas campanhas, cupons usados e gasto são os números do próprio ML; o ritmo usa a leitura diária dos últimos 7 dias (antes de ter 1 dia de histórico, a média desde o início). '
+      +'Você recebe aviso no celular quando uma campanha ativa está a '+VENCE_DIAS+' dias do fim e quando passa de '+Math.round(ORC_ALERTA*100)+'% do orçamento. Cancelados ficam de fora.</p>';
   }
+  function limparResto(){ ['cup-semanas','cup-sku-cab','cup-tabela','cup-rodape'].forEach(function(id){ var x=document.getElementById(id); if(x) x.innerHTML=''; }); }
 
   window.cupOrdenar=function(campo){
     if(_cup.ordem===campo) _cup.desc=!_cup.desc; else { _cup.ordem=campo; _cup.desc=true; }
@@ -15159,13 +15331,33 @@ window.apGarantirMes=async function(mes){
     _cup.busca=String(v||'');
     var el=document.getElementById('cup-tabela'); if(el&&_cup.dados) el.innerHTML=pintarTabela(_cup.dados);
   };
+  window.cupEncerradas=function(v){
+    _cup.encerradas=!!v;
+    var el=document.getElementById('cup-campanhas'); if(el&&_cup.dados) el.innerHTML=pintarCampanhas(_cup.dados);
+  };
+  // Objetivo da campanha: só no OfficeLed (cupom_objetivo). Não escreve nada no ML.
+  window.cupMarcar=async function(id, obj){
+    if(!_cup.dados) return;
+    var antes=_cup.dados.marcados[id];
+    if(!obj || OBJ_NOME[obj]===undefined) return;
+    _cup.dados.marcados[id]=obj;
+    var el=document.getElementById('cup-campanhas'); if(el) el.innerHTML=pintarCampanhas(_cup.dados);
+    try{
+      var r = await sb.from('cupom_objetivo').upsert({ promotion_id:id, objetivo:obj, atualizado_em:new Date().toISOString() }, { onConflict:'promotion_id' });
+      if(r && r.error) throw r.error;
+    }catch(e){
+      console.error('[Cupons] objetivo', e);
+      if(antes) _cup.dados.marcados[id]=antes; else delete _cup.dados.marcados[id];
+      if(el) el.innerHTML=pintarCampanhas(_cup.dados);
+      if(typeof showToast==='function') showToast('Não consegui salvar o objetivo: '+(e&&e.message||e));
+    }
+  };
   window.cupPeriodo=function(v){ _cup.dias=Number(v)||30; _cup.dados=null; window.cupCarregar(); };
   window.cupCarregar=async function(){
     var el=document.getElementById('cup-corpo'); if(!el) return;
     if(_cup.carregando) return;
     _cup.carregando=true;
-    function limparResto(){ ['cup-tabela','cup-rodape'].forEach(function(id){ var x=document.getElementById(id); if(x) x.innerHTML=''; }); }
-    if(!_cup.dados){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Somando cupons e rebate…</div>'; limparResto(); }
+    if(!_cup.dados){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Lendo campanhas e cupons…</div>'; limparResto(); }
     try{ _cup.dados=await cupLer(_cup.dias); pintar(); }
     catch(e){ console.error('[Cupons]', e); limparResto(); el.innerHTML='<p class="fin-note">Não consegui ler os cupons: '+esc(e&&e.message||e)+'</p>'; }
     _cup.carregando=false;
@@ -15178,26 +15370,59 @@ window.apGarantirMes=async function(mes){
     _cup.dados=null;
     await window.cupCarregar();
   };
-  window._cup={ agregar:cupAgregar, estado:_cup };
+  window._cup={ agregar:cupAgregar, semanas:cupSemanas, status:cupStatus, ritmo:cupRitmo, projecao:cupProjecao, objetivo:cupObjetivo, estado:_cup };
 })();
 </script>
 <style id="cup-css">
-#cup-kpis{ grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); }
-#cup-tabela td{ font-size:12.5px; }
-@media (min-width:769px){ #cup-tabela td:not(:first-child), #cup-tabela th{ white-space:nowrap; } }
+#cup-kpis .kpi-grid{ grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); }
+.cup-kpi-grupo{ margin-top:12px; }
+.cup-kpi-tit{ font-size:11px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--slate-600); margin-bottom:6px; }
+.cup-kpi-tit span{ font-weight:500; letter-spacing:0; text-transform:none; color:var(--green-600); margin-left:6px; }
+.cup-kpi-mudo .kpi-v{ color:var(--slate-200) !important; }
+.cup-periodo{ display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin:26px 0 4px; }
+#cup-tabela td, #cup-semanas td{ font-size:12.5px; }
+@media (min-width:769px){ #cup-tabela td:not(:first-child), #cup-tabela th, #cup-semanas td, #cup-semanas th{ white-space:nowrap; } }
 #cup-tabela thead th{ position:sticky; top:0 !important; z-index:6 !important; background:var(--white) !important; box-shadow:inset 0 -1px 0 var(--slate-100) !important; }
-#cup-tabela tbody tr:hover td{ background:var(--slate-50); }
+#cup-tabela tbody tr:hover td, #cup-semanas tbody tr:hover td{ background:var(--slate-50); }
 .cup-selo{ font-size:11.5px; color:var(--slate-400); }
 .cup-selo-erro{ color:var(--amber-600); }
-.cup-camps{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:10px; }
-.cup-camp{ background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius); padding:12px 14px; }
+.cup-camps-resumo{ display:flex; flex-wrap:wrap; gap:6px 18px; font-size:12.5px; color:var(--slate-600); margin-bottom:6px; }
+.cup-camps-resumo b{ color:var(--slate-900); font-family:var(--mono); }
+.cup-urg{ color:var(--coral-600); font-weight:600; }
+.cup-grupo{ margin-top:14px; }
+.cup-grupo-tit{ font-size:12px; font-weight:700; color:var(--slate-700); margin-bottom:8px; display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+.cup-grupo-tit span{ font-weight:500; color:var(--slate-400); font-size:11.5px; }
+.cup-camps{ display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:10px; }
+.cup-camp{ background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius); padding:12px 14px; display:flex; flex-direction:column; }
+.cup-st-encerrada{ opacity:.7; }
 .cup-camp-top{ display:flex; justify-content:space-between; gap:8px; align-items:baseline; }
 .cup-camp-nome{ font-size:13px; font-weight:600; color:var(--slate-900); }
 .cup-camp-pct{ font-family:var(--mono); font-size:15px; color:var(--brand); font-weight:600; }
-.cup-camp-sub{ font-size:11.5px; color:var(--slate-400); margin-top:4px; line-height:1.5; }
-.cup-barra{ height:6px; background:var(--slate-50); border-radius:4px; overflow:hidden; margin-top:8px; }
+.cup-chips{ display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+.cup-chip{ font-size:10.5px; font-weight:600; padding:2px 7px; border-radius:20px; background:var(--slate-50); color:var(--slate-600); }
+.cup-chip-ok{ background:var(--green-50); color:var(--green-600); }
+.cup-chip-azul{ background:var(--blue-50); color:var(--blue-600); }
+.cup-chip-cinza{ background:var(--slate-50); color:var(--slate-400); }
+.cup-chip-alerta{ background:var(--amber-50); color:var(--amber-600); }
+.cup-chip-coral{ background:var(--coral-50); color:var(--coral-600); }
+.cup-camp-sub{ font-size:11.5px; color:var(--slate-400); margin-top:5px; line-height:1.5; }
+.cup-barra{ height:6px; background:var(--slate-50); border-radius:4px; overflow:hidden; margin-top:9px; }
 .cup-barra span{ display:block; height:100%; border-radius:4px; }
-@media (max-width:768px){ #cup-busca{ width:100% !important; } }
+.cup-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:10px; padding-top:9px; border-top:1px solid var(--slate-50); }
+.cup-stat b{ display:block; font-family:var(--mono); font-size:13.5px; color:var(--slate-900); font-weight:600; }
+.cup-stat span{ font-size:10.5px; color:var(--slate-400); }
+.cup-camp-proj{ font-size:11.5px; color:var(--slate-600); margin-top:3px; }
+.cup-proj-alerta{ color:var(--coral-600); font-weight:600; }
+.cup-camp-obj{ margin-top:auto; padding-top:10px; font-size:11.5px; color:var(--slate-400); display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.cup-obj{ font-family:var(--font); font-size:12px; padding:4px 6px; border:1px solid var(--slate-100); border-radius:6px; background:var(--white); color:var(--slate-900); }
+.cup-obj-dica{ font-size:10.5px; color:var(--amber-600); }
+.cup-vazio{ font-size:12px; color:var(--slate-400); border:1px dashed var(--slate-200); border-radius:var(--radius); padding:12px 14px; }
+.cup-toggle{ display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--slate-600); margin-top:14px; cursor:pointer; }
+@media (max-width:768px){
+  #cup-busca{ width:100% !important; }
+  .cup-camps{ grid-template-columns:1fr; }
+  .cup-periodo select{ width:100%; }
+}
 </style>
 
 <script>
@@ -16122,7 +16347,7 @@ body:has(#page-led.active) .fab{ display:none !important; }
   'use strict';
 
   // Containers cujas tabelas viram lista no celular.
-  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela','cup-tabela','estf-tabela',
+  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela','cup-tabela','cup-semanas','estf-tabela',
                'mrc-tabela','exp-ofensoras','exp-categorias'];
 
   // Rótulos do cabeçalho, com colspan expandido: a coluna 3 tem que casar com
