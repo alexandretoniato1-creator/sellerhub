@@ -1423,7 +1423,7 @@ body.sidebar-collapsed .hamburger { display: none; }
 .dash-value.neg, td.neg, .btn-danger { color: var(--coral-500); }
 
 /* ═══ ENTRADA ════════════════════════════════════════════════════════════
-   Era a única tela que ainda dizia SellerHub, em teal. É a primeira coisa
+   Era a única tela que ainda tinha o nome antigo do app, em teal. É a primeira coisa
    que se vê, então é onde a ideia precisa estar mais clara: sala escura, um
    LED aceso, e mais nada brilhando.                                       */
 #pw-screen {
@@ -2505,7 +2505,11 @@ function showSync(msg='Salvando…', ok=false){
 function hideSync(){ document.getElementById('sync-indicator')?.classList.remove('visible'); }
 
 // PASSWORD + SESSÃO PERSISTENTE
-const SESSION_KEY='sellerhub_auth_v2';
+const SESSION_KEY='officeled_auth_v2';
+// Nome antigo da sessão (de quando o app se chamava SellerHub): passa para o
+// nome novo uma vez, para ninguém precisar entrar de novo com a senha.
+try{ var _antiga=localStorage.getItem('sellerhub_auth_v2');
+  if(_antiga){ if(!localStorage.getItem(SESSION_KEY)) localStorage.setItem(SESSION_KEY,_antiga); localStorage.removeItem('sellerhub_auth_v2'); } }catch(_){}
 
 // Estado do usuário atual
 let currentUser = null; // { username, role, aluno_id }
@@ -5099,7 +5103,7 @@ function renderSkuSel() {
 
 let skuHubMes = '2026-04';
 
-// Painel de importações SellerHub — sem SKU: mostra tudo da conta; com SKU: filtra
+// Painel de importações da planilha base — sem SKU: mostra tudo da conta; com SKU: filtra
 function renderSkuHubCoverage() {
   const sku = skuSelected;
   const panel = document.getElementById('sku-hub-coverage-panel');
@@ -5978,10 +5982,10 @@ function closeMlModal() {
   mlImportRows = [];
 }
 
-// ===== IMPORTAÇÃO PLANILHA SELLERHUB =====
+// ===== IMPORTAÇÃO DA PLANILHA BASE (OfficeLed) =====
 let hubImportData = { sku: [], prec: [], perf: [] };
 
-// Histórico de importações SellerHub para poder desfazer
+// Histórico de importações da planilha base para poder desfazer
 let hubImportacoesList = {}; // hubImportacoesList[conta][mes] = [{id, count, itens, created_at}]
 
 async function loadHubImportacoes() {
@@ -6389,7 +6393,7 @@ function exportBaseXLSX() {
 
   // ── ABA: Instruções ──
   const instrRows = [
-    ['GUIA DE PREENCHIMENTO — SELLERHUB'],
+    ['GUIA DE PREENCHIMENTO — OFFICELED'],
     [],
     ['CAMPO', 'COMO PREENCHER'],
     ['Conta', 'FW, BTMX, Falcom ou Logbox — exatamente como escrito'],
@@ -7886,7 +7890,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 
 <!-- ═══════════════════════════════════════════
-     SELLERHUB PREMIUM — Visual Upgrade v2
+     OFFICELED PREMIUM — Visual Upgrade v2
      ═══════════════════════════════════════════ -->
 <style id="premium-override">
 
