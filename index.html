@@ -1761,6 +1761,7 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div id="op-section-cupons" style="display:none">
         <div class="page-subtitle" style="margin-top:0">Suas campanhas de cupom num lugar só (ativas, agendadas, orçamento e ritmo) e quem pagou cada desconto: você ou o Mercado Livre.</div>
         <div id="cup-corpo"></div>
+        <div id="cup-marcas"></div>
         <div id="cup-semanas"></div>
         <div id="cup-sku-cab"></div>
         <div id="cup-tabela"></div>
@@ -14965,7 +14966,8 @@ window.apGarantirMes=async function(mes){
   var OBJ_NOME={carrinho:'Carrinho abandonado', seguidores:'Novos seguidores', outro:'Outro', '':'Sem objetivo marcado'};
   var PCT_PLANEJADO={carrinho:5, seguidores:5};   // o que o Ale quer manter nesses cupons
   var VENCE_DIAS=3, ORC_ALERTA=0.9;
-  var _cup={ dias:30, busca:'', ordem:'cuponsSeus', desc:true, dados:null, carregando:false, encerradas:false };
+  var _cup={ dias:30, busca:'', ordem:'cuponsSeus', desc:true, dados:null, carregando:false, encerradas:false, marca:'todas' };
+  var SEM_MARCA='(sem marca)';
 
   function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -14998,6 +15000,30 @@ window.apGarantirMes=async function(mes){
     if(k.status==='finished' || (fim!==null && fim<=t)) return { st:'encerrada', dias:null };
     if(ini!==null && ini>t) return { st:'agendada', dias:diasCal(agora, k.inicio) };
     return { st:'ativa', dias: fim!==null ? diasCal(agora, k.fim) : null };   // 0 = termina hoje
+  }
+  /* ── Marcas ───────────────────────────────────────────────────────────────
+     Venda: a marca do SKU (skus.marca, aba Catálogo → Marcas). SKU de cor
+     (ex.: XC-BRQ-KART-1-VM) sem cadastro herda a marca do SKU pai.
+     Campanha: a marca escolhida na tela (cupom_objetivo.marca); sem escolha,
+     o nome sugere (TK, VLL, BC, TM ou o nome da marca). */
+  function cupMarcaSku(sku, mapa){
+    if(!sku || !mapa) return null;
+    if(mapa[sku]) return mapa[sku];
+    var pai=String(sku).replace(/-[A-Z]{2}$/,'');
+    return (pai!==sku && mapa[pai]) || null;
+  }
+  var APELIDO=[[/\bTK\b|tib ?kids/i,'tibkids'],[/\bVLL\b|variall/i,'variall'],[/\bBC\b|boyu/i,'boyucell'],[/\bTM\b|thametal/i,'thametal']];
+  function normM(x){ return String(x||'').toLowerCase().replace(/[^a-z0-9]/g,''); }
+  function cupMarcaCampanha(k, escolhidas, marcas){
+    var m=escolhidas && escolhidas[k.promotion_id];
+    if(m) return { marca:m, pelo:'marcado' };
+    var n=String(k.nome||'');
+    for(var i=0;i<APELIDO.length;i++){
+      if(!APELIDO[i][0].test(n)) continue;
+      var alvo=(marcas||[]).find(function(x){ return normM(x)===APELIDO[i][1]; });
+      if(alvo) return { marca:alvo, pelo:'nome' };
+    }
+    return { marca:null, pelo:null };
   }
   // Dias de calendário (Brasília) entre agora e a data: 0 = hoje, 1 = amanhã.
   function diasCal(agora, iso){
@@ -15100,16 +15126,44 @@ window.apGarantirMes=async function(mes){
       sb.from('ml_descontos_sync').select('*').eq('conta',CONTA).limit(1),
       sb.from('ml_descontos').select('data').eq('conta',CONTA).order('data',{ascending:true}).limit(1),
       sb.from('ml_cupom_campanha_dia').select('data,promotion_id,orcamento,orcamento_restante,cupons_usados,lido_em').gte('data',corteFoto).order('data',{ascending:true}),
-      sb.from('cupom_objetivo').select('promotion_id,objetivo')
+      sb.from('cupom_objetivo').select('promotion_id,objetivo,marca'),
+      sbTodas(function(a,b){ return sbP('skus','sku,marca').eq('conta',CONTA).order('sku',{ascending:true}).range(a,b); }, 'cupons/marcas')
     ]);
     var e=r.find(function(x){ return x && x.error; });
     if(e) throw e.error;
     var i2sku={}, titDe={};
     (r[1].data||[]).forEach(function(a){ var k=a.sku||('item:'+a.item_id); i2sku[a.item_id]=k; if(!titDe[k]) titDe[k]=a.titulo||k; });
-    var marcados={}; (r[6].data||[]).forEach(function(o){ if(o.objetivo) marcados[o.promotion_id]=o.objetivo; });
-    return { de:de, ate:hoje, dias:dias, agora:agora, ag:cupAgregar(r[0].data||[], i2sku, titDe), semanas:cupSemanas(r[0].data||[]),
-             campanhas:r[2].data||[], fotos:r[5].data||[], marcados:marcados,
-             sync:(r[3].data&&r[3].data[0])||null, inicioDados:(r[4].data&&r[4].data[0]&&r[4].data[0].data)||null };
+    var marcados={}, marcaCamp={};
+    (r[6].data||[]).forEach(function(o){ if(o.objetivo) marcados[o.promotion_id]=o.objetivo; if(o.marca) marcaCamp[o.promotion_id]=o.marca; });
+    var mapa={}; (r[7].data||[]).forEach(function(x){ if(x.marca) mapa[x.sku]=x.marca; });
+    var marcas=Array.from(new Set(Object.keys(mapa).map(function(k){ return mapa[k]; }))).sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
+    var linhas=(r[0].data||[]).map(function(x){
+      var sku=i2sku[x.item_id] || x.sku || null;
+      return Object.assign({}, x, { _marca: cupMarcaSku(sku, mapa) || SEM_MARCA });
+    });
+    return recalcular({ de:de, ate:hoje, dias:dias, agora:agora, linhas:linhas, i2sku:i2sku, titDe:titDe, mapa:mapa, marcas:marcas,
+             campanhas:r[2].data||[], fotos:r[5].data||[], marcados:marcados, marcaCamp:marcaCamp,
+             sync:(r[3].data&&r[3].data[0])||null, inicioDados:(r[4].data&&r[4].data[0]&&r[4].data[0].data)||null });
+  }
+  /* Aplica o filtro de marca às vendas (cartões, semanas, SKUs) e soma por marca. */
+  function recalcular(c){
+    var f=_cup.marca;
+    if(f!=='todas' && f!==SEM_MARCA && c.marcas.indexOf(f)<0) f=_cup.marca='todas';
+    var L= f==='todas' ? c.linhas : c.linhas.filter(function(x){ return x._marca===f; });
+    c.ag=cupAgregar(L, c.i2sku, c.titDe);
+    c.ag.linhas.forEach(function(o){ o.marca=cupMarcaSku(o.sku, c.mapa); });
+    c.semanas=cupSemanas(L);
+    var por={};
+    c.linhas.forEach(function(x){ (por[x._marca]||(por[x._marca]=[])).push(x); });
+    c.porMarca=Object.keys(por).map(function(m){ var a=cupAgregar(por[m], c.i2sku, c.titDe).tot; a.marca=m; return a; })
+      .sort(function(a,b){ return (a.marca===SEM_MARCA)-(b.marca===SEM_MARCA) || b.cuponsSeus-a.cuponsSeus; });
+    return c;
+  }
+  function marcaDaCampanha(k, c){ return cupMarcaCampanha(k, c.marcaCamp, c.marcas); }
+  function passaMarca(k, c){
+    if(_cup.marca==='todas') return true;
+    var m=marcaDaCampanha(k,c).marca;
+    return _cup.marca===SEM_MARCA ? !m : m===_cup.marca;
   }
 
   /* ── Pintura: campanhas ─────────────────────────────────────────────────── */
@@ -15148,7 +15202,12 @@ window.apGarantirMes=async function(mes){
       +(o.obj?'':'<option value="" selected>— marcar —</option>')
       +OBJ.map(function(x){ return '<option value="'+x[0]+'"'+(o.obj===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join('')
       +'</select>'+(o.pelo==='nome'?'<span class="cup-obj-dica">pelo nome</span>':'');
-    return '<div class="cup-camp cup-st-'+s.st+'" data-id="'+esc(k.promotion_id)+'">'
+    var mc=marcaDaCampanha(k,c);
+    var selM='<select class="cup-obj cup-marca" data-id="'+esc(k.promotion_id)+'" onchange="cupMarcaCamp(this.dataset.id,this.value)">'
+      +(mc.marca?'':'<option value="" selected>— marcar —</option>')
+      +c.marcas.map(function(x){ return '<option value="'+esc(x)+'"'+(mc.marca===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')
+      +'</select>'+(mc.pelo==='nome'?'<span class="cup-obj-dica">pelo nome</span>':'');
+    return '<div class="cup-camp cup-st-'+s.st+'" data-id="'+esc(k.promotion_id)+'" data-marca="'+esc(mc.marca||'')+'">'
       +'<div class="cup-camp-top"><span class="cup-camp-nome">'+esc(k.nome||k.promotion_id)+'</span>'
       +'<span class="cup-camp-pct">'+(pct!==null?fN(pct)+'%':'—')+'</span></div>'
       +'<div class="cup-chips">'+chips.join('')+'</div>'
@@ -15159,12 +15218,12 @@ window.apGarantirMes=async function(mes){
         : '<div class="cup-camp-sub">sem orçamento informado pelo ML</div>')
       +'<div class="cup-stats">'+stats+'</div>'
       +linhaRitmo
-      +'<div class="cup-camp-obj">Objetivo '+sel+'</div>'
+      +'<div class="cup-camp-obj"><span class="cup-campo">Objetivo '+sel+'</span><span class="cup-campo">Marca '+selM+'</span></div>'
       +'</div>';
   }
   function pintarCampanhas(c){
-    var vivas=[], encerradas=[];
-    c.campanhas.forEach(function(k){ (cupStatus(k,c.agora).st==='encerrada'?encerradas:vivas).push(k); });
+    var vivas=[], encerradas=[], fora=0;
+    c.campanhas.forEach(function(k){ if(!passaMarca(k,c)){ fora++; return; } (cupStatus(k,c.agora).st==='encerrada'?encerradas:vivas).push(k); });
     var ativas=vivas.filter(function(k){ return cupStatus(k,c.agora).st==='ativa'; });
     var gastoAtivas=ativas.reduce(function(s,k){ return s+(gastoDe(k)||0); },0);
     var usosAtivas=ativas.reduce(function(s,k){ return s+(num(k.cupons_usados)||0); },0);
@@ -15176,7 +15235,9 @@ window.apGarantirMes=async function(mes){
       +'<span><b>'+fN(usosAtivas)+'</b> cupons usados nas ativas</span>'
       +'<span><b>'+fR0(gastoAtivas)+'</b> gastos nas ativas</span>'
       +(urg?'<span class="cup-urg">'+urg+' pedindo atenção</span>':'')
-      +'</div>';
+      +'</div>'
+      +(_cup.marca!=='todas'?'<div class="cup-filtro-nota">Mostrando só as campanhas de <b>'+esc(_cup.marca==='(sem marca)'?'sem marca escolhida':_cup.marca)+'</b>'
+        +(fora?' · '+fora+' de outras marcas ou sem marca escolhida ficaram de fora':'')+'. <a href="#" onclick="cupFiltrarMarca(\'todas\');return false">Ver todas</a></div>':'');
     var grupos={carrinho:[],seguidores:[],outro:[],'':[]};
     vivas.sort(function(a,b){ var sa=cupStatus(a,c.agora).st, sb2=cupStatus(b,c.agora).st;
       return (sa===sb2?0:sa==='ativa'?-1:1) || (new Date(a.fim)-new Date(b.fim)); });
@@ -15226,6 +15287,58 @@ window.apGarantirMes=async function(mes){
       +'</div>';
   }
 
+  /* ── Pintura: marcas ────────────────────────────────────────────────────── */
+  function faixaMarcas(c){
+    var ops=['todas'].concat(c.marcas);
+    if(c.linhas.some(function(x){ return x._marca===SEM_MARCA; }) || c.campanhas.some(function(k){ return !marcaDaCampanha(k,c).marca; })) ops.push(SEM_MARCA);
+    return '<div class="cup-marcas-faixa" id="cup-faixa">'+ops.map(function(m){
+      var rot= m==='todas'?'Todas as marcas': m===SEM_MARCA?'Sem marca':m;
+      return '<button type="button" data-marca="'+esc(m)+'" class="'+(_cup.marca===m?'ativo':'')+'" onclick="cupFiltrarMarca(this.dataset.marca)">'+esc(rot)+'</button>';
+    }).join('')+'</div>';
+  }
+  function pintarMarcas(c){
+    var temPix=c.porMarca.some(function(o){ return o.pix>0; });
+    var gastoCamp={}, nCamp={};
+    c.campanhas.forEach(function(k){
+      if(cupStatus(k,c.agora).st!=='ativa') return;
+      var m=marcaDaCampanha(k,c).marca||SEM_MARCA;
+      nCamp[m]=(nCamp[m]||0)+1; gastoCamp[m]=(gastoCamp[m]||0)+(gastoDe(k)||0);
+    });
+    var tot=c.porMarca.reduce(function(s,o){ return s+o.cuponsSeus; },0);
+    var corpo=c.porMarca.map(function(o){
+      var sel=_cup.marca===o.marca;
+      return '<tr data-marca="'+esc(o.marca)+'" class="'+(sel?'cup-marca-sel':'')+'" style="cursor:pointer" onclick="cupFiltrarMarca(this.dataset.marca)">'
+        +'<td style="font-weight:600;color:var(--slate-900)">'+esc(o.marca===SEM_MARCA?'Sem marca':o.marca)+'</td>'
+        +'<td data-rot="Pedidos">'+fN(o.pedidos)+'</td>'
+        +'<td data-rot="Receita">'+fR0(o.receita)+'</td>'
+        +'<td data-rot="Cupom de campanha">'+fR0(o.camp)+'</td>'
+        +(temPix?'<td data-rot="Cupom Pix seu">'+fR0(o.pix)+'</td>':'')
+        +'<td data-rot="Seus cupons" style="font-weight:600;color:var(--coral-500)">'+fR0(o.cuponsSeus)+'</td>'
+        +'<td data-rot="% dos seus cupons">'+(tot>0?fP(o.cuponsSeus/tot,0):'—')+'</td>'
+        +'<td data-rot="Seus cupons s/ receita">'+fPP(o.cuponsSeusPct)+'</td>'
+        +'<td data-rot="Cupom do ML" style="color:var(--green-600)">'+fR0(o.cupomMl)+'</td>'
+        +'<td data-rot="Rebate do ML" style="color:var(--green-600)">'+fR0(o.rebate)+'</td>'
+        +'<td data-rot="Campanhas ativas">'+(nCamp[o.marca]||0)+'</td>'
+        +'<td data-rot="Gasto nas campanhas ativas">'+(nCamp[o.marca]?fR0(gastoCamp[o.marca]):'—')+'</td>'
+        +'</tr>';
+    }).join('');
+    // marca com campanha ativa mas sem venda no período ainda aparece
+    Object.keys(nCamp).forEach(function(m){
+      if(c.porMarca.some(function(o){ return o.marca===m; })) return;
+      corpo+='<tr data-marca="'+esc(m)+'" class="'+(_cup.marca===m?'cup-marca-sel':'')+'" style="cursor:pointer" onclick="cupFiltrarMarca(this.dataset.marca)"><td style="font-weight:600;color:var(--slate-900)">'+esc(m===SEM_MARCA?'Sem marca':m)+'</td>'
+        +'<td data-rot="Pedidos">0</td><td data-rot="Receita">—</td><td data-rot="Cupom de campanha">—</td>'+(temPix?'<td data-rot="Cupom Pix seu">—</td>':'')
+        +'<td data-rot="Seus cupons">—</td><td data-rot="% dos seus cupons">—</td><td data-rot="Seus cupons s/ receita">—</td><td data-rot="Cupom do ML">—</td><td data-rot="Rebate do ML">—</td>'
+        +'<td data-rot="Campanhas ativas">'+nCamp[m]+'</td><td data-rot="Gasto nas campanhas ativas">'+fR0(gastoCamp[m])+'</td></tr>';
+    });
+    return '<div class="table-wrap"><table><thead class="hub-thead"><tr><th>Marca</th><th>Pedidos</th><th>Receita</th><th>Cupom de campanha</th>'
+      +(temPix?'<th>Cupom Pix seu</th>':'')
+      +'<th title="Campanha + Pix, pagos por você, nas vendas do período">Seus cupons</th><th>% dos seus cupons</th><th>Seus cupons s/ receita</th>'
+      +'<th>Cupom do ML</th><th>Rebate do ML</th><th title="Campanhas ativas ligadas à marca">Campanhas ativas</th>'
+      +'<th title="Orçamento já usado nas campanhas ativas da marca, desde o início de cada uma (número do ML)">Gasto nas campanhas ativas</th></tr></thead>'
+      +'<tbody class="hub-tbody">'+corpo+'</tbody></table></div>'
+      +'<p class="fin-note">Vendas do período, pela marca de cada SKU (Catálogo → Marcas). As duas últimas colunas vêm das campanhas ligadas à marca: o gasto é o total desde o início de cada campanha, não só do período. Clique numa marca para filtrar a tela.</p>';
+  }
+
   /* ── Pintura: semanas e SKUs ────────────────────────────────────────────── */
   function pintarSemanas(c){
     var S=c.semanas; if(!S.length) return '<p class="fin-note">Sem vendas no período.</p>';
@@ -15268,7 +15381,7 @@ window.apGarantirMes=async function(mes){
       var alto = o.pixSobreRec!==null && o.pixSobreRec>=0.02;
       return '<tr data-sku="'+esc(o.sku)+'">'
         +'<td style="max-width:240px"><div style="font-family:var(--mono);font-size:12.5px;color:var(--slate-900);font-weight:600">'+esc(o.sku)+'</div>'
-        +'<div style="font-size:11px;color:var(--slate-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.titulo)+'</div></td>'
+        +'<div style="font-size:11px;color:var(--slate-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(o.marca?'<span class="cup-sku-marca">'+esc(o.marca)+'</span> · ':'')+esc(o.titulo)+'</div></td>'
         +'<td data-rot="Pedidos">'+fN(o.pedidos)+'</td>'
         +'<td data-rot="Receita">'+fR(o.receita)+'</td>'
         +'<td data-rot="Vendas c/ cupom">'+fP(o.pctPedCamp)+'</td>'
@@ -15302,8 +15415,9 @@ window.apGarantirMes=async function(mes){
     var parcial = c.inicioDados && c.inicioDados>c.de
       ? '<p class="fin-note" style="color:var(--amber-600)">Os dados de cupom começam em '+dataBR(c.inicioDados)+': o período mostra só a partir daí.</p>' : '';
     el.innerHTML=
-      '<div class="perf-vg-controls" style="justify-content:flex-end;flex-wrap:wrap;gap:10px">'+selo
-        +'<button class="perf-select" id="cup-btn" style="cursor:pointer" onclick="cupAtualizar()">↻ Ler do ML</button></div>'
+      '<div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:10px">'+faixaMarcas(c)
+        +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+selo
+        +'<button class="perf-select" id="cup-btn" style="cursor:pointer" onclick="cupAtualizar()">↻ Ler do ML</button></div></div>'
       +'<div class="sec-title" style="margin-top:6px">Campanhas de cupom</div>'
       +'<div id="cup-campanhas">'+pintarCampanhas(c)+'</div>'
       +'<div class="cup-periodo"><div class="sec-title" style="margin:0">Quem pagou os descontos</div>'
@@ -15311,10 +15425,10 @@ window.apGarantirMes=async function(mes){
         +[7,15,30,60].map(function(n){ return '<option value="'+n+'"'+(n===_cup.dias?' selected':'')+'>Últimos '+n+' dias</option>'; }).join('')
         +'</select></div>'
       +parcial
-      +pintarKpis(c)
-      +'<div class="sec-title">Semana a semana</div>';
-    document.getElementById('cup-semanas').innerHTML=pintarSemanas(c);
-    document.getElementById('cup-sku-cab').innerHTML='<div class="cup-periodo"><div class="sec-title" style="margin:0">Por SKU</div>'
+      +pintarKpis(c);
+    document.getElementById('cup-marcas').innerHTML='<div class="sec-title">Por marca</div>'+pintarMarcas(c);
+    document.getElementById('cup-semanas').innerHTML='<div class="sec-title">Semana a semana'+(_cup.marca!=='todas'?' · '+esc(_cup.marca):'')+'</div>'+pintarSemanas(c);
+    document.getElementById('cup-sku-cab').innerHTML='<div class="cup-periodo"><div class="sec-title" style="margin:0">Por SKU'+(_cup.marca!=='todas'?' · '+esc(_cup.marca):'')+'</div>'
       +'<input class="notes-search" id="cup-busca" placeholder="SKU ou título" value="'+esc(_cup.busca)+'" style="width:200px;padding:6px 10px;font-size:12px" oninput="cupBuscar(this.value)"></div>';
     document.getElementById('cup-tabela').innerHTML=pintarTabela(c);
     document.getElementById('cup-rodape').innerHTML=
@@ -15325,7 +15439,7 @@ window.apGarantirMes=async function(mes){
       +'Nas campanhas, cupons usados e gasto são os números do próprio ML; o ritmo usa a leitura diária dos últimos 7 dias (antes de ter 1 dia de histórico, a média desde o início). '
       +'Você recebe aviso no celular quando uma campanha ativa está a '+VENCE_DIAS+' dias do fim e quando passa de '+Math.round(ORC_ALERTA*100)+'% do orçamento. Cancelados ficam de fora.</p>';
   }
-  function limparResto(){ ['cup-semanas','cup-sku-cab','cup-tabela','cup-rodape'].forEach(function(id){ var x=document.getElementById(id); if(x) x.innerHTML=''; }); }
+  function limparResto(){ ['cup-marcas','cup-semanas','cup-sku-cab','cup-tabela','cup-rodape'].forEach(function(id){ var x=document.getElementById(id); if(x) x.innerHTML=''; }); }
 
   window.cupOrdenar=function(campo){
     if(_cup.ordem===campo) _cup.desc=!_cup.desc; else { _cup.ordem=campo; _cup.desc=true; }
@@ -15356,6 +15470,26 @@ window.apGarantirMes=async function(mes){
       if(typeof showToast==='function') showToast('Não consegui salvar o objetivo: '+(e&&e.message||e));
     }
   };
+  window.cupFiltrarMarca=function(m){
+    _cup.marca=m||'todas';
+    if(_cup.dados){ recalcular(_cup.dados); pintar(); }
+  };
+  // Marca da campanha: só no OfficeLed (cupom_objetivo.marca). Não escreve nada no ML.
+  window.cupMarcaCamp=async function(id, marca){
+    if(!_cup.dados || !marca) return;
+    var antes=_cup.dados.marcaCamp[id];
+    _cup.dados.marcaCamp[id]=marca;
+    pintar();
+    try{
+      var r=await sb.from('cupom_objetivo').upsert({ promotion_id:id, marca:marca, atualizado_em:new Date().toISOString() }, { onConflict:'promotion_id' });
+      if(r && r.error) throw r.error;
+    }catch(e){
+      console.error('[Cupons] marca', e);
+      if(antes) _cup.dados.marcaCamp[id]=antes; else delete _cup.dados.marcaCamp[id];
+      pintar();
+      if(typeof showToast==='function') showToast('Não consegui salvar a marca: '+(e&&e.message||e));
+    }
+  };
   window.cupPeriodo=function(v){ _cup.dias=Number(v)||30; _cup.dados=null; window.cupCarregar(); };
   window.cupCarregar=async function(){
     var el=document.getElementById('cup-corpo'); if(!el) return;
@@ -15374,7 +15508,8 @@ window.apGarantirMes=async function(mes){
     _cup.dados=null;
     await window.cupCarregar();
   };
-  window._cup={ agregar:cupAgregar, semanas:cupSemanas, status:cupStatus, ritmo:cupRitmo, projecao:cupProjecao, objetivo:cupObjetivo, estado:_cup };
+  window._cup={ agregar:cupAgregar, semanas:cupSemanas, status:cupStatus, ritmo:cupRitmo, projecao:cupProjecao, objetivo:cupObjetivo,
+    marcaSku:cupMarcaSku, marcaCampanha:cupMarcaCampanha, estado:_cup };
 })();
 </script>
 <style id="cup-css">
@@ -15421,6 +15556,17 @@ window.apGarantirMes=async function(mes){
 .cup-obj{ font-family:var(--font); font-size:12px; padding:4px 6px; border:1px solid var(--slate-100); border-radius:6px; background:var(--white); color:var(--slate-900); }
 .cup-obj-dica{ font-size:10.5px; color:var(--amber-600); }
 .cup-vazio{ font-size:12px; color:var(--slate-400); border:1px dashed var(--slate-200); border-radius:var(--radius); padding:12px 14px; }
+.cup-marcas-faixa{ display:flex; flex-wrap:wrap; gap:6px; }
+.cup-marcas-faixa button{ font-family:var(--font); font-size:12px; padding:6px 12px; border-radius:20px; border:1px solid var(--slate-100); background:var(--white); color:var(--slate-600); cursor:pointer; }
+.cup-marcas-faixa button.ativo{ background:var(--slate-900); border-color:var(--slate-900); color:var(--white); font-weight:600; }
+.cup-filtro-nota{ font-size:12px; color:var(--slate-600); background:var(--blue-50); border-radius:8px; padding:7px 10px; margin:4px 0 2px; }
+.cup-filtro-nota a{ color:var(--blue-600); }
+#cup-marcas td{ font-size:12.5px; }
+@media (min-width:769px){ #cup-marcas td, #cup-marcas th{ white-space:nowrap; } }
+#cup-marcas tbody tr:hover td{ background:var(--slate-50); }
+#cup-marcas tr.cup-marca-sel td{ background:var(--blue-50) !important; }
+.cup-campo{ display:inline-flex; align-items:center; gap:6px; }
+.cup-sku-marca{ color:var(--blue-600); font-weight:600; }
 .cup-toggle{ display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--slate-600); margin-top:14px; cursor:pointer; }
 @media (max-width:768px){
   #cup-busca{ width:100% !important; }
@@ -16351,7 +16497,7 @@ body:has(#page-led.active) .fab{ display:none !important; }
   'use strict';
 
   // Containers cujas tabelas viram lista no celular.
-  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela','cup-tabela','cup-semanas','estf-tabela',
+  var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela','cup-tabela','cup-semanas','cup-marcas','estf-tabela',
                'mrc-tabela','exp-ofensoras','exp-categorias'];
 
   // Rótulos do cabeçalho, com colspan expandido: a coluna 3 tem que casar com
