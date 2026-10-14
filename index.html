@@ -15606,7 +15606,8 @@ window.apGarantirMes=async function(mes){
 (function PromocoesModule(){
   var CONTA='Logbox', SEM_MARCA='(sem marca)';
   var _p={ dados:null, carregando:false, marca:'todas', busca:'', filtro:'todos', ordem:'padrao', desc:true, aberto:{} };
-  var STATUS={ started:'Ativa', pending:'Proposta do ML', candidate:'Disponível' };
+  var STATUS={ started:'Ativa', programada:'Programada', pending:'Proposta do ML', candidate:'Disponível' };
+  function st(o){ return o.programada ? 'programada' : o.status; }
   var TIPO={ SMART:'Co-participação', PRICE_MATCHING:'Preço competitivo', DEAL:'Campanha do ML', LIGHTNING:'Relâmpago',
     PRICE_DISCOUNT:'Desconto próprio', SELLER_CAMPAIGN:'Campanha sua', BANK:'Desconto no Pix', UNHEALTHY_STOCK:'Estoque parado (Full)' };
 
@@ -15616,6 +15617,16 @@ window.apGarantirMes=async function(mes){
   function fP(v,c){ return n(v)===null ? '—' : Number(v).toFixed(c===undefined?1:c).replace('.',',')+'%'; }
   function fDif(v){ if(n(v)===null) return '—'; if(Math.abs(v)<0.005) return 'R$ 0,00'; return (v>0?'+':'−')+'R$ '+Math.abs(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
   function diaBR(iso){ if(!iso) return null; var d=new Date(new Date(iso).getTime()-3*3600000); return String(d.getUTCDate()).padStart(2,'0')+'/'+String(d.getUTCMonth()+1).padStart(2,'0'); }
+  /* Janela de oferta programada, no horário de Brasília: "17/10 das 12h às 0h". */
+  function janela(ini, fim){
+    if(!ini) return null;
+    var a=new Date(new Date(ini).getTime()-3*3600000), b=fim?new Date(new Date(fim).getTime()+1000-3*3600000):null;
+    var h=function(d){ var m=d.getUTCMinutes(); return d.getUTCHours()+'h'+(m?String(m).padStart(2,'0'):''); };
+    if(!b) return 'a partir de '+diaBR(ini)+' '+h(a);
+    var horas=(b-a)/3600000;
+    if(horas<=24) return diaBR(ini)+' das '+h(a)+' às '+h(b);
+    return 'de '+diaBR(ini)+' a '+diaBR(fim);
+  }
   function marcaSku(sku, mapa){ if(!sku) return null; if(mapa[sku]) return mapa[sku]; var pai=String(sku).replace(/-[A-Z]{2}$/,''); return (pai!==sku&&mapa[pai])||null; }
 
   /* Monta a visão por anúncio. Função pura (o teste confere). */
@@ -15626,17 +15637,18 @@ window.apGarantirMes=async function(mes){
         var preco=n(o.preco);
         return Object.assign({}, o, { preco:preco, meli_pct:n(o.meli_pct)||0, seller_pct:n(o.seller_pct), rebate_rs:n(o.rebate_rs)||0, seu_rs:n(o.seu_rs)||0,
           recebe:n(o.recebe), dif_recebe:n(o.dif_recebe), dif_preco:n(o.dif_preco), preco_original:n(o.preco_original),
-          defineP: !o.so_pix && preco>0, fimEf: o.fim || (o.promotion_id && fimDe ? fimDe[o.promotion_id] : null) || null });
+          defineP: !o.so_pix && preco>0, fimEf: o.fim || (o.promotion_id && fimDe && !o.programada ? fimDe[o.promotion_id] : null) || null });
       });
       var ativas=L.filter(function(o){ return o.status==='started' && o.defineP; }).sort(function(x,y){ return x.preco-y.preco; });
       var A=ativas[0]||null;
       var pix=L.filter(function(o){ return o.status==='started' && o.so_pix && o.meli_pct>0 && !(o.seller_pct>0); })[0]||null;
-      var ofertas=L.filter(function(o){ return o.status!=='started' && o.meli_pct>0; })
+      var programadas=L.filter(function(o){ return o.programada; }).sort(function(x,y){ return String(x.inicio||'').localeCompare(String(y.inicio||'')); });
+      var ofertas=L.filter(function(o){ return o.status!=='started' && !o.programada && o.meli_pct>0; })
         .sort(function(x,y){ return (y.atrativa?1:0)-(x.atrativa?1:0) || (n(y.dif_recebe)||-1e9)-(n(x.dif_recebe)||-1e9); });
       var orig=n(a.preco_original) || (L[0]&&L[0].preco_original) || n(a.preco);
       var sku=a.sku||null;
       return { item_id:a.item_id, sku:sku, titulo:a.titulo||'', marca:marcaSku(sku,mapa)||SEM_MARCA,
-        preco_cheio: (A&&A.preco_original) || orig, ativa:A, outrasAtivas:ativas.slice(1), pix:pix, ofertas:ofertas, todas:L,
+        preco_cheio: (A&&A.preco_original) || orig, ativa:A, outrasAtivas:ativas.slice(1), pix:pix, ofertas:ofertas, programadas:programadas, todas:L,
         atrativas:ofertas.filter(function(o){ return o.atrativa; }),
         rebate: A ? A.rebate_rs : 0, rebatePct: A ? A.meli_pct : 0, recebe: A ? A.recebe : null,
         descPct: A && A.preco_original ? 100*(A.preco_original-A.preco)/A.preco_original : null,
@@ -15678,6 +15690,7 @@ window.apGarantirMes=async function(mes){
       if(_p.filtro==='rebate') return o.rebate>0;
       if(_p.filtro==='semRebate') return !!o.ativa && !(o.rebate>0);
       if(_p.filtro==='semPromo') return !o.ativa;
+      if(_p.filtro==='programada') return o.programadas.length>0;
       return true;
     });
   }
@@ -15692,19 +15705,37 @@ window.apGarantirMes=async function(mes){
     var atr=L.reduce(function(s,o){ return s+o.atrativas.length; },0);
     var ofs=L.reduce(function(s,o){ return s+o.ofertas.length; },0);
     var props=L.reduce(function(s,o){ return s+o.ofertas.filter(function(x){ return x.status==='pending'; }).length; },0);
+    var progs=L.reduce(function(s,o){ return s+o.programadas.length; },0);
     var semPromo=L.filter(function(o){ return !o.ativa; }).length;
     var pix=L.filter(function(o){ return o.pix; }).length;
     return '<div class="kpi-grid" id="prm-kpis">'
       +kpi('Ofertas atrativas', String(atr), atr?'em '+L.filter(function(o){ return o.atrativas.length; }).length+' anúncio(s) · comparadas com a ativa':'nenhuma agora', atr?'var(--coral-500)':null, true)
       +kpi('Com rebate do ML', comReb.length+' de '+L.length, 'anúncios com promoção ativa em que o ML banca parte', 'var(--green-600)')
       +kpi('Rebate médio', fP(medio), medioRs!==null?fR(medioRs)+' por venda, em média':'', 'var(--green-600)')
-      +kpi('Ofertas com rebate', String(ofs), props+' proposta(s) do ML · '+(ofs-props)+' disponível(is)')
+      +kpi('Programadas', String(progs), 'ofertas que você já aceitou e ainda não começaram', progs?'var(--blue-600)':null)
+      +kpi('Ofertas com rebate', String(ofs), (props?props+' proposta(s) do ML · ':'')+(ofs-props)+' disponível(is), ainda não aceitas')
       +kpi('Pix 100% ML', String(pix), 'anúncios com desconto no Pix todo bancado pelo ML')
       +kpi('Sem promoção ativa', String(semPromo), 'anúncios vendendo no preço cheio')
       +'</div>';
   }
-  function chipStatus(o){ return '<span class="prm-chip prm-st-'+esc(o.status)+'">'+esc(STATUS[o.status]||o.status)+'</span>'; }
-  function validade(o){ var f=diaBR(o.fimEf); return f ? 'até '+f : ''; }
+  function chipStatus(o){ var s=st(o); return '<span class="prm-chip prm-st-'+esc(s)+'">'+esc(STATUS[s]||s)+'</span>'; }
+  function validade(o){ if(o.programada) return janela(o.inicio, o.fim)||'data não informada'; var f=diaBR(o.fimEf); return f ? 'até '+f : ''; }
+  function pintarProgramadas(L){
+    var itens=[]; L.forEach(function(o){ o.programadas.forEach(function(x){ itens.push([o,x]); }); });
+    if(!itens.length) return '';
+    itens.sort(function(a,b){ return String(a[1].inicio||'z').localeCompare(String(b[1].inicio||'z')); });
+    return '<div class="sec-title">Programadas <span class="prm-sec-sub">você já aceitou, ainda não começaram</span></div>'
+      +'<div class="prm-prog">'+itens.map(function(p){
+        var o=p[0], x=p[1];
+        return '<div class="prm-prog-l" data-item="'+esc(o.item_id)+'" data-chave="'+esc(x.chave)+'">'
+          +'<div class="prm-prog-q">'+esc(validade(x))+'</div>'
+          +'<div class="prm-prog-p"><span class="prm-sku">'+esc(o.sku||o.item_id)+'</span> <span class="prm-sub">'+esc(o.titulo)+'</span><div class="prm-tipo">'+esc(x.nome)+'</div></div>'
+          +'<div class="prm-prog-n"><b>'+fR(x.preco)+'</b><span>preço'+(o.ativa?' (hoje '+fR(o.ativa.preco)+')':'')+'</span></div>'
+          +'<div class="prm-prog-n"><b style="color:var(--green-600)">'+fR(x.rebate_rs)+'</b><span>ML banca ('+fP(x.meli_pct)+')</span></div>'
+          +'<div class="prm-prog-n"><b>'+(x.dif_recebe!==null?fDif(x.dif_recebe):fR(x.recebe))+'</b><span>'+(x.dif_recebe!==null?'você recebe × hoje':'você recebe')+'</span></div>'
+          +'</div>';
+      }).join('')+'</div>';
+  }
   function pintarAtrativas(L){
     var cards=[];
     L.forEach(function(o){ o.atrativas.forEach(function(x){ cards.push([o,x]); }); });
@@ -15739,7 +15770,7 @@ window.apGarantirMes=async function(mes){
   }
   function gaveta(o){
     var linhas=o.todas.filter(function(x){ return x.status==='started' || x.meli_pct>0 || x.tipo==='PRICE_DISCOUNT'; })
-      .sort(function(x,y){ var r={started:0,pending:1,candidate:2}; return (r[x.status]-r[y.status]) || ((x.preco||9e9)-(y.preco||9e9)); });
+      .sort(function(x,y){ var r={started:0,programada:1,pending:2,candidate:3}; return (r[st(x)]-r[st(y)]) || ((x.preco||9e9)-(y.preco||9e9)); });
     var semReb=o.todas.filter(function(x){ return x.status!=='started' && !(x.meli_pct>0); });
     return '<div class="prm-gav">'
       +'<table class="prm-gav-t"><thead><tr><th>Promoção</th><th>Situação</th><th>Preço</th><th>ML banca</th><th>Você banca</th><th>Você recebe</th><th>× ativa</th><th>Validade</th></tr></thead><tbody>'
@@ -15768,7 +15799,7 @@ window.apGarantirMes=async function(mes){
         +'<td style="max-width:260px"><div class="prm-sku">'+(ab?'▾ ':'▸ ')+esc(o.sku||o.item_id)+'</div>'
           +'<div class="prm-sub">'+(o.marca!==SEM_MARCA?'<span class="prm-marca">'+esc(o.marca)+'</span> · ':'')+esc(o.titulo)+'</div></td>'
         +'<td data-rot="Preço cheio">'+fR(o.preco_cheio)+'</td>'
-        +'<td data-rot="Promoção ativa">'+(A?esc(A.nome)+'<div class="prm-tipo">'+[TIPO[A.tipo]&&TIPO[A.tipo]!==A.nome?TIPO[A.tipo]:'', validade(A)].filter(Boolean).map(esc).join(' · ')+'</div>':'<span class="prm-cinza">nenhuma</span>')+'</td>'
+        +'<td data-rot="Promoção ativa">'+(o.programadas.length?'<div class="prm-prog-tag">⚡ '+esc(validade(o.programadas[0]))+' · '+fR(o.programadas[0].preco)+'</div>':'')+(A?esc(A.nome)+'<div class="prm-tipo">'+[TIPO[A.tipo]&&TIPO[A.tipo]!==A.nome?TIPO[A.tipo]:'', validade(A)].filter(Boolean).map(esc).join(' · ')+'</div>':'<span class="prm-cinza">nenhuma</span>')+'</td>'
         +'<td data-rot="Preço na promoção">'+(A?fR(A.preco)+' <small>(−'+fP(o.descPct,0)+')</small>':'—')+'</td>'
         +'<td data-rot="ML banca" style="color:var(--green-600);font-weight:600">'+(o.rebate>0?fR(o.rebate)+' <small>('+fP(o.rebatePct)+')</small>':'—')+'</td>'
         +'<td data-rot="Você banca">'+(A?fR(A.seu_rs):'—')+'</td>'
@@ -15801,17 +15832,18 @@ window.apGarantirMes=async function(mes){
     el.innerHTML='<div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:10px">'+faixa(c)
         +'<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">'+selo+'<button class="perf-select" id="prm-btn" style="cursor:pointer" onclick="prmAtualizar()">↻ Ler do ML</button></div></div>'
       +'<div style="margin-top:12px">'+pintarKpis(Lm)+'</div>'
+      +pintarProgramadas(Lm)
       +'<div class="sec-title">Ofertas atrativas</div>'+pintarAtrativas(Lm)
       +'<div class="cup-periodo"><div class="sec-title" style="margin:0">Promoções por anúncio</div><div style="display:flex;gap:8px;flex-wrap:wrap">'
         +'<select class="perf-select" id="prm-filtro" onchange="prmFiltro(this.value)">'
-        +[['todos','Todos os anúncios'],['atrativa','Com oferta atrativa'],['rebate','Com rebate ativo'],['semRebate','Promoção sem rebate'],['semPromo','Sem promoção ativa']]
+        +[['todos','Todos os anúncios'],['atrativa','Com oferta atrativa'],['programada','Com oferta programada'],['rebate','Com rebate ativo'],['semRebate','Promoção sem rebate'],['semPromo','Sem promoção ativa']]
           .map(function(x){ return '<option value="'+x[0]+'"'+(_p.filtro===x[0]?' selected':'')+'>'+x[1]+'</option>'; }).join('')+'</select>'
         +'<input class="notes-search" id="prm-busca" placeholder="SKU, título ou MLB" value="'+esc(_p.busca)+'" style="width:200px;padding:6px 10px;font-size:12px" oninput="prmBuscar(this.value)"></div></div>';
     document.getElementById('prm-tabela').innerHTML=pintarTabela(c);
     document.getElementById('prm-rodape').innerHTML='<p class="fin-note" style="margin-top:8px"><strong>Rebate</strong> é a parte do desconto que o Mercado Livre banca: volta como tarifa menor ("Reduzimos R$ x das suas tarifas por venda"). '
       +'<strong>Você recebe</strong> = preço da promoção + rebate, por venda. A <strong>promoção ativa</strong> é a de menor preço entre as ativas (é a que o comprador vê). '
       +'Uma oferta é <strong>atrativa</strong> quando tem rebate, ainda não está ativa e, comparada com a ativa, deixa você receber o mesmo ou mais por venda sem subir o preço, melhorando o preço para o comprador ou o rebate. '
-      +'Sem promoção ativa não há com o que comparar. <strong>Pix 100% ML</strong> é desconto só no Pix pago todo pelo ML. '
+      +'Sem promoção ativa não há com o que comparar. <strong>Programada</strong> é a oferta que você já aceitou e ainda não começou (como a oferta relâmpago agendada): não é avaliada nem gera aviso. <strong>Pix 100% ML</strong> é desconto só no Pix pago todo pelo ML. '
       +'A <strong>M.C.</strong> é a do Hub, no preço de lá: não é recalculada no preço da promoção. Lido do ML de hora em hora; clique num anúncio para ver todas as promoções dele. '
       +'Você recebe aviso no celular quando aparece oferta atrativa e quando uma promoção com rebate termina sem outra na fila.</p>';
   }
@@ -15854,6 +15886,18 @@ window.apGarantirMes=async function(mes){
 .prm-st-started{ background:var(--green-50); color:var(--green-600); }
 .prm-st-pending{ background:var(--blue-50); color:var(--blue-600); }
 .prm-st-candidate{ background:var(--slate-50); color:var(--slate-600); }
+.prm-st-programada{ background:var(--blue-50); color:var(--blue-600); }
+.prm-sec-sub{ font-size:11.5px; font-weight:400; color:var(--slate-400); margin-left:6px; letter-spacing:0; text-transform:none; }
+.prm-prog{ background:var(--white); border:1px solid var(--blue-100); border-radius:var(--radius); }
+.prm-prog-l{ display:grid; grid-template-columns:170px minmax(0,1fr) repeat(3,120px); gap:10px; align-items:center; padding:9px 12px; border-top:1px solid var(--slate-50); }
+.prm-prog-l:first-child{ border-top:0; }
+.prm-prog-q{ font-size:12.5px; font-weight:600; color:var(--blue-600); }
+.prm-prog-p{ min-width:0; }
+.prm-prog-p .prm-sub{ display:inline; }
+.prm-prog-n b{ display:block; font-family:var(--mono); font-size:13px; color:var(--slate-900); }
+.prm-prog-n span{ font-size:10.5px; color:var(--slate-400); }
+.prm-prog-tag{ font-size:11px; font-weight:600; color:var(--blue-600); margin-bottom:2px; }
+@media (max-width:768px){ .prm-prog-l{ grid-template-columns:1fr 1fr 1fr; } .prm-prog-q, .prm-prog-p{ grid-column:1 / -1; } }
 .prm-chip-atr{ background:var(--coral-50); color:var(--coral-600); }
 .prm-chip-pix{ background:var(--green-50); color:var(--green-600); }
 .prm-atr-txt{ color:var(--coral-600); }
