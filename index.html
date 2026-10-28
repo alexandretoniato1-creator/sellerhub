@@ -1593,7 +1593,6 @@ body.sidebar-collapsed .hamburger { display: none; }
           <div class="page-subtitle" id="home-subtitle">Resumo da operação</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <span id="dash-selo"></span>
           <select class="perf-select" id="dash-periodo" onchange="dashTrocarPeriodo(this.value)">
             <option value="hoje">Hoje</option>
             <option value="ontem">Ontem</option>
@@ -1610,13 +1609,16 @@ body.sidebar-collapsed .hamburger { display: none; }
             <span style="color:var(--slate-400);font-size:12px">até</span>
             <input type="date" id="dash-ate" onchange="dashCustomAplicar()">
           </div>
+          <select class="perf-select" id="dash-marca" title="Filtrar por marca" onchange="dashTrocarMarca(this.value)">
+            <option value="todas">Todas as marcas</option>
+          </select>
           <button class="perf-select" style="cursor:pointer" title="Reler do banco" onclick="dashRecarregar()">&#8635;</button>
         </div>
       </div>
       <div id="dash-custom-erro" style="margin-top:8px"></div>
 
-      <!-- Avisos de confiabilidade do número: cobertura do Hub e do ml_financeiro -->
-      <div id="dash-avisos" style="margin-top:14px"></div>
+      <!-- Selo de atualização + avisos sobre o número, numa linha que abre o detalhe -->
+      <div id="dash-avisos"></div>
 
       <!-- 12 indicadores -->
       <div id="dash-kpis" style="margin-top:16px">
@@ -1630,7 +1632,7 @@ body.sidebar-collapsed .hamburger { display: none; }
       <div class="sec-title" id="dash-grafico-titulo">Evolução no período</div>
       <div id="dash-grafico"></div>
 
-      <div class="sec-title">Top 15 produtos por faturamento</div>
+      <div class="sec-title">Produtos que venderam</div>
       <div id="dash-produtos"></div>
 
       <!-- AGENDA -->
@@ -10785,7 +10787,11 @@ window.apGarantirMes=async function(mes){
 (function(){
 
   var _dash = { chave:'7d', dados:null, carregando:false, aberta:null,
-                cacheCard:{}, custom:null, cachePeriodo:{}, dia:null, metrica:null };
+                cacheCard:{}, custom:null, cachePeriodo:{}, dia:null, metrica:null,
+                // leitura crua por janela (para recortar por marca sem reler) e o
+                // cálculo de cada marca; `marca` 'todas' = a conta inteira
+                cacheLeitura:{}, cacheMarca:{}, marca:'todas', busca:'', ordem:null,
+                avisosAbertos:false, baldes:null, grafW:0 };
 
   /* Cada troca de período refazia oito consultas paginadas, inclusive para
      voltar a um período já visto. Agora o resultado calculado fica guardado
@@ -10793,18 +10799,26 @@ window.apGarantirMes=async function(mes){
   function chaveCache(j){ return j.ini+'_'+j.fim; }
   var MKT = 'meli';   // chave do marketplace no Hub. NÃO é 'Mercado Livre'.
 
+  /* Negativo com o sinal na frente do R$ ("−R$ 810,90", não "R$ -810,90") e
+     sem "-0,0%": valor que arredonda para zero é zero, sem sinal. */
+  var MENOS='−';
   function dfmtR(v){
     if(v===null||v===undefined||!isFinite(v)) return '—';
-    return 'R$ ' + Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    var n=Math.round(Number(v)*100)/100;
+    var txt=Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    return (n<0?MENOS:'')+'R$ '+txt;
   }
-  function dfmtN(v){ return (Number(v)||0).toLocaleString('pt-BR'); }
+  function dfmtN(v){ var n=Number(v)||0; return (n<0?MENOS:'')+Math.abs(n).toLocaleString('pt-BR'); }
   function dpct(v, casas){
     if(v===null||v===undefined||!isFinite(v)) return '—';
-    return (v*100).toFixed(casas===undefined?2:casas).replace('.',',')+'%';
+    var c=casas===undefined?2:casas, t=(Math.abs(v)*100).toFixed(c);
+    var zero=Number(t)===0;
+    return (v<0&&!zero?MENOS:'')+t.replace('.',',')+'%';
   }
   function dpp(v){
     if(v===null||v===undefined||!isFinite(v)) return '—';
-    return (v>0?'+':'')+(v*100).toFixed(1).replace('.',',')+' p.p.';
+    var t=(Math.abs(v)*100).toFixed(1), zero=Number(t)===0;
+    return (zero?'':(v>0?'+':MENOS))+t.replace('.',',')+' p.p.';
   }
   function desc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
@@ -11047,8 +11061,17 @@ window.apGarantirMes=async function(mes){
     var hubMap={}, hubLinks={};
     try{ if(typeof hubMcCarregar==='function')   hubMap  = await hubMcCarregar()   || {}; }catch(e){}
     try{ if(typeof hubLinksCarregar==='function')hubLinks= await hubLinksCarregar()|| {}; }catch(e){}
+    // Marca de cada SKU (filtro de marca) e a hora do último sync de vendas
+    // (selo "Atualizado às"). Os dois são opcionais: se falharem, a tela segue.
+    var marcas={}, vendasEm=null;
+    try{ if(typeof window.marcaMapa==='function') marcas = await window.marcaMapa() || {}; }catch(e){}
+    try{
+      var up=await sb.from('ml_vendas').select('updated_at').eq('conta','Logbox')
+        .order('updated_at',{ascending:false, nullsFirst:false}).limit(1);
+      vendasEm = up.data && up.data[0] ? up.data[0].updated_at : null;
+    }catch(e){}
 
-    var out = { snapDate:snapDate,
+    var out = { snapDate:snapDate, marcas:marcas, vendasEm:vendasEm,
       vendas:r[0].data||[], ads:r[1].data||[], fin:r[2].data||[],
       vendasA:r[3].data||[], adsA:r[4].data||[], finA:r[5].data||[],
       anuncios:r[6].data||[], reputacao:(r[7].data&&r[7].data[0])||null,
@@ -11181,7 +11204,21 @@ window.apGarantirMes=async function(mes){
   }
   window._dashRebatePorSku=dashRebatePorSku;
 
-  function dashCalcular(d, j){
+  /* Marca do SKU: skus.marca; variação de cor sem cadastro (XC-BRQ-KART-1-VM)
+     herda a do SKU pai — a mesma regra da aba Cupons. */
+  function dashMarcaDe(chave, mapa){
+    if(!chave || !mapa || String(chave).indexOf('item:')===0) return null;
+    if(mapa[chave]) return mapa[chave];
+    var pai=String(chave).replace(/-[A-Z]{2}$/,'');
+    return (pai!==chave && mapa[pai]) || null;
+  }
+  var SEM_MARCA='__sem';
+
+  /* `marca` (opcional) recorta TUDO antes de somar: vendas, ADS, custo do ML,
+     visitas e descontos dos SKUs daquela marca. É a mesma conta da visão
+     geral, só com menos linhas — nenhuma fórmula nova. Sem marca = conta toda,
+     que é o que o LED e o Mural leem. */
+  function dashCalcular(d, j, marca){
     var i2sku={}, skuItens={}, titDe={}, snapSku={};
     d.anuncios.forEach(function(a){
       var chave = a.sku || ('item:'+a.item_id);
@@ -11223,14 +11260,22 @@ window.apGarantirMes=async function(mes){
     // Alvo de TACOS do SKU (skus.tacos_alvo). Independe do vínculo com o Hub.
     function alvoDe(chave){ return tacosAlvo[chave]!==undefined ? tacosAlvo[chave] : null; }
 
-    var reb = dashRebatePorSku(d.descontos, i2sku);
-    var ag  = dashAgregar(d.vendas,  d.ads,  d.fin,  i2sku, d.visitas,  hubDe);
-    var agA = dashAgregar(d.vendasA, d.adsA, d.finA, i2sku, d.visitasA, hubDe);
+    var mapaMarca=d.marcas||{};
+    var filtra = marca && marca!=='todas';
+    function passa(chave){ var m=dashMarcaDe(chave, mapaMarca); return marca===SEM_MARCA ? !m : m===marca; }
+    function porItem(L){ return !filtra||!L ? L : L.filter(function(r){ return passa(i2sku[r.item_id]||('item:'+r.item_id)); }); }
+    function porSku(L){ return !filtra||!L ? L : L.filter(function(r){ return r.sku && passa(r.sku); }); }
+    var V=porItem(d.vendas), A=porItem(d.ads), F=porSku(d.fin), VI=porItem(d.visitas);
+    var VA=porItem(d.vendasA), AA=porItem(d.adsA), FA=porSku(d.finA), VIA=porItem(d.visitasA);
+
+    var reb = dashRebatePorSku(porItem(d.descontos), i2sku);
+    var ag  = dashAgregar(V,  A,  F,  i2sku, VI,  hubDe);
+    var agA = dashAgregar(VA, AA, FA, i2sku, VIA, hubDe);
     var tot = dashTotais(ag,  hubDe, alvoDe);
     var totA= dashTotais(agA, hubDe, alvoDe);
 
     var diasComVenda={};
-    d.vendas.forEach(function(r){ var x=String(r.data||'').slice(0,10);
+    V.forEach(function(r){ var x=String(r.data||'').slice(0,10);
       if(x && Number(r.receita)>0) diasComVenda[x]=1; });
     var diasVenda=Object.keys(diasComVenda);
     var diasSemFin=diasVenda.filter(function(x){ return !ag.diasFin[x]; }).sort();
@@ -11259,7 +11304,7 @@ window.apGarantirMes=async function(mes){
        compra e link do painel olham só para este. Sem venda, fica o primeiro
        anúncio do snapshot. */
     var recItem={};
-    d.vendas.forEach(function(r){ recItem[r.item_id]=(recItem[r.item_id]||0)+(Number(r.receita)||0); });
+    V.forEach(function(r){ recItem[r.item_id]=(recItem[r.item_id]||0)+(Number(r.receita)||0); });
     var itemPrincipal={};
     Object.keys(skuItens).forEach(function(k){
       var melhor=null, mv=-1;
@@ -11286,6 +11331,7 @@ window.apGarantirMes=async function(mes){
         tacos:tacos, adsAlvo: al,
         desvio: (tacos!==null && al!==null) ? tacos-al : null,
         viaLink: h?h.viaLink:false, skuHub: h?h.skuHub:null,
+        marca: dashMarcaDe(k, mapaMarca),
         snap: snapSku[k]||null, estoqueMin: estoqueMin[k]!==undefined?estoqueMin[k]:null,
         itemPrincipal: itemPrincipal[k]||null,
         // Rebate = parte do desconto que o ML banca, sobre a receita das MESMAS vendas.
@@ -11299,7 +11345,13 @@ window.apGarantirMes=async function(mes){
              reputacao:d.reputacao, snapDate:d.snapDate,
              diasSemFin:diasSemFin, diasVenda:diasVenda.length,
              diasPrelim:Object.keys(ag.diasPrelim).sort(),
-             parcial:d.parcial||null, mesmaHora:d.mesmaHora||null,
+             // "Hoje até HH:MM" vem de ml_pedidos, que não tem SKU: não dá para
+             // recortar por marca, então some quando há marca escolhida.
+             parcial: filtra ? null : (d.parcial||null), mesmaHora:d.mesmaHora||null,
+             marca: filtra ? marca : 'todas',
+             marcasLista: Array.from(new Set(Object.keys(mapaMarca).map(function(k){ return mapaMarca[k]; })))
+               .sort(function(a,b){ return a.localeCompare(b,'pt-BR'); }),
+             vendasEm: d.vendasEm||null,
              // Para o LED: o de-para completo do snapshot, inclusive SKU sem venda.
              i2sku:i2sku, skuItens:skuItens, titDe:titDe, snapSku:snapSku,
              estoqueMin:estoqueMin, itemPrincipal:itemPrincipal,
@@ -11309,19 +11361,22 @@ window.apGarantirMes=async function(mes){
   /* ── Render ──────────────────────────────────────────────────────────────── */
   function delta(atual, anterior, tipo, inverso){
     if(atual==null||anterior==null||!isFinite(atual)||!isFinite(anterior)) return '';
-    var bom, txt;
+    var bom, txt, v;
     if(tipo==='pp'){
-      var v=(atual-anterior)*100;
+      v=(atual-anterior)*100;
       if(!isFinite(v)) return '';
-      bom = inverso ? v<=0 : v>=0;
-      txt = (v>=0?'▲':'▼')+' '+Math.abs(v).toFixed(1).replace('.',',')+' p.p.';
     } else {
       if(!anterior) return '';
-      var p=(atual-anterior)/Math.abs(anterior)*100;
-      if(!isFinite(p)) return '';
-      bom = inverso ? p<=0 : p>=0;
-      txt = (p>=0?'▲':'▼')+' '+Math.abs(p).toFixed(1).replace('.',',')+'%';
+      v=(atual-anterior)/Math.abs(anterior)*100;
+      if(!isFinite(v)) return '';
     }
+    var unid = tipo==='pp' ? ' p.p.' : '%';
+    var abs = Math.abs(v).toFixed(1);
+    // Variação que arredonda para zero não é alta nem queda: sem seta e sem cor.
+    if(Number(abs)===0)
+      return '<span class="delta-zero" title="igual ao período anterior">= 0,0'+unid+'</span>';
+    bom = inverso ? v<=0 : v>=0;
+    txt = (v>=0?'▲':'▼')+' '+abs.replace('.',',')+unid;
     return '<span style="font-size:11px;color:'+(bom?'var(--green-600)':'var(--coral-500)')+'">'+txt+'</span>';
   }
 
@@ -11346,6 +11401,17 @@ window.apGarantirMes=async function(mes){
     conversao:{rot:'Conversão',     campo:'conversao',tipo:'pct', casas:2}
   };
 
+  /* Valor do cartão. O número encolhe para caber na largura do cartão
+     (--n = quantidade de caracteres, a fonte é monoespaçada), em vez de quebrar
+     "R$" numa linha e o valor na outra. O "R$" fica menor que o número. */
+  function vCartao(txt){
+    txt=String(txt==null?'—':txt);
+    var m=/^(−?)R\$ (.*)$/.exec(txt);
+    if(m) return '<span class="kpi-num" style="--n:'+(m[2].length+m[1].length+1.4)+'">'+m[1]
+      +'<span class="kpi-rs">R$</span>'+m[2]+'</span>';
+    return '<span class="kpi-num" style="--n:'+Math.max(txt.length,4)+'">'+txt+'</span>';
+  }
+
   function cartao(rotulo, valor, sub, destaque, chave){
     // Sem gráfico não há para onde clicar. Num período de um dia a seção de
     // evolução não existe, então o cartão perde o ↗ e o cursor de mão em vez
@@ -11355,7 +11421,7 @@ window.apGarantirMes=async function(mes){
     return '<div class="kpi'+(destaque?' destaque':'')+(chave?' kpi-clicavel':'')+(sel?' kpi-sel':'')+'"'
       +(chave?' onclick="dashVerMetrica(\''+chave+'\')" title="Ver no gráfico de evolução"':'')+'>'
       +'<div class="kpi-l">'+rotulo+'</div>'
-      +'<div class="kpi-v">'+valor+'</div>'
+      +'<div class="kpi-v">'+vCartao(valor)+'</div>'
       +'<div class="kpi-d">'+(sub||'')+'</div></div>';
   }
 
@@ -11365,7 +11431,7 @@ window.apGarantirMes=async function(mes){
     // seleção pra ela não ficar pendurada e voltar sozinha quando o período
     // mudar para um intervalo.
     if(!c.serie || c.serie.length<2){ _dash.metrica=null; return; }
-    // clicar no cartão já aberto volta para as três faixas
+    // clicar no cartão já aberto volta para o gráfico de barras
     _dash.metrica = (_dash.metrica===chave) ? null : chave;
     try{ dashRenderKpis(c); dashRenderGrafico(c); }catch(e){ console.error('[OfficeLed] métrica', e); }
     var alvo=document.getElementById('dash-grafico');
@@ -11384,14 +11450,29 @@ window.apGarantirMes=async function(mes){
       +(oQue||'snapshot')+' · '+quando+'</span>';
   };
 
+  /* "Atualizado às 11:42" — hora do último sync de vendas (ml_vendas.updated_at).
+     Mais de um dia sem sync vira alerta âmbar. */
+  function seloAtualizado(iso){
+    if(!iso) return '';
+    var d=new Date(iso); if(isNaN(d)) return '';
+    var hoje=diaISO(new Date()), dia=diaISO(d);
+    var hh=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    var dias=Math.round((new Date(hoje+'T12:00:00')-new Date(dia+'T12:00:00'))/86400000);
+    var txt = dias<=0 ? 'Atualizado às '+hh : (dias===1 ? 'Atualizado ontem às '+hh
+            : 'Atualizado em '+dia.slice(8)+'/'+dia.slice(5,7)+' — sync parado há '+dias+' dias');
+    return '<span class="dash-atual'+(dias>=2?' velho':'')+'" title="Último sync de vendas do Mercado Livre">'
+      +'<i></i>'+txt+'</span>';
+  }
+
   function dashRenderKpis(c){
     var t=c.tot, a=c.totA;
     // Comparação que não existe no mesmo horário mostra isso, não um número.
     var semBase=dashSemBaseMesmaHora(c.mesmaHora);
     var SEM='<span class="delta-neutral" title="Este dado não tem registro por horário — comparar com ontem inteiro mentiria">sem base no mesmo horário</span>';
     function dv(chave, html){ return semBase[chave] ? SEM : html; }
-    /* Catorze cartões do mesmo tamanho não dizem onde olhar. Faturamento,
-       M.C., MPA e TACOS decidem o dia; o resto é contexto e fica menor. */
+    /* Faturamento, M.C., MPA e TACOS decidem o dia e ficam grandes; o resto é
+       contexto. M.C. e MPA em R$ moram no próprio cartão grande (não há mais
+       cartão pequeno repetindo o mesmo número). */
     var g='<div class="kpi-grid-alto">';
     g+=cartao('Faturamento', dfmtR(t.fat), delta(t.fat,a.fat), false, 'fat');
     g+=cartao('M.C. — Hub', dpct(t.mcPct,1), delta(t.mcPct,a.mcPct,'pp')
@@ -11404,8 +11485,6 @@ window.apGarantirMes=async function(mes){
     g+='</div>';
 
     g+='<div class="kpi-grid-baixo">';
-    g+=cartao('M.C. em R$', dfmtR(t.mcVal), delta(t.mcVal,a.mcVal), false, 'mcVal');
-    g+=cartao('MPA em R$', dfmtR(t.mpaVal), dv('mpaVal',delta(t.mpaVal,a.mpaVal)), false, 'mpaVal');
     g+=cartao('Desvio de ADS', t.desvioAds===null ? '—' : dpp(t.desvioAds),
       t.desvioAds===null ? 'nenhum SKU com TACOS alvo'
         : '<span style="color:'+(t.desvioAds>0?'var(--amber-600)':'var(--green-600)')+'">'
@@ -11437,97 +11516,115 @@ window.apGarantirMes=async function(mes){
       false, 'custoML');
     g+='</div>';
 
-    /* CADEIA DO LUCRO — os mesmos números, na ordem em que um vira o outro.
-       Custos = faturamento − M.C. por definição do Hub; ADS sai da M.C. e o que
-       resta é MPA. Nenhuma conta nova, só a leitura que faltava. */
-    var _fat=t.fat||0, _mcv=t.mcVal||0, _ads=t.ads||0, _mpv=t.mpaVal||0;
-    var _pMc=_fat>0?Math.max(0,Math.min(100,_mcv/_fat*100)):0;
-    var _pAds=_mcv>0?Math.max(0,Math.min(100,_ads/_mcv*100)):0;
-    function _seg(w,bg,fg,rot,val,sub){
-      return '<div style="width:'+w.toFixed(1)+'%;min-width:0;background:'+bg+';border-radius:6px;padding:8px 11px;overflow:hidden">'
-        +'<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:'+sub+';white-space:nowrap">'+rot+'</div>'
-        +'<div style="font-family:var(--mono);font-size:13px;color:'+fg+';margin-top:2px;white-space:nowrap">'+val+'</div></div>';
+    /* CADEIA DO LUCRO — os mesmos números do cartão, na ordem em que um vira o
+       outro. A base é a MESMA do cartão M.C. — Hub: a receita dos SKUs com plano
+       no Hub (sem plano não há margem conhecida, então não entra como zero).
+       Custos = receita com plano − M.C.; a M.C. se reparte em ADS (dos mesmos
+       SKUs) e MPA. Assim ADS + MPA = M.C. e o % bate com o cartão. */
+    var base=t.recHub||0, mcv=t.mcVal||0, adsH=t.adsHub||0, mpv=t.mpaVal||0;
+    if(base>0){
+      var pc=function(v){ return Math.max(0,Math.min(100, v/base*100)); };
+      var wCus=pc(base-mcv), wAds=pc(Math.min(adsH, Math.max(mcv,0))), wMpa=pc(Math.max(mpv,0));
+      var parteAds = mcv>0 ? adsH/mcv : null;
+      g+='<div class="surface dash-lucro">'
+        +'<div class="dash-lucro-cab"><div class="dash-lucro-tit">De onde sai o lucro</div>'
+        +'<div class="dash-lucro-sub">receita → custos → M.C. → ADS → MPA</div></div>'
+        +'<div class="dash-lucro-mc" style="margin-left:'+wCus.toFixed(2)+'%"><span>M.C. Hub · '+dfmtR(mcv)+' · '+dpct(t.mcPct,1)+'</span></div>'
+        +'<div class="dash-lucro-barra">'
+          +'<i class="lc-cus" style="width:'+wCus.toFixed(2)+'%"></i>'
+          +'<i class="lc-ads" style="width:'+wAds.toFixed(2)+'%"></i>'
+          +'<i class="lc-mpa" style="width:'+wMpa.toFixed(2)+'%"></i></div>'
+        +'<div class="dash-lucro-leg">'
+          +'<div><b class="lc-cus"></b><span>Custos<i class="lc-long"> — ML, CMV e impostos</i></span><strong>'+dfmtR(base-mcv)+'</strong><em>'+dpct((base-mcv)/base,1)+'</em></div>'
+          +'<div><b class="lc-ads"></b><span>ADS</span><strong>'+dfmtR(adsH)+'</strong><em>'+dpct(adsH/base,1)
+            +(parteAds!==null?' · '+dpct(parteAds,0)+' da M.C.':'')+'</em></div>'
+          +'<div><b class="lc-mpa"></b><span>MPA — sobra pós-ADS</span><strong'+(mpv<0?' class="neg"':'')+'>'+dfmtR(mpv)+'</strong><em>'+dpct(mpv/base,1)+'</em></div>'
+        +'</div>'
+        +'<div class="dash-lucro-nota">100% = '+dfmtR(base)+' de receita dos SKUs com plano no Hub'
+          +(t.semHub ? ' · <span class="dash-lucro-fora">'+t.semHub+' SKU'+(t.semHub>1?'s':'')+' sem plano ('+dfmtR(t.receitaSemHub)+') fora desta conta</span>' : '')
+        +'</div>'
+        +'<div class="dash-lucro-ml">'
+          +'<div><span>Comissão cobrada</span><strong>'+dfmtR(t.comTotal)+'</strong></div>'
+          +'<div><span>Frete pago por você</span><strong class="neg">'+dfmtR(t.freTotal)+'</strong>'
+            +(t.comTotal>0 && t.freTotal>t.comTotal ? '<em>'+Math.round((t.freTotal/t.comTotal-1)*100)+'% acima da comissão</em>' : '')+'</div>'
+          +'<p>Custo cobrado, não planejado: não entra na M.C. Serve para saber se o frete que o Hub planejou ainda vale.</p>'
+        +'</div>'
+        +'</div>';
     }
-    g+='<div class="surface" style="margin-top:10px;padding:15px 17px">'
-      +'<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:12px">'
-      +'<div style="font-size:13.5px;font-weight:600;letter-spacing:-.2px">De onde sai o lucro</div>'
-      +'<div style="font-size:11.5px;color:var(--slate-400)">faturamento → custos → M.C. → ADS → MPA</div></div>'
-      +'<div style="display:flex;gap:3px">'
-      +_seg(100-_pMc,'var(--slate-50)','var(--slate-700)','Custos — ML, CMV e impostos',dfmtR(_fat-_mcv),'var(--slate-400)')
-      +_seg(_pMc,'var(--brand)','#FFFFFF','M.C. Hub',dfmtR(_mcv),'#B8D6F2')
-      +'</div>'
-      +'<div style="display:flex;justify-content:space-between;margin:6px 0 14px">'
-      +'<span style="font-family:var(--mono);font-size:10.5px;color:var(--slate-400)">Faturamento '+dfmtR(_fat)+' = 100%</span>'
-      +'<span style="font-family:var(--mono);font-size:10.5px;color:var(--slate-400)">M.C. '+dpct(_mcv/(_fat||1),1)+'</span></div>'
-      +'<div style="display:flex;gap:3px">'
-      +_seg(_pAds,'var(--amber-50)','var(--amber-600)','ADS',dfmtR(_ads),'var(--amber-600)')
-      +_seg(100-_pAds,'var(--green-50)','var(--green-600)','MPA — sobra pós-ADS',dfmtR(_mpv),'var(--green-600)')
-      +'</div>'
-      +'<div style="font-family:var(--mono);font-size:10.5px;color:var(--slate-400);margin-top:6px">'
-      +'a M.C. acima, repartida: '+dpct(_pAds/100,0)+' vai para ADS</div>'
-      +'</div>';
-    g+='<div class="surface" style="margin-top:10px;padding:12px 14px;display:flex;gap:28px;flex-wrap:wrap;align-items:center">'
-      +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Comissão cobrada</div>'
-      +'<div style="font-family:var(--mono);font-size:15px;color:var(--slate-700)">'+dfmtR(t.comTotal)+'</div></div>'
-      +'<div><div style="font-size:9.5px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--slate-400)">Frete pago por você</div>'
-      +'<div style="font-family:var(--mono);font-size:15px;color:var(--coral-500)">'+dfmtR(t.freTotal)
-      +(t.comTotal>0 && t.freTotal>t.comTotal
-         ? ' <span style="font-size:11px;color:var(--slate-400)">('+Math.round((t.freTotal/t.comTotal-1)*100)+'% acima da comissão)</span>' : '')
-      +'</div></div>'
-      +'<div style="font-size:11px;color:var(--slate-400);max-width:340px;line-height:1.5">'
-      +'Custo cobrado, não planejado. Ele não entra na M.C. — serve para saber se o frete que o Hub planejou ainda vale.</div>'
-      +'</div>';
     document.getElementById('dash-kpis').innerHTML=g;
   }
 
+  /* Avisos sobre o número. Antes eram parágrafos técnicos no topo da tela; agora
+     são uma linha: o selo de atualização e um resumo clicável que abre o detalhe. */
   function dashRenderAvisos(c){
     var el=document.getElementById('dash-avisos'), av=[];
     if(c.tot.cobertura!==null && c.tot.cobertura<0.995){
-      av.push('<strong>M.C. e MPA cobrem '+dpct(c.tot.cobertura,0)+' do faturamento.</strong> '
+      av.push({c:dpct(c.tot.cobertura,0)+' da receita com plano',
+        l:'<strong>M.C. e MPA consideram '+dpct(c.tot.cobertura,0)+' do faturamento.</strong> '
         +c.tot.semHub+' SKU'+(c.tot.semHub>1?'s':'')+' com venda ('+dfmtR(c.tot.receitaSemHub)
-        +') não está linkado ao Hub de Precificação. Continua no faturamento e no TACOS, fora da margem.');
+        +') sem plano no Hub de Precificação: entra no faturamento e no TACOS, fica fora da margem.'});
     }
     if(c.mesmaHora){
-      av.push(c.mesmaHora.fonte==='foto'
-        ? '<strong>Setas comparadas com ontem até '+c.mesmaHora.corte+'</strong>, pela foto que o sync ao vivo '
-          +'grava a cada 5 min — não com ontem inteiro. Conversão e custo do ML não têm registro por horário '
-          +'(visitas e frete são diários) e ficam sem seta.'
-        : '<strong>Setas de venda comparadas com ontem até '+c.mesmaHora.corte+'</strong>, pelos pedidos. '
-          +'Ainda não existe foto de ontem neste horário (ela começou a ser gravada em 21/09/2026), '
-          +'então ADS, MPA e TACOS ficam sem seta em vez de comparar com o dia inteiro.');
+      av.push({c:'comparado com ontem até '+c.mesmaHora.corte,
+        l: c.mesmaHora.fonte==='foto'
+        ? '<strong>As setas comparam com ontem até '+c.mesmaHora.corte+'</strong>, não com ontem inteiro. '
+          +'Conversão e custo do ML só existem por dia e ficam sem seta.'
+        : '<strong>As setas de venda comparam com ontem até '+c.mesmaHora.corte+'</strong>, pelos pedidos. '
+          +'Ainda não há foto de ontem neste horário, então ADS, MPA e TACOS ficam sem seta.'});
     }
     if(c.parcial){
-      av.push('<strong>O cartão "Hoje até '+c.parcial.corte+'" vem de <code>ml_pedidos</code></strong>, '
-        +'não de <code>ml_vendas</code> — é o único lugar com hora do pedido. Serve para comparar '
-        +'dois recortes do mesmo horário, não como faturamento oficial: a tabela guarda ~30 dias e tem '
-        +'teto por rodada de sync. Ontem fechou o dia em '+dfmtR(c.parcial.ontemDiaTodo)+'.');
+      av.push({c:'"Hoje até '+c.parcial.corte+'" é prévia',
+        l:'<strong>"Hoje até '+c.parcial.corte+'" é uma prévia pelos pedidos do dia.</strong> '
+        +'Serve para comparar com ontem no mesmo horário; o faturamento oficial do dia fecha depois. '
+        +'Ontem fechou em '+dfmtR(c.parcial.ontemDiaTodo)+'.'});
     }
     if(c.diasPrelim && c.diasPrelim.length){
-      av.push('<strong>ADS preliminar em '+c.diasPrelim.length+' dia'
-        +(c.diasPrelim.length>1?'s':'')+' do período.</strong> '
-        +'O ML fecha o relatório de Ads com atraso e revisa esses números, quase sempre para cima. '
-        +'Eles já estão contados no TACOS e na MPA — trate como provisório.');
+      av.push({c:'ADS provisório em '+c.diasPrelim.length+' dia'+(c.diasPrelim.length>1?'s':''),
+        l:'<strong>ADS ainda provisório em '+c.diasPrelim.length+' dia'+(c.diasPrelim.length>1?'s':'')+'.</strong> '
+        +'O ML revisa esses valores depois, quase sempre para cima — TACOS e MPA podem piorar um pouco.'});
     }
     if(c.diasSemFin.length){
-      av.push('<strong>'+c.diasSemFin.length+' de '+c.diasVenda+' dias sem custo do ML registrado.</strong> '
-        +'Isso afeta só o cartão de custo real — M.C. e MPA vêm do Hub e não dependem dele. '
-        +'Preencher em Financeiro → Custo real do Mercado Livre.');
+      av.push({c:c.diasSemFin.length+' dia'+(c.diasSemFin.length>1?'s':'')+' sem custo do ML',
+        l:'<strong>'+c.diasSemFin.length+' de '+c.diasVenda+' dias sem custo do ML registrado.</strong> '
+        +'Só afeta o cartão Custo real do ML — M.C. e MPA vêm do Hub. Preencher em Financeiro → Custo real do Mercado Livre.'});
     }
-    el.innerHTML = av.length
-      ? '<div style="background:var(--white);border:1px solid var(--slate-100);border-left:2.5px solid var(--amber-600);border-radius:var(--radius);padding:11px 14px">'
-        +av.map(function(a){ return '<div style="font-size:12px;color:var(--slate-700);line-height:1.6;margin-bottom:4px">'+a+'</div>'; }).join('')
-        +'</div>'
-      : '';
+    var selo=seloAtualizado(c.vendasEm);
+    if(c.snapDate){
+      var dSnap=Math.round((new Date(diaISO(new Date())+'T12:00:00')-new Date(c.snapDate+'T12:00:00'))/86400000);
+      if(dSnap>=2) selo+=' '+seloDado(c.snapDate,'estoque e anúncios');
+    }
+    var aberto=_dash.avisosAbertos;
+    el.innerHTML='<div class="dash-status'+(aberto?' aberto':'')+'">'+selo
+      +(av.length
+        ? '<button type="button" class="dash-av-chip" onclick="dashAvisos()" aria-expanded="'+(aberto?'true':'false')+'">'
+          +'<b>'+av.length+'</b><span>'+av.map(function(a){ return a.c; }).join(' · ')+'</span><i>▾</i></button>'
+          +'<div class="dash-av-lista">'+av.map(function(a){ return '<p>'+a.l+'</p>'; }).join('')+'</div>'
+        : '')
+      +'</div>';
   }
+  window.dashAvisos=function(){
+    _dash.avisosAbertos=!_dash.avisosAbertos;
+    var s=document.querySelector('#dash-avisos .dash-status');
+    if(s){ s.classList.toggle('aberto', _dash.avisosAbertos);
+      var b=s.querySelector('.dash-av-chip'); if(b) b.setAttribute('aria-expanded', _dash.avisosAbertos?'true':'false'); }
+  };
 
+  /* Termômetro do ML: o nível vem cru da API ("5_green"). */
+  var NIVEIS=[['1_red','Vermelho','#E5484D'],['2_orange','Laranja','#F76B15'],['3_yellow','Amarelo','#F5B60B'],
+              ['4_light_green','Verde-claro','#8BC34A'],['5_green','Verde','#2F9E5B']];
   function dashRenderSaude(c){
     var r=c.reputacao, el=document.getElementById('dash-saude');
     if(!r){ el.innerHTML=''; return; }
     function cel(l,v){ return '<div class="metric-cell"><div class="metric-cell-label">'+l+'</div>'
       +'<div class="metric-cell-value">'+v+'</div></div>'; }
-    var p=function(x){ return (Number(x)*100).toFixed(2).replace('.',',')+'%'; };
-    el.innerHTML='<div class="metric-strip">'
-      +cel('Nível do vendedor', desc(r.nivel||'—'))
+    var p=function(x){ return x===null||x===undefined ? '—' : (Number(x)*100).toFixed(2).replace('.',',')+'%'; };
+    var iN=NIVEIS.findIndex(function(n){ return n[0]===String(r.nivel||''); });
+    var nivel = iN<0 ? '<div class="metric-cell-value">'+desc(r.nivel||'—')+'</div>'
+      : '<div class="metric-cell-value" style="color:'+NIVEIS[iN][2]+'">'+NIVEIS[iN][1]+'</div>'
+        +'<div class="dash-termo" title="Termômetro do Mercado Livre">'+NIVEIS.map(function(n,i){
+          return '<i style="background:'+n[2]+';opacity:'+(i===iN?1:0.2)+'"'+(i===iN?' class="on"':'')+'></i>'; }).join('')+'</div>';
+    el.innerHTML='<div class="metric-strip dash-saude">'
+      +'<div class="metric-cell dash-nivel"><div class="metric-cell-label">Nível do vendedor</div>'+nivel+'</div>'
       +cel('Reclamações', p(r.reclamacoes))
       +cel('Cancelamentos', p(r.cancelamentos))
       +cel('Atraso de envio', p(r.tempo_envio))
@@ -11535,6 +11632,19 @@ window.apGarantirMes=async function(mes){
          ? cel('Vendas completas', dfmtN(r.vendas_completas)) : '')
       +'</div>';
   }
+
+  /* SKU citado num ponto de atenção é botão: abre o produto na tabela. */
+  function skuChip(sku){
+    var id=desc(sku).replace(/'/g,"\\'");
+    return '<button type="button" class="dash-sku-chip" onclick="dashIrSku(\''+id+'\')">'+desc(sku)+'</button>';
+  }
+  window.dashIrSku=function(sku){
+    if(_dash.busca){ _dash.busca=''; var b=document.getElementById('dash-busca'); if(b) b.value=''; dashPintarLinhas(); }
+    var tr=document.getElementById(idCard(sku));
+    if(!tr) return;
+    if(tr.style.display==='none') dashToggleLinha(sku);
+    else tr.previousElementSibling.scrollIntoView({behavior:'smooth', block:'start'});
+  };
 
   /* Pontos de atenção montados a partir dos números JÁ calculados na tela —
      não de uma segunda passada com regra própria, que foi o que produziu duas
@@ -11550,31 +11660,31 @@ window.apGarantirMes=async function(mes){
     if(sangria.length){
       var perdido=sangria.reduce(function(s,o){ return s+o.desvio*o.receita; },0);
       itens.push({cor:'amber', t:'TACOS acima do alvo em '+sangria.length+' SKU'+(sangria.length>1?'s':''),
-        d: dfmtR(perdido)+' de ADS além do TACOS alvo. Piores: '
-           +sangria.slice(0,5).map(function(o){ return desc(o.sku)+' ('+dpp(o.desvio)+')'; }).join(' · ')});
+        d: dfmtR(perdido)+' de ADS além do TACOS alvo. Piores: ',
+        s: sangria.slice(0,5).map(function(o){ return skuChip(o.sku)+' '+dpp(o.desvio); })});
     }
 
     var negativos=c.linhas.filter(ledRegraMpaNegativa);
     if(negativos.length){
       itens.unshift({cor:'coral', t:negativos.length+' SKU'+(negativos.length>1?'s':'')+' com MPA negativa',
-        d:'Vende e perde dinheiro depois do ADS: '
-          +negativos.slice(0,5).map(function(o){ return desc(o.sku)+' ('+dpct(o.mpaPct,1)+')'; }).join(' · ')});
+        d:'Vende e perde dinheiro depois do ADS: ',
+        s:negativos.slice(0,5).map(function(o){ return skuChip(o.sku)+' '+dpct(o.mpaPct,1); })});
     }
 
     var caros=c.linhas.filter(function(o){ return o.custoMLPct!==null && o.custoMLPct>0.30 && o.receita>0; })
       .sort(function(a,b){ return b.custoMLPct-a.custoMLPct; });
     if(caros.length){
       itens.push({cor:'amber', t:caros.length+' SKU'+(caros.length>1?'s':'')+' entregando mais de 30% ao ML',
-        d:'Comissão + frete sobre a receita — ticket baixo pesa mais porque o frete tem parte fixa: '
-          +caros.slice(0,5).map(function(o){ return desc(o.sku)+' ('+dpct(o.custoMLPct,1)+')'; }).join(' · ')});
+        d:'Comissão + frete sobre a receita — ticket baixo pesa mais porque o frete tem parte fixa: ',
+        s:caros.slice(0,5).map(function(o){ return skuChip(o.sku)+' '+dpct(o.custoMLPct,1); })});
     }
 
     var semHub=c.linhas.filter(ledRegraSemHub)
       .sort(function(a,b){ return b.receita-a.receita; });
     if(semHub.length){
       itens.push({cor:'amber', t:semHub.length+' SKU'+(semHub.length>1?'s':'')+' sem plano no Hub',
-        d:'Sem M.C. planejada não há margem calculável: '
-          +semHub.slice(0,5).map(function(o){ return desc(o.sku)+' ('+dfmtR(o.receita)+')'; }).join(' · ')});
+        d:'Sem M.C. planejada não há margem calculável: ',
+        s:semHub.slice(0,5).map(function(o){ return skuChip(o.sku)+' '+dfmtR(o.receita); })});
     }
 
     // Estoque e Buy Box vieram do bloco de atenção do Catálogo: são decisões de
@@ -11583,18 +11693,18 @@ window.apGarantirMes=async function(mes){
       .sort(function(a,b){ return b.receita-a.receita; });
     if(estoque.length){
       itens.splice(negativos.length?1:0, 0, {cor:'coral', t:estoque.length+' SKU'+(estoque.length>1?'s':'')+' sem estoque ou no mínimo',
-        d:estoque.slice(0,5).map(function(o){
+        d:'', s:estoque.slice(0,5).map(function(o){
           var dias = ledCoberturaDias(o, c.j.dias);
-          return desc(o.sku)+' ('+dfmtN(o.snap.estoque)+' un'+(dias!==null?', '+(dias<1?'<1d':'~'+Math.floor(dias)+'d'):'')+')';
-        }).join(' · ')});
+          return skuChip(o.sku)+' '+dfmtN(o.snap.estoque)+' un'+(dias!==null?', '+(dias<1?'<1d':'~'+Math.floor(dias)+'d'):'');
+        })});
     }
     var cobertura=c.linhas.filter(function(o){ return ledRegraCoberturaBaixa(o, c.j.dias); })
       .sort(function(a,b){ return ledCoberturaDias(a,c.j.dias)-ledCoberturaDias(b,c.j.dias); });
     if(cobertura.length){
       itens.push({cor:'amber', t:cobertura.length+' SKU'+(cobertura.length>1?'s':'')+' com estoque para menos de '+LED_COBERTURA_DIAS+' dias',
-        d:'No ritmo de venda do período: '+cobertura.slice(0,5).map(function(o){
-          var cd=ledCoberturaDias(o,c.j.dias); return desc(o.sku)+' ('+(cd<1?'<1d':'~'+Math.floor(cd)+'d')+', '+dfmtN(o.snap.estoque)+' un)';
-        }).join(' · ')});
+        d:'No ritmo de venda do período: ', s:cobertura.slice(0,5).map(function(o){
+          var cd=ledCoberturaDias(o,c.j.dias); return skuChip(o.sku)+' '+(cd<1?'<1d':'~'+Math.floor(cd)+'d')+', '+dfmtN(o.snap.estoque)+' un';
+        })});
     }
 
     var rotulo={not_listed:'fora do catálogo', losing:'perdendo', sharing_first_place:'dividindo o 1º'};
@@ -11603,7 +11713,7 @@ window.apGarantirMes=async function(mes){
     }).sort(function(a,b){ return b.receita-a.receita; });
     if(buybox.length){
       itens.push({cor:'amber', t:buybox.length+' SKU'+(buybox.length>1?'s':'')+' com Buy Box em risco',
-        d:buybox.slice(0,5).map(function(o){ return desc(o.sku)+' ('+rotulo[o.snap.buybox]+')'; }).join(' · ')});
+        d:'', s:buybox.slice(0,5).map(function(o){ return skuChip(o.sku)+' '+rotulo[o.snap.buybox]; })});
     }
 
     if(!itens.length){
@@ -11614,18 +11724,17 @@ window.apGarantirMes=async function(mes){
     el.innerHTML=itens.map(function(i){
       var fg = i.cor==='coral' ? 'var(--coral-500)' : 'var(--amber-600)';
       var sel = i.cor==='coral' ? 'agora' : 'espera';
-      return '<div style="background:var(--white);border:1px solid var(--slate-100);border-left:3px solid '+fg+';border-radius:var(--radius);padding:12px 15px;margin-bottom:8px">'
-        +'<div style="display:flex;align-items:baseline;gap:9px;margin-bottom:4px">'
-        +'<div style="font-size:13px;font-weight:600;color:var(--slate-900);letter-spacing:-.1px">'+i.t+'</div>'
-        +'<div style="font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:'+fg+';margin-left:auto;white-space:nowrap">'+sel+'</div></div>'
-        +'<div style="font-size:11.5px;color:var(--slate-600);line-height:1.65;font-family:var(--mono)">'+i.d+'</div></div>';
+      return '<div class="dash-atn" style="border-left-color:'+fg+'">'
+        +'<div class="dash-atn-cab"><div class="dash-atn-t">'+i.t+'</div>'
+        +'<div class="dash-atn-sel" style="color:'+fg+'">'+sel+'</div></div>'
+        +(i.d?'<div class="dash-atn-d">'+i.d+'</div>':'')
+        +'<div class="dash-atn-skus">'+i.s.map(function(x){ return '<span>'+x+'</span>'; }).join('')+'</div></div>';
     }).join('');
   }
 
   // Um dia não tem evolução. Com "Hoje" ou "Ontem" selecionado a série tem um
-  // ponto só: a linha vira um pixel, a média tracejada passa exatamente em
-  // cima dele e o eixo não diz nada. Seção inteira sai da tela — título junto,
-  // senão fica um rótulo órfão. O dado do dia já está nos indicadores acima.
+  // ponto só: a seção inteira sai da tela — título junto, senão fica um rótulo
+  // órfão. O dado do dia já está nos indicadores acima.
   function dashSecaoGrafico(mostrar){
     var t=document.getElementById('dash-grafico-titulo');
     var g=document.getElementById('dash-grafico');
@@ -11633,6 +11742,45 @@ window.apGarantirMes=async function(mes){
     if(g) g.style.display = mostrar ? '' : 'none';
   }
 
+  /* Rótulo do eixo em reais: "75 mil", "1,2 mi". */
+  function eixoR(v){
+    var a=Math.abs(v), s=v<0?MENOS:'';
+    if(a>=1e6) return s+(a/1e6).toFixed(a>=1e7?0:1).replace('.',',')+' mi';
+    if(a>=1000) return s+Math.round(a/1000)+' mil';
+    return s+Math.round(a);
+  }
+  function passoBonito(max, n){
+    var bruto=max/n, pot=Math.pow(10, Math.floor(Math.log10(bruto||1))), f=bruto/pot;
+    var m = f<=1?1 : f<=2?2 : f<=2.5?2.5 : f<=5?5 : 10;
+    return m*pot;
+  }
+  var toque = function(){ try{ return window.matchMedia('(hover: none)').matches; }catch(_){ return false; } };
+
+  /* Agrupa a série por semana quando o período passa de ~2 meses: 300 barras de
+     1px não dizem nada. Cada balde soma os mesmos campos do dia. */
+  function dashBaldes(s){
+    if(s.length<=62) return s.map(function(x){ return Object.assign({ini:x.data, fim:x.data, dias:1}, x); });
+    var out=[];
+    for(var i=0;i<s.length;i+=7){
+      var g=s.slice(i,i+7), b={data:g[0].data, ini:g[0].data, fim:g[g.length-1].data, dias:g.length,
+        fat:0, com:0, fre:0, ads:0, vis:0, ped:0, uni:0, mc:0, recHub:0};
+      g.forEach(function(x){ ['fat','com','fre','ads','vis','ped','uni','mc','recHub'].forEach(function(k){ b[k]+=Number(x[k])||0; }); });
+      b.mpa=b.mc-b.ads; out.push(b);
+    }
+    return out;
+  }
+
+  /* Largura real do quadro do gráfico: o SVG é desenhado em pixels de verdade
+     (sem esticar), senão o texto do eixo sai achatado e minúsculo no celular. */
+  function largGrafico(el){
+    var a=el.querySelector('.dash-graf-area');
+    var w=a ? a.clientWidth : (el.clientWidth ? el.clientWidth-32 : 0);
+    return Math.max(280, Math.round(w||760));
+  }
+
+  /* Gráfico padrão: uma barra por dia = faturamento, repartido como no bloco
+     "De onde sai o lucro": custos (cinza), ADS (âmbar) e MPA (verde) por cima
+     da base. Hoje, enquanto o dia não fecha, sai mais claro e tracejado. */
   function dashRenderGrafico(c){
     var el=document.getElementById('dash-grafico'), s=c.serie;
     if(s.length<2){ dashSecaoGrafico(false); el.innerHTML=''; return; }
@@ -11641,73 +11789,93 @@ window.apGarantirMes=async function(mes){
       el.innerHTML='<div class="fin-cascata"><p class="fin-note">Sem venda no período.</p></div>'; return;
     }
     if(_dash.metrica && METRICAS[_dash.metrica]) return dashGraficoMetrica(c, METRICAS[_dash.metrica]);
-    var W=800,H=240,P={t:14,r:14,b:26,l:56};
-    var max=Math.max.apply(null,s.map(function(x){return Math.max(x.fat,0);}))||1;
-    var min=Math.min.apply(null,s.map(function(x){return Math.min(x.posAds,0);}));
-    var escY=function(v){ return P.t+(H-P.t-P.b)*(1-(v-min)/(max-min||1)); };
-    var px=function(i){ return s.length<2?P.l:P.l+(W-P.l-P.r)*(i/(s.length-1)); };
-    function area(campo,cor,op){
-      var topo=s.map(function(x,i){ return px(i)+','+escY(x[campo]); }).join(' ');
-      var base=escY(Math.max(min,0));
-      return '<polygon points="'+P.l+','+base+' '+topo+' '+px(s.length-1)+','+base+'" fill="'+cor+'" opacity="'+op+'"/>'
-           +'<polyline points="'+topo+'" fill="none" stroke="'+cor+'" stroke-width="1.5"/>';
-    }
+
+    var B=dashBaldes(s); _dash.baldes=B;
+    var semana=B.length && B[0].dias>1;
+    var hoje=diaISO(new Date());
+    el.innerHTML='<div class="fin-cascata dash-graf"><div class="dash-graf-area" style="position:relative"></div></div>';
+    var W=largGrafico(el), H=W<560?220:250;
+    var P={t:22,r:8,b:26,l:W<560?44:54}, pw=W-P.l-P.r, ph=H-P.t-P.b;
+    var max=Math.max.apply(null,B.map(function(x){ return Math.max(x.fat,0); }))||1;
+    var passo=passoBonito(max,4), topo=Math.ceil(max/passo)*passo;
+    var Y=function(v){ return P.t+ph*(1-Math.max(0,v)/topo); };
+    var n=B.length, col=pw/n, bw=Math.max(2, Math.min(38, col*0.64));
+    var fs=W<560?10.5:11;
+
     var grid='';
-    for(var k=0;k<=3;k++){
-      var v=min+(max-min)*k/3, y=escY(v);
-      grid+='<line x1="'+P.l+'" y1="'+y+'" x2="'+(W-P.r)+'" y2="'+y+'" stroke="var(--slate-50)"/>'
-        +'<text x="'+(P.l-8)+'" y="'+(y+3)+'" text-anchor="end" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
-        +(Math.abs(v)>=1000?(v/1000).toFixed(0)+'k':v.toFixed(0))+'</text>';
+    for(var v=0; v<=topo+1e-6; v+=passo){
+      var y=Y(v);
+      grid+='<line x1="'+P.l+'" y1="'+y.toFixed(1)+'" x2="'+(W-P.r)+'" y2="'+y.toFixed(1)+'" stroke="var(--slate-100)"'+(v===0?'':' stroke-dasharray="2 3"')+'/>'
+        +'<text x="'+(P.l-7)+'" y="'+(y+3.5).toFixed(1)+'" text-anchor="end" font-size="'+fs+'" fill="var(--slate-400)" font-family="var(--mono)">'+eixoR(v)+'</text>';
     }
-    var rot='', passo=Math.max(1,Math.ceil(s.length/8));
-    s.forEach(function(x,i){ if(i%passo) return;
-      rot+='<text x="'+px(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
-        +x.data.slice(8)+'/'+x.data.slice(5,7)+'</text>'; });
-
-    /* Faixas invisíveis por cima do SVG: o gráfico usa
-       preserveAspectRatio="none", então converter posição do mouse em índice
-       daria errado. Uma coluna HTML por dia resolve sem matemática. */
-    var largura = 100/s.length;
-    var bandas = s.map(function(x,i){
-      return '<div class="dash-banda" style="left:'+(i*largura)+'%;width:'+largura+'%" '
+    var barras='', temParcial=false, temNeg=false;
+    B.forEach(function(x,i){
+      var cx=P.l+col*(i+0.5), x0=(cx-bw/2).toFixed(1), base=Y(0);
+      var parcial = c.j.fim===hoje && x.ini<=hoje && x.fim>=hoje;
+      if(parcial) temParcial=true;
+      var mpaP=Math.max(0, x.mpa||0), adsV=Math.max(0, Math.min(x.ads||0, x.fat-mpaP));
+      var yF=Y(x.fat), yM=Y(mpaP), yA=Y(mpaP+adsV);
+      var op = parcial ? ' opacity="0.45"' : '';
+      barras+='<g'+op+'>'
+        +'<rect x="'+x0+'" y="'+yF.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,base-yF).toFixed(1)+'" rx="2" fill="var(--slate-200)"/>'
+        +(adsV>0?'<rect x="'+x0+'" y="'+yA.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,yM-yA).toFixed(1)+'" fill="#F2B84B"/>':'')
+        +(mpaP>0?'<rect x="'+x0+'" y="'+yM.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,base-yM).toFixed(1)+'" fill="var(--green-600)" fill-opacity="0.85"/>':'')
+        +'</g>';
+      if(parcial){
+        barras+='<rect x="'+x0+'" y="'+yF.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,base-yF).toFixed(1)+'" rx="2" fill="none" stroke="var(--slate-400)" stroke-dasharray="3 2"/>'
+          +'<text x="'+cx.toFixed(1)+'" y="'+(yF-6).toFixed(1)+'" text-anchor="middle" font-size="'+(fs-1)+'" fill="var(--slate-400)" font-family="var(--mono)">parcial</text>';
+      }
+      if((x.mc>0||x.recHub>0) && x.mpa<0){
+        temNeg=true;
+        barras+='<circle cx="'+cx.toFixed(1)+'" cy="'+(base+0.5).toFixed(1)+'" r="3" fill="var(--coral-500)"/>';
+      }
+    });
+    var maxRot=Math.max(2, Math.floor(pw/50)), pr=Math.max(1, Math.ceil(n/maxRot)), rot='';
+    B.forEach(function(x,i){
+      if(i%pr && i!==n-1) return;
+      if(i===n-1 && i%pr && (n-1)%pr < pr*0.6) return;   // não encosta no rótulo anterior
+      rot+='<text x="'+(P.l+col*(i+0.5)).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="'+fs+'" fill="var(--slate-400)" font-family="var(--mono)">'
+        +x.data.slice(8)+'/'+x.data.slice(5,7)+'</text>';
+    });
+    var bandas=B.map(function(x,i){
+      return '<div class="dash-banda" style="left:'+((P.l+col*i)/W*100).toFixed(3)+'%;width:'+(col/W*100).toFixed(3)+'%" '
         +'data-i="'+i+'" onmouseenter="dashTip('+i+',this)" onmouseleave="dashTip(-1)" '
-        +'onclick="dashVerDia(\''+x.data+'\')"></div>';
+        +'onclick="dashVerDia('+i+')"></div>';
     }).join('');
-
-    el.innerHTML='<div class="fin-cascata">'
-      +'<div style="position:relative">'
-      +'<svg width="100%" height="240" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
-      +grid+area('fat','var(--slate-200)',0.45)+area('liquido','var(--blue-100)',0.55)
-      +area('posAds','var(--green-100)',0.75)+rot+'</svg>'
+    var area=el.querySelector('.dash-graf-area');
+    area.innerHTML='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block">'+grid+barras+rot+'</svg>'
       +bandas
-      +'<div id="dash-tip" style="display:none;position:absolute;z-index:5;pointer-events:none;'
-      +'background:var(--slate-900);color:var(--white);border-radius:6px;padding:8px 10px;'
-      +'font-size:11px;font-family:var(--mono);line-height:1.65;white-space:nowrap"></div>'
+      +'<div id="dash-tip" class="dash-tip"></div>';
+    var leg=function(cor,txt,ex){ return '<span><i style="background:'+cor+(ex||'')+'"></i>'+txt+'</span>'; };
+    area.parentNode.insertAdjacentHTML('beforeend',
+      '<div class="dash-graf-leg">'
+      +leg('var(--slate-200)','Custos — ML, CMV e impostos')
+      +leg('#F2B84B','ADS')
+      +leg('var(--green-600)','MPA — o que sobra')
+      +(temParcial?leg('transparent','Hoje, ainda aberto',';border:1px dashed var(--slate-400)'):'')
+      +(temNeg?'<span><i style="background:var(--coral-500);border-radius:50%"></i>MPA negativa no '+(semana?'período':'dia')+'</span>':'')
       +'</div>'
-      +'<div style="display:flex;gap:16px;margin-top:8px;font-size:11px;color:var(--slate-400);flex-wrap:wrap">'
-      +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--slate-200);border-radius:2px;margin-right:4px"></span>Faturamento</span>'
-      +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--blue-100);border-radius:2px;margin-right:4px"></span>Depois do ML</span>'
-      +'<span><span style="display:inline-block;width:10px;height:10px;background:var(--green-100);border-radius:2px;margin-right:4px"></span>Depois do ML e do ADS</span>'
-      +'</div>'
-      +'<p class="fin-note">A distância entre as faixas é o que sai da sua conta: a primeira é o Mercado Livre, a segunda é o ADS. '
-      +'A mercadoria não está aqui — ela já está dentro da M.C. do Hub. '
-      +'Passe o mouse para ver o dia; clique para abrir o detalhe.</p>'
-      +'<div id="dash-detalhe-dia"></div></div>';
+      +'<p class="fin-note">Cada barra é o faturamento '+(semana?'de uma semana':'do dia')+'. '
+      +(toque()?'Toque numa barra para ver o detalhe.':'Passe o mouse para ver os valores; clique para abrir o detalhe.')+'</p>'
+      +'<div id="dash-detalhe-dia"></div>');
+    _dash.grafW=W;
   }
 
-  /* Uma métrica só, dia a dia. Linha com área, média do período tracejada e
-     os mesmos rótulos do eixo. O dia sem base (conversão sem visita, M.C. sem
-     plano no Hub) é BURACO na linha, não zero — zero afundaria a média e
-     inventaria uma queda que não houve. */
+  /* Uma métrica só, dia a dia. Linha com área, média do período tracejada. O
+     dia sem base (conversão sem visita, M.C. sem plano no Hub) é BURACO na
+     linha, não zero — zero afundaria a média e inventaria uma queda. */
   function dashGraficoMetrica(c, m){
     var el=document.getElementById('dash-grafico'), s=c.serie;
-    var W=800,H=240,P={t:16,r:14,b:26,l:62};
+    _dash.baldes=null;
     var vals=s.map(function(x){ var v=x[m.campo]; return (v===null||v===undefined||!isFinite(v))?null:v; });
     var validos=vals.filter(function(v){ return v!==null; });
     if(!validos.length){
       el.innerHTML='<div class="fin-cascata">'+dashBotaoVoltar(m)
         +'<p class="fin-note">Sem base para calcular '+m.rot+' neste período.</p></div>'; return;
     }
+    el.innerHTML='<div class="fin-cascata dash-graf">'+dashBotaoVoltar(m)+'<div class="dash-graf-area" style="position:relative"></div></div>';
+    var W=largGrafico(el), H=W<560?220:240, fs=W<560?10.5:11;
+    var P={t:18,r:10,b:26,l:W<560?50:62};
     var fmt=function(v){
       if(v===null) return '—';
       if(m.tipo==='reais') return dfmtR(v);
@@ -11715,12 +11883,12 @@ window.apGarantirMes=async function(mes){
       return dfmtN(v);
     };
     var fmtEixo=function(v){
-      if(m.tipo==='reais') return Math.abs(v)>=1000 ? (v/1000).toFixed(0)+'k' : v.toFixed(0);
-      if(m.tipo==='pct')   return (v*100).toFixed(m.casas===2?1:0)+'%';
-      return v.toFixed(0);
+      if(m.tipo==='reais') return eixoR(v);
+      if(m.tipo==='pct')   return dpct(v, m.casas===2?1:0);
+      return dfmtN(Math.round(v));
     };
     var max=Math.max.apply(null,validos), min=Math.min.apply(null,validos);
-    if(min>0) min=0;                       // barra parte do zero quando tudo é positivo
+    if(min>0) min=0;
     if(max===min) max=min+(Math.abs(min)||1);
     var media=validos.reduce(function(a,b){return a+b;},0)/validos.length;
     var y=function(v){ return P.t+(H-P.t-P.b)*(1-(v-min)/(max-min)); };
@@ -11730,15 +11898,14 @@ window.apGarantirMes=async function(mes){
     var grid='';
     for(var k=0;k<=3;k++){
       var v=min+(max-min)*k/3, yy=y(v);
-      grid+='<line x1="'+P.l+'" y1="'+yy+'" x2="'+(W-P.r)+'" y2="'+yy+'" stroke="var(--slate-50)"/>'
-        +'<text x="'+(P.l-8)+'" y="'+(yy+3)+'" text-anchor="end" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
+      grid+='<line x1="'+P.l+'" y1="'+yy.toFixed(1)+'" x2="'+(W-P.r)+'" y2="'+yy.toFixed(1)+'" stroke="var(--slate-100)"'+(k?' stroke-dasharray="2 3"':'')+'/>'
+        +'<text x="'+(P.l-8)+'" y="'+(yy+3.5).toFixed(1)+'" text-anchor="end" font-size="'+fs+'" fill="var(--slate-400)" font-family="var(--mono)">'
         +fmtEixo(v)+'</text>';
     }
-    // Buraco vira segmento novo: linha não atravessa dia sem base.
     var segs=[], atual=[];
     vals.forEach(function(v,i){
       if(v===null){ if(atual.length){segs.push(atual);atual=[];} return; }
-      atual.push(px(i)+','+y(v));
+      atual.push(px(i).toFixed(1)+','+y(v).toFixed(1));
     });
     if(atual.length) segs.push(atual);
     var linha=segs.map(function(g){
@@ -11747,17 +11914,21 @@ window.apGarantirMes=async function(mes){
           +g[g.length-1].split(',')[0]+','+y(Math.max(min,0))+'" fill="'+cor+'" opacity="0.12"/>' : '';
       return area+'<polyline points="'+g.join(' ')+'" fill="none" stroke="'+cor+'" stroke-width="2"/>';
     }).join('');
+    var hoje=diaISO(new Date());
     var pontos=vals.map(function(v,i){
-      return v===null ? '' : '<circle cx="'+px(i)+'" cy="'+y(v)+'" r="2.5" fill="'+cor+'"/>';
+      if(v===null) return '';
+      var aberto = s[i].data===hoje && c.j.fim===hoje;
+      return '<circle cx="'+px(i).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="'+(aberto?3.5:2.5)+'" '
+        +(aberto?'fill="var(--white)" stroke="'+cor+'" stroke-width="1.5"':'fill="'+cor+'"')+'/>';
     }).join('');
     var yMedia=y(media);
-    var linhaMedia='<line x1="'+P.l+'" y1="'+yMedia+'" x2="'+(W-P.r)+'" y2="'+yMedia
+    var linhaMedia='<line x1="'+P.l+'" y1="'+yMedia.toFixed(1)+'" x2="'+(W-P.r)+'" y2="'+yMedia.toFixed(1)
       +'" stroke="var(--slate-400)" stroke-width="1" stroke-dasharray="4 4"/>'
-      +'<text x="'+(W-P.r)+'" y="'+(yMedia-5)+'" text-anchor="end" font-size="9" '
+      +'<text x="'+(W-P.r)+'" y="'+(yMedia-5).toFixed(1)+'" text-anchor="end" font-size="'+fs+'" '
       +'fill="var(--slate-400)" font-family="var(--mono)">média '+fmt(media)+'</text>';
-    var rot='', passo=Math.max(1,Math.ceil(s.length/8));
+    var pw=W-P.l-P.r, maxRot=Math.max(2, Math.floor(pw/50)), passo=Math.max(1,Math.ceil(s.length/maxRot)), rot='';
     s.forEach(function(x,i){ if(i%passo) return;
-      rot+='<text x="'+px(i)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9" fill="var(--slate-400)" font-family="var(--mono)">'
+      rot+='<text x="'+px(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="'+fs+'" fill="var(--slate-400)" font-family="var(--mono)">'
         +x.data.slice(8)+'/'+x.data.slice(5,7)+'</text>'; });
 
     var larg=100/s.length;
@@ -11768,25 +11939,33 @@ window.apGarantirMes=async function(mes){
     }).join('');
 
     var semBase=vals.filter(function(v){return v===null;}).length;
-    el.innerHTML='<div class="fin-cascata">'+dashBotaoVoltar(m)
-      +'<div style="position:relative">'
-      +'<svg width="100%" height="240" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none">'
+    var area=el.querySelector('.dash-graf-area');
+    area.innerHTML='<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block">'
       +grid+linha+pontos+linhaMedia+rot+'</svg>'+bandas
-      +'<div id="dash-tip" style="display:none;position:absolute;z-index:5;pointer-events:none;'
-      +'background:var(--slate-900);color:var(--white);border-radius:6px;padding:8px 10px;'
-      +'font-size:11px;font-family:var(--mono);line-height:1.65;white-space:nowrap"></div>'
-      +'</div>'
-      +'<p class="fin-note">'+m.rot+' dia a dia. A tracejada é a média do período'
+      +'<div id="dash-tip" class="dash-tip"></div>';
+    area.parentNode.insertAdjacentHTML('beforeend',
+      '<p class="fin-note">'+m.rot+' dia a dia. A tracejada é a média do período'
+      +(c.j.fim===hoje?' · o ponto vazio é hoje, ainda aberto':'')
       +(semBase? ' · '+semBase+' dia(s) sem base para calcular ficaram como buraco na linha, não como zero':'')
-      +'. Clique num dia para abrir o detalhe.</p>'
-      +'<div id="dash-detalhe-dia"></div></div>';
+      +'. '+(toque()?'Toque':'Clique')+' num dia para abrir o detalhe.</p>'
+      +'<div id="dash-detalhe-dia"></div>');
     window._dashMetricaAtual=m;
+    _dash.grafW=W;
   }
 
   function dashBotaoVoltar(m){
     return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px;flex-wrap:wrap">'
       +'<div style="font-size:12.5px;color:var(--slate-700)"><strong>'+m.rot+'</strong> no período</div>'
-      +'<button class="perf-select" style="cursor:pointer" onclick="dashVerMetrica(null)">← Voltar às três faixas</button></div>';
+      +'<button class="perf-select" style="cursor:pointer" onclick="dashVerMetrica(null)">← Voltar às barras</button></div>';
+  }
+
+  function posTip(tip, el){
+    tip.style.display='block';
+    // Perto da borda direita o balão vira para a esquerda, senão sai da tela.
+    var frac = el ? (parseFloat(el.style.left)/100) : 0.5;
+    tip.style.left = (frac>0.55 ? 'auto' : (frac*100)+'%');
+    tip.style.right = (frac>0.55 ? ((1-frac-parseFloat(el.style.width)/100)*100)+'%' : 'auto');
+    tip.style.top='4px';
   }
 
   window.dashTipMetrica=function(i, el){
@@ -11800,111 +11979,181 @@ window.apGarantirMes=async function(mes){
     tip.innerHTML='<strong>'+x.data.slice(8)+'/'+x.data.slice(5,7)+'</strong><br>'
       +m.rot+' '+txt+'<br>'
       +dfmtR(x.fat)+' · '+dfmtN(x.ped)+' pedidos';
-    tip.style.display='block';
-    var frac = el ? (parseFloat(el.style.left)/100) : 0.5;
-    tip.style.left = (frac>0.6 ? 'auto' : (frac*100)+'%');
-    tip.style.right = (frac>0.6 ? ((1-frac)*100)+'%' : 'auto');
-    tip.style.top='8px';
+    posTip(tip, el);
   };
+
+  function rotBalde(x){
+    var d=function(s){ return s.slice(8)+'/'+s.slice(5,7); };
+    return x.ini && x.fim && x.ini!==x.fim ? d(x.ini)+' a '+d(x.fim) : d(x.data);
+  }
 
   window.dashTip=function(i, el){
     var tip=document.getElementById('dash-tip'); if(!tip) return;
-    var c=_dash.dados;
-    if(i<0 || !c){ tip.style.display='none'; return; }
-    var x=c.serie[i]; if(!x){ tip.style.display='none'; return; }
-    tip.innerHTML='<strong>'+x.data.slice(8)+'/'+x.data.slice(5,7)+'</strong><br>'
+    var c=_dash.dados, B=_dash.baldes||(c&&c.serie);
+    if(i<0 || !c || !B){ tip.style.display='none'; return; }
+    var x=B[i]; if(!x){ tip.style.display='none'; return; }
+    tip.innerHTML='<strong>'+rotBalde(x)+'</strong><br>'
       +'Faturamento '+dfmtR(x.fat)+'<br>'
       +'Custo ML '+dfmtR(x.com+x.fre)+'<br>'
       +'ADS '+dfmtR(x.ads)+'<br>'
       +(x.mc>0 ? 'MPA '+dfmtR(x.mpa)+'<br>' : '')
       +dfmtN(x.ped)+' pedidos'+(x.vis? ' · '+dfmtN(x.vis)+' visitas':'');
-    tip.style.display='block';
-    // Perto da borda direita o balão vira para a esquerda, senão sai da tela.
-    var frac = el ? (parseFloat(el.style.left)/100) : 0.5;
-    tip.style.left = (frac>0.6 ? 'auto' : (frac*100)+'%');
-    tip.style.right = (frac>0.6 ? ((1-frac)*100)+'%' : 'auto');
-    tip.style.top='8px';
+    posTip(tip, el);
   };
 
-  window.dashVerDia=function(data){
+  /* Detalhe de um dia (ou de uma semana, no gráfico agrupado). Aceita a data
+     (gráfico de métrica) ou o índice da barra (gráfico de barras). */
+  window.dashVerDia=function(ref){
     var c=_dash.dados, el=document.getElementById('dash-detalhe-dia');
     if(!c||!el) return;
-    if(_dash.dia===data){ _dash.dia=null; el.innerHTML=''; return; }
-    _dash.dia=data;
-    var x=c.serie.find(function(y){ return y.data===data; });
+    var x = typeof ref==='number' ? (_dash.baldes||c.serie)[ref] : c.serie.find(function(y){ return y.data===ref; });
     if(!x){ el.innerHTML=''; return; }
+    var chave = x.ini||x.data;
+    if(_dash.dia===chave){ _dash.dia=null; el.innerHTML=''; return; }
+    _dash.dia=chave;
     var custo=x.com+x.fre;
     function par(r,v,cor){ return '<div><div style="font-size:9px;font-weight:600;text-transform:uppercase;'
       +'letter-spacing:.6px;color:var(--slate-400)">'+r+'</div>'
       +'<div style="font-family:var(--mono);font-size:14px;color:'+(cor||'var(--slate-900)')+'">'+v+'</div></div>'; }
-    el.innerHTML='<div style="margin-top:12px;background:var(--white);border:1px solid var(--slate-100);'
-      +'border-radius:var(--radius);padding:12px 14px;display:flex;gap:22px;flex-wrap:wrap;align-items:center">'
-      +par('Dia', data.split('-').reverse().join('/'))
+    var fechar = typeof ref==='number' ? ref : '\''+ref+'\'';
+    el.innerHTML='<div class="dash-dia">'
+      +par(x.ini&&x.fim&&x.ini!==x.fim?'Semana':'Dia', x.ini&&x.fim&&x.ini!==x.fim ? rotBalde(x) : (x.data).split('-').reverse().join('/'))
       +par('Faturamento', dfmtR(x.fat))
       +par('Comissão', dfmtR(x.com))
       +par('Frete', dfmtR(x.fre), 'var(--coral-500)')
       +par('Custo ML', dfmtR(custo)+(x.fat>0?' · '+dpct(custo/x.fat,1):''))
       +par('ADS', dfmtR(x.ads)+(x.fat>0?' · TACOS '+dpct(x.ads/x.fat,2):''))
-      +(x.mc>0 ? par('MPA', dfmtR(x.mpa)) : '')
+      +(x.mc>0 ? par('MPA', dfmtR(x.mpa), x.mpa<0?'var(--coral-500)':'') : '')
       +par('Pedidos', dfmtN(x.ped))
       +par('Conversão', x.vis>0?dpct(x.ped/x.vis,2):'—')
-      +'<button class="perf-select" style="cursor:pointer;margin-left:auto" onclick="dashVerDia(\''+data+'\')">Fechar</button>'
+      +'<button class="perf-select" style="cursor:pointer;margin-left:auto" onclick="dashVerDia('+fechar+')">Fechar</button>'
       +'</div>';
   };
 
-  /* ── Tabela com card expandindo DENTRO da linha ──────────────────────────────
-     A gaveta lateral tirava o SKU da lista e, com ele, o ranking — que é o que
-     dá sentido a 19,6% de M.C. Aqui o card abre embaixo da própria linha, uma
-     de cada vez, e a linha sobe para o topo da tela ao abrir.               */
+  // O SVG tem largura em pixels: ao girar o celular ou mudar a janela, redesenha.
+  var _rsz=null;
+  window.addEventListener('resize', function(){
+    clearTimeout(_rsz);
+    _rsz=setTimeout(function(){
+      var c=_dash.dados, el=document.getElementById('dash-grafico');
+      if(!c || !el || !el.offsetParent) return;
+      if(Math.abs(largGrafico(el)-(_dash.grafW||0))<4) return;
+      try{ dashRenderGrafico(c); }catch(e){ console.warn('[OfficeLed] gráfico/resize', e); }
+    }, 180);
+  });
+
+  /* ── Tabela de produtos: TODOS os SKUs que venderam no período ───────────────
+     Ordena clicando no título da coluna e filtra pela busca. O card do produto
+     abre DENTRO da linha, um de cada vez. No celular cada SKU vira um cartão
+     curto (faturado, MPA e TACOS); o resto aparece ao tocar. */
+  var COLS=[
+    ['sku','Produto',null], ['receita','Faturado','k'], ['repres','Repres.',null], ['unidades','Unid.',null],
+    ['precoMedio','Preço médio',null], ['rebatePct','Rebate',null], ['mcPct','M.C.',null], ['mpaPct','MPA','k'],
+    ['mpaVal','MPA R$',null], ['tacos','TACOS','k'], ['desvio','Desvio ADS',null], ['conversao','Conversão',null],
+    ['custoMLPct','Custo ML',null]
+  ];
   function dashRenderProdutos(c){
     var el=document.getElementById('dash-produtos');
-    var top=c.linhas.slice(0,15);
-    if(!top.length){ el.innerHTML='<div class="fin-cascata"><p class="fin-note">Sem venda no período.</p></div>'; return; }
+    if(!c.linhas.length){ el.innerHTML='<div class="fin-cascata"><p class="fin-note">Sem venda no período.</p></div>'; return; }
+    _dash.ordem=_dash.ordem||{campo:'receita', dir:-1};
+    _dash.aberta=null;
+    el.innerHTML='<div class="dash-prod-barra">'
+      +'<span class="dash-prod-n" id="dash-prod-n"></span>'
+      +'<input type="search" id="dash-busca" class="dash-busca" placeholder="Buscar SKU ou título" autocomplete="off" value="'+desc(_dash.busca||'')+'" oninput="dashBuscar(this.value)">'
+      +'</div>'
+      +'<div class="table-wrap"><table>'
+      +'<thead class="hub-thead"><tr>'+COLS.map(function(k){
+        return '<th data-campo="'+k[0]+'" onclick="dashOrdenar(\''+k[0]+'\')" title="'
+          +(k[0]==='rebatePct'?'Parte do desconto que o Mercado Livre banca, sobre a receita. ':'')+'Ordenar por '+k[1]+'">'
+          +k[1]+'<span class="ord"></span></th>'; }).join('')
+      +'</tr></thead><tbody class="hub-tbody" id="dash-prod-corpo"></tbody></table></div>'
+      +'<details class="dash-legenda"><summary>Como ler as colunas</summary><p>'
+      +'<strong>M.C.</strong> vem do Hub de Precificação; <strong>MPA</strong> é a M.C. menos o ADS real do SKU. '
+      +'<strong>Desvio ADS</strong> é o TACOS real menos o TACOS alvo do SKU: positivo, o ADS passou da meta; sem alvo, fica em branco. '
+      +'<strong>Custo ML</strong> é comissão + frete cobrados sobre a receita — não entra na M.C., mas alto demais quer dizer que o frete planejado ficou velho. '
+      +'<strong>Rebate</strong> é a parte do desconto que o Mercado Livre banca, sobre a receita do SKU: já está no preço do Hub, não mexe na M.C. '
+      +'Clique na linha para abrir o produto aqui mesmo.</p></details>';
+    dashPintarLinhas();
+  }
 
-    var linhas=top.map(function(o){
-      var rep=c.tot.fat>0?o.receita/c.tot.fat:0;
+  function valorOrdem(o, campo, fat){
+    if(campo==='repres') return fat>0 ? o.receita/fat : null;
+    if(campo==='sku') return String(o.sku||'');
+    var v=o[campo]; return (v===null||v===undefined||(typeof v==='number'&&!isFinite(v))) ? null : v;
+  }
+
+  window.dashPintarLinhas=function(){
+    var c=_dash.dados, corpo=document.getElementById('dash-prod-corpo');
+    if(!c || !corpo) return;
+    var q=String(_dash.busca||'').trim().toLowerCase();
+    var L=c.linhas.filter(function(o){
+      return !q || String(o.sku).toLowerCase().indexOf(q)>=0 || String(o.titulo||'').toLowerCase().indexOf(q)>=0;
+    });
+    var ord=_dash.ordem||{campo:'receita',dir:-1}, fat=c.tot.fat;
+    L=L.slice().sort(function(a,b){
+      var x=valorOrdem(a,ord.campo,fat), y=valorOrdem(b,ord.campo,fat);
+      if(x===null && y===null) return b.receita-a.receita;
+      if(x===null) return 1;          // sem valor vai para o fim, nos dois sentidos
+      if(y===null) return -1;
+      if(typeof x==='string') return ord.dir*x.localeCompare(y,'pt-BR');
+      return ord.dir*(x-y) || (b.receita-a.receita);
+    });
+    var n=document.getElementById('dash-prod-n');
+    if(n) n.textContent = q ? L.length+' de '+c.linhas.length+' SKUs' : c.linhas.length+' SKU'+(c.linhas.length>1?'s':'')+' com venda';
+    document.querySelectorAll('#dash-produtos thead th').forEach(function(th){
+      var on=th.getAttribute('data-campo')===ord.campo;
+      th.classList.toggle('ord-on', on);
+      var s=th.querySelector('.ord'); if(s) s.textContent = on ? (ord.dir<0?' ▼':' ▲') : '';
+    });
+    _dash.aberta=null;
+    if(!L.length){
+      corpo.innerHTML='<tr><td colspan="13" class="dash-vazio">Nenhum SKU com “'+desc(q)+'” no período.</td></tr>';
+      return;
+    }
+    corpo.innerHTML=L.map(function(o){
+      var rep=fat>0?o.receita/fat:0;
       var corCusto = o.custoMLPct===null?'':(o.custoMLPct>0.30?'var(--coral-500)':(o.custoMLPct>0.22?'var(--amber-600)':'var(--slate-600)'));
       // Mesma régua da lâmpada: acima do alvo (além da tolerância) é âmbar.
       var corDesv  = o.desvio===null?'':(ledRegraAdsAcima(o)?'var(--amber-600)':(o.desvio>0?'var(--slate-600)':'var(--green-600)'));
       var corMpa   = o.mpaPct===null?'':(o.mpaPct<0?'var(--coral-500)':'var(--slate-900)');
+      var corTacos = ledRegraAdsAcima(o)?'var(--amber-600)':'';
       var id=desc(o.sku).replace(/'/g,"\\'");
       return '<tr class="dash-linha" data-sku="'+desc(o.sku)+'" style="cursor:pointer" onclick="dashToggleLinha(\''+id+'\')">'
         // O Ale identifica anúncio por SKU, não por título. O SKU vem primeiro,
         // monoespaçado e em peso; o título desce para legenda.
-        +'<td style="max-width:250px">'
-          +'<div style="font-family:var(--mono);font-size:12.5px;color:var(--slate-900);font-weight:600">'+desc(o.sku)
+        +'<td class="dash-prod-sku" data-rot="">'
+          +'<div class="dash-sku">'+desc(o.sku)
           +(o.viaLink?' <span title="linkado manualmente ao Hub" style="color:var(--blue-600);font-weight:400">↔ '+desc(o.skuHub)+'</span>':'')+'</div>'
-          +'<div style="font-size:11px;color:var(--slate-400);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+desc(o.titulo)+'</div></td>'
-        +'<td data-rot="Faturado">'+dfmtR(o.receita)+'</td>'
+          +'<div class="dash-tit">'+desc(o.titulo)+'</div></td>'
+        +'<td class="k" data-rot="Faturado">'+dfmtR(o.receita)+'</td>'
         +'<td data-rot="Repres.">'+dpct(rep,1)+'</td>'
         +'<td data-rot="Unidades">'+dfmtN(o.unidades)+'</td>'
         +'<td data-rot="Preço médio">'+dfmtR(o.precoMedio)+'</td>'
-        +'<td data-rot="Rebate" title="'+(o.rebateVal!==null?'R$ '+Number(o.rebateVal).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})+' bancados pelo ML':'sem leitura de descontos')+'"'
+        +'<td data-rot="Rebate" title="'+(o.rebateVal!==null?dfmtR(o.rebateVal)+' bancados pelo ML':'sem leitura de descontos')+'"'
           +(o.rebatePct>0?' style="color:var(--green-600)"':'')+'>'+(o.rebatePct===null?'—':dpct(o.rebatePct,1))+'</td>'
-        +'<td data-rot="M.C.">'+(o.mcPct===null?'<span style="color:var(--slate-200)">sem plano</span>':dpct(o.mcPct,1))+'</td>'
-        +'<td data-rot="MPA" style="color:'+corMpa+'">'+dpct(o.mpaPct,1)+'</td>'
-        +'<td data-rot="MPA R$">'+dfmtR(o.mpaVal)+'</td>'
-        +'<td data-rot="TACOS">'+dpct(o.tacos,2)+'</td>'
+        +'<td data-rot="M.C.">'+(o.mcPct===null?'<span style="color:var(--slate-300)">sem plano</span>':dpct(o.mcPct,1))+'</td>'
+        +'<td class="k" data-rot="MPA" style="color:'+corMpa+'">'+dpct(o.mpaPct,1)+'</td>'
+        +'<td data-rot="MPA R$"'+(o.mpaVal<0?' style="color:var(--coral-500)"':'')+'>'+dfmtR(o.mpaVal)+'</td>'
+        +'<td class="k" data-rot="TACOS"'+(corTacos?' style="color:'+corTacos+'"':'')+'>'+dpct(o.tacos,2)+'</td>'
         +'<td data-rot="Desvio ADS" style="color:'+corDesv+'">'+dpp(o.desvio)+'</td>'
         +'<td data-rot="Conversão">'+dpct(o.conversao,2)+'</td>'
         +'<td data-rot="Custo ML" style="color:'+corCusto+'">'+dpct(o.custoMLPct,1)+'</td>'
         +'</tr>'
-        +'<tr class="dash-card-row" id="dash-card-'+btoa(unescape(encodeURIComponent(o.sku))).replace(/[^A-Za-z0-9]/g,'')+'" style="display:none">'
+        +'<tr class="dash-card-row" id="'+idCard(o.sku)+'" style="display:none">'
         +'<td colspan="13" style="padding:0;background:var(--bg)"></td></tr>';
     }).join('');
-
-    el.innerHTML='<div class="table-wrap"><table>'
-      +'<thead class="hub-thead"><tr>'
-      +'<th>Produto</th><th>Faturado</th><th>Repres.</th><th>Unid.</th><th>Preço médio</th><th title="Parte do desconto que o Mercado Livre banca, sobre a receita">Rebate</th>'
-      +'<th>M.C.</th><th>MPA</th><th>MPA R$</th><th>TACOS</th><th>Desvio ADS</th><th>Conversão</th><th>Custo ML</th>'
-      +'</tr></thead><tbody class="hub-tbody">'+linhas+'</tbody></table></div>'
-      +'<p class="fin-note"><strong>Desvio ADS</strong> é o TACOS real menos o TACOS alvo do SKU (preenchido no OfficeLed): positivo quer dizer '
-      +'que o ADS passou da meta. Sem alvo preenchido, fica em branco. <strong>Custo ML</strong> é comissão + frete cobrados '
-      +'sobre a receita do SKU — não entra na M.C., mas alto demais significa que o frete planejado ficou velho. '
-      +'<strong>Rebate</strong> é a parte do desconto que o Mercado Livre banca (vem como tarifa menor), sobre a receita do SKU — '
-      +'já está no preço do Hub, então não mexe na M.C.; serve para você ver quanto o ML está pondo em cada produto. '
-      +'Clique na linha para abrir o produto aqui mesmo.</p>';
-  }
+  };
+  window.dashOrdenar=function(campo){
+    var o=_dash.ordem||{campo:'receita',dir:-1};
+    // primeiro clique: maior primeiro (no Produto, A→Z); segundo inverte
+    _dash.ordem = o.campo===campo ? {campo:campo, dir:-o.dir} : {campo:campo, dir: campo==='sku'?1:-1};
+    dashPintarLinhas();
+  };
+  var _busca=null;
+  window.dashBuscar=function(v){
+    clearTimeout(_busca);
+    _busca=setTimeout(function(){ _dash.busca=v; dashPintarLinhas(); }, 120);
+  };
 
   function idCard(sku){ return 'dash-card-'+btoa(unescape(encodeURIComponent(sku))).replace(/[^A-Za-z0-9]/g,''); }
 
@@ -11916,11 +12165,12 @@ window.apGarantirMes=async function(mes){
     // Uma por vez: card alto dentro de tabela longa só funciona assim.
     if(_dash.aberta && _dash.aberta!==sku){
       var ant=document.getElementById(idCard(_dash.aberta));
-      if(ant) ant.style.display='none';
+      if(ant){ ant.style.display='none'; if(ant.previousElementSibling) ant.previousElementSibling.classList.remove('aberta'); }
     }
-    if(!abrindo){ tr.style.display='none'; _dash.aberta=null; return; }
+    if(!abrindo){ tr.style.display='none'; tr.previousElementSibling.classList.remove('aberta'); _dash.aberta=null; return; }
 
     tr.style.display='';
+    tr.previousElementSibling.classList.add('aberta');
     _dash.aberta=sku;
     var cel=tr.firstElementChild;
     cel.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Abrindo o produto…</div>';
@@ -11930,7 +12180,7 @@ window.apGarantirMes=async function(mes){
     try{
       var det=_dash.cacheCard[sku] || await dashCarregarCard(linha, c);
       _dash.cacheCard[sku]=det;
-      cel.innerHTML=dashCardHtml(linha, det, c);
+      if(_dash.aberta===sku) cel.innerHTML=dashCardHtml(linha, det, c);
     }catch(e){
       console.error('[Central] card do produto', e);
       cel.innerHTML='<div style="padding:16px"><p class="fin-note">Não consegui abrir o produto. '+desc(String(e&&e.message||e))+'</p></div>';
@@ -12147,7 +12397,21 @@ window.apGarantirMes=async function(mes){
     dashCarregar(true);
   };
 
-  window.dashRecarregar=function(){ _dash.cachePeriodo={}; _dash.cacheCard={}; dashCarregar(true); };
+  window.dashRecarregar=function(){ _dash.cachePeriodo={}; _dash.cacheLeitura={}; _dash.cacheMarca={}; _dash.cacheCard={}; dashCarregar(true); };
+
+  /* Filtro de marca: recorta indicadores, gráfico, tabela e pontos de atenção.
+     Saúde da conta, Agenda e Anotações são da conta toda e não mudam. */
+  window.dashTrocarMarca=function(v){
+    _dash.marca=v||'todas'; _dash.aberta=null; _dash.metrica=_dash.metrica; _dash.busca='';
+    dashCarregar(false);
+  };
+  function dashPintarMarcas(lista){
+    var sel=document.getElementById('dash-marca'); if(!sel) return;
+    var atual=_dash.marca||'todas';
+    var ops=[['todas','Todas as marcas']].concat((lista||[]).map(function(m){ return [m,m]; })).concat([[SEM_MARCA,'Sem marca']]);
+    sel.innerHTML=ops.map(function(o){ return '<option value="'+desc(o[0])+'"'+(o[0]===atual?' selected':'')+'>'+desc(o[1])+'</option>'; }).join('');
+    sel.classList.toggle('on', atual!=='todas');
+  }
 
   window.dashTrocarPeriodo=function(v){
     var cx=document.getElementById('dash-custom');
@@ -12175,10 +12439,22 @@ window.apGarantirMes=async function(mes){
     kpis.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Montando a operação…</div>';
     try{
       var j=dashJanela(_dash.chave, _dash.custom);
-      var ck=chaveCache(j);
-      var c = (!forcar && _dash.cachePeriodo[ck]) ? _dash.cachePeriodo[ck]
-                                                 : dashCalcular(await dashLer(j), j);
-      _dash.cachePeriodo[ck]=c;
+      var ck=chaveCache(j), marca=_dash.marca||'todas';
+      var d = (!forcar && _dash.cacheLeitura[ck]) || null;
+      var cT = (!forcar && _dash.cachePeriodo[ck]) || null;
+      if(!cT || (marca!=='todas' && !d)){
+        d = await dashLer(j);
+        _dash.cacheLeitura[ck]=d;
+        cT = dashCalcular(d, j);
+        _dash.cachePeriodo[ck]=cT;
+        for(var km in _dash.cacheMarca) if(km.indexOf(ck+'|')===0) delete _dash.cacheMarca[km];
+      }
+      var c = cT;
+      if(marca!=='todas'){
+        var kmc=ck+'|'+marca;
+        c = _dash.cacheMarca[kmc] || (_dash.cacheMarca[kmc]=dashCalcular(d, j, marca));
+      }
+      dashPintarMarcas(cT.marcasLista);
       _dash.dados=c; _dash.dia=null;
       /* Cada bloco protegido por si. Antes, um erro em qualquer render
          derrubava os seguintes e deixava a área em branco — "não funciona"
@@ -12200,17 +12476,17 @@ window.apGarantirMes=async function(mes){
             +String(err&&err.message||err)+'</p></div>';
         }
       });
-      try{ if(typeof ledsDoDashboard==='function') ledsDoDashboard(c); }
+      // O LED e o Mural leem a conta inteira, nunca o recorte de marca da tela.
+      try{ if(typeof ledsDoDashboard==='function') ledsDoDashboard(cT); }
       catch(err){ console.warn('[OfficeLed] leds', err); }
-      var selo=document.getElementById('dash-selo');
-      if(selo) selo.innerHTML = seloDado(c.snapDate, 'anúncios');
       var sub=document.getElementById('home-subtitle');
-      if(sub) sub.textContent=j.rotulo+(j.rotulo==='Personalizado'?' ('+j.dias+' dias)':'')
-        +' · '+j.ini.split('-').reverse().join('/')
-        +(j.ini!==j.fim?' a '+j.fim.split('-').reverse().join('/'):'')
-        +(c.mesmaHora
+      if(sub) sub.innerHTML='<span class="sub-rot">'+desc(j.rotulo+(j.rotulo==='Personalizado'?' ('+j.dias+' dias)':''))+' · </span>'
+        +'<span class="sub-datas">'+j.ini.split('-').reverse().join('/')
+        +(j.ini!==j.fim?' a '+j.fim.split('-').reverse().join('/'):'')+'</span>'
+        +(marca!=='todas' ? '<span class="sub-marca"> · '+desc(marca===SEM_MARCA?'sem marca':marca)+'</span>' : '')
+        +'<span class="sub-comp">'+(c.mesmaHora
           ? ' · comparado com ontem até '+c.mesmaHora.corte
-          : ' · comparado com os '+j.dias+' dia'+(j.dias>1?'s':'')+' anteriores');
+          : ' · comparado com os '+j.dias+' dia'+(j.dias>1?'s':'')+' anteriores')+'</span>';
     }catch(err){
       console.error('[OfficeLed] dashboard',err);
       kpis.innerHTML='<div class="fin-cascata"><p class="fin-note">Não consegui montar a dashboard. '
@@ -12225,11 +12501,14 @@ window.apGarantirMes=async function(mes){
   window._dashPeriodo=async function(chave, forcar){
     var j=dashJanela(chave, null), ck=chaveCache(j);
     if(!forcar && _dash.cachePeriodo[ck]) return _dash.cachePeriodo[ck];
-    var c=dashCalcular(await dashLer(j), j);
+    var d=await dashLer(j);
+    _dash.cacheLeitura[ck]=d;
+    var c=dashCalcular(d, j);
     _dash.cachePeriodo[ck]=c;
     return c;
   };
   window._dashSomaDias=somaDias;
+  window._dashBaldes=dashBaldes;   // exposto para teste
   window._dashTotais=dashTotais;
   window._dashAgregar=dashAgregar;
 })();
@@ -16727,6 +17006,220 @@ body:has(#page-led.active) .fab{ display:none !important; }
     width:100cqw; max-width:100cqw; box-sizing:border-box;
   }
 }
+
+/* ══ DASHBOARD v2 (28/10/2026) ══════════════════════════════════════════════
+   Ajustes pedidos na revisão da aba (itens 1–19 e 21). Fica no fim do bloco
+   ol26 para valer por cima das regras antigas, sem reescrevê-las. */
+
+/* 1 — número do cartão numa linha só: encolhe para caber (--n = caracteres). */
+#page-home .kpi{ container-type:inline-size; position:relative; }
+#page-home .kpi-v{ white-space:nowrap; overflow:hidden; }
+#page-home .kpi-num{ display:inline-block; font-size:min(1em, calc(100cqi / (var(--n) * 0.6))); }
+#page-home .kpi-rs{ font-size:.56em; letter-spacing:0; margin-right:.22em; color:var(--slate-400); font-weight:400; }
+.delta-zero{ font-size:11px; color:var(--slate-400); font-family:var(--mono); }
+
+/* 4/7 — a grade pequena sempre fecha a última linha (o último cartão estica). */
+#page-home .kpi-grid-baixo{ grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+#page-home .kpi-grid-baixo > .kpi:last-child:nth-child(4n+1){ grid-column:span 4; }
+#page-home .kpi-grid-baixo > .kpi:last-child:nth-child(4n+2){ grid-column:span 3; }
+#page-home .kpi-grid-baixo > .kpi:last-child:nth-child(4n+3){ grid-column:span 2; }
+
+/* 9/12 — linha de status: atualização + avisos resumidos que abrem o detalhe */
+#dash-avisos{ margin:2px 0 12px; }
+.dash-status{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.dash-atual{ display:inline-flex; align-items:center; gap:7px; font-size:12px; color:var(--slate-600);
+  background:var(--white); border:1px solid var(--slate-100); border-radius:999px; padding:5px 11px; white-space:nowrap; }
+.dash-atual i{ width:7px; height:7px; border-radius:50%; background:var(--green-600); box-shadow:0 0 0 3px rgba(47,158,91,.14); }
+.dash-atual.velho{ color:var(--amber-600); background:var(--amber-50); border-color:var(--amber-100); }
+.dash-atual.velho i{ background:var(--amber-600); box-shadow:none; }
+.dash-av-chip{ display:inline-flex; align-items:center; gap:8px; max-width:100%; min-width:0; cursor:pointer;
+  font-family:var(--font); font-size:12px; color:var(--slate-600); background:var(--white);
+  border:1px solid var(--slate-100); border-radius:999px; padding:4px 11px 4px 5px; }
+.dash-av-chip:hover{ border-color:var(--amber-600); }
+.dash-av-chip b{ flex:0 0 auto; min-width:20px; height:20px; border-radius:999px; background:var(--amber-50);
+  color:var(--amber-600); font-size:11px; display:inline-flex; align-items:center; justify-content:center; font-weight:600; }
+.dash-av-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.dash-av-chip i{ font-style:normal; color:var(--slate-400); transition:transform .15s; flex:0 0 auto; }
+.dash-status.aberto .dash-av-chip i{ transform:rotate(180deg); }
+.dash-av-lista{ display:none; flex-basis:100%; background:var(--white); border:1px solid var(--slate-100);
+  border-left:2.5px solid var(--amber-600); border-radius:var(--radius); padding:10px 14px; }
+.dash-status.aberto .dash-av-lista{ display:block; }
+.dash-av-lista p{ font-size:12px; color:var(--slate-700); line-height:1.6; margin:0 0 4px; }
+.dash-av-lista p:last-child{ margin:0; }
+
+/* 3/8 — De onde sai o lucro: uma barra só, rótulos embaixo (não cortam) */
+.dash-lucro{ margin-top:10px; padding:15px 17px !important; }
+.dash-lucro-cab{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:22px; }
+.dash-lucro-tit{ font-size:13.5px; font-weight:600; letter-spacing:-.2px; }
+.dash-lucro-sub{ font-size:11.5px; color:var(--slate-400); }
+.dash-lucro-mc{ position:relative; height:7px; border:1px solid var(--brand); border-bottom:0; border-radius:3px 3px 0 0; margin-bottom:3px; }
+.dash-lucro-mc span{ position:absolute; right:0; bottom:9px; white-space:nowrap; font-family:var(--mono);
+  font-size:11px; color:var(--brand); font-weight:500; }
+.dash-lucro-barra{ display:flex; height:16px; border-radius:5px; overflow:hidden; background:var(--slate-50); }
+.dash-lucro-barra i{ display:block; height:100%; }
+.lc-cus{ background:var(--slate-200); } .lc-ads{ background:#F2B84B; } .lc-mpa{ background:var(--green-600); }
+.dash-lucro-leg{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px 18px; margin-top:12px; }
+.dash-lucro-leg > div{ display:grid; grid-template-columns:10px 1fr; column-gap:7px; align-items:baseline; }
+.dash-lucro-leg b{ width:10px; height:10px; border-radius:3px; display:block; transform:translateY(1px); }
+.dash-lucro-leg i{ font-style:normal; }
+.dash-lucro-leg span{ font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.5px; color:var(--slate-400); }
+.dash-lucro-leg strong{ grid-column:2; font-family:var(--mono); font-size:14px; font-weight:500; color:var(--slate-900); }
+.dash-lucro-leg strong.neg{ color:var(--coral-500); }
+.dash-lucro-leg em{ grid-column:2; font-style:normal; font-family:var(--mono); font-size:11px; color:var(--slate-400); }
+.dash-lucro-nota{ margin-top:12px; font-size:11.5px; color:var(--slate-400); }
+.dash-lucro-fora{ color:var(--amber-600); }
+.dash-lucro-ml{ display:flex; flex-wrap:wrap; gap:10px 28px; align-items:baseline; margin-top:14px; padding-top:12px; border-top:1px solid var(--slate-50); }
+.dash-lucro-ml > div{ display:flex; flex-direction:column; }
+.dash-lucro-ml span{ font-size:9.5px; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:var(--slate-400); }
+.dash-lucro-ml strong{ font-family:var(--mono); font-size:15px; font-weight:500; color:var(--slate-700); }
+.dash-lucro-ml strong.neg{ color:var(--coral-500); }
+.dash-lucro-ml em{ font-style:normal; font-size:11px; color:var(--slate-400); }
+.dash-lucro-ml p{ flex:1 1 260px; margin:0; font-size:11px; color:var(--slate-400); line-height:1.5; }
+
+/* 11 — termômetro do ML */
+.dash-termo{ display:flex; gap:3px; margin-top:6px; }
+.dash-termo i{ flex:1; height:6px; border-radius:2px; max-width:26px; }
+.dash-termo i.on{ height:8px; transform:translateY(-1px); }
+
+/* 19 — SKU dos pontos de atenção é botão */
+.dash-atn{ background:var(--white); border:1px solid var(--slate-100); border-left:3px solid; border-radius:var(--radius); padding:12px 15px; margin-bottom:8px; }
+.dash-atn-cab{ display:flex; align-items:baseline; gap:9px; margin-bottom:4px; }
+.dash-atn-t{ font-size:13px; font-weight:600; color:var(--slate-900); letter-spacing:-.1px; }
+.dash-atn-sel{ font-family:var(--mono); font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; margin-left:auto; white-space:nowrap; }
+.dash-atn-d{ font-size:11.5px; color:var(--slate-600); line-height:1.55; margin-bottom:6px; }
+.dash-atn-skus{ display:flex; flex-wrap:wrap; gap:5px 10px; font-family:var(--mono); font-size:11.5px; color:var(--slate-600); }
+.dash-atn-skus > span{ white-space:nowrap; }
+.dash-sku-chip{ font-family:var(--mono); font-size:11.5px; color:var(--brand); background:var(--white);
+  border:1px solid var(--blue-100); border-radius:6px; padding:1px 6px; cursor:pointer; }
+.dash-sku-chip:hover{ background:var(--brand); color:#fff; border-color:var(--brand); }
+
+/* 14–16 — gráfico em barras, desenhado na largura real */
+.dash-graf .dash-banda{ bottom:26px; }
+.dash-tip{ display:none; position:absolute; z-index:5; pointer-events:none; background:var(--slate-900); color:var(--white);
+  border-radius:6px; padding:8px 10px; font-size:11px; font-family:var(--mono); line-height:1.65; white-space:nowrap; }
+.dash-graf-leg{ display:flex; gap:6px 16px; margin-top:8px; font-size:11.5px; color:var(--slate-600); flex-wrap:wrap; }
+.dash-graf-leg i{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; box-sizing:border-box; }
+.dash-dia{ margin-top:12px; background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius);
+  padding:12px 14px; display:flex; gap:14px 22px; flex-wrap:wrap; align-items:center; }
+
+/* 2 — tabela de produtos em largura total, com busca e ordenação */
+#ol-full{ margin-top:4px; }
+.dash-prod-barra{ display:flex; align-items:center; gap:10px; justify-content:space-between; margin:-2px 0 10px; flex-wrap:wrap; }
+.dash-prod-n{ font-size:12px; color:var(--slate-400); }
+.dash-busca{ width:260px; max-width:100%; border:1px solid var(--slate-100); border-radius:8px; padding:7px 11px;
+  font-family:var(--font); font-size:13px; color:var(--slate-900); background:var(--white); }
+.dash-busca:focus{ outline:none; border-color:var(--brand); }
+#dash-produtos thead th{ cursor:pointer; user-select:none; white-space:nowrap; }
+#dash-produtos thead th:hover{ color:var(--slate-900); }
+#dash-produtos thead th.ord-on{ color:var(--brand); }
+#dash-produtos .ord{ font-size:9px; }
+#dash-produtos .dash-sku{ font-family:var(--mono); font-size:12.5px; color:var(--slate-900); font-weight:600; }
+#dash-produtos .dash-tit{ font-size:11px; color:var(--slate-400); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:260px; }
+#dash-produtos tr.dash-linha.aberta td{ background:var(--slate-50); }
+@media (min-width:769px){
+  /* 13 colunas em 1.150px (notebook de 1280): menos respiro lateral e título mais curto */
+  #dash-produtos thead th, #dash-produtos tbody tr.dash-linha > td{ padding-left:9px !important; padding-right:9px !important; }
+  #dash-produtos thead th:first-child, #dash-produtos tbody tr.dash-linha > td:first-child{ padding-left:14px !important; }
+  #dash-produtos .dash-tit{ max-width:220px; }
+  #dash-produtos table{ min-width:0 !important; }
+  /* se mesmo assim não couber, a coluna do produto fica parada ao rolar */
+  #dash-produtos:not(.cabe) tbody tr.dash-linha > td:first-child,
+  #dash-produtos:not(.cabe) thead th:first-child{ position:sticky; left:0; z-index:2; background:var(--white); box-shadow:1px 0 0 var(--slate-100); }
+  #dash-produtos:not(.cabe) thead th:first-child{ z-index:7 !important; }
+}
+#dash-produtos .dash-vazio{ text-align:center; color:var(--slate-400); padding:22px !important; font-size:12.5px; }
+.dash-legenda{ margin-top:8px; font-size:11.5px; color:var(--slate-400); }
+.dash-legenda summary{ cursor:pointer; color:var(--brand); font-size:12px; }
+.dash-legenda p{ margin:6px 0 0; line-height:1.6; }
+/* quando a tabela cabe, o cabeçalho gruda no topo da página ao rolar a lista */
+#dash-produtos.cabe .table-wrap{ overflow:visible !important; }
+#dash-produtos.cabe thead th{ top:var(--pg-head-h, 58px) !important; }
+
+/* 21 — filtro de marca no cabeçalho */
+#dash-marca.on{ border-color:var(--brand) !important; color:var(--brand); font-weight:500; }
+
+/* 6 — botões flutuantes: o "+" só onde ele faz algo; o LED vai para a lateral */
+body:not(:has(#page-anotacoes.active)):not(:has(#page-ideias.active)):not(:has(#page-agenda.active)) .fab{ display:none !important; }
+@media (min-width:769px){
+  /* LED e ferramentas de apresentação descem para a barra lateral, acima do
+     usuário: fora da área dos números. A barra tem 64px. */
+  body.led-flutua #led-flutuante{ left:10px; right:auto; bottom:98px; z-index:210; }
+  #admin-toolbar.admin-toolbar{ left:12px !important; right:auto !important; bottom:152px !important; align-items:flex-start !important; z-index:210; }
+  #admin-toolbar .admin-fab{ width:40px; height:40px; font-size:16px; }
+  #led-flutuante .led-bola{ width:44px; height:44px; }
+  #led-flutuante .led-balao{ left:54px; right:auto; }
+  #led-chat{ left:76px; right:auto; bottom:20px; }
+}
+
+/* Layout empilhado (≤980px): números, tabela, agenda/anotações, saúde e,
+   por último, pontos de atenção — a ordem pedida em 20/09. */
+@media (max-width:980px){
+  #page-home.active{ display:flex !important; flex-direction:column; }
+  #page-home > *{ order:0; }
+  #ol-wrap, #ol-rail{ display:contents !important; }
+  #ol-col{ order:1; } #ol-full{ order:2; } #ol-rail-b{ order:3; } #ol-rail-a{ order:4; }
+  #ol-rail-b{ display:flex; flex-direction:column; }
+  #ol-rail-b > .home-section{ order:0; }
+  #ol-rail-b > .sec-title, #ol-rail-b > #dash-saude{ order:1; }
+  #ol-rail-a{ margin-top:8px; }
+}
+
+@media (max-width:768px){
+  /* 18 — cabeçalho em duas linhas curtas, colado no topo (os 64px de cima eram
+     do botão de menu antigo, que já não aparece no celular) */
+  .main:has(#page-home.active){ padding-top:calc(16px + env(safe-area-inset-top)) !important; }
+  #page-home .pg-head{ display:flex; flex-direction:column; align-items:stretch !important; gap:8px; padding-top:9px !important; padding-bottom:9px !important; }
+  #page-home .pg-head > div:first-child{ display:flex; align-items:baseline; gap:8px; min-width:0; }
+  #page-home .pg-head .page-subtitle{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  #page-home .pg-head .sub-rot, #page-home .pg-head .sub-comp{ display:none; }
+  #page-home .pg-head > div:last-child{ display:flex; flex-wrap:nowrap !important; gap:6px !important; }
+  #page-home .pg-head > div:last-child select{ flex:1 1 0; min-width:0; font-size:13px; }
+  #page-home .pg-head #dash-custom{ flex-basis:100%; }
+  #page-home .pg-head > div:last-child{ flex-wrap:wrap !important; }
+  #page-home .pg-head > div:last-child > button{ flex:0 0 auto; }
+
+  #page-home .kpi-grid-baixo{ grid-template-columns:1fr 1fr !important; }
+  #page-home .kpi-grid-baixo > .kpi:last-child{ grid-column:auto; }
+  #page-home .kpi-grid-baixo > .kpi:last-child:nth-child(odd){ grid-column:span 2; }
+  .dash-lucro-leg{ grid-template-columns:1fr; gap:8px; }
+  .dash-lucro-leg > div{ grid-template-columns:10px 1fr auto auto; column-gap:8px; }
+  .dash-lucro-leg strong, .dash-lucro-leg em{ grid-column:auto; text-align:right; }
+  .dash-lucro-leg span{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .dash-lucro-leg .lc-long{ display:none; }
+  .dash-lucro-mc span{ font-size:10.5px; }
+  .dash-busca{ width:100%; }
+  .dash-prod-barra{ flex-direction:column-reverse; align-items:stretch; gap:6px; }
+
+  /* 17 — lista curta por SKU: SKU e faturado na 1ª linha; título, MPA e TACOS
+     na 2ª. ~56px por produto. O resto das colunas aparece ao tocar. */
+  #dash-produtos.empilha .table-wrap{ background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius); overflow:hidden; }
+  #dash-produtos.empilha tbody tr.dash-linha{ display:grid !important; grid-template-columns:minmax(0,1fr) 74px 88px;
+    column-gap:12px; row-gap:1px; align-items:baseline; padding:9px 12px !important; margin:0 !important;
+    border:0 !important; border-bottom:1px solid var(--slate-50) !important; border-radius:0 !important; background:var(--white); }
+  #dash-produtos.empilha tbody tr.dash-linha > td{ grid-column:1 / -1; order:3; }
+  #dash-produtos.empilha tbody tr.dash-linha > td.dash-prod-sku{ grid-column:1; grid-row:1 / span 2; order:0; display:block !important;
+    margin:0 !important; padding:0 !important; border:0 !important; min-width:0; }
+  #dash-produtos.empilha tbody tr.dash-linha > td.k{ order:1; padding:0 !important; display:block !important; text-align:right !important; border:0 !important;
+    font-family:var(--mono); font-size:12px !important; white-space:nowrap; }
+  #dash-produtos.empilha tbody tr.dash-linha > td.k[data-rot="Faturado"]{ grid-column:2 / span 2; grid-row:1; font-size:13px !important; color:var(--slate-900); }
+  #dash-produtos.empilha tbody tr.dash-linha > td.k[data-rot="MPA"]{ grid-column:2; grid-row:2; }
+  #dash-produtos.empilha tbody tr.dash-linha > td.k[data-rot="TACOS"]{ grid-column:3; grid-row:2; }
+  #dash-produtos.empilha tbody tr.dash-linha > td.k[data-rot="Faturado"]::before{ content:none !important; }
+  #dash-produtos.empilha tbody tr.dash-linha > td.k::before{ font-size:9px !important; margin-right:4px; font-family:var(--font); }
+  #dash-produtos.empilha tbody tr.dash-linha .dash-sku{ font-size:12.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #dash-produtos.empilha tbody tr.dash-linha .dash-tit{ max-width:none; font-size:10.5px; margin-top:1px; }
+  #dash-produtos.empilha tbody tr.dash-linha:not(.aberta) > td:not(.k):not(.dash-prod-sku){ display:none !important; }
+  #dash-produtos.empilha tbody tr.dash-linha.aberta > td:not(.k):not(.dash-prod-sku){ padding:3px 0 !important; }
+  #dash-produtos.empilha tbody tr.dash-linha.aberta > td[data-rot="Repres."]{ margin-top:8px; padding-top:8px !important; border-top:1px solid var(--slate-50) !important; }
+  #dash-produtos.empilha tbody tr.dash-linha.aberta{ background:var(--slate-50) !important; }
+  #dash-produtos.empilha tbody tr.dash-linha.aberta td{ background:none !important; }
+  #dash-produtos.empilha tbody tr.dash-card-row > td > div{ border-bottom:1px solid var(--slate-100); }
+  #dash-produtos tr.dash-card-row td, #dash-produtos tr.dash-card-row td *{ white-space:normal !important; }
+  #dash-produtos tr.dash-card-row td{ overflow-wrap:anywhere; }
+
+  /* + acima da barra de abas */
+  .fab{ bottom:calc(78px + env(safe-area-inset-bottom)) !important; }
+}
 </style>
 <!-- ═══ OFFICELED 2026 — barra de abas mobile ═══ -->
 <script>
@@ -16799,7 +17292,12 @@ body:has(#page-led.active) .fab{ display:none !important; }
     }
     mover(col,'dash-custom-erro'); mover(col,'dash-avisos'); mover(col,'dash-kpis');
     mover(ra,'dash-atencao'); mover(rb,'dash-saude');
-    mover(col,'dash-grafico'); mover(col,'dash-produtos');
+    mover(col,'dash-grafico');
+    // A tabela de produtos sai da coluna e ocupa a largura toda, embaixo:
+    // ao lado do trilho as 13 colunas não cabiam e rolavam de lado.
+    var full=document.createElement('section'); full.id='ol-full';
+    home.appendChild(full);
+    mover(full,'dash-produtos');
     Array.prototype.forEach.call(home.children, function(n){ /* nada: coleta abaixo */ });
     var secoes=[]; 
     for(var i=0;i<home.children.length;i++){
@@ -16900,7 +17398,7 @@ body:has(#page-led.active) .fab{ display:none !important; }
   //    cartão, com `thead th{top:0 !important}`. Se o `.cabe` trocasse o
   //    overflow para visible numa tela larga, esse top:0 passaria a contar da
   //    PÁGINA e o cabeçalho da tabela deslizaria para trás do cabeçalho sticky.
-  var SEMPRE_ROLA = { 'dre-tabela': 1, 'dash-produtos': 1 };
+  var SEMPRE_ROLA = { 'dre-tabela': 1 };
 
   // A tabela cabe no espaço que tem? Se cabe, o wrap para de ser container de
   // rolagem e o <thead> pode grudar no cabeçalho da PÁGINA em vez de flutuar
