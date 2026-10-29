@@ -1740,23 +1740,15 @@ body.sidebar-collapsed .hamburger { display: none; }
            em 15/09; preenchimento é manual de propósito, para agrupar como a
            operação pensa e não como o ML cataloga. -->
       <div id="op-section-marcas" style="display:none">
-        <div class="page-subtitle" id="mrc-subtitle" style="margin-top:0">Uma marca por SKU. Salva ao sair do campo.</div>
-        <div class="perf-vg-controls" style="justify-content:space-between;flex-wrap:wrap;gap:12px">
-          <input class="notes-search" id="mrc-busca" placeholder="SKU ou descrição"
-                 style="width:220px;padding:6px 10px;font-size:12px" oninput="mrcFiltrar()">
-          <div style="display:flex;gap:10px;align-items:center">
-            <label style="font-size:12px;color:var(--slate-500);display:flex;align-items:center;gap:6px">
-              <input type="checkbox" id="mrc-so-vazio" onchange="mrcFiltrar()"> só sem marca
-            </label>
-            <input class="notes-search" id="mrc-aplicar" placeholder="marca p/ aplicar em massa"
-                   style="width:190px;padding:6px 10px;font-size:12px">
-            <button class="perf-select" style="cursor:pointer" onclick="mrcAplicarEmMassa()">Aplicar aos filtrados</button>
+        <div class="mb-topo">
+          <div class="mb-abas" id="mrc-abas">
+            <button type="button" data-aba="desempenho" class="on" onclick="mrcAba('desempenho')">Desempenho</button>
+            <button type="button" data-aba="cadastro" onclick="mrcAba('cadastro')">Cadastro de marcas</button>
           </div>
+          <button type="button" class="perf-select" title="Reler do banco" onclick="mrcCarregar(true)">&#8635;</button>
         </div>
-        <div id="mrc-resumo" style="margin-top:14px"></div>
-        <div id="mrc-tabela" style="margin-top:12px">
-          <div class="fin-loading"><div class="fin-spinner"></div> Carregando SKUs…</div>
-        </div>
+        <div class="page-subtitle" id="mrc-subtitle" style="margin:6px 0 12px"></div>
+        <div id="mrc-corpo"><div class="fin-loading"><div class="fin-spinner"></div> Carregando…</div></div>
       </div>
 
       <!-- LANÇAMENTOS — espelho do quadro Cronograma Comercial do Trello (28/09). -->
@@ -13527,220 +13519,822 @@ window.apGarantirMes=async function(mes){
 
 <script>
 /* ═════════════════════════════════════════════════════════════════════════════
-   MARCAS
+   MARCAS v2 (29/10/2026)
 
-   A dimensão não existia: nem `skus`, nem as tabelas `ml_*` guardavam marca.
-   O único campo `marca` do arquivo era da tabela `ideias`, do kanban, e não
-   tem relação. A coluna `skus.marca` foi criada em 15/09.
+   Duas telas:
+     · Desempenho — volume e crescimento, ranking de modelos e qualidade por
+       marca, com filtros para escolher o que mostrar e um modo tela cheia para
+       apresentar (pensado para a conversa com as fábricas).
+     · Cadastro — a marca de cada SKU. Edição em massa SÓ no que estiver
+       marcado na caixinha, com revisão antes, Desfazer depois e histórico
+       (tabela skus_marca_hist, gravada por trigger no banco).
 
-   O preenchimento é manual de propósito. A alternativa era sincar o atributo
-   BRAND do anúncio, mas aí o agrupamento seria o do catálogo do ML — que
-   depende de como cada anúncio foi preenchido e não de como a operação pensa.
-   Para decisão de compra e para mentoria, agrupar do seu jeito vale mais.
+   Por que mudou: em 29/10 o botão "Aplicar aos filtrados" com o filtro vazio
+   trocou os 320 SKUs para "TibKids" de uma vez. O filtro vazio valia como
+   "todos", não havia revisão nem volta. Agora nada muda sem seleção explícita.
 
-   Um SKU tem uma marca só.
+   Só LÊ o Mercado Livre (tabelas ml_*). Só ESCREVE skus.marca.
+   Margem não aparece aqui de propósito: esta tela é para mostrar a terceiros.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function(){
-  var _mrc={ linhas:null, carregando:false, busca:'', soVazio:false, salvando:{} };
+  var CONTA='Logbox';
+  var _mb={ aba:'desempenho', periodo:'ano', marca:'todas',
+            blocos:{volume:true, ranking:true, qualidade:true}, reais:true,
+            metrica:'un', agrupar:true, top:15,
+            dados:null, carregando:false, erro:null,
+            // cadastro
+            busca:'', filtro:'todas', sel:{}, desfazer:null, hist:null, histErro:null,
+            revisao:null, novaMarca:false, salvando:false };
 
   function esc(t){ return String(t==null?'':t).replace(/[&<>"']/g,function(c){
     return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-  function fN(v){ return (Number(v)||0).toLocaleString('pt-BR'); }
-  function fR(v){ return (v===null||v===undefined||!isFinite(v)) ? '—'
-    : 'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function js(t){ return esc(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+  var MENOS='−';
+  function fN(v){ var n=Math.round(Number(v)||0); return (n<0?MENOS:'')+Math.abs(n).toLocaleString('pt-BR'); }
+  function fR(v){ if(v===null||v===undefined||!isFinite(v)) return '—';
+    var n=Math.round(v*100)/100; return (n<0?MENOS:'')+'R$ '+Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+  function fR0(v){ if(v===null||v===undefined||!isFinite(v)) return '—';
+    var a=Math.abs(v), s=v<0?MENOS:'';
+    if(a>=1e6) return s+'R$ '+(a/1e6).toFixed(2).replace('.',',')+' mi';
+    if(a>=1e4) return s+'R$ '+Math.round(a/1000)+' mil';
+    return s+'R$ '+Math.round(a).toLocaleString('pt-BR'); }
+  function fP(v,c){ if(v===null||v===undefined||!isFinite(v)) return '—';
+    var t=(Math.abs(v)*100).toFixed(c===undefined?1:c); return (v<0&&Number(t)!==0?MENOS:'')+t.replace('.',',')+'%'; }
+  function fVar(v){ if(v===null||v===undefined||!isFinite(v)) return '<span class="mb-neutro">—</span>';
+    var t=(Math.abs(v)*100).toFixed(0);
+    if(Number(t)===0) return '<span class="mb-neutro">= 0%</span>';
+    return '<span class="'+(v>0?'mb-sobe':'mb-desce')+'">'+(v>0?'▲ +':'▼ '+MENOS)+t+'%</span>'; }
+  function iso(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  var MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+  function rotMes(m){ return MESES[Number(m.slice(5,7))-1]+'/'+m.slice(2,4); }
+  function normM(x){ return String(x||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]/g,''); }
+  function limpaMarca(x){ return String(x||'').replace(/\s+/g,' ').trim(); }
 
-  function filtradas(){
-    var q=_mrc.busca.toLowerCase();
-    return (_mrc.linhas||[]).filter(function(o){
-      if(_mrc.soVazio && o.marca) return false;
-      return !q || o.sku.toLowerCase().indexOf(q)>=0 || String(o.descricao||'').toLowerCase().indexOf(q)>=0;
-    });
+  /* Janela carregada: 12 meses até hoje (o sync de vendas começa em jan/2026). */
+  function inicioCarga(){ var d=new Date(); d.setDate(1); d.setMonth(d.getMonth()-11); return iso(d); }
+
+  /* ── Motivos de reclamação do ML (post-purchase/v1/claims/reasons) ──────────
+     Agrupados pelo que interessa à fábrica: os quatro primeiros grupos são
+     PROBLEMA DE PRODUTO; o resto é comprador, entrega ou operação. */
+  var GRUPOS={
+    defeito:   {rot:'Defeito / não funciona',      prod:true,  cor:'#D9480F'},
+    quebrado:  {rot:'Chegou quebrado',             prod:true,  cor:'#E8590C'},
+    faltando:  {rot:'Faltam peças ou acessórios',  prod:true,  cor:'#F08C00'},
+    diferente: {rot:'Diferente do anunciado',      prod:true,  cor:'#F59F00'},
+    vazia:     {rot:'Caixa vazia',                 prod:false, cor:'#ADB5BD'},
+    arrependimento:{rot:'Comprador desistiu',      prod:false, cor:'#CED4DA'},
+    entrega:   {rot:'Entrega / endereço',          prod:false, cor:'#CED4DA'},
+    outros:    {rot:'Outros',                      prod:false, cor:'#DEE2E6'}
+  };
+  var MOTIVO={
+    PDD9929:['defeito','Veio com defeito'], PDD9930:['defeito','Defeito (embalagem danificada)'],
+    PDD9949:['defeito','Não funciona'], PDD9950:['defeito','Não funciona (embalagem danificada)'],
+    PDD9946:['quebrado','Chegou quebrado'], PDD9947:['quebrado','Quebrado (embalagem danificada)'],
+    PDD9952:['faltando','Faltam acessórios'], PDD9953:['faltando','Faltam acessórios (embalagem danificada)'],
+    PDD9955:['faltando','Falta peça ou item'], PDD9956:['faltando','Falta item (embalagem danificada)'],
+    PDD9941:['diferente','Cor, tamanho ou modelo diferente'], PDD9942:['diferente','Recebeu outro produto'],
+    PDD9943:['diferente','Não era da marca original'], PDD9944:['diferente','Diferente das características do anúncio'],
+    PDD9958:['vazia','Caixa vazia'], PDD9959:['vazia','Caixa vazia (embalagem danificada)'],
+    PDD9939:['arrependimento','Chegou bem, mas não quer mais'], PNR9501:['arrependimento','Desistiu antes de receber'],
+    PNR9509:['arrependimento','Desistiu antes de receber'], CS9514:['arrependimento','Desistiu da compra'],
+    PNR9611:['arrependimento','Não quer mais a compra'], PNR9617:['arrependimento','Escolheu o produto errado'],
+    PNR9641:['arrependimento','Escolheu a característica errada'],
+    PNR9504:['entrega','Não pode esperar a entrega'], PNR9510:['entrega','Não pode esperar a entrega'],
+    PNR9521:['entrega','Entrega atrasada'], PNR9560:['entrega','Não recebeu o pacote'], PNR9567:['entrega','Não recebeu o pacote'],
+    PNR9505:['entrega','Não pode receber no endereço'], PNR9511:['entrega','Não pode receber no endereço'],
+    PNR9636:['entrega','Mudou o endereço'], PNR9508:['entrega','Não recebeu (outro motivo)'], PNR9513:['entrega','Não recebeu (outro motivo)'],
+    PNR9503:['outros','Sem estoque'], CS9532:['outros','Sem estoque'], PDD9960:['outros','NF-e não chegou'],
+    PDD9961:['outros','Compra não autorizada'], PNR9507:['outros','Compra não autorizada'], PNR9512:['outros','Compra não autorizada'],
+    PNR9502:['outros','Vendedor não respondeu'], CS9523:['outros','Outros'], CS9534:['outros','Outros'], PNR9615:['outros','Outros']
+  };
+  function motivoDe(cod){ var m=MOTIVO[cod]; return m ? {g:m[0], t:m[1]} : {g:'outros', t:cod||'sem motivo'}; }
+
+  /* Cor fixa por marca, a mesma em todos os gráficos. */
+  var COR_MARCA={'variall':'#1F9E89','boyucell':'#3B6FD8','thametal':'#D08A2E','tibkids':'#D9579B'};
+  var COR_EXTRA=['#7950F2','#12B886','#E64980','#4C6EF5','#82C91E'];
+  function corDe(m, lista){
+    if(!m) return '#C3C7CC';
+    var k=normM(m); if(COR_MARCA[k]) return COR_MARCA[k];
+    var i=(lista||[]).filter(function(x){ return !COR_MARCA[normM(x)]; }).indexOf(m);
+    return COR_EXTRA[(i<0?0:i)%COR_EXTRA.length];
   }
 
-  async function mrcLer(){
-    var hoje=new Date(), d30=new Date(Date.now()-29*86400000);
-    var iso=function(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-    var snap=await sb.from('ml_anuncios').select('data').eq('conta','Logbox')
-      .order('data',{ascending:false}).limit(1).single();
+  /* Marca do SKU: skus.marca; variação de cor sem cadastro herda a do pai. */
+  function paiDe(sku){ return String(sku||'').replace(/-[A-Z]{2}$/,''); }
+  function marcaDe(sku, mapa){
+    if(!sku) return null;
+    if(mapa[sku]) return mapa[sku];
+    var p=paiDe(sku); return (p!==sku && mapa[p]) || null;
+  }
+  /* Sugestão pelo prefixo — só os prefixos que a operação já usa com certeza. */
+  var PREFIXOS=[[/^VA-/,'variall'],[/^BC-/,'boyucell'],[/^TM-/,'thametal'],[/^XC-BRQ-/,'tibkids']];
+  function sugestaoDe(sku, marcas){
+    for(var i=0;i<PREFIXOS.length;i++){
+      if(!PREFIXOS[i][0].test(sku)) continue;
+      var alvo=(marcas||[]).find(function(m){ return normM(m)===PREFIXOS[i][1]; });
+      if(alvo) return alvo;
+    }
+    return null;
+  }
 
+  /* ── Leitura ─────────────────────────────────────────────────────────────── */
+  async function mbLer(){
+    var desde=inicioCarga();
+    var snap=await sb.from('ml_anuncios').select('data').eq('conta',CONTA)
+      .order('data',{ascending:false}).limit(1).single();
+    var dSnap=(snap.data&&snap.data.data)||'2099-01-01';
     var r=await Promise.all([
       sbTodas(function(a,b){ return sbP('skus','sku,descricao,marca')
-        .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'mrc/skus'),
-      sbTodas(function(a,b){ return sbP('ml_vendas','item_id,data,receita')
-        .eq('conta','Logbox').gte('data',iso(d30))
-        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'mrc/vendas'),
-      sbTodas(function(a,b){ return sbP('ml_anuncios','item_id,sku')
-        .eq('conta','Logbox').eq('data',(snap.data&&snap.data.data)||'2099-01-01')
-        .order('item_id',{ascending:true}).range(a,b); }, 'mrc/anuncios')
+        .eq('conta',CONTA).order('sku',{ascending:true}).range(a,b); }, 'marcas/skus'),
+      sbTodas(function(a,b){ return sbP('ml_vendas','item_id,sku,data,receita,unidades,pedidos')
+        .eq('conta',CONTA).gte('data',desde)
+        .order('data',{ascending:false}).order('item_id',{ascending:true}).range(a,b); }, 'marcas/vendas'),
+      sbTodas(function(a,b){ return sbP('ml_anuncios','item_id,sku,titulo')
+        .eq('conta',CONTA).eq('data',dSnap)
+        .order('item_id',{ascending:true}).range(a,b); }, 'marcas/anuncios'),
+      sbTodas(function(a,b){ return sbP('ml_reclamacoes','claim_id,item_id,motivo,tipo,data_abertura')
+        .eq('conta',CONTA).gte('data_abertura',desde)
+        .order('data_abertura',{ascending:false}).order('claim_id',{ascending:true}).range(a,b); }, 'marcas/reclamacoes'),
+      sbTodas(function(a,b){ return sbP('ml_reviews','review_id,item_id,nota,comentario,data')
+        .eq('conta',CONTA).gte('data',desde)
+        .order('data',{ascending:false}).order('review_id',{ascending:true}).range(a,b); }, 'marcas/avaliacoes')
     ]);
-    var e=r.find(function(x){ return x && x.error; });
-    if(e) throw e.error;
-
-    var i2sku={};
-    (r[2].data||[]).forEach(function(a){ if(a.sku) i2sku[a.item_id]=a.sku; });
-    var rec={};
-    (r[1].data||[]).forEach(function(v){
-      var k=i2sku[v.item_id]; if(!k) return;
-      rec[k]=(rec[k]||0)+(Number(v.receita)||0);
-    });
-    // Ordenar por receita põe primeiro o que importa preencher primeiro.
-    return (r[0].data||[]).map(function(x){
-      return {sku:x.sku, descricao:x.descricao||'', marca:x.marca||'', receita:rec[x.sku]||0};
-    }).sort(function(a,b){ return b.receita-a.receita; });
+    // skus e vendas são obrigatórios; reclamações e avaliações, se falharem, só
+    // esvaziam o bloco de qualidade.
+    if(r[0].error) throw r[0].error;
+    if(r[1].error) throw r[1].error;
+    return { desde:desde, skus:r[0].data||[], vendas:r[1].data||[], anuncios:r[2].data||[],
+             recl:r[3].error?null:(r[3].data||[]), aval:r[4].error?null:(r[4].data||[]) };
   }
 
-  function mrcResumo(){
-    var L=_mrc.linhas||[];
-    var com=L.filter(function(o){ return o.marca; });
-    var porMarca={};
-    com.forEach(function(o){
-      if(!porMarca[o.marca]) porMarca[o.marca]={marca:o.marca, n:0, rec:0};
-      porMarca[o.marca].n++; porMarca[o.marca].rec+=o.receita;
+  function preparar(d){
+    var mapa={}, desc={}, marcas={};
+    d.skus.forEach(function(s){
+      var m=limpaMarca(s.marca); if(m){ mapa[s.sku]=m; marcas[m]=1; }
+      if(s.descricao) desc[s.sku]=s.descricao;
     });
-    var recT=L.reduce(function(s,o){ return s+o.receita; },0);
-    var recC=com.reduce(function(s,o){ return s+o.receita; },0);
-    var lista=Object.keys(porMarca).sort(function(a,b){ return porMarca[b].rec-porMarca[a].rec; });
-
-    var el=document.getElementById('mrc-resumo');
-    el.innerHTML='<div class="surface" style="padding:12px 14px">'
-      +'<div style="font-size:12px;color:var(--slate-700);margin-bottom:'+(lista.length?'8px':'0')+'">'
-      +'<strong>'+fN(com.length)+' de '+fN(L.length)+' SKUs com marca</strong>'
-      +(recT>0 ? ' · cobrindo '+(recC/recT*100).toFixed(0)+'% da receita de 30 dias' : '')
-      +(lista.length ? ' · '+lista.length+' marca'+(lista.length>1?'s':'') : '')
-      +'</div>'
-      +(lista.length
-        ? lista.slice(0,12).map(function(m){
-            var o=porMarca[m];
-            return '<span class="cal-pill" style="font-size:11px;margin:2px 4px 2px 0;cursor:pointer" '
-              +'onclick="mrcBuscarMarca(\''+esc(m).replace(/'/g,"\\'")+'\')">'
-              +esc(m)+' <span style="color:var(--slate-400)">'+o.n+' · '+fR(o.rec)+'</span></span>';
-          }).join('')
-        : '<div style="font-size:11.5px;color:var(--slate-400);line-height:1.6">A coluna acabou de ser criada e está vazia. '
-          +'A lista abaixo vem ordenada por receita dos últimos 30 dias — preencher os primeiros já cobre a maior parte da operação.</div>')
-      +'</div>';
+    var i2sku={}, tit={};
+    d.anuncios.forEach(function(a){ if(a.sku){ i2sku[a.item_id]=a.sku; if(!tit[a.sku]) tit[a.sku]=a.titulo; } });
+    d.vendas.forEach(function(v){ if(v.sku && !i2sku[v.item_id]) i2sku[v.item_id]=v.sku; });
+    /* O SKU de um anúncio muda com o tempo (ex.: o MLB6293351916 vendeu como
+       VA-BA10 e hoje é VA-BF1000-110). Reclamação e avaliação vão para o SKU
+       que o anúncio tinha NA DATA — senão o SKU novo herda os problemas de
+       meses de vendas do antigo e a taxa sai inflada. */
+    var linha={};
+    d.vendas.forEach(function(v){ if(v.sku) (linha[v.item_id]=linha[v.item_id]||[]).push([String(v.data), v.sku]); });
+    Object.keys(linha).forEach(function(k){ linha[k].sort(function(a,b){ return a[0]<b[0]?-1:a[0]>b[0]?1:0; }); });
+    d.skuNaData=function(item, dia){
+      var L=linha[item]; if(!L||!L.length) return i2sku[item]||null;
+      var lo=0, hi=L.length-1, r=-1;
+      while(lo<=hi){ var m=(lo+hi)>>1; if(L[m][0]<=dia){ r=m; lo=m+1; } else hi=m-1; }
+      return (r<0?L[0]:L[r])[1];
+    };
+    /* SKU antigo que nem está mais no cadastro (6CR30M, que hoje é BC-6CR30)
+       conta pelo SKU atual do mesmo anúncio — é o mesmo produto renomeado. */
+    var cad={}; d.skus.forEach(function(x){ cad[x.sku]=1; });
+    var snapI={}; d.anuncios.forEach(function(a){ if(a.sku) snapI[a.item_id]=a.sku; });
+    d.chave=function(sku, item){
+      if(sku && cad[sku] && mapa[sku]) return sku;
+      var at=snapI[item] || (linha[item] && linha[item].length ? linha[item][linha[item].length-1][1] : null);
+      if(at && at!==sku && cad[at] && (!sku || !cad[sku] || !mapa[sku] && mapa[at])) return at;
+      return sku || ('item:'+item);
+    };
+    d.mapa=mapa; d.desc=desc; d.tit=tit; d.i2sku=i2sku;
+    d.marcas=Object.keys(marcas).sort(function(a,b){ return a.localeCompare(b,'pt-BR'); });
+    return d;
   }
 
-  window.mrcBuscarMarca=function(m){
-    var el=document.getElementById('mrc-busca');
-    if(el){ el.value=''; }
-    _mrc.busca=''; _mrc.soVazio=false;
-    var cb=document.getElementById('mrc-so-vazio'); if(cb) cb.checked=false;
-    mrcRender();
-    // rola até a primeira linha daquela marca
-    var alvo=(_mrc.linhas||[]).find(function(o){ return o.marca===m; });
-    if(alvo){
-      var tr=document.getElementById('mrc-tr-'+btoa(unescape(encodeURIComponent(alvo.sku))).replace(/[^A-Za-z0-9]/g,''));
-      if(tr) tr.scrollIntoView({behavior:'smooth', block:'center'});
+  /* ── Período ─────────────────────────────────────────────────────────────── */
+  function janela(chave){
+    var h=new Date(), hoje=iso(h), ini, rot;
+    var mesIni=function(n){ var d=new Date(h.getFullYear(), h.getMonth()-n, 1); return iso(d); };
+    if(chave==='3m'){ ini=mesIni(2); rot='Últimos 3 meses'; }
+    else if(chave==='6m'){ ini=mesIni(5); rot='Últimos 6 meses'; }
+    else if(chave==='12m'){ ini=mesIni(11); rot='Últimos 12 meses'; }
+    else if(chave==='mes'){ ini=mesIni(0); rot='Este mês'; }
+    else if(chave==='mes_passado'){ ini=mesIni(1); var f=new Date(h.getFullYear(), h.getMonth(), 0); return {ini:ini, fim:iso(f), rot:'Mês passado'}; }
+    else { ini=h.getFullYear()+'-01-01'; rot='Desde janeiro'; }
+    return {ini:ini, fim:hoje, rot:rot};
+  }
+  function mesesEntre(ini, fim){
+    var out=[], y=Number(ini.slice(0,4)), m=Number(ini.slice(5,7));
+    var Y=Number(fim.slice(0,4)), M=Number(fim.slice(5,7));
+    while(y<Y || (y===Y && m<=M)){ out.push(y+'-'+String(m).padStart(2,'0')); m++; if(m>12){ m=1; y++; } }
+    return out;
+  }
+
+  /* ── Cálculo ─────────────────────────────────────────────────────────────── */
+  function calcular(d){
+    var J=janela(_mb.periodo), hoje=iso(new Date()), mesAtual=hoje.slice(0,7);
+    // vendas só existem a partir do primeiro dia sincado
+    var primeiro=d.vendas.reduce(function(m,v){ return !m||v.data<m ? v.data : m; }, null)||J.ini;
+    if(J.ini<primeiro) J.ini=primeiro.slice(0,8)+'01';
+    var meses=mesesEntre(J.ini, J.fim);
+    var filtro=_mb.marca;
+    function passa(m){ return filtro==='todas' || (filtro==='__sem' ? !m : m===filtro); }
+
+    var porMarca={}, porSku={}, tot={un:0, rec:0, ped:0}, totConta={un:0, rec:0};
+    var mesTodo={};   // mês → todas as vendas da janela de carga (para crescimento)
+    function bm(m){ var k=m||'__sem';
+      return porMarca[k]||(porMarca[k]={marca:m, un:0, rec:0, ped:0, skus:{}, mes:{}, prob:0, recl:0, notas:0, somaNota:0, ruins:0}); }
+    d.vendas.forEach(function(v){
+      var sku=d.chave(v.sku||d.i2sku[v.item_id], v.item_id);
+      var m=marcaDe(sku, d.mapa), un=Number(v.unidades)||0, rec=Number(v.receita)||0, mes=String(v.data).slice(0,7);
+      if(passa(m)){ var mt=mesTodo[mes]||(mesTodo[mes]={un:0, rec:0}); mt.un+=un; mt.rec+=rec; }
+      if(v.data<J.ini || v.data>J.fim) return;
+      totConta.un+=un; totConta.rec+=rec;
+      if(!passa(m)) return;
+      var b=bm(m); b.un+=un; b.rec+=rec; b.ped+=Number(v.pedidos)||0; b.skus[sku]=1;
+      var bmes=b.mes[mes]||(b.mes[mes]={un:0, rec:0}); bmes.un+=un; bmes.rec+=rec;
+      tot.un+=un; tot.rec+=rec; tot.ped+=Number(v.pedidos)||0;
+      var s=porSku[sku]||(porSku[sku]={sku:sku, marca:m, un:0, rec:0, ped:0, mes:{}, prob:0, recl:0, motivos:{}, notas:0, somaNota:0, ruins:0});
+      s.un+=un; s.rec+=rec; s.ped+=Number(v.pedidos)||0; s.mes[mes]=(s.mes[mes]||0)+un;
+    });
+
+    /* Crescimento: média mensal dos 3 últimos meses FECHADOS contra os 3 de
+       antes — não depende do período escolhido, e não compara mês pela metade. */
+    var fech=Object.keys(mesTodo).filter(function(m){ return m<mesAtual; }).sort();
+    function media(L,c){ return L.length ? L.reduce(function(s,m){ return s+mesTodo[m][c]; },0)/L.length : null; }
+    var u3=fech.slice(-3), p3=fech.slice(-6,-3);
+    var cresc = (u3.length===3 && p3.length===3 && media(p3,'un')>0) ? media(u3,'un')/media(p3,'un')-1 : null;
+    var crescR = (u3.length===3 && p3.length===3 && media(p3,'rec')>0) ? media(u3,'rec')/media(p3,'rec')-1 : null;
+    // por marca
+    var crescMarca={};
+    if(u3.length===3 && p3.length===3){
+      var acc={};
+      d.vendas.forEach(function(v){
+        var sku=d.chave(v.sku||d.i2sku[v.item_id], v.item_id); var m=marcaDe(sku, d.mapa)||'__sem', mes=String(v.data).slice(0,7);
+        var g = u3.indexOf(mes)>=0 ? 'u' : (p3.indexOf(mes)>=0 ? 'p' : null); if(!g) return;
+        var a=acc[m]||(acc[m]={u:0,p:0}); a[g]+=Number(v.unidades)||0;
+      });
+      Object.keys(acc).forEach(function(k){ crescMarca[k]= acc[k].p>0 ? acc[k].u/acc[k].p-1 : null; });
     }
+
+    // Qualidade: reclamações e avaliações do período, pelo SKU do anúncio.
+    var grupos={}, totProb=0, totRecl=0, notas=[], ruins=[];
+    (d.recl||[]).forEach(function(c){
+      var dia=String(c.data_abertura||'').slice(0,10); if(dia<J.ini || dia>J.fim) return;
+      var sku=d.chave(d.skuNaData(c.item_id, dia), c.item_id);
+      var m=marcaDe(sku, d.mapa); if(!passa(m)) return;
+      var mo=motivoDe(c.motivo), G=GRUPOS[mo.g];
+      grupos[mo.g]=grupos[mo.g]||{n:0, motivos:{}}; grupos[mo.g].n++; grupos[mo.g].motivos[mo.t]=(grupos[mo.g].motivos[mo.t]||0)+1;
+      totRecl++; bm(m).recl++;
+      var s=porSku[sku];
+      if(s){ s.recl++; }
+      if(G.prod){ totProb++; bm(m).prob++; if(s){ s.prob++; s.motivos[mo.t]=(s.motivos[mo.t]||0)+1; } }
+    });
+    (d.aval||[]).forEach(function(a){
+      var dia=String(a.data||'').slice(0,10); if(dia<J.ini || dia>J.fim) return;
+      var n=Number(a.nota); if(!(n>=1&&n<=5)) return;
+      var sku=d.chave(d.skuNaData(a.item_id, dia), a.item_id);
+      var m=marcaDe(sku, d.mapa); if(!passa(m)) return;
+      notas.push(n); var b=bm(m); b.notas++; b.somaNota+=n; if(n<=2) b.ruins++;
+      var s=porSku[sku]; if(s){ s.notas++; s.somaNota+=n; if(n<=2) s.ruins++; }
+      if(n<=2 && a.comentario) ruins.push({sku:sku, marca:m, nota:n, txt:a.comentario, data:dia});
+    });
+
+    var marcas=Object.keys(porMarca).map(function(k){ var b=porMarca[k]; b.nSkus=Object.keys(b.skus).length; b.cresc=crescMarca[k]!==undefined?crescMarca[k]:null; return b; })
+      .filter(function(b){ return b.un>0 || b.recl>0; })
+      .sort(function(a,b){ return (_mb.metrica==='rec'?b.rec-a.rec:b.un-a.un); });
+    return { J:J, meses:meses, mesAtual:mesAtual, hoje:hoje, tot:tot, totConta:totConta, marcas:marcas,
+             skus:Object.keys(porSku).map(function(k){ return porSku[k]; }),
+             cresc:cresc, crescR:crescR, u3:u3, p3:p3, grupos:grupos, totProb:totProb, totRecl:totRecl,
+             notas:notas, ruins:ruins.sort(function(a,b){ return a.data<b.data?1:-1; }),
+             temRecl:!!d.recl, temAval:!!d.aval, lista:d.marcas };
+  }
+
+  /* ── Render: Desempenho ─────────────────────────────────────────────────── */
+  function chip(rot, on, fn, extra){
+    return '<button type="button" class="mb-chip'+(on?' on':'')+'" onclick="'+fn+'"'+(extra||'')+'>'+rot+'</button>';
+  }
+  function cabDesempenho(c){
+    var J=c?c.J:janela(_mb.periodo);
+    var lista=(_mb.dados&&_mb.dados.marcas)||[];
+    var per=[['3m','3 meses'],['6m','6 meses'],['ano','Desde janeiro'],['12m','12 meses'],['mes','Este mês'],['mes_passado','Mês passado']];
+    return '<div class="mb-filtros">'
+      +'<div class="mb-linha">'
+        +'<select class="perf-select" onchange="mbPeriodo(this.value)" title="Período">'+per.map(function(p){
+          return '<option value="'+p[0]+'"'+(p[0]===_mb.periodo?' selected':'')+'>'+p[1]+'</option>'; }).join('')+'</select>'
+        +'<div class="mb-marcas">'
+          +chip('Todas as marcas', _mb.marca==='todas', "mbMarca('todas')")
+          +lista.map(function(m){ return chip('<i style="background:'+corDe(m,lista)+'"></i>'+esc(m), _mb.marca===m, "mbMarca('"+js(m)+"')"); }).join('')
+          +chip('<i style="background:#C3C7CC"></i>Sem marca', _mb.marca==='__sem', "mbMarca('__sem')")
+        +'</div>'
+        +'<button type="button" class="perf-select mb-tela" onclick="mbTelaCheia()">'+(document.body.classList.contains('mb-apresenta')?'Sair da tela cheia':'⛶ Tela cheia para apresentar')+'</button>'
+      +'</div>'
+      +'<div class="mb-linha mb-mostrar"><span>Mostrar:</span>'
+        +chip('Volume e crescimento', _mb.blocos.volume, "mbBloco('volume')")
+        +chip('Ranking de modelos', _mb.blocos.ranking, "mbBloco('ranking')")
+        +chip('Qualidade', _mb.blocos.qualidade, "mbBloco('qualidade')")
+        +'<span class="mb-sep"></span>'
+        +chip('Valores em R$', _mb.reais, "mbReais()", ' title="Desligue para mostrar só unidades (ex.: ao apresentar para terceiros)"')
+      +'</div></div>';
+  }
+
+  function tituloApresentacao(c){
+    var nome = _mb.marca==='todas' ? 'Todas as marcas' : (_mb.marca==='__sem' ? 'SKUs sem marca' : _mb.marca);
+    var fim=c.J.fim===c.hoje ? 'até '+c.hoje.slice(8)+'/'+c.hoje.slice(5,7)+'/'+c.hoje.slice(0,4) : 'até '+c.J.fim.split('-').reverse().join('/');
+    return '<div class="mb-titulo"><div><b>'+esc(nome)+'</b><span>'+esc(c.J.rot)+' · '+c.J.ini.split('-').reverse().join('/')+' '+fim+'</span></div>'
+      +'<span class="mb-fonte">Vendas no Mercado Livre · OfficeLed</span></div>';
+  }
+
+  function kpi(rot, val, sub, cls){
+    return '<div class="mb-kpi'+(cls?' '+cls:'')+'"><div class="mb-kpi-l">'+rot+'</div><div class="mb-kpi-v">'+val+'</div>'
+      +(sub?'<div class="mb-kpi-s">'+sub+'</div>':'')+'</div>';
+  }
+
+  /* Gráfico mensal: barras empilhadas por marca (ou uma cor, com marca escolhida).
+     Desenhado na largura real do quadro. O mês corrente sai mais claro. */
+  function graficoMensal(c, el){
+    var met=_mb.reais?_mb.metrica:'un';
+    var meses=c.meses, lista=c.lista;
+    var series=c.marcas.map(function(b){ return {m:b.marca, cor:corDe(b.marca, lista), v:meses.map(function(ms){ var x=b.mes[ms]; return x?x[met]:0; })}; });
+    var totais=meses.map(function(_,i){ return series.reduce(function(s,x){ return s+x.v[i]; },0); });
+    var W=Math.max(300, el.clientWidth||900), H=W<560?230:270, P={t:26,r:10,b:28,l:W<560?46:58};
+    var pw=W-P.l-P.r, ph=H-P.t-P.b, max=Math.max.apply(null,totais)||1;
+    var bruto=max/4, pot=Math.pow(10,Math.floor(Math.log10(bruto))), f=bruto/pot, passo=(f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*pot;
+    var topo=Math.ceil(max/passo)*passo, Y=function(v){ return P.t+ph*(1-v/topo); };
+    var n=meses.length, col=pw/n, bw=Math.min(54, col*0.62), fs=W<560?10.5:11.5;
+    var eixo=function(v){ return met==='rec' ? (v>=1e6?(v/1e6).toFixed(1).replace('.',',')+' mi':Math.round(v/1000)+' mil') : (v>=1000?(v/1000).toFixed(v>=1e4?0:1).replace('.',',')+' mil':String(Math.round(v))); };
+    var s='';
+    for(var v=0; v<=topo+1e-6; v+=passo){ var y=Y(v);
+      s+='<line x1="'+P.l+'" x2="'+(W-P.r)+'" y1="'+y.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="var(--slate-100)"'+(v?' stroke-dasharray="2 3"':'')+'/>'
+        +'<text x="'+(P.l-7)+'" y="'+(y+4).toFixed(1)+'" text-anchor="end" font-size="'+fs+'" fill="var(--slate-400)" font-family="var(--mono)">'+eixo(v)+'</text>'; }
+    // rótulos não podem encavalar: no celular, um mês sim, outro não
+    var passoRot=Math.max(1, Math.ceil(n/Math.max(2, Math.floor(pw/(met==='rec'?58:46)))));
+    meses.forEach(function(ms,i){
+      var mostra = (n-1-i)%passoRot===0;
+      var cx=P.l+col*(i+0.5), x0=(cx-bw/2).toFixed(1), acum=0, parcial=ms===c.mesAtual && c.J.fim===c.hoje;
+      s+='<g'+(parcial?' opacity="0.5"':'')+'>';
+      series.forEach(function(sr){ var val=sr.v[i]; if(!val) return;
+        var y1=Y(acum+val), y0=Y(acum); acum+=val;
+        s+='<rect x="'+x0+'" y="'+y1.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(0,y0-y1).toFixed(1)+'" fill="'+sr.cor+'"/>'; });
+      s+='</g>';
+      if(totais[i]>0 && mostra) s+='<text x="'+cx.toFixed(1)+'" y="'+(Y(totais[i])-6).toFixed(1)+'" text-anchor="middle" font-size="'+(fs-0.5)+'" fill="var(--slate-600)" font-family="var(--mono)">'
+        +(met==='rec'?eixo(totais[i]):fN(totais[i]))+'</text>';
+      if(mostra) s+='<text x="'+cx.toFixed(1)+'" y="'+(H-9)+'" text-anchor="middle" font-size="'+fs+'" fill="'+(parcial?'var(--slate-300)':'var(--slate-400)')+'" font-family="var(--mono)">'
+        +rotMes(ms)+(parcial?'*':'')+'</text>';
+    });
+    return '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" style="display:block">'+s+'</svg>';
+  }
+
+  function blocoVolume(c){
+    var met=_mb.reais?_mb.metrica:'un', T=c.tot, tc=c.totConta;
+    // média só a partir do primeiro mês com venda: marca que estreou em maio
+    // não pode ter a média puxada para baixo por janeiro a abril zerados
+    var temVenda=function(ms){ return c.marcas.some(function(b){ return (b.mes[ms]||{}).un>0; }); };
+    var primeiroMes=c.meses.find(temVenda)||c.meses[0];
+    var nMeses=c.meses.filter(function(m){ return m>=primeiroMes; }).length;
+    var mesesFech=c.meses.filter(function(m){ return m>=primeiroMes && (m<c.mesAtual || c.J.fim<c.hoje); });
+    var unFech=mesesFech.reduce(function(s,ms){ return s+c.marcas.reduce(function(a,b){ return a+((b.mes[ms]||{}).un||0); },0); },0);
+    var mediaMes = mesesFech.length ? unFech/mesesFech.length : null;
+    var nSkus=c.skus.filter(function(s){ return s.un>0; }).length;
+    var share = _mb.marca!=='todas' && tc.un>0 ? T.un/tc.un : null;
+    var shareR = _mb.marca!=='todas' && tc.rec>0 ? T.rec/tc.rec : null;
+    var h='<div class="mb-bloco"><div class="mb-bloco-t">Volume e crescimento</div>';
+    h+='<div class="mb-kpis">'
+      +kpi('Unidades vendidas', fN(T.un), nMeses+' '+(nMeses>1?'meses':'mês')+(share!==null?' · '+fP(share,0)+' das unidades da conta':''))
+      +(_mb.reais?kpi('Faturamento', fR0(T.rec), shareR!==null?fP(shareR,0)+' do faturamento da conta':(T.un>0?'preço médio '+fR(T.rec/T.un):'')):'')
+      +kpi('Média por mês', mediaMes===null?'—':fN(mediaMes)+' un', mesesFech.length?'nos '+mesesFech.length+' meses fechados com venda':'sem mês fechado no período')
+      +kpi('Crescimento', fVar(c.cresc), (c.u3.length===3&&c.p3.length===3)?'unidades/mês: '+rotMes(c.u3[0])+'–'+rotMes(c.u3[2])+' vs '+rotMes(c.p3[0])+'–'+rotMes(c.p3[2]):'precisa de 6 meses fechados')
+      +kpi('Modelos vendidos', fN(nSkus), 'SKUs com venda no período')
+      +'</div>';
+    h+='<div class="mb-graf-cab"><span>'+(met==='rec'?'Faturamento':'Unidades')+' por mês</span>'
+      +(_mb.reais?'<div class="mb-seg">'+chip('Unidades', met==='un', "mbMetrica('un')")+chip('R$', met==='rec', "mbMetrica('rec')")+'</div>':'')+'</div>'
+      +'<div class="mb-graf" id="mb-graf"></div>'
+      +'<div class="mb-leg">'+c.marcas.map(function(b){ return '<span><i style="background:'+corDe(b.marca,c.lista)+'"></i>'+esc(b.marca||'Sem marca')+'</span>'; }).join('')
+      +(c.meses.indexOf(c.mesAtual)>=0 && c.J.fim===c.hoje ? '<span class="mb-nota">* '+rotMes(c.mesAtual)+' até o dia '+c.hoje.slice(8)+', ainda aberto</span>':'')+'</div>';
+    if(_mb.marca==='todas' && c.marcas.length){
+      var totM = met==='rec' ? T.rec : T.un;
+      h+='<div class="mb-share">'+c.marcas.map(function(b){ var v=met==='rec'?b.rec:b.un, p=totM>0?v/totM:0;
+          return '<i style="width:'+(p*100).toFixed(2)+'%;background:'+corDe(b.marca,c.lista)+'" title="'+esc(b.marca||'Sem marca')+' '+fP(p,0)+'"></i>'; }).join('')+'</div>';
+      h+='<div class="table-wrap mb-tabela"><table><thead class="hub-thead"><tr><th>Marca</th><th>Unidades</th><th>Part.</th>'
+        +(_mb.reais?'<th>Faturamento</th><th>Preço médio</th>':'')+'<th>Média/mês</th><th>Crescimento</th><th>Modelos</th></tr></thead><tbody class="hub-tbody">'
+        +c.marcas.map(function(b){
+          var mf=mesesFech.filter(function(ms){ return ms>=(Object.keys(b.mes).sort()[0]||ms); });
+          var unF=mf.reduce(function(s,ms){ return s+((b.mes[ms]||{}).un||0); },0);
+          return '<tr onclick="mbMarca(\''+js(b.marca||'__sem')+'\')" style="cursor:pointer"><td><span class="mb-dot" style="background:'+corDe(b.marca,c.lista)+'"></span><b>'+esc(b.marca||'Sem marca')+'</b></td>'
+            +'<td>'+fN(b.un)+'</td><td>'+fP(T.un>0?b.un/T.un:null,0)+'</td>'
+            +(_mb.reais?'<td>'+fR0(b.rec)+'</td><td>'+(b.un?fR(b.rec/b.un):'—')+'</td>':'')
+            +'<td>'+(mf.length?fN(unF/mf.length):'—')+'</td><td>'+fVar(b.cresc)+'</td><td>'+fN(b.nSkus)+'</td></tr>'; }).join('')
+        +'</tbody></table></div><p class="mb-obs">Clique numa marca para ver só ela. Crescimento: média de unidades por mês dos 3 últimos meses fechados contra os 3 anteriores.</p>';
+    }
+    return h+'</div>';
+  }
+
+  function spark(serie){
+    var max=Math.max.apply(null,serie)||1, W=84, H=24, n=serie.length;
+    if(n<2) return '';
+    var pts=serie.map(function(v,i){ return (2+(W-4)*i/(n-1)).toFixed(1)+','+(H-3-(H-6)*v/max).toFixed(1); }).join(' ');
+    return '<svg width="'+W+'" height="'+H+'" class="mb-spark"><polyline points="'+pts+'" fill="none" stroke="var(--brand)" stroke-width="1.6"/></svg>';
+  }
+
+  function blocoRanking(c){
+    var met=_mb.reais?_mb.metrica:'un';
+    var linhas=c.skus.filter(function(s){ return s.un>0; });
+    if(_mb.agrupar){
+      var g={};
+      linhas.forEach(function(s){
+        var p=paiDe(s.sku), k=s.sku.indexOf('item:')===0?s.sku:p;
+        var o=g[k]||(g[k]={sku:k, marca:s.marca, un:0, rec:0, mes:{}, prob:0, notas:0, somaNota:0, ruins:0, motivos:{}, var:[]});
+        o.un+=s.un; o.rec+=s.rec; o.prob+=s.prob; o.notas+=s.notas; o.somaNota+=s.somaNota; o.ruins+=s.ruins;
+        Object.keys(s.mes).forEach(function(m){ o.mes[m]=(o.mes[m]||0)+s.mes[m]; });
+        Object.keys(s.motivos).forEach(function(m){ o.motivos[m]=(o.motivos[m]||0)+s.motivos[m]; });
+        if(p!==s.sku) o.var.push({suf:s.sku.slice(p.length+1), un:s.un});
+      });
+      linhas=Object.keys(g).map(function(k){ return g[k]; });
+    }
+    linhas.sort(function(a,b){ return met==='rec'?b.rec-a.rec:b.un-a.un; });
+    var tot=linhas.reduce(function(s,o){ return s+(met==='rec'?o.rec:o.un); },0);
+    var mostrar=_mb.top>0?linhas.slice(0,_mb.top):linhas;
+    var d=_mb.dados;
+    var h='<div class="mb-bloco"><div class="mb-bloco-t">Ranking de modelos <span class="mb-bloco-n">'+linhas.length+' '+(_mb.agrupar?'modelos':'SKUs')+'</span></div>'
+      +'<div class="mb-linha mb-rank-ctl">'
+        +'<div class="mb-seg">'+chip('Top 10', _mb.top===10, 'mbTop(10)')+chip('Top 15', _mb.top===15, 'mbTop(15)')+chip('Todos', _mb.top===0, 'mbTop(0)')+'</div>'
+        +chip('Juntar cores do mesmo modelo', _mb.agrupar, 'mbAgrupar()')
+      +'</div>';
+    if(!mostrar.length) return h+'<p class="mb-obs">Sem venda no período.</p></div>';
+    h+='<div class="table-wrap mb-tabela"><table><thead class="hub-thead"><tr><th>#</th><th>Modelo</th>'+(_mb.marca==='todas'?'<th>Marca</th>':'')
+      +'<th>Unidades</th><th>'+(met==='rec'?'% do faturamento':'% das unidades')+'</th>'+(_mb.reais?'<th>Faturamento</th><th>Preço médio</th>':'')
+      +'<th>Por mês</th>'+(_mb.blocos.qualidade?'<th title="Reclamações de produto (defeito, quebrado, faltando peça, diferente) ÷ unidades vendidas">Problema</th><th>Nota</th>':'')+'</tr></thead><tbody class="hub-tbody">'
+      +mostrar.map(function(o,i){
+        var nome=d.desc[o.sku]||d.tit[o.sku]||(o.var&&o.var.length?(d.desc[o.sku+'-'+o.var[0].suf]||d.tit[o.sku+'-'+o.var[0].suf]):'')||'';
+        var vars=o.var&&o.var.length>1 ? '<div class="mb-vars">'+o.var.sort(function(a,b){ return b.un-a.un; }).map(function(v){
+          return '<span>'+esc(v.suf)+' '+fP(o.un?v.un/o.un:0,0)+'</span>'; }).join('')+'</div>' : '';
+        var taxa=o.un>0?o.prob/o.un:null, nota=o.notas?o.somaNota/o.notas:null;
+        return '<tr><td class="mb-pos">'+(i+1)+'</td><td><div class="mb-sku">'+esc(o.sku)+'</div><div class="mb-desc">'+esc(nome)+'</div>'+vars+'</td>'
+          +(_mb.marca==='todas'?'<td><span class="mb-dot" style="background:'+corDe(o.marca,c.lista)+'"></span>'+esc(o.marca||'—')+'</td>':'')
+          +'<td><b>'+fN(o.un)+'</b></td><td>'+fP(tot>0?(met==='rec'?o.rec:o.un)/tot:null,1)+'</td>'
+          +(_mb.reais?'<td>'+fR0(o.rec)+'</td><td>'+(o.un?fR(o.rec/o.un):'—')+'</td>':'')
+          +'<td>'+spark(c.meses.map(function(m){ return o.mes[m]||0; }))+'</td>'
+          +(_mb.blocos.qualidade?'<td class="'+(taxa!==null&&taxa>=0.03?'mb-ruim':'')+'">'+(o.prob?fP(taxa,1)+' <small>'+o.prob+'</small>':'<span class="mb-neutro">0</span>')+'</td>'
+            +'<td>'+(nota!==null?nota.toFixed(1).replace('.',',')+' ★ <small>'+o.notas+'</small>':'<span class="mb-neutro">—</span>')+'</td>':'')
+          +'</tr>'; }).join('')
+      +'</tbody></table></div>';
+    if(_mb.top>0 && linhas.length>_mb.top) h+='<p class="mb-obs">Mostrando '+_mb.top+' de '+linhas.length+'.</p>';
+    return h+'</div>';
+  }
+
+  function blocoQualidade(c){
+    var h='<div class="mb-bloco"><div class="mb-bloco-t">Qualidade</div>';
+    if(!c.temRecl && !c.temAval) return h+'<p class="mb-obs">Não consegui ler reclamações e avaliações agora.</p></div>';
+    var T=c.tot, taxa=T.un>0?c.totProb/T.un:null;
+    var media=c.notas.length?c.notas.reduce(function(s,n){return s+n;},0)/c.notas.length:null;
+    var ruins=c.notas.filter(function(n){ return n<=2; }).length;
+    h+='<div class="mb-kpis">'
+      +kpi('Problemas de produto', fN(c.totProb), (taxa!==null?fP(taxa,2)+' das unidades vendidas':'')+' · defeito, quebrado, faltando peça ou diferente', taxa!==null&&taxa>=0.02?'alerta':'')
+      +kpi('Avaliação média', media===null?'—':media.toFixed(2).replace('.',',')+' ★', fN(c.notas.length)+' avaliações no período')
+      +kpi('Notas 1 e 2', c.notas.length?fP(ruins/c.notas.length,1):'—', fN(ruins)+' avaliações')
+      +kpi('Reclamações no total', fN(c.totRecl), 'inclui desistência e entrega, que não são do produto')
+      +'</div>';
+    // motivos
+    var ordem=Object.keys(GRUPOS).filter(function(g){ return c.grupos[g]; });
+    var maxN=Math.max.apply(null, ordem.map(function(g){ return c.grupos[g].n; }).concat([1]));
+    h+='<div class="mb-q-grid"><div><div class="mb-sub">Motivos das reclamações</div><div class="mb-motivos">'
+      +ordem.map(function(g){ var G=GRUPOS[g], x=c.grupos[g];
+        var det=Object.keys(x.motivos).sort(function(a,b){ return x.motivos[b]-x.motivos[a]; }).slice(0,3)
+          .map(function(m){ return esc(m)+' ('+x.motivos[m]+')'; }).join(' · ');
+        return '<div class="mb-mot'+(G.prod?' prod':'')+'"><div class="mb-mot-cab"><span>'+G.rot+(G.prod?'':' <em>não é do produto</em>')+'</span><b>'+fN(x.n)+'</b></div>'
+          +'<div class="mb-mot-barra"><i style="width:'+(x.n/maxN*100).toFixed(1)+'%;background:'+G.cor+'"></i></div>'
+          +'<div class="mb-mot-det">'+det+'</div></div>'; }).join('')
+      +(ordem.length?'':'<p class="mb-obs">Nenhuma reclamação no período.</p>')
+      +'</div></div>';
+    // piores modelos (mín. 10 unidades)
+    var piores=c.skus.filter(function(s){ return s.un>=10 && s.prob>0; })
+      .sort(function(a,b){ return b.prob/b.un-a.prob/a.un; }).slice(0,8);
+    h+='<div><div class="mb-sub">Modelos com mais problema de produto <small>(mín. 10 unidades)</small></div>'
+      +(piores.length?'<div class="table-wrap mb-tabela"><table><thead class="hub-thead"><tr><th>SKU</th><th>Unid.</th><th>Problemas</th><th>Taxa</th><th>Principal motivo</th></tr></thead><tbody class="hub-tbody">'
+        +piores.map(function(s){ var mm=Object.keys(s.motivos).sort(function(a,b){ return s.motivos[b]-s.motivos[a]; })[0]||'';
+          return '<tr><td><div class="mb-sku">'+esc(s.sku)+'</div></td><td>'+fN(s.un)+'</td><td>'+fN(s.prob)+'</td><td class="mb-ruim">'+fP(s.prob/s.un,1)+'</td><td class="mb-desc">'+esc(mm)+'</td></tr>'; }).join('')
+        +'</tbody></table></div>':'<p class="mb-obs">Nenhum modelo com problema de produto no período.</p>')
+      +'</div></div>';
+    if(_mb.marca==='todas' && c.marcas.length>1){
+      h+='<div class="mb-sub">Por marca</div><div class="table-wrap mb-tabela"><table><thead class="hub-thead"><tr><th>Marca</th><th>Unidades</th><th>Problemas de produto</th><th>Taxa</th><th>Nota média</th><th>Notas 1 e 2</th></tr></thead><tbody class="hub-tbody">'
+        +c.marcas.map(function(b){ var tx=b.un>0?b.prob/b.un:null;
+          return '<tr><td><span class="mb-dot" style="background:'+corDe(b.marca,c.lista)+'"></span><b>'+esc(b.marca||'Sem marca')+'</b></td><td>'+fN(b.un)+'</td><td>'+fN(b.prob)+'</td>'
+            +'<td class="'+(tx!==null&&tx>=0.02?'mb-ruim':'')+'">'+fP(tx,2)+'</td><td>'+(b.notas?(b.somaNota/b.notas).toFixed(2).replace('.',',')+' ★':'—')+'</td><td>'+(b.notas?fP(b.ruins/b.notas,1):'—')+'</td></tr>'; }).join('')
+        +'</tbody></table></div>';
+    }
+    if(c.ruins.length){
+      h+='<div class="mb-sub">O que os clientes dizem nas notas 1 e 2 <small>(mais recentes)</small></div><div class="mb-coments">'
+        +c.ruins.slice(0,6).map(function(r){ return '<div class="mb-coment"><div><b>'+'★'.repeat(r.nota)+'</b><span>'+esc(r.sku)+' · '+r.data.split('-').reverse().join('/')+'</span></div><p>'+esc(String(r.txt).slice(0,260))+'</p></div>'; }).join('')
+        +'</div>';
+    }
+    return h+'<p class="mb-obs">Problema de produto = reclamação por defeito, produto quebrado, falta de peça ou acessório, ou diferente do anunciado. '
+      +'Desistência do comprador, entrega e caixa vazia ficam fora da taxa.</p></div>';
+  }
+
+  function renderDesempenho(){
+    var el=document.getElementById('mrc-corpo'); if(!el) return;
+    if(!_mb.dados){ el.innerHTML=cabDesempenho(null)+'<div class="fin-loading"><div class="fin-spinner"></div> Lendo vendas, reclamações e avaliações…</div>'; return; }
+    var c=calcular(_mb.dados);
+    var h=cabDesempenho(c)+'<div class="mb-folha">'+tituloApresentacao(c);
+    if(!c.tot.un && !c.totRecl) h+='<div class="fin-cascata"><p class="fin-note">Sem venda nesta marca no período.</p></div>';
+    else {
+      if(_mb.blocos.volume) h+=blocoVolume(c);
+      if(_mb.blocos.ranking) h+=blocoRanking(c);
+      if(_mb.blocos.qualidade) h+=blocoQualidade(c);
+      if(!_mb.blocos.volume && !_mb.blocos.ranking && !_mb.blocos.qualidade) h+='<p class="mb-obs">Escolha em "Mostrar" o que entra na tela.</p>';
+    }
+    el.innerHTML=h+'</div>';
+    var g=document.getElementById('mb-graf');
+    if(g) g.innerHTML=graficoMensal(c, g);
+    _mb.ultimo=c;
+  }
+
+  window.mbPeriodo=function(v){ _mb.periodo=v; renderDesempenho(); };
+  window.mbMarca=function(m){ _mb.marca=m; renderDesempenho(); };
+  window.mbBloco=function(k){ _mb.blocos[k]=!_mb.blocos[k]; renderDesempenho(); };
+  window.mbReais=function(){ _mb.reais=!_mb.reais; renderDesempenho(); };
+  window.mbMetrica=function(m){ _mb.metrica=m; renderDesempenho(); };
+  window.mbTop=function(n){ _mb.top=n; renderDesempenho(); };
+  window.mbAgrupar=function(){ _mb.agrupar=!_mb.agrupar; renderDesempenho(); };
+  /* Tela cheia: some o menu, as abas e o cabeçalho do Catálogo; fica a folha
+     limpa com o título da marca e do período — pronta para print ou para
+     compartilhar a tela numa chamada. Esc sai. */
+  window.mbTelaCheia=function(){
+    var on=!document.body.classList.contains('mb-apresenta');
+    document.body.classList.toggle('mb-apresenta', on);
+    try{ if(on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function(){});
+         if(!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function(){}); }catch(_){}
+    renderDesempenho();
+    window.scrollTo(0,0);
   };
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape' && document.body.classList.contains('mb-apresenta')){ document.body.classList.remove('mb-apresenta'); renderDesempenho(); }
+  });
+  document.addEventListener('fullscreenchange', function(){
+    if(!document.fullscreenElement && document.body.classList.contains('mb-apresenta')){ document.body.classList.remove('mb-apresenta'); renderDesempenho(); }
+  });
+  var _rz=null;
+  window.addEventListener('resize', function(){ clearTimeout(_rz); _rz=setTimeout(function(){
+    var g=document.getElementById('mb-graf'); if(g && g.offsetParent && _mb.ultimo) g.innerHTML=graficoMensal(_mb.ultimo, g); }, 180); });
 
-  function mrcRender(){
-    mrcResumo();
-    var L=filtradas(), el=document.getElementById('mrc-tabela');
-    if(!L.length){ el.innerHTML='<div class="fin-cascata"><p class="fin-note">Nada bate com esse filtro.</p></div>'; return; }
-    var marcas=Array.from(new Set((_mrc.linhas||[]).map(function(o){ return o.marca; }).filter(Boolean))).sort();
-    var dl='<datalist id="mrc-lista">'+marcas.map(function(m){ return '<option value="'+esc(m)+'">'; }).join('')+'</datalist>';
+  /* ── Render: Cadastro ────────────────────────────────────────────────────── */
+  function linhasCadastro(){
+    var d=_mb.dados; if(!d) return [];
+    var hoje=new Date(), d30=iso(new Date(hoje.getTime()-29*864e5)), rec={};
+    d.vendas.forEach(function(v){ if(v.data<d30) return; var k=v.sku||d.i2sku[v.item_id]; if(k) rec[k]=(rec[k]||0)+(Number(v.receita)||0); });
+    return d.skus.map(function(s){
+      var m=limpaMarca(s.marca);
+      return {sku:s.sku, descricao:s.descricao||d.tit[s.sku]||'', marca:m, herdada: !m ? marcaDe(s.sku, d.mapa) : null,
+              sug: !m ? sugestaoDe(s.sku, d.marcas) : null, rec:rec[s.sku]||0};
+    }).sort(function(a,b){ return b.rec-a.rec || a.sku.localeCompare(b.sku); });
+  }
+  function filtradas(L){
+    var q=_mb.busca.toLowerCase(), f=_mb.filtro;
+    return L.filter(function(o){
+      if(f==='__sem' && o.marca) return false;
+      if(f==='__sug' && !o.sug) return false;
+      if(f!=='todas' && f!=='__sem' && f!=='__sug' && o.marca!==f) return false;
+      return !q || o.sku.toLowerCase().indexOf(q)>=0 || o.descricao.toLowerCase().indexOf(q)>=0;
+    });
+  }
+  function opcoesMarca(atual, comSem){
+    var lista=(_mb.dados&&_mb.dados.marcas)||[];
+    return (comSem?'<option value="">— sem marca —</option>':'')
+      +lista.map(function(m){ return '<option value="'+esc(m)+'"'+(m===atual?' selected':'')+'>'+esc(m)+'</option>'; }).join('')
+      +'<option value="__nova">+ Nova marca…</option>';
+  }
 
-    var corpo=L.slice(0,300).map(function(o){
-      var id=btoa(unescape(encodeURIComponent(o.sku))).replace(/[^A-Za-z0-9]/g,'');
-      return '<tr id="mrc-tr-'+id+'">'
-        +'<td style="font-family:var(--mono);font-size:12px;color:var(--slate-900)">'+esc(o.sku)+'</td>'
-        +'<td style="max-width:320px;font-size:12px;color:var(--slate-600);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(o.descricao)+'</td>'
-        +'<td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--slate-400)">'+fR(o.receita)+'</td>'
-        +'<td><input list="mrc-lista" class="notes-search" style="width:180px;padding:5px 8px;font-size:12px" '
-          +'value="'+esc(o.marca)+'" onchange="mrcSalvar(\''+esc(o.sku).replace(/'/g,"\\'")+'\',this)"></td>'
-        +'<td id="mrc-st-'+id+'" style="font-size:11px;color:var(--slate-400);white-space:nowrap"></td>'
+  function renderCadastro(){
+    var el=document.getElementById('mrc-corpo'); if(!el) return;
+    if(!_mb.dados){ el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Carregando SKUs…</div>'; return; }
+    var L=linhasCadastro(), F=filtradas(L), d=_mb.dados;
+    var nSel=Object.keys(_mb.sel).length, comMarca=L.filter(function(o){ return o.marca; }).length;
+    var nSug=L.filter(function(o){ return o.sug; }).length;
+    var todosVis=F.length && F.every(function(o){ return _mb.sel[o.sku]; });
+    var porMarca={}; L.forEach(function(o){ if(o.marca) porMarca[o.marca]=(porMarca[o.marca]||0)+1; });
+    var h='<div class="mb-cad-resumo">'
+      +'<span><b>'+fN(comMarca)+'</b> de '+fN(L.length)+' SKUs com marca</span>'
+      +d.marcas.map(function(m){ return '<button type="button" class="mb-chip" onclick="mbCadFiltro(\''+js(m)+'\')"><i style="background:'+corDe(m,d.marcas)+'"></i>'+esc(m)+' <small>'+(porMarca[m]||0)+'</small></button>'; }).join('')
+      +(nSug?'<button type="button" class="mb-chip mb-chip-sug" onclick="mbCadFiltro(\'__sug\')">'+nSug+' com sugestão pelo prefixo</button>':'')
+      +'</div>';
+    if(_mb.desfazer){
+      h+='<div class="mb-toast">'+esc(_mb.desfazer.txt)+' <button type="button" onclick="mbDesfazer()">Desfazer</button><button type="button" class="x" onclick="mbFecharToast()">✕</button></div>';
+    }
+    h+='<div class="mb-linha mb-cad-ctl">'
+      +'<input class="notes-search" id="mb-busca" placeholder="Buscar SKU ou descrição" value="'+esc(_mb.busca)+'" oninput="mbCadBuscar(this.value)">'
+      +'<select class="perf-select" onchange="mbCadFiltro(this.value)">'
+        +[['todas','Todas'],['__sem','Sem marca'],['__sug','Com sugestão']].concat(d.marcas.map(function(m){ return [m,m]; }))
+          .map(function(o){ return '<option value="'+esc(o[0])+'"'+(o[0]===_mb.filtro?' selected':'')+'>'+esc(o[1])+'</option>'; }).join('')
+      +'</select>'
+      +'<span class="mb-obs" style="margin:0">'+fN(F.length)+' na lista</span>'
+      +'</div>';
+    // barra de ação em massa — só com seleção
+    if(nSel){
+      var todos=nSel===L.length;
+      h+='<div class="mb-massa'+(todos?' perigo':'')+'"><b>'+fN(nSel)+' selecionado'+(nSel>1?'s':'')+'</b>'
+        +(todos?'<span class="mb-aviso">É o catálogo inteiro.</span>':'')
+        +'<span>Trocar a marca para</span><select class="perf-select" id="mb-massa-marca" onchange="mbMassaEscolha(this)">'
+        +['','__limpar'].concat(d.marcas).concat(['__nova']).map(function(v){
+            var rot = v==='' ? 'escolha…' : v==='__limpar' ? 'Tirar a marca' : v==='__nova' ? '+ Nova marca…' : v;
+            return '<option value="'+esc(v)+'"'+((_mb.massaValor||'')===v?' selected':'')+'>'+esc(rot)+'</option>'; }).join('')+'</select>'
+        +(_mb.novaMarca?'<input class="notes-search" id="mb-nova" placeholder="Nome da nova marca" style="width:170px">':'')
+        +'<button type="button" class="perf-select" onclick="mbRevisar()">Revisar</button>'
+        +(L.some(function(o){ return _mb.sel[o.sku] && o.sug; })?'<button type="button" class="perf-select" onclick="mbRevisarSugestoes()">Usar a sugestão nos selecionados</button>':'')
+        +'<button type="button" class="mb-link" onclick="mbLimparSel()">limpar seleção</button></div>';
+    }
+    if(_mb.revisao){
+      var R=_mb.revisao, grupos={};
+      R.mud.forEach(function(x){ var k=(x.de||'sem marca')+' → '+(x.para||'sem marca'); grupos[k]=(grupos[k]||0)+1; });
+      h+='<div class="mb-revisao"><div><b>Confira antes de gravar</b> — '+fN(R.mud.length)+' SKU'+(R.mud.length>1?'s mudam':' muda')
+        +(R.iguais?' · '+R.iguais+' já estão assim':'')+(R.aviso?'<div class="mb-aviso">'+esc(R.aviso)+'</div>':'')+'</div>'
+        +'<ul>'+Object.keys(grupos).map(function(k){ return '<li>'+esc(k)+': <b>'+grupos[k]+'</b></li>'; }).join('')+'</ul>'
+        +(R.mud.length<=12?'<div class="mb-obs" style="margin:4px 0 0">'+R.mud.map(function(x){ return esc(x.sku); }).join(' · ')+'</div>':'')
+        +'<div class="mb-revisao-bt"><button type="button" class="perf-select mb-ok" onclick="mbConfirmar()"'+(R.mud.length?'':' disabled')+'>Gravar '+fN(R.mud.length)+'</button>'
+        +'<button type="button" class="perf-select" onclick="mbCancelarRevisao()">Cancelar</button></div></div>';
+    }
+    var corpo=F.slice(0,400).map(function(o){
+      var sel=!!_mb.sel[o.sku];
+      return '<tr class="'+(sel?'sel':'')+'"><td class="mb-ck"><input type="checkbox"'+(sel?' checked':'')+' onchange="mbSel(\''+js(o.sku)+'\',this.checked)"></td>'
+        +'<td><div class="mb-sku">'+esc(o.sku)+'</div></td>'
+        +'<td class="mb-desc" style="max-width:320px">'+esc(o.descricao)+'</td>'
+        +'<td style="text-align:right;font-family:var(--mono);font-size:12px;color:var(--slate-400)">'+(o.rec?fR(o.rec):'—')+'</td>'
+        +'<td><select class="perf-select mb-sel-marca" onchange="mbMudar(\''+js(o.sku)+'\',this)">'+opcoesMarca(o.marca,true)+'</select>'
+          +(o.herdada?'<div class="mb-obs" style="margin:2px 0 0">herda '+esc(o.herdada)+' do modelo</div>':'')+'</td>'
+        +'<td>'+(o.sug?'<button type="button" class="mb-chip mb-chip-sug" title="Sugestão pelo prefixo do SKU" onclick="mbUsarSug(\''+js(o.sku)+'\')">usar '+esc(o.sug)+'</button>':'')+'</td>'
         +'</tr>';
     }).join('');
-
-    el.innerHTML=dl+'<div class="table-wrap"><table><thead class="hub-thead"><tr>'
-      +'<th>SKU</th><th>Descrição</th><th style="text-align:right">Receita 30d</th><th>Marca</th><th></th>'
-      +'</tr></thead><tbody class="hub-tbody">'+corpo+'</tbody></table></div>'
-      +'<p class="fin-note">Ordenado por receita dos últimos 30 dias — os de cima pesam mais. '
-      +'O campo sugere marcas já usadas. Salva ao sair do campo.'
-      +(L.length>300?' Mostrando 300 de '+L.length+'.':'')+'</p>';
+    h+='<div class="table-wrap mb-tabela mb-cad"><table><thead class="hub-thead"><tr>'
+      +'<th class="mb-ck"><input type="checkbox" title="Selecionar todos os da lista"'+(todosVis?' checked':'')+' onchange="mbSelTodos(this.checked)"></th>'
+      +'<th>SKU</th><th>Descrição</th><th style="text-align:right">Receita 30d</th><th>Marca</th><th>Sugestão</th></tr></thead><tbody class="hub-tbody">'+corpo+'</tbody></table></div>'
+      +(F.length>400?'<p class="mb-obs">Mostrando 400 de '+F.length+'. Use a busca para achar o resto.</p>':'');
+    h+=histHtml();
+    el.innerHTML=h;
+    if(_mb.novaMarca){ var n=document.getElementById('mb-nova'); if(n) n.focus(); }
   }
 
-  window.mrcSalvar=async function(sku, input){
-    var valor=(input.value||'').trim();
-    var id=btoa(unescape(encodeURIComponent(sku))).replace(/[^A-Za-z0-9]/g,'');
-    var st=document.getElementById('mrc-st-'+id);
-    if(st){ st.textContent='salvando…'; st.style.color='var(--slate-400)'; }
+  /* Histórico (skus_marca_hist): cada troca, agrupada pela operação que a fez. */
+  function histHtml(){
+    var h='<details class="mb-hist"'+(_mb.histAberto?' open':'')+' ontoggle="mbHistToggle(this.open)"><summary>Histórico de mudanças</summary>';
+    if(_mb.histErro) return h+'<p class="mb-obs">'+esc(_mb.histErro)+'</p></details>';
+    if(!_mb.hist) return h+'<div class="fin-loading"><div class="fin-spinner"></div> Lendo…</div></details>';
+    if(!_mb.hist.length) return h+'<p class="mb-obs">Nenhuma mudança registrada ainda.</p></details>';
+    return h+'<div class="mb-hist-lista">'+_mb.hist.map(function(o,i){
+      var para={}; o.linhas.forEach(function(x){ var k=x.depois||'sem marca'; para[k]=(para[k]||0)+1; });
+      var dt=new Date(o.em);
+      return '<div class="mb-hist-item"><div><b>'+dt.toLocaleDateString('pt-BR')+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'</b> · '
+        +fN(o.linhas.length)+' SKU'+(o.linhas.length>1?'s':'')+' → '+Object.keys(para).map(function(k){ return esc(k)+(Object.keys(para).length>1?' ('+para[k]+')':''); }).join(', ')
+        +(o.linhas.length<=6?'<div class="mb-obs" style="margin:2px 0 0">'+o.linhas.map(function(x){ return esc(x.sku)+': '+esc(x.antes||'sem marca')+' → '+esc(x.depois||'sem marca'); }).join(' · ')+'</div>':'')
+        +'</div><button type="button" class="perf-select" onclick="mbDesfazerHist('+i+')">Voltar como estava</button></div>'; }).join('')+'</div></details>';
+  }
+  async function lerHist(){
     try{
-      var r=await sb.from('skus').upsert(
-        {conta:'Logbox', sku:sku, marca:valor||null, updated_at:'now()'},
-        {onConflict:'conta,sku'});
+      var r=await sb.from('skus_marca_hist').select('sku,antes,depois,em,transacao').eq('conta',CONTA)
+        .order('em',{ascending:false}).limit(2000);
       if(r.error) throw r.error;
-      var linha=(_mrc.linhas||[]).find(function(o){ return o.sku===sku; });
-      if(linha) linha.marca=valor;
-      if(st){ st.textContent='salvo'; st.style.color='var(--green-600)'; }
-      setTimeout(function(){ if(st) st.textContent=''; }, 1800);
-      mrcResumo();
+      var g={}, ordem=[];
+      (r.data||[]).forEach(function(x){ var k=String(x.transacao);
+        // os lotes de uma mesma ação chegam em transações separadas, segundos
+        // um do outro: junta o que aconteceu no mesmo minuto
+        var kk=x.em.slice(0,16);
+        if(!g[kk]){ g[kk]={em:x.em, linhas:[]}; ordem.push(kk); }
+        g[kk].linhas.push(x); });
+      _mb.hist=ordem.slice(0,20).map(function(k){ return g[k]; });
+      _mb.histErro=null;
     }catch(e){
-      console.error('[Marcas] salvar', e);
-      if(st){ st.textContent='falhou'; st.style.color='var(--coral-500)'; }
+      _mb.hist=null;
+      _mb.histErro=/skus_marca_hist|relation|does not exist|schema cache/i.test(String(e&&e.message||e))
+        ? 'O histórico ainda não está ligado no banco (falta aprovar a tabela skus_marca_hist). O Desfazer logo após cada mudança já funciona.'
+        : 'Não consegui ler o histórico: '+String(e&&e.message||e);
     }
-  };
+  }
+  window.mbHistToggle=function(open){ _mb.histAberto=open; if(open && !_mb.hist && !_mb.histErro){ lerHist().then(renderCadastro); } };
 
-  /* Aplicar em massa ao que está filtrado — 261 SKUs um a um seria trabalho
-     demais para uma dimensão que só existe para agrupar. */
-  window.mrcAplicarEmMassa=async function(){
-    var campo=document.getElementById('mrc-aplicar');
-    var valor=(campo && campo.value || '').trim();
-    if(!valor){ alert('Escreva a marca no campo antes de aplicar.'); return; }
-    var L=filtradas();
-    if(!L.length){ alert('O filtro atual não tem nenhum SKU.'); return; }
-    if(!confirm('Aplicar a marca "'+valor+'" a '+L.length+' SKU'+(L.length>1?'s':'')
-      +' filtrado'+(L.length>1?'s':'')+'?\n\nIsso sobrescreve a marca que já estiver preenchida neles.')) return;
-
-    var el=document.getElementById('mrc-resumo');
-    el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Aplicando em '+L.length+' SKUs…</div>';
-    try{
-      // Em lotes: upsert de 261 linhas de uma vez é um payload grande e um
-      // erro no meio derruba o lote inteiro.
-      for(var i=0;i<L.length;i+=50){
-        var lote=L.slice(i,i+50).map(function(o){
-          return {conta:'Logbox', sku:o.sku, marca:valor, updated_at:'now()'};
-        });
-        var r=await sb.from('skus').upsert(lote,{onConflict:'conta,sku'});
-        if(r.error) throw r.error;
-        L.slice(i,i+50).forEach(function(o){ o.marca=valor; });
+  /* Grava mudanças [{sku, de, para}] em lotes, agrupadas pelo valor novo.
+     update, nunca upsert: nada de criar SKU por engano. */
+  async function gravar(mud){
+    var porPara={};
+    mud.forEach(function(x){ var k=x.para||''; (porPara[k]=porPara[k]||[]).push(x.sku); });
+    var feitos=[];
+    for(var para in porPara){
+      var L=porPara[para];
+      for(var i=0;i<L.length;i+=100){
+        var lote=L.slice(i,i+100);
+        var r=await sb.from('skus').update({marca:para||null, updated_at:new Date().toISOString()})
+          .eq('conta',CONTA).in('sku',lote);
+        if(r.error) throw Object.assign(r.error, {feitos:feitos});
+        lote.forEach(function(s){ feitos.push(s); });
       }
-      if(campo) campo.value='';
-      mrcRender();
-    }catch(e){
-      console.error('[Marcas] em massa', e);
-      el.innerHTML='<div class="fin-cascata"><p class="fin-note">Falhou ao aplicar: '+esc(String(e&&e.message||e))+'</p></div>';
     }
-  };
-
-  window.mrcFiltrar=function(){
-    _mrc.busca=(document.getElementById('mrc-busca').value||'').trim();
-    var cb=document.getElementById('mrc-so-vazio');
-    _mrc.soVazio=!!(cb && cb.checked);
-    if(_mrc.linhas) mrcRender();
-  };
-
-  window.mrcCarregar=async function(forcar){
-    if(_mrc.carregando) return;
-    if(_mrc.linhas && !forcar){ mrcRender(); return; }
-    var el=document.getElementById('mrc-tabela'); if(!el) return;
-    _mrc.carregando=true;
-    el.innerHTML='<div class="fin-loading"><div class="fin-spinner"></div> Carregando SKUs…</div>';
+    // reflete na memória e invalida o mapa usado pelas outras telas
+    var d=_mb.dados, idx={}; d.skus.forEach(function(s){ idx[s.sku]=s; });
+    mud.forEach(function(x){ if(idx[x.sku]) idx[x.sku].marca=x.para||null; });
+    preparar(d);
+    window._marcaCache=null;
+    _mb.hist=null; _mb.histErro=null;
+    return feitos.length;
+  }
+  async function aplicar(mud, txt){
+    if(!mud.length || _mb.salvando) return;
+    _mb.salvando=true;
     try{
-      _mrc.linhas=await mrcLer();
-      mrcRender();
-    }catch(err){
-      console.error('[Marcas]',err);
-      var falta=/marca/i.test(String(err&&err.message||''));
-      el.innerHTML='<div class="fin-cascata"><p class="fin-note">'
-        +(falta ? 'A coluna <code>skus.marca</code> não existe neste banco. '
-                 +'Rode: <code>alter table public.skus add column marca text;</code>'
-                : 'Não consegui carregar os SKUs. '+esc(String(err&&err.message||err)))
-        +'</p></div>';
+      var n=await gravar(mud);
+      _mb.desfazer={ txt:txt.replace('{n}', fN(n)), volta:mud.map(function(x){ return {sku:x.sku, de:x.para, para:x.de}; }) };
+    }catch(e){
+      console.error('[Marcas] gravar', e);
+      alert('Falhou ao gravar: '+(e&&e.message||e)+(e&&e.feitos&&e.feitos.length?'\n'+e.feitos.length+' SKUs já tinham sido gravados.':''));
     }
-    _mrc.carregando=false;
+    _mb.salvando=false; _mb.revisao=null;
+    renderCadastro();
+    if(_mb.histAberto){ lerHist().then(renderCadastro); }
+  }
+
+  /* Nome de marca: se já existe uma parecida ("TibKids" ≈ "Tib Kids"), usa a existente. */
+  function resolverNome(nome){
+    nome=limpaMarca(nome); if(!nome) return {nome:''};
+    var ex=((_mb.dados&&_mb.dados.marcas)||[]).find(function(m){ return normM(m)===normM(nome); });
+    return ex ? {nome:ex, troca: ex!==nome ? 'Usei "'+ex+'", que já existe ("'+nome+'" é a mesma marca escrita de outro jeito).' : null} : {nome:nome, nova:true};
+  }
+
+  window.mbCadBuscar=function(v){ clearTimeout(window._mbBusca); window._mbBusca=setTimeout(function(){ _mb.busca=v; renderCadastro();
+    var b=document.getElementById('mb-busca'); if(b){ b.focus(); b.setSelectionRange(b.value.length,b.value.length); } }, 150); };
+  window.mbCadFiltro=function(v){ _mb.filtro=v; renderCadastro(); };
+  window.mbSel=function(sku, on){ if(on) _mb.sel[sku]=1; else delete _mb.sel[sku]; _mb.revisao=null; renderCadastro(); };
+  window.mbSelTodos=function(on){ filtradas(linhasCadastro()).forEach(function(o){ if(on) _mb.sel[o.sku]=1; else delete _mb.sel[o.sku]; }); _mb.revisao=null; renderCadastro(); };
+  window.mbLimparSel=function(){ _mb.sel={}; _mb.revisao=null; _mb.novaMarca=false; _mb.massaValor=''; renderCadastro(); };
+  window.mbMassaEscolha=function(s){ _mb.novaMarca = s.value==='__nova'; _mb.massaValor=s.value; if(_mb.novaMarca) renderCadastro(); };
+  window.mbRevisar=function(){
+    var v=_mb.massaValor||'', aviso=null;
+    if(!v){ alert('Escolha a marca.'); return; }
+    var para;
+    if(v==='__limpar') para='';
+    else if(v==='__nova'){ var n=document.getElementById('mb-nova'); var r=resolverNome(n&&n.value); if(!r.nome){ alert('Escreva o nome da nova marca.'); return; } para=r.nome; aviso=r.troca||null; }
+    else para=v;
+    var L=linhasCadastro(), mud=[], iguais=0;
+    L.forEach(function(o){ if(!_mb.sel[o.sku]) return; if((o.marca||'')===para){ iguais++; return; } mud.push({sku:o.sku, de:o.marca||'', para:para}); });
+    if(Object.keys(_mb.sel).length===L.length) aviso=(aviso?aviso+' ':'')+'Atenção: isto muda o catálogo inteiro.';
+    _mb.revisao={mud:mud, iguais:iguais, aviso:aviso, txt:'Marca trocada em {n} SKUs.'};
+    renderCadastro();
   };
+  window.mbRevisarSugestoes=function(){
+    var mud=[]; linhasCadastro().forEach(function(o){ if(_mb.sel[o.sku] && o.sug) mud.push({sku:o.sku, de:'', para:o.sug}); });
+    _mb.revisao={mud:mud, iguais:0, aviso:null, txt:'Sugestão aplicada em {n} SKUs.'};
+    renderCadastro();
+  };
+  window.mbConfirmar=function(){ var R=_mb.revisao; if(!R) return; var txt=R.txt; aplicar(R.mud, txt).then(function(){ _mb.sel={}; _mb.novaMarca=false; _mb.massaValor=''; renderCadastro(); }); };
+  window.mbCancelarRevisao=function(){ _mb.revisao=null; renderCadastro(); };
+  window.mbMudar=function(sku, sel){
+    var v=sel.value, o=linhasCadastro().find(function(x){ return x.sku===sku; }); if(!o) return;
+    if(v==='__nova'){
+      var nome=window.prompt('Nome da nova marca para '+sku+':','');
+      var r=resolverNome(nome); if(!r.nome){ sel.value=o.marca||''; return; }
+      if(r.troca) alert(r.troca);
+      v=r.nome;
+    }
+    if((o.marca||'')===v) return;
+    aplicar([{sku:sku, de:o.marca||'', para:v}], sku+': '+(o.marca||'sem marca')+' → '+(v||'sem marca')+'.');
+  };
+  window.mbUsarSug=function(sku){
+    var o=linhasCadastro().find(function(x){ return x.sku===sku; }); if(!o||!o.sug) return;
+    aplicar([{sku:sku, de:o.marca||'', para:o.sug}], sku+' → '+o.sug+'.');
+  };
+  window.mbDesfazer=function(){
+    var D=_mb.desfazer; if(!D) return;
+    // só volta o que ainda está como ficou (não desfaz mudança feita depois)
+    var atual={}; linhasCadastro().forEach(function(o){ atual[o.sku]=o.marca||''; });
+    var mud=D.volta.filter(function(x){ return (atual[x.sku]||'')===(x.de||''); });
+    _mb.desfazer=null;
+    aplicar(mud, 'Desfeito: {n} SKUs voltaram como estavam.').then(function(){ _mb.desfazer=null; renderCadastro(); });
+  };
+  window.mbFecharToast=function(){ _mb.desfazer=null; renderCadastro(); };
+  window.mbDesfazerHist=function(i){
+    var o=_mb.hist&&_mb.hist[i]; if(!o) return;
+    var atual={}; linhasCadastro().forEach(function(x){ atual[x.sku]=x.marca||''; });
+    var mud=o.linhas.filter(function(x){ return (atual[x.sku]||'')===(x.depois||''); }).map(function(x){ return {sku:x.sku, de:x.depois||'', para:x.antes||''}; });
+    var pulados=o.linhas.length-mud.length;
+    _mb.revisao={mud:mud, iguais:0, aviso:pulados?pulados+' SKU(s) mudaram de novo depois disso e ficam como estão.':null, txt:'Voltou como estava em {n} SKUs.'};
+    renderCadastro();
+    var r=document.querySelector('.mb-revisao'); if(r) r.scrollIntoView({behavior:'smooth', block:'center'});
+  };
+
+  /* ── Orquestração ────────────────────────────────────────────────────────── */
+  function render(){
+    document.querySelectorAll('#mrc-abas button').forEach(function(b){ b.classList.toggle('on', b.dataset.aba===_mb.aba); });
+    var sub=document.getElementById('mrc-subtitle');
+    if(sub) sub.textContent = _mb.aba==='cadastro'
+      ? 'Uma marca por SKU. Para mudar vários de uma vez, marque a caixinha, revise e grave — e dá para desfazer.'
+      : 'Volume, modelos e qualidade de cada marca. Escolha o que mostrar e use a tela cheia para apresentar.';
+    if(_mb.aba==='cadastro') renderCadastro(); else renderDesempenho();
+  }
+  window.mrcAba=function(a){ _mb.aba=a; if(a!=='desempenho') document.body.classList.remove('mb-apresenta'); render(); };
+  window.mrcCarregar=async function(forcar){
+    if(_mb.carregando) return;
+    if(_mb.dados && !forcar){ render(); return; }
+    _mb.carregando=true; _mb.dados=null; render();
+    try{ _mb.dados=preparar(await mbLer()); }
+    catch(err){
+      console.error('[Marcas]', err);
+      var el=document.getElementById('mrc-corpo');
+      if(el) el.innerHTML='<div class="fin-cascata"><p class="fin-note">Não consegui carregar: '+esc(String(err&&err.message||err))+'</p></div>';
+      _mb.carregando=false; return;
+    }
+    _mb.carregando=false;
+    render();
+  };
+  window._mbCalcular=function(){ return _mb.dados ? calcular(_mb.dados) : null; };   // exposto para teste
+  window._mbEstado=_mb;
 
   /* Mapa sku → marca, usado pelo agrupamento das outras telas. */
   window.marcaMapa=async function(){
@@ -13750,7 +14344,7 @@ window.apGarantirMes=async function(mes){
         .eq('conta','Logbox').order('sku',{ascending:true}).range(a,b); }, 'marca/mapa');
       if(r.error) throw r.error;
       var m={};
-      (r.data||[]).forEach(function(x){ if(x.marca) m[x.sku]=x.marca; });
+      (r.data||[]).forEach(function(x){ if(x.marca) m[x.sku]=limpaMarca(x.marca); });
       window._marcaCache=m;
       return m;
     }catch(e){ console.warn('[Marcas] mapa', e); window._marcaCache={}; return {}; }
@@ -17220,6 +17814,121 @@ body:not(:has(#page-anotacoes.active)):not(:has(#page-ideias.active)):not(:has(#
   /* + acima da barra de abas */
   .fab{ bottom:calc(78px + env(safe-area-inset-bottom)) !important; }
 }
+
+/* ══ MARCAS v2 (29/10/2026) ═════════════════════════════════════════════════ */
+.mb-topo{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.mb-abas{ display:inline-flex; background:var(--slate-50); border:1px solid var(--slate-100); border-radius:10px; padding:3px; gap:2px; }
+.mb-abas button{ border:0; background:none; padding:6px 14px; border-radius:8px; font-family:var(--font); font-size:13px; color:var(--slate-600); cursor:pointer; }
+.mb-abas button.on{ background:var(--white); color:var(--slate-900); font-weight:600; box-shadow:0 1px 2px rgba(0,0,0,.08); }
+.mb-filtros{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.mb-linha{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.mb-marcas{ display:flex; flex-wrap:wrap; gap:6px; flex:1; min-width:0; }
+.mb-chip{ display:inline-flex; align-items:center; gap:6px; border:1px solid var(--slate-100); background:var(--white); color:var(--slate-600);
+  border-radius:999px; padding:5px 11px; font-family:var(--font); font-size:12.5px; cursor:pointer; white-space:nowrap; }
+.mb-chip:hover{ border-color:var(--slate-300); }
+.mb-chip.on{ border-color:var(--brand); color:var(--brand); background:#EEF4FB; font-weight:500; }
+.mb-chip i{ width:9px; height:9px; border-radius:50%; display:inline-block; }
+.mb-chip small{ color:var(--slate-400); font-size:11px; }
+.mb-chip-sug{ border-style:dashed; color:var(--brand); }
+.mb-mostrar > span:first-child{ font-size:12px; color:var(--slate-400); }
+.mb-sep{ width:1px; height:20px; background:var(--slate-100); margin:0 4px; }
+.mb-seg{ display:inline-flex; gap:4px; }
+.mb-tela{ cursor:pointer; margin-left:auto; }
+.mb-folha{ display:flex; flex-direction:column; gap:14px; }
+.mb-titulo{ display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; padding:2px 2px 0; }
+.mb-titulo b{ display:block; font-size:20px; letter-spacing:-.4px; color:var(--slate-900); }
+.mb-titulo span{ font-size:12.5px; color:var(--slate-400); }
+.mb-titulo .mb-fonte{ font-family:var(--mono); font-size:10.5px; }
+.mb-bloco{ background:var(--white); border:1px solid var(--slate-100); border-radius:var(--radius); padding:16px 18px; }
+.mb-bloco-t{ font-size:15px; font-weight:600; letter-spacing:-.2px; color:var(--slate-900); margin-bottom:12px; }
+.mb-bloco-n{ font-weight:400; font-size:12px; color:var(--slate-400); margin-left:6px; }
+.mb-kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin-bottom:14px; }
+.mb-kpi{ border:1px solid var(--slate-100); border-radius:10px; padding:11px 13px; }
+.mb-kpi.alerta{ border-color:#F5C9A8; background:#FFF7F0; }
+.mb-kpi-l{ font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate-400); }
+.mb-kpi-v{ font-family:var(--mono); font-size:22px; color:var(--slate-900); margin-top:3px; letter-spacing:-.6px; white-space:nowrap; }
+.mb-kpi-s{ font-size:11.5px; color:var(--slate-400); margin-top:2px; line-height:1.4; }
+.mb-sobe{ color:var(--green-600); } .mb-desce{ color:var(--coral-500); } .mb-neutro{ color:var(--slate-400); }
+.mb-graf-cab{ display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12.5px; color:var(--slate-600); font-weight:500; margin:4px 0 6px; }
+.mb-graf{ width:100%; }
+.mb-leg{ display:flex; flex-wrap:wrap; gap:6px 16px; font-size:12px; color:var(--slate-600); margin-top:6px; }
+.mb-leg i{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:5px; vertical-align:-1px; }
+.mb-nota{ color:var(--slate-400); }
+.mb-share{ display:flex; height:10px; border-radius:5px; overflow:hidden; margin:14px 0 10px; background:var(--slate-50); }
+.mb-share i{ display:block; height:100%; }
+.mb-tabela{ margin-top:4px; }
+.mb-tabela td, .mb-tabela th{ font-size:12.5px; }
+.mb-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:7px; }
+.mb-pos{ font-family:var(--mono); color:var(--slate-400); width:28px; }
+.mb-sku{ font-family:var(--mono); font-size:12.5px; font-weight:600; color:var(--slate-900); }
+.mb-desc{ font-size:11.5px; color:var(--slate-400); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:300px; }
+.mb-vars{ display:flex; flex-wrap:wrap; gap:4px; margin-top:4px; }
+.mb-vars span{ font-family:var(--mono); font-size:10.5px; color:var(--slate-600); background:var(--slate-50); border-radius:4px; padding:1px 5px; }
+.mb-spark{ display:block; }
+.mb-ruim{ color:var(--coral-500); font-weight:500; }
+.mb-tabela small{ color:var(--slate-400); font-size:10.5px; }
+.mb-obs{ font-size:11.5px; color:var(--slate-400); margin:8px 0 0; line-height:1.55; }
+.mb-sub{ font-size:12.5px; font-weight:600; color:var(--slate-700); margin:14px 0 8px; }
+.mb-sub small{ font-weight:400; color:var(--slate-400); }
+.mb-q-grid{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr); gap:18px; }
+.mb-q-grid .mb-sub{ margin-top:0; }
+.mb-motivos{ display:flex; flex-direction:column; gap:9px; }
+.mb-mot-cab{ display:flex; justify-content:space-between; gap:8px; font-size:12.5px; color:var(--slate-600); }
+.mb-mot.prod .mb-mot-cab{ color:var(--slate-900); font-weight:500; }
+.mb-mot-cab em{ font-style:normal; font-size:10.5px; color:var(--slate-400); font-weight:400; margin-left:4px; }
+.mb-mot-cab b{ font-family:var(--mono); font-weight:500; }
+.mb-mot-barra{ height:7px; background:var(--slate-50); border-radius:4px; overflow:hidden; margin:3px 0 2px; }
+.mb-mot-barra i{ display:block; height:100%; border-radius:4px; }
+.mb-mot-det{ font-size:11px; color:var(--slate-400); line-height:1.4; }
+.mb-coments{ display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:10px; }
+.mb-coment{ border:1px solid var(--slate-100); border-radius:10px; padding:10px 12px; }
+.mb-coment > div{ display:flex; justify-content:space-between; gap:8px; font-size:11px; color:var(--slate-400); }
+.mb-coment b{ color:#F5A524; letter-spacing:1px; }
+.mb-coment p{ margin:5px 0 0; font-size:12.5px; color:var(--slate-700); line-height:1.5; }
+/* cadastro */
+.mb-cad-resumo{ display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin-bottom:12px; font-size:12.5px; color:var(--slate-600); }
+.mb-cad-resumo > span{ margin-right:6px; }
+.mb-cad-ctl{ margin-bottom:10px; }
+.mb-cad-ctl .notes-search{ width:240px; padding:7px 10px; font-size:12.5px; }
+.mb-massa{ position:sticky; top:var(--pg-head-h,58px); z-index:8; display:flex; flex-wrap:wrap; align-items:center; gap:8px;
+  background:#EEF4FB; border:1px solid var(--blue-100); border-radius:10px; padding:9px 12px; margin-bottom:10px; font-size:12.5px; color:var(--slate-700); }
+.mb-massa.perigo{ background:#FFF4EC; border-color:#F5C9A8; }
+.mb-aviso{ color:var(--coral-500); font-weight:600; }
+.mb-link{ background:none; border:0; color:var(--brand); cursor:pointer; font-size:12px; text-decoration:underline; }
+.mb-revisao{ background:var(--white); border:1px solid var(--slate-200); border-left:3px solid var(--brand); border-radius:10px; padding:12px 14px; margin-bottom:12px; font-size:12.5px; color:var(--slate-700); }
+.mb-revisao ul{ margin:8px 0 0; padding-left:18px; }
+.mb-revisao-bt{ display:flex; gap:8px; margin-top:10px; }
+.mb-ok{ background:var(--brand) !important; color:#fff !important; border-color:var(--brand) !important; cursor:pointer; }
+.mb-ok[disabled]{ opacity:.4; cursor:not-allowed; }
+.mb-toast{ display:flex; align-items:center; gap:10px; background:var(--slate-900); color:#fff; border-radius:10px; padding:9px 12px; margin-bottom:10px; font-size:12.5px; }
+.mb-toast button{ background:none; border:1px solid rgba(255,255,255,.35); color:#fff; border-radius:7px; padding:3px 10px; cursor:pointer; font-size:12px; }
+.mb-toast button.x{ border:0; margin-left:auto; opacity:.7; }
+.mb-cad tr.sel td{ background:#F3F8FD; }
+.mb-ck{ width:30px; }
+.mb-sel-marca{ min-width:150px; font-size:12.5px; }
+.mb-hist{ margin-top:14px; background:var(--white); border:1px solid var(--slate-100); border-radius:10px; padding:10px 14px; }
+.mb-hist summary{ cursor:pointer; font-size:13px; font-weight:600; color:var(--slate-700); }
+.mb-hist-lista{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+.mb-hist-item{ display:flex; justify-content:space-between; gap:10px; align-items:center; font-size:12.5px; color:var(--slate-700); border-top:1px solid var(--slate-50); padding-top:8px; }
+/* tela cheia para apresentar */
+body.mb-apresenta .sidebar, body.mb-apresenta #ol-tabbar, body.mb-apresenta #led-flutuante, body.mb-apresenta #admin-toolbar,
+body.mb-apresenta #page-performance > .pg-head, body.mb-apresenta #operacao-tabs, body.mb-apresenta .mb-topo,
+body.mb-apresenta #mrc-subtitle, body.mb-apresenta .fab, body.mb-apresenta .sync-indicator{ display:none !important; }
+body.mb-apresenta .main{ margin-left:0 !important; padding:22px 28px 40px !important; }
+body.mb-apresenta #op-section-marcas{ max-width:1240px; margin:0 auto; }
+body.mb-apresenta .mb-titulo b{ font-size:26px; }
+body.mb-apresenta .mb-kpi-v{ font-size:26px; }
+body.mb-apresenta .mb-filtros{ opacity:.55; }
+body.mb-apresenta .mb-filtros:hover{ opacity:1; }
+@media (max-width:768px){
+  .mb-q-grid{ grid-template-columns:1fr; }
+  .mb-tela{ margin-left:0; }
+  .mb-kpis{ grid-template-columns:1fr 1fr; }
+  .mb-kpi-v{ font-size:18px; }
+  .mb-marcas{ flex-wrap:nowrap; overflow-x:auto; flex-basis:100%; padding-bottom:2px; }
+  .mb-cad-ctl .notes-search{ width:100%; }
+  .mb-massa{ top:0; }
+}
 </style>
 <!-- ═══ OFFICELED 2026 — barra de abas mobile ═══ -->
 <script>
@@ -17349,7 +18058,7 @@ body:not(:has(#page-anotacoes.active)):not(:has(#page-ideias.active)):not(:has(#
 
   // Containers cujas tabelas viram lista no celular.
   var ALVOS = ['dash-produtos','ads-tabela','est-tabela','dre-tabela','cup-tabela','cup-semanas','cup-marcas','prm-tabela','estf-tabela',
-               'mrc-tabela','exp-ofensoras','exp-categorias'];
+               'mrc-corpo','exp-ofensoras','exp-categorias'];
 
   // Rótulos do cabeçalho, com colspan expandido: a coluna 3 tem que casar com
   // a 3ª célula mesmo que a 1ª ocupe duas.
